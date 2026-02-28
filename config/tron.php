@@ -28,7 +28,7 @@ header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 // 3) Control de autenticación
 if (empty($_SESSION['usuario_id'])) {
     http_response_code(401);
-    header("Location: /canetto/login.php");
+    header("Location: /canetto/login/login.php");
     exit;
 }
 
@@ -42,7 +42,7 @@ if (!isset($_SESSION['lock_ua'])) $_SESSION['lock_ua'] = $ua;
 if ($_SESSION['lock_ip'] !== $ip || $_SESSION['lock_ua'] !== $ua) {
     session_destroy();
     http_response_code(401);
-    header("Location: /canetto/login.php");
+    header("Location: /canetto/login/login.php");
     exit;
 }
 
@@ -52,7 +52,7 @@ $last = $_SESSION['last_seen'] ?? time();
 
 if ((time() - $last) > $max) {
     session_destroy();
-    header("Location: /canetto/login.php?timeout=1");
+    header("Location: /canetto/login/login.php?timeout=1");
     exit;
 }
 $_SESSION['last_seen'] = time();

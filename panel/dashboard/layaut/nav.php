@@ -9,10 +9,25 @@ if (!isset($pageTitle)) {
 <head>
 <meta charset="UTF-8">
 <title><?= $pageTitle ?></title>
-<link rel="stylesheet" href="../../../assets/dashboard.css">
+<link rel="stylesheet" href="/canetto/assets/dashboard.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+
+<!-- datatables  -->
+
+
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+
+<!-- DataTables JS -->
+ 
+
+<!-- Responsive (opcional pero recomendable) -->
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+
 </head>
 <body>
 
@@ -35,7 +50,7 @@ if (!isset($pageTitle)) {
         <nav class="nav-menu">
 
     <!-- DASHBOARD -->
-    <a href="index.php" class="<?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : '' ?>">
+    <a href="/canetto/administracion/index.php" class="<?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : '' ?>">
         <i class="fa-solid fa-chart-line"></i>
         <span>Dashboard</span>
     </a>
@@ -100,7 +115,7 @@ if (!isset($pageTitle)) {
                 <span>Productos</span>
             </a>
 
-            <a href="../../public/administracion/materias_primas/index.php">
+            <a href="../administracion/materias_primas/index.php">
                 <i class="fa-solid fa-seedling"></i>
                 <span>Materias primas</span>
             </a>
