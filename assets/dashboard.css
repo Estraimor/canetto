@@ -246,7 +246,7 @@ body {
     height: 100vh;
     background: linear-gradient(135deg, #ffe4f0, #ffd6eb, #fff0f7, #ffeaf5);
     background-size: 400% 400%;
-    animation: gradientMove 8s ease infinite, fadeOutLoader 1.5s ease 3.5s forwards;
+    animation: gradientMove 8s ease infinite;
     display: flex;
     align-items: center;
     justify-content: center;

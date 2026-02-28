@@ -295,43 +295,31 @@ $pdo = Conexion::conectar();
   </div>
 </div>
 
+
+
 <?php include '../../panel/dashboard/layaut/footer.php'; ?>
-
-
 <script>
-  /* =========================================================
+/* =========================================================
    CANETTO - MATERIAS PRIMAS
-   Sistema completo con DataTables + API
 ========================================================= */
-
 (function () {
   "use strict";
 
-  /* =========================================================
-     HELPERS
-  ========================================================= */
-
-  const $ = (q) => document.querySelector(q);
+  const $  = (q) => document.querySelector(q);
   const $$ = (q) => document.querySelectorAll(q);
 
   function showToast(msg) {
     const toast = $("#toast");
     const toastMsg = $("#toastMsg");
-
     if (!toast) return;
-
     toastMsg.textContent = msg;
     toast.classList.add("show");
-
-    setTimeout(() => {
-      toast.classList.remove("show");
-    }, 2500);
+    setTimeout(() => toast.classList.remove("show"), 2500);
   }
 
-  /* =========================================================
-     MODALES
-  ========================================================= */
-
+  // =========================
+  // MODALES
+  // =========================
   const modalMP = $("#modalMP");
   const modalDelete = $("#modalDelete");
 
@@ -339,17 +327,12 @@ $pdo = Conexion::conectar();
     if (!modal) return;
     modal.classList.add("open");
     document.body.classList.add("mp-lock");
-
-    requestAnimationFrame(() => {
-      modal.classList.add("in");
-    });
+    requestAnimationFrame(() => modal.classList.add("in"));
   }
 
   function closeModal(modal) {
     if (!modal) return;
-
     modal.classList.remove("in");
-
     setTimeout(() => {
       modal.classList.remove("open");
       document.body.classList.remove("mp-lock");
@@ -365,25 +348,21 @@ $pdo = Conexion::conectar();
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (modalMP.classList.contains("open")) closeModal(modalMP);
-      if (modalDelete.classList.contains("open")) closeModal(modalDelete);
+      if (modalMP?.classList.contains("open")) closeModal(modalMP);
+      if (modalDelete?.classList.contains("open")) closeModal(modalDelete);
     }
   });
 
-  /* =========================================================
-     DATA TABLE
-  ========================================================= */
-
+  // =========================
+  // DATATABLE
+  // =========================
   if (!window.jQuery || !jQuery.fn.DataTable) {
     console.error("DataTables no está cargado.");
     return;
   }
 
   const tabla = jQuery("#tablaMP").DataTable({
-    ajax: {
-      url: "api/listar.php",
-      dataSrc: ""
-    },
+    ajax: { url: "api/listar.php", dataSrc: "" },
     pageLength: 10,
     responsive: true,
     order: [[0, "asc"]],
@@ -391,53 +370,40 @@ $pdo = Conexion::conectar();
       { data: "nombre" },
       {
         data: "stock_actual",
-        render: function (data, type, row) {
-          return parseFloat(data).toLocaleString("es-AR") + " " + (row.unidad || "");
-        }
+        render: (data, type, row) => `${parseFloat(data).toLocaleString("es-AR")} ${row.unidad || ""}`
       },
       {
         data: "stock_minimo",
-        render: function (data, type, row) {
-          return parseFloat(data).toLocaleString("es-AR") + " " + (row.unidad || "");
-        }
+        render: (data, type, row) => `${parseFloat(data).toLocaleString("es-AR")} ${row.unidad || ""}`
       },
       { data: "estado_html" },
       {
         data: "activo",
-        render: function (data) {
-          return data == 1
-            ? '<span class="badge-ok">Activo</span>'
-            : '<span class="badge-low">Inactivo</span>';
-        }
+        render: (data) => data == 1
+          ? '<span class="badge-ok">Activo</span>'
+          : '<span class="badge-low">Inactivo</span>'
       },
       {
         data: null,
         orderable: false,
-        render: function (data) {
-          return `
-            <button class="mp-icon-btn editar" data-id="${data.idmateria_prima}">
-              <i class="fa fa-pen"></i>
-            </button>
-            <button class="mp-icon-btn mp-icon-danger eliminar" data-id="${data.idmateria_prima}">
-              <i class="fa fa-trash"></i>
-            </button>
-          `;
-        }
+        render: (data) => `
+          <button class="mp-icon-btn editar" data-id="${data.idmateria_prima}">
+            <i class="fa fa-pen"></i>
+          </button>
+          <button class="mp-icon-btn mp-icon-danger eliminar" data-id="${data.idmateria_prima}">
+            <i class="fa fa-trash"></i>
+          </button>
+        `
       }
     ]
   });
 
-  /* =========================================================
-     STATS
-  ========================================================= */
-
+  // =========================
+  // STATS
+  // =========================
   function refreshStats() {
     const rows = tabla.rows({ search: "applied" }).data().toArray();
-
-    let total = rows.length;
-    let ok = 0;
-    let low = 0;
-    let critical = 0;
+    let total = rows.length, ok = 0, low = 0, critical = 0;
 
     rows.forEach(r => {
       if (r.estado_key === "ok") ok++;
@@ -454,84 +420,99 @@ $pdo = Conexion::conectar();
   tabla.on("xhr.dt", refreshStats);
   tabla.on("draw.dt", refreshStats);
 
-  /* =========================================================
-     FILTROS
-  ========================================================= */
+  // =========================
+// FILTROS
+// =========================
 
-/* =========================================================
-   FILTROS REALES (estado + activo + buscar)
-========================================================= */
-
-const qBuscar = $("#qBuscar");
-const qEstado = $("#qEstado");
-const qActivo = $("#qActivo");
-const qOrden  = $("#qOrden");
+const qBuscar   = $("#qBuscar");
+const qEstado   = $("#qEstado");
+const qActivo   = $("#qActivo");
+const qOrden    = $("#qOrden");
 const btnLimpiar = $("#btnLimpiar");
 
+const btnToggleFilters = $("#btnToggleFilters");
+const filtersBox       = $("#filtersBox");
 
-// Filtro personalizado global
-$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-
-    const row = tabla.row(dataIndex).data();
-
-    // =====================
-    // FILTRO ESTADO
-    // =====================
-    if (qEstado.value !== "all") {
-        if (row.estado_key !== qEstado.value) {
-            return false;
-        }
-    }
-
-    // =====================
-    // FILTRO ACTIVO
-    // =====================
-    if (qActivo.value !== "all") {
-        if (String(row.activo) !== qActivo.value) {
-            return false;
-        }
-    }
-
-    return true;
-});
-
-
-function applyFilters() {
-
-    // Buscar por texto
-    tabla.search(qBuscar.value);
-
-    // Orden
-    switch (qOrden.value) {
-        case "nombre_asc":  tabla.order([0, "asc"]); break;
-        case "nombre_desc": tabla.order([0, "desc"]); break;
-        case "stock_asc":   tabla.order([1, "asc"]); break;
-        case "stock_desc":  tabla.order([1, "desc"]); break;
-        case "estado":      tabla.order([3, "asc"]); break;
-    }
-
-    tabla.draw();
+// =========================
+// TOGGLE PANEL FILTROS
+// =========================
+if (btnToggleFilters && filtersBox) {
+  btnToggleFilters.addEventListener("click", () => {
+    filtersBox.classList.toggle("open");
+  });
 }
 
+// =========================
+// FILTRO PERSONALIZADO DATATABLE
+// =========================
+jQuery.fn.DataTable.ext.search.push(function(settings, data, dataIndex) {
 
-// Eventos
-[qBuscar, qEstado, qActivo, qOrden].forEach(el => {
-    el.addEventListener("input", applyFilters);
-    el.addEventListener("change", applyFilters);
+  const row = tabla.row(dataIndex).data();
+
+  // 🔥 Si todavía no hay datos cargados, no bloquear
+  if (!row) return true;
+
+  // FILTRO ESTADO
+  if (qEstado.value !== "all" && row.estado_key !== qEstado.value) {
+    return false;
+  }
+
+  // FILTRO ACTIVO
+  if (qActivo.value !== "all" && String(row.activo) !== qActivo.value) {
+    return false;
+  }
+
+  return true;
 });
 
-btnLimpiar.addEventListener("click", () => {
+// =========================
+// APLICAR FILTROS
+// =========================
+function applyFilters() {
+
+  // Buscar por texto
+  tabla.search(qBuscar.value);
+
+  // Orden
+  switch (qOrden.value) {
+    case "nombre_asc":  tabla.order([0, "asc"]); break;
+    case "nombre_desc": tabla.order([0, "desc"]); break;
+    case "stock_asc":   tabla.order([1, "asc"]); break;
+    case "stock_desc":  tabla.order([1, "desc"]); break;
+    case "estado":      tabla.order([3, "asc"]); break;
+  }
+
+  tabla.draw();
+}
+
+// =========================
+// EVENTOS
+// =========================
+[qBuscar, qEstado, qActivo, qOrden].forEach(el => {
+  if (!el) return;
+  el.addEventListener("input", applyFilters);
+  el.addEventListener("change", applyFilters);
+});
+
+// =========================
+// LIMPIAR FILTROS
+// =========================
+if (btnLimpiar) {
+  btnLimpiar.addEventListener("click", () => {
+
     qBuscar.value = "";
     qEstado.value = "all";
-    qActivo.value = "1";
+    qActivo.value = "all";   // 🔥 AHORA MUESTRA TODAS
     qOrden.value  = "nombre_asc";
-    tabla.search("");
-    tabla.draw();
-});
-  /* =========================================================
-     NUEVA
-  ========================================================= */
 
+    tabla.search("");
+    tabla.order([0, "asc"]);
+    tabla.draw();
+  });
+}
+  // =========================
+  // NUEVA
+  // =========================
   const btnNuevaMP = $("#btnNuevaMP");
   const formMP = $("#formMP");
 
@@ -554,15 +535,13 @@ btnLimpiar.addEventListener("click", () => {
     openModal(modalMP);
   });
 
-  /* =========================================================
-     EDITAR
-  ========================================================= */
-
+  // =========================
+  // EDITAR (ABRIR MODAL)
+  // =========================
   jQuery("#tablaMP").on("click", ".editar", function () {
     const id = jQuery(this).data("id");
 
     jQuery.get("api/obtener.php", { id }, function (data) {
-
       mp_id.value = data.idmateria_prima;
       mp_nombre.value = data.nombre;
       mp_unidad.value = data.unidad_medida_idunidad_medida;
@@ -575,14 +554,12 @@ btnLimpiar.addEventListener("click", () => {
       $("#modalSub").textContent = "Actualiza la información";
 
       openModal(modalMP);
-
     }, "json");
   });
 
-  /* =========================================================
-     GUARDAR
-  ========================================================= */
-
+  // =========================
+  // GUARDAR (INSERT/UPDATE + SWEETALERT)
+  // =========================
   formMP.addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -602,46 +579,52 @@ btnLimpiar.addEventListener("click", () => {
     }
 
     jQuery.post("api/guardar.php", payload, function (resp) {
-
       if (resp.success) {
         closeModal(modalMP);
         tabla.ajax.reload(null, false);
-        showToast("Guardado correctamente");
-      } else {
-        showToast("No se pudo guardar");
-      }
 
+        Swal.fire({
+          icon: "success",
+          title: payload.id ? "Cambios actualizados" : "Registrado correctamente",
+          text: payload.id ? "Se han actualizado los cambios correctamente" : "La materia prima fue creada correctamente",
+          confirmButtonColor: "#E91E63"
+        });
+
+      } else {
+        Swal.fire("Error", resp?.message || "No se pudo guardar", "error");
+      }
     }, "json");
   });
 
-  /* =========================================================
-     ELIMINAR
-  ========================================================= */
-
-  let deletingId = null;
-
+  // =========================
+  // ELIMINAR (SWEETALERT)
+  // =========================
   jQuery("#tablaMP").on("click", ".eliminar", function () {
-    deletingId = jQuery(this).data("id");
-
+    const id = jQuery(this).data("id");
     const row = tabla.row(jQuery(this).closest("tr")).data();
-    $("#delName").textContent = `¿Eliminar "${row.nombre}"?`;
 
-    openModal(modalDelete);
-  });
+    Swal.fire({
+      title: "¿Eliminar materia prima?",
+      text: `"${row.nombre}" se eliminará permanentemente`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#E91E63",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true
+    }).then((result) => {
+      if (!result.isConfirmed) return;
 
-  $("#btnConfirmDelete").addEventListener("click", function () {
-
-    jQuery.post("api/eliminar.php", { id: deletingId }, function (resp) {
-
-      if (resp.success) {
-        closeModal(modalDelete);
-        tabla.ajax.reload(null, false);
-        showToast("Eliminado correctamente");
-      } else {
-        showToast("No se pudo eliminar");
-      }
-
-    }, "json");
+      jQuery.post("api/eliminar.php", { id }, function (resp) {
+        if (resp.success) {
+          tabla.ajax.reload(null, false);
+          Swal.fire({ icon: "success", title: "Eliminado", text: "La materia prima fue eliminada correctamente", timer: 1800, showConfirmButton: false });
+        } else {
+          Swal.fire("Error", resp?.message || "No se pudo eliminar", "error");
+        }
+      }, "json");
+    });
   });
 
 })();
