@@ -1,4 +1,23 @@
 <?php
+declare(strict_types=1);
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+/* ===========================
+   VERIFICAR SESIÓN ACTIVA
+=========================== */
+
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: /canetto/login/login.php");
+    exit;
+}
+
+/* ===========================
+   CONFIG NAV
+=========================== */
+
 if (!isset($pageTitle)) {
     $pageTitle = "Canetto Admin";
 }
@@ -88,14 +107,14 @@ $current = $_SERVER['PHP_SELF'];
             Recetas
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/recetas/recetas.php"
-               class="<?= str_contains($current,'recetas.php') ? 'active' : '' ?>">
+            <a href="<?= $baseUrl ?>/administracion/recetas/index.php"
+               class="<?= str_contains($current,'administracion/recetas/index') ? 'active' : '' ?>">
                 <i class="fa-solid fa-list"></i>
                 Listado
             </a>
 
-            <a href="<?= $baseUrl ?>/recetas/crear_receta.php"
-               class="<?= str_contains($current,'crear_receta') ? 'active' : '' ?>">
+            <a href="<?= $baseUrl ?>/administracion/recetas/crear_receta.php"
+               class="<?= str_contains($current,'administracion/recetas/crear_receta') ? 'active' : '' ?>">
                 <i class="fa-solid fa-plus"></i>
                 Crear receta
             </a>

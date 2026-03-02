@@ -1,12 +1,13 @@
-<?php
-session_start();
-?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Canetto | Iniciar sesión</title>
+
+<!-- Fuente Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <link rel="stylesheet" href="login.css">
 </head>
 
@@ -17,6 +18,7 @@ session_start();
     <div class="logo">CANETTO</div>
     <div class="subtitle">Accedé a tu cuenta</div>
 
+    <!-- Mensaje de error -->
     <?php if (!empty($_SESSION['error'])): ?>
         <div class="error-msg">
             <?= $_SESSION['error']; unset($_SESSION['error']); ?>
@@ -35,9 +37,28 @@ session_start();
             <input type="password" name="password" required>
         </div>
 
-        <button type="submit" class="btn-login">Ingresar</button>
+        <button type="submit" class="btn-login">
+            Ingresar
+        </button>
 
     </form>
+
+    <!-- Divider -->
+    <div class="divider">
+        <span>o continuar con</span>
+    </div>
+
+    <!-- Google visual (sin conectar) -->
+    <button class="btn-google">
+        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+        Ingresar con Google
+    </button>
+
+    <!-- Registro -->
+    <div class="register-link">
+        ¿No tenés cuenta?
+        <a href="#">Registrate</a>
+    </div>
 
 </div>
 
