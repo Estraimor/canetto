@@ -15,41 +15,68 @@ $stmt = $pdo->query("
     ORDER BY r.nombre ASC
 ");
 
-$recetas = $stmt->fetchAll();
+$recetas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <link rel="stylesheet" href="receta.css">
 
 <div class="content-body">
 
+    <!-- HEADER -->
     <div class="mp-header">
         <div>
             <div class="mp-title">Recetas</div>
-            <div class="mp-sub">Gestión de formulaciones de productos</div>
+            <div class="mp-sub">Gestión de formulaciones y composición de productos</div>
         </div>
 
-        <button class="btn-mp">
-            + Nueva receta
+        <button class="btn-mp" onclick="window.location='crear.php'">
+            <i class="fa-solid fa-plus"></i> Nueva receta
         </button>
     </div>
 
-    <div class="recetas-grid">
-        <?php foreach ($recetas as $r): ?>
-            <div class="receta-card">
-                <h3><?= htmlspecialchars($r['nombre']) ?></h3>
-                <p><?= htmlspecialchars($r['observacion'] ?? 'Sin observaciones') ?></p>
+    <!-- GRID -->
+    <?php if (count($recetas) > 0): ?>
+        <div class="recetas-grid">
+            <?php foreach ($recetas as $r): ?>
+                <div class="receta-card">
 
-                <div class="badge">
-                    <?= $r['total_ingredientes'] ?> ingredientes
-                </div>
+                    <div class="receta-header">
+                        <h3><?= htmlspecialchars($r['nombre']) ?></h3>
+                        <span class="badge">
+                            <?= $r['total_ingredientes'] ?> ingredientes
+                        </span>
+                    </div>
 
-                <div class="card-actions">
-                    <a href="ver.php?id=<?= $r['idrecetas'] ?>">Ver</a>
-                    <a href="editar.php?id=<?= $r['idrecetas'] ?>">Editar</a>
+                    <p class="receta-desc">
+                        <?= htmlspecialchars($r['observacion'] ?? 'Sin observaciones registradas') ?>
+                    </p>
+
+                    <div class="card-actions">
+                        <a class="btn-link" href="preparar.php?id=<?= $r['idrecetas'] ?>">
+                            <i class="fa-solid fa-flask"></i> Preparar
+                        </a>
+
+                        <a class="btn-link muted" href="editar.php?id=<?= $r['idrecetas'] ?>">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </a>
+                    </div>
+
                 </div>
-            </div>
-        <?php endforeach; ?>
-    </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+
+        <!-- ESTADO VACÍO -->
+        <div class="empty-state">
+            <i class="fa-solid fa-cookie-bite"></i>
+            <h3>No hay recetas creadas</h3>
+            <p>Comenzá creando tu primera formulación de producto.</p>
+            <button class="btn-mp" onclick="window.location='crear.php'">
+                Crear receta
+            </button>
+        </div>
+
+    <?php endif; ?>
 
 </div>
 
