@@ -30,7 +30,7 @@ $unidades = $pdo->query("
             <p>Crear formulación completa con ingredientes, cantidades y rendimiento estimado.</p>
         </div>
 
-        <form method="POST" action="guardar_receta.php" id="formReceta" class="fade-up delay-1">
+        <form method="POST" action="./api/guardar_receta.php" id="formReceta" class="fade-up delay-1">
             <div class="editor-card">
 
                 <div class="form-grid">
@@ -72,21 +72,28 @@ $unidades = $pdo->query("
                 <div class="resumen-produccion" id="resumenProduccion">
 
     <div class="resumen-card">
-    <span class="resumen-label">Total Masa</span>
-    <div class="resumen-input">
-        <input 
-            type="number"
-            step="0.01"
-            name="masa_total"
-            id="inputMasa"
-            placeholder="0"
-        >
-        <span>kg</span>
+        <span class="resumen-label">Total Masa</span>
+        <div class="resumen-input">
+            <input 
+                type="number"
+                step="0.01"
+                name="masa_total"
+                id="inputMasa"
+                placeholder="0"
+            >
+            <select name="unidad_medida_receta">
+<?php foreach($unidades as $u): ?>
+    <option hidden>Seleccione...</option>
+<option value="<?= $u['idunidad_medida'] ?>">
+<?= $u['abreviatura'] ?>
+</option>
+<?php endforeach; ?>
+</select>
+        </div>
     </div>
-</div>
 
 <div class="resumen-card">
-    <span class="resumen-label">Cantidad de Galletas</span>
+    <span class="resumen-label">Cantidad de Producto </span>
     <div class="resumen-input">
         <input 
             type="number"
