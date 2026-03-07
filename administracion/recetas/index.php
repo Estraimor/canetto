@@ -19,65 +19,122 @@ $recetas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <link rel="stylesheet" href="receta.css">
-
-<div class="content-body">
-
-    <!-- HEADER -->
-    <div class="mp-header">
-        <div>
-            <div class="mp-title">Recetas</div>
-            <div class="mp-sub">Gestión de formulaciones y composición de productos</div>
+<div class="main-wrapper">
+    <div class="content-body">
+        <!-- HEADER -->
+        <div class="recetas-header">
+            <div>
+            <h1>Recetas</h1>
+            <p>Gestión de formulaciones y composición de productos</p>
         </div>
 
-        <button class="btn-mp" onclick="window.location='crear.php'">
+        <a href="crear.php" class="btn-primary">
             <i class="fa-solid fa-plus"></i> Nueva receta
-        </button>
+        </a>
     </div>
 
-    <!-- GRID -->
     <?php if (count($recetas) > 0): ?>
+
         <div class="recetas-grid">
+
             <?php foreach ($recetas as $r): ?>
+
+                <?php
+                // Traer ingredientes de cada receta
+                $stmtIng = $pdo->prepare("
+                    SELECT mp.nombre, ri.cantidad, um.abreviatura
+                    FROM receta_ingredientes ri
+                    INNER JOIN materia_prima mp 
+                        ON mp.idmateria_prima = ri.materia_prima_idmateria_prima
+                    INNER JOIN unidad_medida um
+                        ON um.idunidad_medida = mp.unidad_medida_idunidad_medida
+                    WHERE ri.recetas_idrecetas = ?
+                ");
+                $stmtIng->execute([$r['idrecetas']]);
+                $ingredientes = $stmtIng->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+
                 <div class="receta-card">
 
-                    <div class="receta-header">
-                        <h3><?= htmlspecialchars($r['nombre']) ?></h3>
-                        <span class="badge">
-                            <?= $r['total_ingredientes'] ?> ingredientes
-                        </span>
+                    <div class="receta-main" onclick="toggleReceta(<?= $r['idrecetas'] ?>)">
+                        <div class="receta-info">
+                            <h3><?= htmlspecialchars($r['nombre']) ?></h3>
+                            <span class="badge">
+                                <?= $r['total_ingredientes'] ?> ingredientes
+                            </span>
+                        </div>
+
+                        <div class="receta-actions">
+                            <i class="fa-solid fa-chevron-down arrow" id="arrow-<?= $r['idrecetas'] ?>"></i>
+                        </div>
                     </div>
 
                     <p class="receta-desc">
                         <?= htmlspecialchars($r['observacion'] ?? 'Sin observaciones registradas') ?>
                     </p>
 
-                    <div class="card-actions">
-                        <a class="btn-link" href="preparar.php?id=<?= $r['idrecetas'] ?>">
-                            <i class="fa-solid fa-flask"></i> Preparar
-                        </a>
+                    <!-- SECCIÓN EXPANDIBLE -->
+                    <div class="receta-expand" id="expand-<?= $r['idrecetas'] ?>">
 
-                        <a class="btn-link muted" href="editar.php?id=<?= $r['idrecetas'] ?>">
-                            <i class="fa-solid fa-pen"></i> Editar
-                        </a>
+                        <?php if (count($ingredientes) > 0): ?>
+
+                            <div class="ingredientes-list">
+                                <?php foreach ($ingredientes as $ing): ?>
+                                    <div class="ingrediente-item">
+                                        <span><?= htmlspecialchars($ing['nombre']) ?></span>
+                                        <strong>
+                                            <?= $ing['cantidad'] . ' ' . $ing['abreviatura'] ?>
+                                        </strong>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                        <?php else: ?>
+                            <div class="sin-ingredientes">
+                                No tiene ingredientes cargados
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="expand-actions">
+                            <a href="preparar.php?id=<?= $r['idrecetas'] ?>" class="btn-card primary">
+                                <i class="fa-solid fa-flask"></i> Preparar
+                            </a>
+
+                            <a href="editar.php?id=<?= $r['idrecetas'] ?>" class="btn-card ghost">
+                                <i class="fa-solid fa-pen"></i> Editar
+                            </a>
+                        </div>
+
                     </div>
 
                 </div>
+
             <?php endforeach; ?>
+
         </div>
+
     <?php else: ?>
 
-        <!-- ESTADO VACÍO -->
         <div class="empty-state">
             <i class="fa-solid fa-cookie-bite"></i>
             <h3>No hay recetas creadas</h3>
             <p>Comenzá creando tu primera formulación de producto.</p>
-            <button class="btn-mp" onclick="window.location='crear.php'">
-                Crear receta
-            </button>
+            <a href="crear.php" class="btn-primary">Crear receta</a>
         </div>
 
     <?php endif; ?>
 
 </div>
+</div>
+
+<script>
+function toggleReceta(id) {
+    const expand = document.getElementById('expand-' + id);
+    const arrow = document.getElementById('arrow-' + id);
+
+    expand.classList.toggle('open');
+    arrow.classList.toggle('rotate');
+}
+</script>
 
 <?php include '../../panel/dashboard/layaut/footer.php'; ?>

@@ -1,0 +1,558 @@
+/* ==========================================================
+   WRAPPER GENERAL
+========================================================== */
+
+.receta-crear{
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 22px 10px 34px;
+    position: relative;
+}
+
+.receta-crear *{
+    box-sizing: border-box;
+}
+
+/* ==========================================================
+   ANIMACIONES BASE
+========================================================== */
+
+.receta-crear .fade-up{
+    opacity: 0;
+    transform: translateY(18px);
+    animation: recetaFadeUp .65s ease forwards;
+}
+
+.receta-crear .delay-1{
+    animation-delay: .12s;
+}
+
+@keyframes recetaFadeUp{
+    to{
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes recetaPulse{
+    0%{
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(232, 156, 169, 0);
+    }
+    50%{
+        transform: scale(1.01);
+        box-shadow: 0 10px 25px rgba(232, 156, 169, .10);
+    }
+    100%{
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(232, 156, 169, 0);
+    }
+}
+
+@keyframes filaIn{
+    from{
+        opacity: 0;
+        transform: translateY(12px) scale(.985);
+    }
+    to{
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes filaOut{
+    from{
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to{
+        opacity: 0;
+        transform: translateY(-8px) scale(.98);
+    }
+}
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.receta-crear .editor-header{
+    margin-bottom: 22px;
+    position: relative;
+}
+
+.receta-crear .editor-badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(232,156,169,.16), rgba(255,255,255,.9));
+    border: 1px solid rgba(232,156,169,.24);
+    color: #c96d7c;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    margin-bottom: 12px;
+    box-shadow: 0 6px 20px rgba(232,156,169,.10);
+}
+
+.receta-crear .editor-header h1{
+    margin: 0 0 6px;
+    font-size: 34px;
+    line-height: 1.05;
+    font-weight: 800;
+    color: #1f2937;
+    letter-spacing: -.6px;
+}
+
+.receta-crear .editor-header p{
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #6b7280;
+    max-width: 720px;
+}
+
+/* ==========================================================
+   CARD PRINCIPAL
+========================================================== */
+
+.receta-crear .editor-card{
+    position: relative;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.96));
+    border: 1px solid rgba(229,231,235,.9);
+    padding: 30px;
+    border-radius: 22px;
+    box-shadow:
+        0 10px 30px rgba(15, 23, 42, 0.05),
+        0 2px 10px rgba(15, 23, 42, 0.03);
+    overflow: hidden;
+}
+
+.receta-crear .editor-card::before{
+    content: "";
+    position: absolute;
+    top: -140px;
+    right: -90px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,156,169,.18), rgba(232,156,169,0));
+    pointer-events: none;
+}
+
+.receta-crear .editor-card::after{
+    content: "";
+    position: absolute;
+    bottom: -120px;
+    left: -60px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,214,220,.28), rgba(255,214,220,0));
+    pointer-events: none;
+}
+
+/* ==========================================================
+   GRID FORM
+========================================================== */
+
+.receta-crear .form-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    position: relative;
+    z-index: 1;
+}
+
+.receta-crear .form-group{
+    margin-bottom: 2px;
+}
+
+.receta-crear .form-group.full{
+    grid-column: 1 / -1;
+}
+
+.receta-crear label{
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #374151;
+    letter-spacing: .2px;
+}
+
+/* ==========================================================
+   INPUTS
+========================================================== */
+
+.receta-crear input,
+.receta-crear textarea,
+.receta-crear select{
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+    color: #1f2937;
+    background: #fbfbfc;
+    transition:
+        border-color .22s ease,
+        box-shadow .22s ease,
+        background .22s ease,
+        transform .18s ease;
+}
+
+.receta-crear input,
+.receta-crear select{
+    height: 48px;
+    padding: 0 14px;
+}
+
+.receta-crear textarea{
+    min-height: 120px;
+    padding: 14px;
+    resize: vertical;
+}
+
+.receta-crear input::placeholder,
+.receta-crear textarea::placeholder{
+    color: #9ca3af;
+}
+
+.receta-crear input:focus,
+.receta-crear textarea:focus,
+.receta-crear select:focus{
+    outline: none;
+    border-color: #e89ca9;
+    background: #ffffff;
+    box-shadow:
+        0 0 0 4px rgba(232,156,169,.14),
+        0 8px 24px rgba(232,156,169,.08);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================
+   HEAD SECCION
+========================================================== */
+
+.receta-crear .section-head{
+    margin-top: 26px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+    position: relative;
+    z-index: 1;
+}
+
+.receta-crear .section-head h3{
+    margin: 0 0 5px;
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -.3px;
+}
+
+.receta-crear .section-head p{
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* ==========================================================
+   BOTONES
+========================================================== */
+
+.receta-crear .btn-outline,
+.receta-crear .btn-primary,
+.receta-crear .btn-delete{
+    transition:
+        transform .18s ease,
+        box-shadow .22s ease,
+        background .22s ease,
+        color .22s ease,
+        border-color .22s ease,
+        opacity .22s ease;
+}
+
+.receta-crear .btn-outline{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(232,156,169,.55);
+    background: rgba(255,255,255,.78);
+    color: #d97d8c;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(232,156,169,.08);
+    backdrop-filter: blur(8px);
+}
+
+.receta-crear .btn-outline span{
+    font-size: 18px;
+    line-height: 1;
+}
+
+.receta-crear .btn-outline:hover{
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #f8d7dd, #fff1f4);
+    border-color: #e89ca9;
+    box-shadow: 0 12px 28px rgba(232,156,169,.18);
+}
+
+.receta-crear .btn-primary{
+    min-width: 180px;
+    height: 48px;
+    padding: 0 22px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #e89ca9, #d97d8c);
+    color: white;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    cursor: pointer;
+    box-shadow:
+        0 10px 24px rgba(217,125,140,.26),
+        inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.receta-crear .btn-primary:hover{
+    transform: translateY(-2px);
+    box-shadow:
+        0 16px 34px rgba(217,125,140,.34),
+        inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.receta-crear .btn-primary:active{
+    transform: translateY(0);
+}
+
+.receta-crear .btn-delete{
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #98a2b3;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.receta-crear .btn-delete:hover{
+    background: #fff1f2;
+    color: #ef4444;
+    border-color: #fecdd3;
+    transform: scale(1.04);
+}
+
+/* ==========================================================
+   TABLA INGREDIENTES
+========================================================== */
+
+.receta-crear .ingredientes-wrap{
+    position: relative;
+    z-index: 1;
+    border: 1px solid #eef0f3;
+    border-radius: 18px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff, #fcfcfd);
+}
+
+.receta-crear .tabla-ingredientes{
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.receta-crear .tabla-ingredientes thead th{
+    background: #fafafb;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #6b7280;
+    padding: 16px 14px;
+    text-align: left;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.receta-crear .tabla-ingredientes tbody td{
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f3f6;
+    vertical-align: middle;
+    background: #fff;
+}
+
+.receta-crear .tabla-ingredientes tbody tr:last-child td{
+    border-bottom: none;
+}
+
+.receta-crear .tabla-ingredientes tbody tr:hover td{
+    background: #fffdfd;
+}
+
+.receta-crear .tabla-ingredientes .th-accion,
+.receta-crear .tabla-ingredientes .td-accion{
+    width: 70px;
+    text-align: center;
+}
+
+.receta-crear .tabla-ingredientes select,
+.receta-crear .tabla-ingredientes input{
+    height: 44px;
+    border-radius: 12px;
+    background: #fbfbfc;
+}
+
+.receta-crear .fila-ingrediente{
+    animation: filaIn .25s ease;
+}
+
+.receta-crear .fila-exit{
+    animation: filaOut .22s ease forwards;
+}
+
+/* ==========================================================
+   RESUMEN
+========================================================== */
+
+.receta-crear .resumen-produccion{
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.receta-crear .resumen-produccion.pulse-update{
+    animation: recetaPulse .34s ease;
+}
+
+.receta-crear .resumen-card{
+    padding: 18px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff, #fafafa);
+    border: 1px solid #edf0f3;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.03);
+}
+
+.receta-crear .resumen-label{
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: #9aa1ad;
+}
+
+.receta-crear .resumen-card strong{
+    display: block;
+    font-size: 22px;
+    line-height: 1.1;
+    color: #1f2937;
+    font-weight: 800;
+    letter-spacing: -.4px;
+}
+
+/* ==========================================================
+   ACTIONS
+========================================================== */
+
+.receta-crear .form-actions{
+    margin-top: 26px;
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+    z-index: 1;
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width: 992px){
+    .receta-crear{
+        max-width: 100%;
+        padding: 18px 6px 26px;
+    }
+
+    .receta-crear .editor-card{
+        padding: 22px;
+        border-radius: 18px;
+    }
+
+    .receta-crear .editor-header h1{
+        font-size: 28px;
+    }
+
+    .receta-crear .resumen-produccion{
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px){
+    .receta-crear .form-grid{
+        grid-template-columns: 1fr;
+    }
+
+    .receta-crear .section-head{
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .receta-crear .btn-outline{
+        width: 100%;
+        justify-content: center;
+    }
+
+    .receta-crear .form-actions{
+        justify-content: stretch;
+    }
+
+    .receta-crear .btn-primary{
+        width: 100%;
+    }
+
+    .receta-crear .ingredientes-wrap{
+        overflow-x: auto;
+    }
+
+    .receta-crear .tabla-ingredientes{
+        min-width: 680px;
+    }
+}
+
+
+/* INPUT KPI */
+
+.receta-crear .resumen-input{
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.receta-crear .resumen-input input{
+    width:90px;
+    height:42px;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+    text-align:center;
+    font-size:18px;
+    font-weight:700;
+    background:#fff;
+}
+
+.receta-crear .resumen-input span{
+    font-size:14px;
+    color:#6b7280;
+    font-weight:600;
+}
