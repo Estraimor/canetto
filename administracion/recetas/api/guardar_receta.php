@@ -1,9 +1,16 @@
 <?php
 
 define('APP_BOOT', true);
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 require_once __DIR__ . '/../../../config/conexion.php';
 
+header('Content-Type: application/json');
+
 $pdo = Conexion::conectar();
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 try {
 
@@ -16,13 +23,15 @@ try {
 
     $masa_total = $_POST['masa_total'] ?? null;
     $cantidad_galletas = $_POST['cantidad_galletas'] ?? null;
+    $unidad_medida_receta = $_POST['unidad_medida_receta'] ?? null;
 
     if ($nombre === '') {
         throw new Exception("El nombre de la receta es obligatorio");
     }
 
+
     /* =========================
-       ARRAYS INGREDIENTES
+       INGREDIENTES
     ========================= */
 
     $materias = $_POST['materia_prima'] ?? [];
@@ -33,11 +42,13 @@ try {
         throw new Exception("Debe agregar al menos una materia prima");
     }
 
+
     /* =========================
-       TRANSACCION
+       INICIAR TRANSACCION
     ========================= */
 
     $pdo->beginTransaction();
+
 
     /* =========================
        INSERT RECETA
@@ -45,8 +56,14 @@ try {
 
     $sqlReceta = "
         INSERT INTO recetas
-        (nombre, observacion, masa_total, cantidad_galletas)
-        VALUES (?, ?, ?, ?)
+        (
+            nombre,
+            observacion,
+            masa_total,
+            cantidad_galletas,
+            unidad_medida_idunidad_medida
+        )
+        VALUES (?, ?, ?, ?, ?)
     ";
 
     $stmtReceta = $pdo->prepare($sqlReceta);
@@ -55,7 +72,8 @@ try {
         $nombre,
         $observacion ?: null,
         $masa_total ?: null,
-        $cantidad_galletas ?: null
+        $cantidad_galletas ?: null,
+        $unidad_medida_receta ?: null
     ]);
 
     $receta_id = $pdo->lastInsertId();
@@ -65,7 +83,7 @@ try {
        INSERT INGREDIENTES
     ========================= */
 
-    $sqlIng = "
+    $sqlIngrediente = "
         INSERT INTO receta_ingredientes
         (
             recetas_idrecetas,
@@ -76,7 +94,7 @@ try {
         VALUES (?, ?, ?, ?)
     ";
 
-    $stmtIng = $pdo->prepare($sqlIng);
+    $stmtIngrediente = $pdo->prepare($sqlIngrediente);
 
     for ($i = 0; $i < count($materias); $i++) {
 
@@ -88,7 +106,7 @@ try {
             continue;
         }
 
-        $stmtIng->execute([
+        $stmtIngrediente->execute([
             $receta_id,
             $materia,
             $cantidad,
@@ -96,14 +114,22 @@ try {
         ]);
     }
 
+
     /* =========================
-       COMMIT
+       CONFIRMAR TRANSACCION
     ========================= */
 
     $pdo->commit();
 
-    header("Location: index.php");
-    exit;
+
+    /* =========================
+       RESPUESTA
+    ========================= */
+
+    echo json_encode([
+        "status"  => "ok",
+        "mensaje" => "Receta creada correctamente"
+    ]);
 
 } catch (Exception $e) {
 
@@ -111,7 +137,8 @@ try {
         $pdo->rollBack();
     }
 
-    echo "<h3>Error al guardar receta</h3>";
-    echo "<p>" . $e->getMessage() . "</p>";
-
+    echo json_encode([
+        "status"  => "error",
+        "mensaje" => $e->getMessage()
+    ]);
 }

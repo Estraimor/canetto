@@ -80,23 +80,18 @@ $current = $_SERVER['PHP_SELF'];
                 Planificación
             </a>
 
-            <a href="<?= $baseUrl ?>/produccion/masa_congelada.php"
-               class="<?= str_contains($current,'masa_congelada') ? 'active' : '' ?>">
+            <a href="<?= $baseUrl ?>/administracion/produccion/congelado/index.php"
+               class="<?= str_contains($current,'administracion/produccion/congelado/index') ? 'active' : '' ?>">
                 <i class="fa-solid fa-snowflake"></i>
                 Masa congelada
             </a>
 
-            <a href="<?= $baseUrl ?>/produccion/horneado.php"
-               class="<?= str_contains($current,'horneado') ? 'active' : '' ?>">
+            <a href="<?= $baseUrl ?>/administracion/produccion/horneado/index.php"
+               class="<?= str_contains($current,'administracion/produccion/horneado') ? 'active' : '' ?>">
                 <i class="fa-solid fa-fire"></i>
                 Horneado
             </a>
 
-            <a href="<?= $baseUrl ?>/produccion/mermas.php"
-               class="<?= str_contains($current,'mermas') ? 'active' : '' ?>">
-                <i class="fa-solid fa-trash"></i>
-                Mermas
-            </a>
         </div>
     </div>
 
@@ -121,6 +116,31 @@ $current = $_SERVER['PHP_SELF'];
         </div>
     </div>
 
+
+    <!-- PRODUCTOS -->
+<div class="menu-group <?= str_contains($current,'productos') ? 'open' : '' ?>">
+    <span class="menu-title">
+        <i class="fa-solid fa-cookie-bite"></i>
+        Productos
+    </span>
+    <div class="submenu">
+
+        <a href="<?= $baseUrl ?>/administracion/productos/index.php"
+           class="<?= str_contains($current,'administracion/productos/index') ? 'active' : '' ?>">
+            <i class="fa-solid fa-list"></i>
+            Listado
+        </a>
+
+        <a href="<?= $baseUrl ?>/administracion/productos/crear_producto.php"
+           class="<?= str_contains($current,'administracion/productos/crear_producto') ? 'active' : '' ?>">
+            <i class="fa-solid fa-plus"></i>
+            Crear producto
+        </a>
+
+    </div>
+</div>
+
+
     <!-- STOCK -->
     <div class="menu-group <?= str_contains($current,'stock') || str_contains($current,'materias_primas') ? 'open' : '' ?>">
         <span class="menu-title">
@@ -128,7 +148,7 @@ $current = $_SERVER['PHP_SELF'];
             Stock
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/stock/productos.php"
+            <a href="<?= $baseUrl ?>/administracion/stock/index.php"
                class="<?= str_contains($current,'productos') ? 'active' : '' ?>">
                 <i class="fa-solid fa-cookie-bite"></i>
                 Productos

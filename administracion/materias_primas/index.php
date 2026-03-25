@@ -201,12 +201,14 @@ $pdo = Conexion::conectar();
           </div>
 
           <div class="mp-field mp-switch">
-            <label>Activo</label>
-            <div class="switch">
-              <input type="checkbox" id="mp_activo" checked>
-              <span class="slider"></span>
-            </div>
-          </div>
+  <label>Activo</label>
+
+  <label class="switch">
+    <input type="checkbox" id="mp_activo" checked>
+    <span class="slider"></span>
+  </label>
+
+</div>
 
           <div class="mp-field">
             <label>Nota (opcional)</label>

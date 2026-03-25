@@ -1,25 +1,33 @@
-/* ===== RESET ===== */
+/* =========================
+RESET
+========================= */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    transition: background-color .2s ease, color .2s ease;
+}
+
+html, body {
+    height: 100%;
 }
 
 body {
     font-family: 'Segoe UI', sans-serif;
     background: #ffffff;
     color: #111;
-    overflow: hidden;
 }
 
-/* ===== LAYOUT ===== */
+/* =========================
+LAYOUT BASE
+========================= */
 .app {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
 }
 
-/* ===== SIDEBAR ===== */
+/* =========================
+SIDEBAR
+========================= */
 .sidebar {
     width: 230px;
     background: #fff;
@@ -34,7 +42,9 @@ body {
     color: #E91E63;
 }
 
-/* NAV */
+/* =========================
+NAV
+========================= */
 .nav-menu {
     display: flex;
     flex-direction: column;
@@ -49,9 +59,9 @@ body {
     font-size: 14px;
     position: relative;
     overflow: hidden;
+    transition: all .2s ease;
 }
 
-/* Línea lateral animada */
 .nav-menu a::before {
     content: "";
     position: absolute;
@@ -81,8 +91,9 @@ body {
     font-weight: 500;
 }
 
-
-
+/* =========================
+SUBMENUS
+========================= */
 .menu-group {
     display: flex;
     flex-direction: column;
@@ -123,16 +134,19 @@ body {
     color: #E91E63;
 }
 
-
-
-/* ===== MAIN ===== */
+/* =========================
+MAIN (CLAVE)
+========================= */
 .main {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
 }
 
-/* ===== TOPBAR ===== */
+/* =========================
+TOPBAR
+========================= */
 .topbar {
     height: 70px;
     background: #fff;
@@ -151,16 +165,20 @@ body {
     font-size: 14px;
 }
 
-/* ===== WORKSPACE ===== */
+/* =========================
+WORKSPACE (EMPUJA FOOTER)
+========================= */
 .workspace {
     flex: 1;
     padding: 40px;
     background: #fafafa;
-    animation: fadeSlide .5s ease;
     overflow-y: auto;
+    animation: fadeSlide .5s ease;
 }
 
-/* Entrada suave */
+/* =========================
+ANIMACIONES
+========================= */
 @keyframes fadeSlide {
     from {
         opacity: 0;
@@ -172,30 +190,13 @@ body {
     }
 }
 
-/* ===== CARDS ===== */
+/* =========================
+CARDS
+========================= */
 .metrics {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 25px;
-}
-
-/* Animación escalonada */
-.metrics .card {
-    opacity: 0;
-    transform: translateY(10px);
-    animation: cardAppear .4s ease forwards;
-}
-
-.metrics .card:nth-child(1) { animation-delay: .1s; }
-.metrics .card:nth-child(2) { animation-delay: .2s; }
-.metrics .card:nth-child(3) { animation-delay: .3s; }
-.metrics .card:nth-child(4) { animation-delay: .4s; }
-
-@keyframes cardAppear {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .card {
@@ -216,7 +217,6 @@ body {
 .card span {
     font-size: 13px;
     color: #888;
-    letter-spacing: .3px;
 }
 
 .card h2 {
@@ -225,21 +225,32 @@ body {
     font-weight: 600;
 }
 
-/* ===== FOOTER ===== */
+/* =========================
+FOOTER (SIEMPRE ABAJO)
+========================= */
 .footer {
-    height: 50px;
+    position: fixed;
+    bottom: 0;
+    left: 230px; /* ancho sidebar */
+    right: 0;
+
+    height: 35px;
     background: #fff;
     border-top: 1px solid #eee;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    color: #888;
-}
-/* Pantalla de carga */
-/* ===== LOADER ===== */
-/* ===== LOADER PREMIUM ===== */
 
+    font-size: 12px;
+    color: #999;
+
+    z-index: 10;
+}
+
+/* =========================
+LOADER PREMIUM
+========================= */
 #loader {
     position: fixed;
     width: 100%;
@@ -253,24 +264,20 @@ body {
     z-index: 9999;
 }
 
-/* Contenido centrado */
 .loader-content {
     text-align: center;
     animation: floatUp 3s ease-in-out infinite;
 }
 
-/* Logo elegante */
 .logo-loader {
     font-size: 34px;
     font-weight: 600;
     color: #E91E63;
     margin-bottom: 30px;
     letter-spacing: 2px;
-    opacity: 0;
     animation: fadeInLogo 2s ease forwards;
 }
 
-/* Spinner más suave */
 .spinner {
     width: 55px;
     height: 55px;
@@ -281,20 +288,15 @@ body {
     animation: spin 2.5s linear infinite;
 }
 
-/* Texto */
 .loader-content p {
     font-size: 14px;
     color: #444;
     opacity: 0.6;
-    animation: fadeInText 2.5s ease forwards;
 }
 
-/* ===== ANIMACIONES ===== */
-
+/* Animaciones */
 @keyframes spin {
-    100% {
-        transform: rotate(360deg);
-    }
+    100% { transform: rotate(360deg); }
 }
 
 @keyframes floatUp {
@@ -306,18 +308,6 @@ body {
 @keyframes fadeInLogo {
     from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeInText {
-    from { opacity: 0; }
-    to { opacity: 0.6; }
-}
-
-@keyframes fadeOutLoader {
-    to {
-        opacity: 0;
-        visibility: hidden;
-    }
 }
 
 @keyframes gradientMove {
