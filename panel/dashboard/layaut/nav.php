@@ -108,11 +108,7 @@ $current = $_SERVER['PHP_SELF'];
                 Listado
             </a>
 
-            <a href="<?= $baseUrl ?>/administracion/recetas/crear_receta.php"
-               class="<?= str_contains($current,'administracion/recetas/crear_receta') ? 'active' : '' ?>">
-                <i class="fa-solid fa-plus"></i>
-                Crear receta
-            </a>
+            
         </div>
     </div>
 
@@ -160,11 +156,7 @@ $current = $_SERVER['PHP_SELF'];
                 Materias primas
             </a>
 
-            <a href="<?= $baseUrl ?>/stock/movimientos_stock.php"
-               class="<?= str_contains($current,'movimientos_stock') ? 'active' : '' ?>">
-                <i class="fa-solid fa-right-left"></i>
-                Movimientos
-            </a>
+            
         </div>
     </div>
 
@@ -180,12 +172,17 @@ $current = $_SERVER['PHP_SELF'];
                 <i class="fa-solid fa-receipt"></i>
                 Pedidos
             </a>
-
-            <a href="<?= $baseUrl ?>/ventas/metodos_pago.php"
-               class="<?= str_contains($current,'metodos_pago') ? 'active' : '' ?>">
-                <i class="fa-solid fa-credit-card"></i>
-                Métodos de pago
+            <a href="<?= $baseUrl ?>/administracion/ventas/ventas/index.php"
+               class="<?= str_contains($current,'pedidos') ? 'active' : '' ?>">
+                <i class="fa-solid fa-receipt"></i>
+                Ventas
             </a>
+<a href="<?= $baseUrl ?>/administracion/ventas/ventas/Historial/index.php"
+               class="<?= str_contains($current,'pedidos') ? 'active' : '' ?>">
+                <i class="fa-solid fa-receipt"></i>
+                Historial de ventas
+            </a>
+            
         </div>
     </div>
 
@@ -206,6 +203,33 @@ $current = $_SERVER['PHP_SELF'];
                class="<?= str_contains($current,'registrar_compra') ? 'active' : '' ?>">
                 <i class="fa-solid fa-file-invoice"></i>
                 Registrar compra
+            </a>
+        </div>
+    </div>
+
+    <!-- configuraciones -->
+    <div class="menu-group <?= str_contains($current,'configuraciones') ? 'open' : '' ?>">
+        <span class="menu-title">
+            <i class="fa-solid fa-gears"></i>
+            Configuraciones
+        </span>
+        <div class="submenu">
+            <a href="<?= $baseUrl ?>/configuraciones/usuarios.php"
+               class="<?= str_contains($current,'usuarios') ? 'active' : '' ?>">
+                <i class="fa-solid fa-gears"></i>
+                Configuraciones Generales
+            </a>
+
+            <a href="<?= $baseUrl ?>/configuraciones/sucursales.php"
+               class="<?= str_contains($current,'sucursales') ? 'active' : '' ?>">
+                <i class="fa-solid fa-building"></i>
+                Sucursales
+            </a>
+
+            <a href="<?= $baseUrl ?>/ventas/metodos_pago.php"
+               class="<?= str_contains($current,'metodos_pago') ? 'active' : '' ?>">
+                <i class="fa-solid fa-credit-card"></i>
+                Métodos de pago
             </a>
         </div>
     </div>
