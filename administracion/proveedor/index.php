@@ -153,6 +153,10 @@ include '../../panel/dashboard/layaut/nav.php';
     <button class="prov-tab active" onclick="switchTab('proveedores', this)">
       Proveedores <span class="badge-count" id="badgeCount">0</span>
     </button>
+    <button class="prov-tab" onclick="switchTab('asignaciones', this)">
+    Materias Primas por proveedor
+  </button>
+
     <button class="prov-tab" onclick="switchTab('compras', this)">Registrar compra</button>
     <button class="prov-tab" onclick="switchTab('historial', this)">Historial de compras</button>
   </div>

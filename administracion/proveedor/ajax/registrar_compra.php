@@ -1,7 +1,11 @@
 <?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../../../config/conexion.php';
+
 header('Content-Type: application/json');
+
+// 🔥 conexión
+$pdo = Conexion::conectar();
 
 $data          = json_decode(file_get_contents('php://input'), true);
 $idproveedor   = intval($data['idproveedor'] ?? 0);
@@ -11,43 +15,96 @@ $costo         = isset($data['costo']) && $data['costo'] !== null && $data['cost
 $observaciones = trim($data['observaciones'] ?? '');
 
 if (!$idproveedor || !$idmateria || $cantidad <= 0) {
-    echo json_encode(['ok' => false, 'msg' => 'Datos incompletos o inválidos']);
+    echo json_encode([
+        'ok'  => false,
+        'msg' => 'Datos incompletos o inválidos'
+    ]);
     exit;
 }
 
 try {
+
     $pdo->beginTransaction();
 
     // 1. Actualizar stock
-    $pdo->prepare("UPDATE materia_prima SET stock_actual = stock_actual + ?, updated_at = NOW() WHERE idmateria_prima = ?")
-        ->execute([$cantidad, $idmateria]);
+    $stmt = $pdo->prepare("
+        UPDATE materia_prima 
+        SET stock_actual = stock_actual + ?, updated_at = NOW() 
+        WHERE idmateria_prima = ?
+    ");
+    $stmt->execute([$cantidad, $idmateria]);
 
-    // 2. Obtener stock nuevo para log
-    $stockNuevo = $pdo->prepare("SELECT stock_actual FROM materia_prima WHERE idmateria_prima = ?");
+    // 🔥 validar que realmente exista la materia
+    if ($stmt->rowCount() === 0) {
+        throw new Exception('Materia prima no encontrada');
+    }
+
+    // 2. Obtener stock nuevo
+    $stockNuevo = $pdo->prepare("
+        SELECT stock_actual 
+        FROM materia_prima 
+        WHERE idmateria_prima = ?
+    ");
     $stockNuevo->execute([$idmateria]);
     $nuevoStock = $stockNuevo->fetchColumn();
 
-    // 3. Actualizar costo en tabla relación si se indicó
+    // 3. Actualizar costo (si viene)
     if ($costo !== null) {
-        $pdo->prepare("UPDATE materia_prima_has_proveedor SET costo=?, updated_at=NOW()
-            WHERE materia_prima_idmateria_prima=? AND proveedor_idproveedor=?")
-            ->execute([$costo, $idmateria, $idproveedor]);
+
+        $stmtCosto = $pdo->prepare("
+            UPDATE materia_prima_has_proveedor 
+            SET costo = ?, updated_at = NOW()
+            WHERE materia_prima_idmateria_prima = ? 
+            AND proveedor_idproveedor = ?
+        ");
+        $stmtCosto->execute([$costo, $idmateria, $idproveedor]);
     }
 
-    // 4. Registrar en historial (tabla compra_materia_prima si existe, si no, lo omitimos)
-    // Intentamos insertar en una tabla de historial; si no existe, ignoramos el error
+    // 4. Historial (opcional)
     try {
-        $pdo->prepare("INSERT INTO compra_materia_prima
-            (proveedor_idproveedor, materia_prima_idmateria_prima, cantidad, costo, stock_nuevo, observaciones, created_at)
-            VALUES (?,?,?,?,?,?,NOW())")
-            ->execute([$idproveedor, $idmateria, $cantidad, $costo, $nuevoStock, $observaciones ?: null]);
-    } catch (Exception $ignored) {
-        // La tabla de historial puede no existir aún; el stock ya fue actualizado
+
+        $stmtHist = $pdo->prepare("
+            INSERT INTO compra_materia_prima
+            (
+                proveedor_idproveedor,
+                materia_prima_idmateria_prima,
+                cantidad,
+                costo,
+                stock_nuevo,
+                observaciones,
+                created_at
+            )
+            VALUES (?,?,?,?,?,?,NOW())
+        ");
+
+        $stmtHist->execute([
+            $idproveedor,
+            $idmateria,
+            $cantidad,
+            $costo,
+            $nuevoStock,
+            $observaciones ?: null
+        ]);
+
+    } catch (PDOException $ignored) {
+        // tabla puede no existir
     }
 
     $pdo->commit();
-    echo json_encode(['ok' => true, 'stock_nuevo' => $nuevoStock]);
+
+    echo json_encode([
+        'ok'          => true,
+        'stock_nuevo' => $nuevoStock
+    ]);
+
 } catch (Exception $e) {
-    $pdo->rollBack();
-    echo json_encode(['ok' => false, 'msg' => $e->getMessage()]);
+
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    echo json_encode([
+        'ok'  => false,
+        'msg' => $e->getMessage()
+    ]);
 }
