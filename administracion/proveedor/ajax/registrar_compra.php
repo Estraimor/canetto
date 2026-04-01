@@ -1,6 +1,6 @@
 <?php
 define('APP_BOOT', true);
-require_once __DIR__ . '/../../../../config/conexion.php';
+require_once __DIR__ . '/../../../config/conexion.php';
 
 header('Content-Type: application/json');
 
@@ -48,17 +48,17 @@ try {
     $stockNuevo->execute([$idmateria]);
     $nuevoStock = $stockNuevo->fetchColumn();
 
-    // 3. Actualizar costo (si viene)
-    if ($costo !== null) {
+    // // 3. Actualizar costo (si viene)
+    // if ($costo !== null) {
 
-        $stmtCosto = $pdo->prepare("
-            UPDATE materia_prima_has_proveedor 
-            SET costo = ?, updated_at = NOW()
-            WHERE materia_prima_idmateria_prima = ? 
-            AND proveedor_idproveedor = ?
-        ");
-        $stmtCosto->execute([$costo, $idmateria, $idproveedor]);
-    }
+    //     $stmtCosto = $pdo->prepare("
+    //         UPDATE materia_prima_has_proveedor 
+    //         SET costo = ?, updated_at = NOW()
+    //         WHERE materia_prima_idmateria_prima = ? 
+    //         AND proveedor_idproveedor = ?
+    //     ");
+    //     $stmtCosto->execute([$costo, $idmateria, $idproveedor]);
+    // }
 
     // 4. Historial (opcional)
     try {

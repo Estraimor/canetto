@@ -24,8 +24,7 @@ try {
             mp.idmateria_prima,
             mp.nombre,
             mp.stock_actual,
-            mp.stock_minimo,
-            mhp.costo
+            mp.stock_minimo
         FROM materia_prima mp
         INNER JOIN materia_prima_has_proveedor mhp
             ON mhp.materia_prima_idmateria_prima = mp.idmateria_prima

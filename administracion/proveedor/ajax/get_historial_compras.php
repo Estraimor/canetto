@@ -15,7 +15,6 @@ try {
             p.nombre  AS proveedor_nombre,
             mp.nombre AS materia_nombre,
             c.cantidad,
-            c.costo,
             c.stock_nuevo,
             c.created_at
         FROM compra_materia_prima c

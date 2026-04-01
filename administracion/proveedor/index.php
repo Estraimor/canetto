@@ -15,7 +15,6 @@ include '../../panel/dashboard/layaut/nav.php';
     --white:     #ffffff;
     --rule:      #e0e0e0;
     --rule-dark: #c0c0c0;
-    --accent:    #0a0a0a;
     --danger:    #c0392b;
     --success:   #1a7a4a;
     --shadow-sm: 0 1px 4px rgba(0,0,0,.08);
@@ -37,8 +36,8 @@ include '../../panel/dashboard/layaut/nav.php';
   .btn-primary svg { width:16px; height:16px; flex-shrink:0; }
 
   /* Tabs */
-  .prov-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--rule); margin-bottom: 2rem; }
-  .prov-tab { background: none; border: none; padding: .75rem 1.6rem; font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 500; color: var(--ink-soft); cursor: pointer; position: relative; transition: color var(--transition); letter-spacing: .02em; }
+  .prov-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--rule); margin-bottom: 2rem; flex-wrap: wrap; }
+  .prov-tab { background: none; border: none; padding: .75rem 1.4rem; font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 500; color: var(--ink-soft); cursor: pointer; position: relative; transition: color var(--transition); letter-spacing: .02em; white-space: nowrap; }
   .prov-tab::after { content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px; background: var(--ink); transform: scaleX(0); transition: transform var(--transition); }
   .prov-tab.active { color: var(--ink); font-weight: 600; }
   .prov-tab.active::after { transform: scaleX(1); }
@@ -49,20 +48,22 @@ include '../../panel/dashboard/layaut/nav.php';
   .prov-panel.active { display: block; }
   @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
 
-  /* Cards */
+  /* Cards grid */
   .prov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.2rem; }
   .prov-card { background: var(--white); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1.4rem 1.5rem; transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition); position: relative; overflow: hidden; }
   .prov-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background: var(--ink); transform: scaleY(0); transform-origin: bottom; transition: transform var(--transition); }
   .prov-card:hover { box-shadow: var(--shadow-md); border-color: var(--rule-dark); transform: translateY(-2px); }
   .prov-card:hover::before { transform: scaleY(1); }
-  .prov-card__name { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; margin-bottom: .3rem; }
+  .prov-card__name { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; }
   .prov-card__meta { font-size: .78rem; color: var(--ink-soft); display: flex; flex-direction: column; gap: .2rem; margin-top: .6rem; }
   .prov-card__meta span { display: flex; align-items: center; gap: .4rem; }
   .prov-card__meta svg { width:13px; height:13px; opacity:.6; }
   .prov-card__badge { display:inline-block; padding:.2rem .6rem; border-radius:20px; font-size:.7rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
-  .badge-active { background:#e8f5e9; color: var(--success); }
+  .badge-active   { background:#e8f5e9; color: var(--success); }
   .badge-inactive { background:#fce8e6; color: var(--danger); }
   .prov-card__actions { display: flex; gap: .5rem; margin-top: 1rem; padding-top: .8rem; border-top: 1px solid var(--rule); }
+
+  /* Buttons */
   .btn-sm { display:inline-flex; align-items:center; gap:.35rem; padding:.38rem .85rem; border-radius:var(--radius); font-size:.75rem; font-weight:600; cursor:pointer; border:1px solid var(--rule); background:var(--white); color:var(--ink); transition: all var(--transition); }
   .btn-sm:hover { background:var(--ink); color:var(--white); border-color:var(--ink); }
   .btn-sm.danger:hover { background: var(--danger); border-color: var(--danger); }
@@ -86,19 +87,23 @@ include '../../panel/dashboard/layaut/nav.php';
   .modal-body { padding:1.8rem; }
   .modal-footer { padding:1rem 1.8rem 1.4rem; display:flex; justify-content:flex-end; gap:.75rem; border-top:1px solid var(--rule); }
 
-  /* Form */
+  /* Forms */
   .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; }
   .form-group { display:flex; flex-direction:column; gap:.4rem; }
   .form-group.full { grid-column:1/-1; }
   .form-group label { font-size:.775rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); }
-  .form-group input, .form-group select, .form-group textarea { padding:.65rem .9rem; border:1px solid var(--rule-dark); border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.875rem; color:var(--ink); background:var(--paper); transition: border-color var(--transition), box-shadow var(--transition); outline:none; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--ink); box-shadow:0 0 0 3px rgba(10,10,10,.07); }
+  .form-group input,
+  .form-group select,
+  .form-group textarea { padding:.65rem .9rem; border:1px solid var(--rule-dark); border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.875rem; color:var(--ink); background:var(--paper); transition: border-color var(--transition), box-shadow var(--transition); outline:none; }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color:var(--ink); box-shadow:0 0 0 3px rgba(10,10,10,.07); }
   .form-group textarea { resize:vertical; min-height:70px; }
-  .form-section-title { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:600; color:var(--ink); margin-bottom:.6rem; padding-bottom:.4rem; border-bottom:1px solid var(--rule); grid-column:1/-1; margin-top:.4rem; }
+  .form-section-title { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:600; color:var(--ink); padding-bottom:.4rem; border-bottom:1px solid var(--rule); grid-column:1/-1; margin-top:.4rem; }
 
   /* Compras layout */
   .compra-layout { display:grid; grid-template-columns:1fr 1.2fr; gap:1.5rem; align-items:start; }
-  @media(max-width:860px){ .compra-layout { grid-template-columns:1fr; } .form-grid { grid-template-columns:1fr; } }
+  @media(max-width:860px){ .compra-layout, .form-grid { grid-template-columns:1fr; } }
   .compra-form-card { background:var(--white); border:1px solid var(--rule); border-radius:var(--radius); padding:1.8rem; }
   .compra-form-card h3 { font-family:'Playfair Display',serif; font-size:1.15rem; margin-bottom:1.2rem; padding-bottom:.7rem; border-bottom:1px solid var(--rule); }
 
@@ -119,7 +124,7 @@ include '../../panel/dashboard/layaut/nav.php';
   .toast-container { position:fixed; bottom:1.5rem; right:1.5rem; z-index:2000; display:flex; flex-direction:column; gap:.5rem; }
   .toast { background:var(--ink); color:var(--white); padding:.75rem 1.2rem; border-radius:var(--radius); font-size:.82rem; font-weight:500; display:flex; align-items:center; gap:.6rem; box-shadow:var(--shadow-lg); animation: slideIn .3s ease both; max-width:320px; }
   .toast.success { border-left:4px solid #4caf50; }
-  .toast.error { border-left:4px solid var(--danger); }
+  .toast.error   { border-left:4px solid var(--danger); }
   @keyframes slideIn { from{transform:translateX(30px);opacity:0} to{transform:translateX(0);opacity:1} }
   @keyframes slideOut { to{transform:translateX(30px);opacity:0} }
 
@@ -153,15 +158,12 @@ include '../../panel/dashboard/layaut/nav.php';
     <button class="prov-tab active" onclick="switchTab('proveedores', this)">
       Proveedores <span class="badge-count" id="badgeCount">0</span>
     </button>
-    <button class="prov-tab" onclick="switchTab('asignaciones', this)">
-    Materias Primas por proveedor
-  </button>
-
+    <button class="prov-tab" onclick="switchTab('asignaciones', this)">Materias por proveedor</button>
     <button class="prov-tab" onclick="switchTab('compras', this)">Registrar compra</button>
     <button class="prov-tab" onclick="switchTab('historial', this)">Historial de compras</button>
   </div>
 
-  <!-- Panel: Proveedores -->
+  <!-- ── Panel: Proveedores ── -->
   <div class="prov-panel active" id="panel-proveedores">
     <div class="search-bar">
       <input type="text" id="searchProv" placeholder="Buscar proveedor…" oninput="filtrarProveedores()">
@@ -174,7 +176,52 @@ include '../../panel/dashboard/layaut/nav.php';
     </div>
   </div>
 
-  <!-- Panel: Registrar compra -->
+  <!-- ── Panel: Asignaciones ── -->
+  <div class="prov-panel" id="panel-asignaciones">
+
+    <div class="compra-form-card" style="margin-bottom:1.5rem;">
+      <h3>Asignar materia prima a proveedor</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Proveedor</label>
+          <select id="selectProvAsignacion">
+            <option value="">— Seleccioná proveedor —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Materia prima</label>
+          <select id="selectMateriaAsignacion">
+            <option value="">— Seleccioná materia prima —</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:1.2rem; display:flex; justify-content:flex-end;">
+        <button class="btn-primary" onclick="asignarMateriaProveedor()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Asignar
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Proveedor</th>
+            <th>Materia prima</th>
+            <th>Costo registrado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tablaAsignaciones">
+          <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--ink-soft);">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ── Panel: Registrar compra ── -->
   <div class="prov-panel" id="panel-compras">
     <div class="compra-layout">
       <div class="compra-form-card">
@@ -188,12 +235,12 @@ include '../../panel/dashboard/layaut/nav.php';
           </div>
           <div class="form-group">
             <label>Materia prima</label>
-            <select id="selectMateriaCompra">
+            <select id="selectMateriaCompra" onchange="mostrarStockInfo()">
               <option value="">— Primero seleccioná proveedor —</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Cantidad a comprar</label>
+            <label>Cantidad a comprar (G,ML,U)</label>
             <input type="number" id="inputCantidad" placeholder="0.00" min="0" step="0.01">
           </div>
           <div class="form-group">
@@ -205,7 +252,7 @@ include '../../panel/dashboard/layaut/nav.php';
             <textarea id="inputObsCompra" placeholder="Notas de la compra…"></textarea>
           </div>
         </div>
-        <div style="margin-top:1.4rem; display:flex; gap:.75rem; justify-content:flex-end;">
+        <div style="margin-top:1.4rem; display:flex; justify-content:flex-end;">
           <button class="btn-primary" onclick="registrarCompra()" id="btnRegistrar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Registrar y actualizar stock
@@ -214,7 +261,7 @@ include '../../panel/dashboard/layaut/nav.php';
       </div>
 
       <div>
-        <div class="compra-form-card" id="cardStockInfo" style="border-left:3px solid var(--ink);">
+        <div class="compra-form-card" style="border-left:3px solid var(--ink);">
           <h3>Stock actual</h3>
           <div id="stockInfoContent" style="color:var(--ink-soft);font-size:.85rem;">
             Seleccioná una materia prima para ver el stock actual.
@@ -224,7 +271,7 @@ include '../../panel/dashboard/layaut/nav.php';
     </div>
   </div>
 
-  <!-- Panel: Historial -->
+  <!-- ── Panel: Historial ── -->
   <div class="prov-panel" id="panel-historial">
     <div class="table-wrap">
       <table>
@@ -246,9 +293,9 @@ include '../../panel/dashboard/layaut/nav.php';
     </div>
   </div>
 
-</div>
+</div><!-- /prov-module -->
 
-<!-- Modal: Alta / Editar proveedor -->
+<!-- ── Modal: Alta / Editar proveedor ── -->
 <div class="modal-overlay" id="modalAltaProveedor">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-header">
@@ -313,60 +360,76 @@ include '../../panel/dashboard/layaut/nav.php';
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
+/* ══ STATE ══ */
 let proveedores = [], materias = [], editId = null;
 
+/* ══ INIT ══ */
 document.addEventListener('DOMContentLoaded', () => {
   cargarProveedores();
   cargarTodasMaterias();
   cargarHistorial();
+  cargarAsignaciones();
 });
 
-/* ── Tabs ── */
+/* ══ TABS ══ */
 function switchTab(tab, btn) {
   document.querySelectorAll('.prov-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.prov-panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
+  // Recargar datos al entrar en cada panel
+  if (tab === 'asignaciones') cargarAsignaciones();
+  if (tab === 'historial')    cargarHistorial();
 }
 
-/* ── Modal ── */
+/* ══ MODAL ══ */
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; if(id==='modalAltaProveedor') resetForm(); }
 document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) closeModal(o.id); }));
 function resetForm() { document.getElementById('formProveedor').reset(); editId=null; document.getElementById('modalTitle').textContent='Nuevo proveedor'; }
 
-/* ── Toast ── */
+/* ══ TOAST ══ */
 function toast(msg, type='success') {
   const c=document.getElementById('toastContainer'), t=document.createElement('div');
   t.className=`toast ${type}`;
-  const icon = type==='success' ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+  const icon = type==='success'
+    ? '<polyline points="20 6 9 17 4 12"/>'
+    : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
   t.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">${icon}</svg>${msg}`;
   c.appendChild(t);
-  setTimeout(()=>{ t.style.animation='slideOut .3s ease forwards'; setTimeout(()=>t.remove(),300); },3000);
+  setTimeout(()=>{ t.style.animation='slideOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 3000);
 }
 
-/* ── AJAX ── */
+/* ══ AJAX helper ══ */
 async function ajax(url, data=null) {
   const opts = { method: data?'POST':'GET', headers:{'Content-Type':'application/json'} };
-  if(data) opts.body=JSON.stringify(data);
-  const r=await fetch(url,opts); return r.json();
+  if(data) opts.body = JSON.stringify(data);
+  const r = await fetch(url, opts);
+  return r.json();
 }
 
-/* ── Proveedores ── */
+/* ══════════════════════════════════
+   PROVEEDORES
+══════════════════════════════════ */
 async function cargarProveedores() {
   try {
-    const res=await ajax('ajax/get_proveedores.php');
-    proveedores=res.data||[];
+    const res = await ajax('ajax/get_proveedores.php');
+    proveedores = res.data || [];
     renderGrid(proveedores);
-    actualizarSelectProvCompra();
-    document.getElementById('badgeCount').textContent=proveedores.filter(p=>p.activo==1).length;
-  } catch(e){ toast('Error al cargar proveedores','error'); }
+    poblarSelectsProveedores();
+    document.getElementById('badgeCount').textContent = proveedores.filter(p=>p.activo==1).length;
+  } catch(e) { toast('Error al cargar proveedores','error'); }
 }
 
 function renderGrid(lista) {
-  const g=document.getElementById('gridProveedores');
-  if(!lista.length){ g.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Sin proveedores aún</h3><p>Creá tu primer proveedor con el botón de arriba.</p></div>`; return; }
-  g.innerHTML=lista.map((p,i)=>`
+  const g = document.getElementById('gridProveedores');
+  if (!lista.length) {
+    g.innerHTML=`<div class="empty-state" style="grid-column:1/-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <h3>Sin proveedores aún</h3><p>Creá tu primer proveedor con el botón de arriba.</p></div>`;
+    return;
+  }
+  g.innerHTML = lista.map((p,i) => `
     <div class="prov-card" style="animation:fadeUp .3s ease ${i*0.05}s both">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div class="prov-card__name">${esc(p.nombre)}</div>
@@ -391,111 +454,223 @@ function renderGrid(lista) {
 }
 
 function filtrarProveedores() {
-  const q=document.getElementById('searchProv').value.toLowerCase();
-  renderGrid(proveedores.filter(p=>p.nombre.toLowerCase().includes(q)||(p.email||'').toLowerCase().includes(q)));
+  const q = document.getElementById('searchProv').value.toLowerCase();
+  renderGrid(proveedores.filter(p => p.nombre.toLowerCase().includes(q) || (p.email||'').toLowerCase().includes(q)));
+}
+
+/* Pobla TODOS los selects de proveedores de una sola vez */
+function poblarSelectsProveedores() {
+  const activos = proveedores.filter(p => p.activo == 1);
+  const optsActivos = '<option value="">— Seleccioná proveedor —</option>' + activos.map(p=>`<option value="${p.idproveedor}">${esc(p.nombre)}</option>`).join('');
+  const optsCompra  = '<option value="">— Seleccioná un proveedor —</option>' + activos.map(p=>`<option value="${p.idproveedor}">${esc(p.nombre)}</option>`).join('');
+  document.getElementById('selectProvAsignacion').innerHTML = optsActivos;
+  document.getElementById('selectProvCompra').innerHTML     = optsCompra;
 }
 
 async function guardarProveedor() {
-  const btn=document.getElementById('btnGuardar');
-  const data={ idproveedor:editId, nombre:document.getElementById('pNombre').value.trim(), telefono:document.getElementById('pTelefono').value.trim(), email:document.getElementById('pEmail').value.trim(), direccion:document.getElementById('pDireccion').value.trim(), contacto_nombre:document.getElementById('pContactoNombre').value.trim(), contacto_telefono:document.getElementById('pContactoTel').value.trim(), observaciones:document.getElementById('pObservaciones').value.trim(), activo:document.getElementById('pActivo').value };
-  if(!data.nombre){ toast('El nombre es requerido','error'); return; }
-  btn.innerHTML='<span class="loader"></span>'; btn.disabled=true;
+  const btn = document.getElementById('btnGuardar');
+  const data = {
+    idproveedor:       editId,
+    nombre:            document.getElementById('pNombre').value.trim(),
+    telefono:          document.getElementById('pTelefono').value.trim(),
+    email:             document.getElementById('pEmail').value.trim(),
+    direccion:         document.getElementById('pDireccion').value.trim(),
+    contacto_nombre:   document.getElementById('pContactoNombre').value.trim(),
+    contacto_telefono: document.getElementById('pContactoTel').value.trim(),
+    observaciones:     document.getElementById('pObservaciones').value.trim(),
+    activo:            document.getElementById('pActivo').value,
+  };
+  if (!data.nombre) { toast('El nombre es requerido','error'); return; }
+  btn.innerHTML = '<span class="loader"></span>'; btn.disabled = true;
   try {
-    const res=await ajax('ajax/guardar_proveedor.php',data);
-    if(res.ok){ toast(editId?'Proveedor actualizado':'Proveedor creado ✓'); closeModal('modalAltaProveedor'); cargarProveedores(); }
-    else toast(res.msg||'Error al guardar','error');
-  } catch(e){ toast('Error de conexión','error'); }
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar proveedor';
-  btn.disabled=false;
+    const res = await ajax('ajax/guardar_proveedor.php', data);
+    if (res.ok) { toast(editId ? 'Proveedor actualizado' : 'Proveedor creado ✓'); closeModal('modalAltaProveedor'); cargarProveedores(); }
+    else toast(res.msg || 'Error al guardar','error');
+  } catch(e) { toast('Error de conexión','error'); }
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar proveedor';
+  btn.disabled = false;
 }
 
 function editarProveedor(id) {
-  const p=proveedores.find(x=>x.idproveedor==id); if(!p) return;
-  editId=id;
-  document.getElementById('pNombre').value=p.nombre||''; document.getElementById('pTelefono').value=p.telefono||''; document.getElementById('pEmail').value=p.email||''; document.getElementById('pDireccion').value=p.direccion||''; document.getElementById('pContactoNombre').value=p.contacto_nombre||''; document.getElementById('pContactoTel').value=p.contacto_telefono||''; document.getElementById('pObservaciones').value=p.observaciones||''; document.getElementById('pActivo').value=p.activo;
-  document.getElementById('modalTitle').textContent='Editar proveedor';
+  const p = proveedores.find(x => x.idproveedor == id); if(!p) return;
+  editId = id;
+  document.getElementById('pNombre').value          = p.nombre || '';
+  document.getElementById('pTelefono').value        = p.telefono || '';
+  document.getElementById('pEmail').value           = p.email || '';
+  document.getElementById('pDireccion').value       = p.direccion || '';
+  document.getElementById('pContactoNombre').value  = p.contacto_nombre || '';
+  document.getElementById('pContactoTel').value     = p.contacto_telefono || '';
+  document.getElementById('pObservaciones').value   = p.observaciones || '';
+  document.getElementById('pActivo').value          = p.activo;
+  document.getElementById('modalTitle').textContent = 'Editar proveedor';
   openModal('modalAltaProveedor');
 }
 
-async function eliminarProveedor(id,nombre) {
-  if(!confirm(`¿Eliminar el proveedor "${nombre}"?`)) return;
-  try{ const res=await ajax('ajax/eliminar_proveedor.php',{idproveedor:id}); if(res.ok){ toast('Proveedor eliminado'); cargarProveedores(); } else toast(res.msg||'Error','error'); } catch(e){ toast('Error de conexión','error'); }
-}
-
-/* ── Compras ── */
-async function cargarTodasMaterias() {
-  try { const res=await ajax('ajax/get_materias.php'); materias=res.data||[]; } catch(e){}
-}
-
-function actualizarSelectProvCompra() {
-  const s=document.getElementById('selectProvCompra');
-  s.innerHTML='<option value="">— Seleccioná un proveedor —</option>'+proveedores.filter(p=>p.activo==1).map(p=>`<option value="${p.idproveedor}">${esc(p.nombre)}</option>`).join('');
-}
-
-async function cargarMateriasPorProveedor() {
-  const idProv=document.getElementById('selectProvCompra').value;
-  const s=document.getElementById('selectMateriaCompra');
-  s.innerHTML='<option value="">Cargando…</option>';
-  document.getElementById('stockInfoContent').innerHTML='Seleccioná una materia prima para ver el stock actual.';
-  if(!idProv){ s.innerHTML='<option value="">— Primero seleccioná proveedor —</option>'; return; }
+async function eliminarProveedor(id, nombre) {
+  if (!confirm(`¿Eliminar el proveedor "${nombre}"?`)) return;
   try {
-    const res=await ajax(`ajax/get_materias_proveedor.php?idproveedor=${idProv}`);
-    const lista=res.data||[];
-    s.innerHTML=lista.length ? '<option value="">— Seleccioná materia prima —</option>'+lista.map(m=>`<option value="${m.idmateria_prima}" data-stock="${m.stock_actual}" data-min="${m.stock_minimo}" data-costo="${m.costo||''}">${esc(m.nombre)}</option>`).join('') : '<option value="">Sin materias primas asignadas</option>';
-    s.onchange=mostrarStockInfo;
-  } catch(e){ s.innerHTML='<option value="">Error al cargar</option>'; }
+    const res = await ajax('ajax/eliminar_proveedor.php', {idproveedor: id});
+    if (res.ok) { toast('Proveedor eliminado'); cargarProveedores(); }
+    else toast(res.msg || 'Error','error');
+  } catch(e) { toast('Error de conexión','error'); }
+}
+
+/* ══════════════════════════════════
+   ASIGNACIONES
+══════════════════════════════════ */
+async function cargarTodasMaterias() {
+  try {
+    const res = await ajax('ajax/get_materias.php');
+    materias = res.data || [];
+    // Poblar select de materias en asignaciones
+    const s = document.getElementById('selectMateriaAsignacion');
+    s.innerHTML = '<option value="">— Seleccioná materia prima —</option>' +
+      materias.map(m => `<option value="${m.idmateria_prima}">${esc(m.nombre)}</option>`).join('');
+  } catch(e) { toast('Error al cargar materias','error'); }
+}
+
+async function cargarAsignaciones() {
+  try {
+    const res  = await ajax('ajax/get_asignaciones.php');
+    const lista = res.data || [];
+    const tb   = document.getElementById('tablaAsignaciones');
+    if (!lista.length) {
+      tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--ink-soft);">Sin asignaciones aún.</td></tr>';
+      return;
+    }
+    tb.innerHTML = lista.map((a,i) => `
+      <tr style="animation:fadeUp .2s ease ${i*0.04}s both">
+        <td><strong>${esc(a.proveedor_nombre)}</strong></td>
+        <td>${esc(a.materia_nombre)}</td>
+        <td>${a.costo ? '$'+parseFloat(a.costo).toFixed(5) : '<span style="color:var(--ink-soft)">—</span>'}</td>
+        <td>
+          <button class="btn-sm danger" onclick="eliminarAsignacion(${a.idproveedor}, ${a.idmateria_prima}, '${esc(a.materia_nombre)}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Quitar
+          </button>
+        </td>
+      </tr>`).join('');
+  } catch(e) { toast('Error al cargar asignaciones','error'); }
+}
+
+async function asignarMateriaProveedor() {
+  const idproveedor  = document.getElementById('selectProvAsignacion').value;
+  const idmateria    = document.getElementById('selectMateriaAsignacion').value;
+  if (!idproveedor || !idmateria) { toast('Seleccioná proveedor y materia prima','error'); return; }
+  try {
+    const res = await ajax('ajax/asignar_materia_proveedor.php', {idproveedor, idmateria_prima: idmateria});
+    if (res.ok) { toast('Asignación creada ✓'); cargarAsignaciones(); }
+    else toast(res.msg || 'Error','error');
+  } catch(e) { toast('Error de conexión','error'); }
+}
+
+async function eliminarAsignacion(idproveedor, idmateria, nombre) {
+  if (!confirm(`¿Quitar "${nombre}" de este proveedor?`)) return;
+  try {
+    const res = await ajax('ajax/eliminar_asignacion.php', {idproveedor, idmateria_prima: idmateria});
+    if (res.ok) { toast('Asignación eliminada'); cargarAsignaciones(); }
+    else toast(res.msg || 'Error','error');
+  } catch(e) { toast('Error de conexión','error'); }
+}
+
+/* ══════════════════════════════════
+   COMPRAS
+══════════════════════════════════ */
+async function cargarMateriasPorProveedor() {
+  const idProv = document.getElementById('selectProvCompra').value;
+  const s      = document.getElementById('selectMateriaCompra');
+  document.getElementById('stockInfoContent').innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
+  if (!idProv) { s.innerHTML = '<option value="">— Primero seleccioná proveedor —</option>'; return; }
+  s.innerHTML = '<option value="">Cargando…</option>';
+  try {
+    const res  = await ajax(`ajax/get_materias_proveedor.php?idproveedor=${idProv}`);
+    const lista = res.data || [];
+    s.innerHTML = lista.length
+      ? '<option value="">— Seleccioná materia prima —</option>' +
+        lista.map(m => `<option value="${m.idmateria_prima}" data-stock="${m.stock_actual}" data-min="${m.stock_minimo}" data-costo="${m.costo||''}">${esc(m.nombre)}</option>`).join('')
+      : '<option value="">Sin materias primas asignadas a este proveedor</option>';
+  } catch(e) { s.innerHTML = '<option value="">Error al cargar</option>'; }
 }
 
 function mostrarStockInfo() {
-  const opt=document.getElementById('selectMateriaCompra').selectedOptions[0];
-  const c=document.getElementById('stockInfoContent');
-  if(!opt||!opt.value){ c.innerHTML='Seleccioná una materia prima para ver el stock actual.'; return; }
-  const stock=parseFloat(opt.dataset.stock)||0, min=parseFloat(opt.dataset.min)||0;
-  const costo=opt.dataset.costo?`$${parseFloat(opt.dataset.costo).toFixed(5)}`:'—';
-  const pct=min>0?Math.min(100,(stock/min)*100):100;
-  const color=stock>=min?'#1a7a4a':'#c0392b';
-  c.innerHTML=`<div style="display:grid;gap:.9rem;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.82rem;">
-      <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;"><div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:${color}">${stock}</div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock actual</div></div>
-      <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;"><div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;">${min}</div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock mínimo</div></div>
+  const opt = document.getElementById('selectMateriaCompra').selectedOptions[0];
+  const c   = document.getElementById('stockInfoContent');
+  if (!opt || !opt.value) { c.innerHTML = 'Seleccioná una materia prima para ver el stock actual.'; return; }
+  const stock = parseFloat(opt.dataset.stock) || 0;
+  const min   = parseFloat(opt.dataset.min)   || 0;
+  const costo = opt.dataset.costo ? `$${parseFloat(opt.dataset.costo).toFixed(5)}` : '—';
+  const pct   = min > 0 ? Math.min(100, (stock/min)*100) : 100;
+  const color = stock >= min ? '#1a7a4a' : '#c0392b';
+  c.innerHTML = `<div style="display:grid;gap:.9rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+      <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:${color}">${stock}</div>
+        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock actual</div>
+      </div>
+      <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;">${min}</div>
+        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock mínimo</div>
+      </div>
     </div>
-    <div><div style="font-size:.72rem;color:var(--ink-soft);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em;">Nivel de stock</div><div style="background:var(--rule);border-radius:20px;height:6px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${color};border-radius:20px;transition:width .6s ease;"></div></div></div>
+    <div>
+      <div style="font-size:.72rem;color:var(--ink-soft);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em;">Nivel de stock</div>
+      <div style="background:var(--rule);border-radius:20px;height:6px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:20px;transition:width .6s ease;"></div>
+      </div>
+    </div>
     <div style="font-size:.8rem;color:var(--ink-soft);">Costo registrado: <strong style="color:var(--ink)">${costo}</strong></div>
   </div>`;
-  if(opt.dataset.costo) document.getElementById('inputCosto').value=parseFloat(opt.dataset.costo).toFixed(5);
+  if (opt.dataset.costo) document.getElementById('inputCosto').value = parseFloat(opt.dataset.costo).toFixed(5);
 }
 
 async function registrarCompra() {
-  const idProv=document.getElementById('selectProvCompra').value;
-  const idMateria=document.getElementById('selectMateriaCompra').value;
-  const cantidad=parseFloat(document.getElementById('inputCantidad').value);
-  const costo=document.getElementById('inputCosto').value;
-  const obs=document.getElementById('inputObsCompra').value;
-  if(!idProv){ toast('Seleccioná un proveedor','error'); return; }
-  if(!idMateria){ toast('Seleccioná una materia prima','error'); return; }
-  if(!cantidad||cantidad<=0){ toast('Ingresá una cantidad válida','error'); return; }
-  const btn=document.getElementById('btnRegistrar');
-  btn.innerHTML='<span class="loader"></span> Procesando…'; btn.disabled=true;
+  const idProv    = document.getElementById('selectProvCompra').value;
+  const idMateria = document.getElementById('selectMateriaCompra').value;
+  const cantidad  = parseFloat(document.getElementById('inputCantidad').value);
+  const costo     = document.getElementById('inputCosto').value;
+  const obs       = document.getElementById('inputObsCompra').value;
+  if (!idProv)              { toast('Seleccioná un proveedor','error'); return; }
+  if (!idMateria)           { toast('Seleccioná una materia prima','error'); return; }
+  if (!cantidad || cantidad<=0) { toast('Ingresá una cantidad válida','error'); return; }
+  const btn = document.getElementById('btnRegistrar');
+  btn.innerHTML = '<span class="loader"></span> Procesando…'; btn.disabled = true;
   try {
-    const res=await ajax('ajax/registrar_compra.php',{idproveedor:idProv,idmateria_prima:idMateria,cantidad,costo:costo||null,observaciones:obs});
-    if(res.ok){ toast(`Stock actualizado +${cantidad} unidades ✓`); document.getElementById('inputCantidad').value=''; document.getElementById('inputObsCompra').value=''; mostrarStockInfo(); cargarHistorial(); }
-    else toast(res.msg||'Error al registrar','error');
-  } catch(e){ toast('Error de conexión','error'); }
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar y actualizar stock';
-  btn.disabled=false;
+    const res = await ajax('ajax/registrar_compra.php', {idproveedor:idProv, idmateria_prima:idMateria, cantidad, costo:costo||null, observaciones:obs});
+    if (res.ok) {
+      toast(`Stock actualizado +${cantidad} unidades ✓`);
+      document.getElementById('inputCantidad').value = '';
+      document.getElementById('inputObsCompra').value = '';
+      mostrarStockInfo();
+      cargarHistorial();
+    } else toast(res.msg || 'Error al registrar','error');
+  } catch(e) { toast('Error de conexión','error'); }
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar y actualizar stock';
+  btn.disabled = false;
 }
 
-/* ── Historial ── */
+/* ══════════════════════════════════
+   HISTORIAL
+══════════════════════════════════ */
 async function cargarHistorial() {
   try {
-    const res=await ajax('ajax/get_historial_compras.php');
-    const lista=res.data||[];
-    const tb=document.getElementById('tablaHistorial');
-    if(!lista.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--ink-soft);">Sin registros de compras aún.</td></tr>'; return; }
-    tb.innerHTML=lista.map((c,i)=>`<tr style="animation:fadeUp .25s ease ${i*0.04}s both"><td><strong>${c.id}</strong></td><td>${esc(c.proveedor_nombre)}</td><td>${esc(c.materia_nombre)}</td><td><span class="stock-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+${parseFloat(c.cantidad).toFixed(2)}</span></td><td>${c.costo?'$'+parseFloat(c.costo).toFixed(5):'—'}</td><td style="color:var(--ink-soft)">${c.created_at}</td><td><strong>${parseFloat(c.stock_nuevo||0).toFixed(2)}</strong></td></tr>`).join('');
-  } catch(e){}
+    const res  = await ajax('ajax/get_historial_compras.php');
+    const lista = res.data || [];
+    const tb   = document.getElementById('tablaHistorial');
+    if (!lista.length) { tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--ink-soft);">Sin registros de compras aún.</td></tr>'; return; }
+    tb.innerHTML = lista.map((c,i) => `
+      <tr style="animation:fadeUp .25s ease ${i*0.04}s both">
+        <td><strong>${c.id}</strong></td>
+        <td>${esc(c.proveedor_nombre)}</td>
+        <td>${esc(c.materia_nombre)}</td>
+        <td><span class="stock-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+${parseFloat(c.cantidad).toFixed(2)}</span></td>
+        <td>${c.costo ? '$'+parseFloat(c.costo).toFixed(5) : '—'}</td>
+        <td style="color:var(--ink-soft)">${c.created_at}</td>
+        <td><strong>${parseFloat(c.stock_nuevo||0).toFixed(2)}</strong></td>
+      </tr>`).join('');
+  } catch(e) {}
 }
 
+/* ══ Util ══ */
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 

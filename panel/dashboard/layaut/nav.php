@@ -193,17 +193,12 @@ $current = $_SERVER['PHP_SELF'];
             Compras
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/compras/proveedores.php"
+            <a href="<?= $baseUrl ?>/administracion/proveedor/index.php"
                class="<?= str_contains($current,'proveedores') ? 'active' : '' ?>">
                 <i class="fa-solid fa-handshake"></i>
                 Proveedores
             </a>
 
-            <a href="<?= $baseUrl ?>/compras/registrar_compra.php"
-               class="<?= str_contains($current,'registrar_compra') ? 'active' : '' ?>">
-                <i class="fa-solid fa-file-invoice"></i>
-                Registrar compra
-            </a>
         </div>
     </div>
 
