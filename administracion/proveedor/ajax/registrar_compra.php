@@ -1,11 +1,12 @@
 <?php
 define('APP_BOOT', true);
+session_start();
 require_once __DIR__ . '/../../../config/conexion.php';
 
 header('Content-Type: application/json');
 
-// 🔥 conexión
-$pdo = Conexion::conectar();
+$pdo        = Conexion::conectar();
+$usuario_id = $_SESSION['usuario_id'] ?? null;
 
 $data          = json_decode(file_get_contents('php://input'), true);
 $idproveedor   = intval($data['idproveedor'] ?? 0);
@@ -26,41 +27,37 @@ try {
 
     $pdo->beginTransaction();
 
-    // 1. Actualizar stock
+    // 1. Obtener stock anterior
+    $stmtAntes = $pdo->prepare("SELECT stock_actual FROM materia_prima WHERE idmateria_prima = ?");
+    $stmtAntes->execute([$idmateria]);
+    $stockAnterior = $stmtAntes->fetchColumn();
+
+    if ($stockAnterior === false) {
+        throw new Exception('Materia prima no encontrada');
+    }
+
+    // 2. Actualizar stock
     $stmt = $pdo->prepare("
-        UPDATE materia_prima 
-        SET stock_actual = stock_actual + ?, updated_at = NOW() 
+        UPDATE materia_prima
+        SET stock_actual = stock_actual + ?, updated_at = NOW()
         WHERE idmateria_prima = ?
     ");
     $stmt->execute([$cantidad, $idmateria]);
 
-    // 🔥 validar que realmente exista la materia
-    if ($stmt->rowCount() === 0) {
-        throw new Exception('Materia prima no encontrada');
+    $nuevoStock = $stockAnterior + $cantidad;
+
+    // 3. Actualizar costo en pivot (si viene)
+    if ($costo !== null) {
+        $stmtCosto = $pdo->prepare("
+            UPDATE materia_prima_has_proveedor
+            SET costo = ?, updated_at = NOW()
+            WHERE materia_prima_idmateria_prima = ?
+            AND proveedor_idproveedor = ?
+        ");
+        $stmtCosto->execute([$costo, $idmateria, $idproveedor]);
     }
 
-    // 2. Obtener stock nuevo
-    $stockNuevo = $pdo->prepare("
-        SELECT stock_actual 
-        FROM materia_prima 
-        WHERE idmateria_prima = ?
-    ");
-    $stockNuevo->execute([$idmateria]);
-    $nuevoStock = $stockNuevo->fetchColumn();
-
-    // // 3. Actualizar costo (si viene)
-    // if ($costo !== null) {
-
-    //     $stmtCosto = $pdo->prepare("
-    //         UPDATE materia_prima_has_proveedor 
-    //         SET costo = ?, updated_at = NOW()
-    //         WHERE materia_prima_idmateria_prima = ? 
-    //         AND proveedor_idproveedor = ?
-    //     ");
-    //     $stmtCosto->execute([$costo, $idmateria, $idproveedor]);
-    // }
-
-    // 4. Historial (opcional)
+    // 4. Historial
     try {
 
         $stmtHist = $pdo->prepare("
@@ -70,11 +67,13 @@ try {
                 materia_prima_idmateria_prima,
                 cantidad,
                 costo,
+                stock_anterior,
                 stock_nuevo,
                 observaciones,
+                usuario_id,
                 created_at
             )
-            VALUES (?,?,?,?,?,?,NOW())
+            VALUES (?,?,?,?,?,?,?,?,NOW())
         ");
 
         $stmtHist->execute([
@@ -82,8 +81,10 @@ try {
             $idmateria,
             $cantidad,
             $costo,
+            $stockAnterior,
             $nuevoStock,
-            $observaciones ?: null
+            $observaciones ?: null,
+            $usuario_id,
         ]);
 
     } catch (PDOException $ignored) {

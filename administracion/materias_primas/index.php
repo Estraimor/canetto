@@ -15,8 +15,8 @@ $pdo = Conexion::conectar();
   ========================== -->
   <div class="mp-header">
     <div>
+      <div class="mp-sub">Gestión</div>
       <div class="mp-title">Materias Primas</div>
-      <div class="mp-sub">Gestión de ingredientes base · estilo Canetto</div>
     </div>
 
     <div class="mp-actions">
@@ -589,7 +589,7 @@ if (btnLimpiar) {
           icon: "success",
           title: payload.id ? "Cambios actualizados" : "Registrado correctamente",
           text: payload.id ? "Se han actualizado los cambios correctamente" : "La materia prima fue creada correctamente",
-          confirmButtonColor: "#E91E63"
+          confirmButtonColor: "#0a0a0a"
         });
 
       } else {
@@ -610,7 +610,7 @@ if (btnLimpiar) {
       text: `"${row.nombre}" se eliminará permanentemente`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#E91E63",
+      confirmButtonColor: "#0a0a0a",
       cancelButtonColor: "#6c757d",
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
