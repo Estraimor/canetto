@@ -38,7 +38,12 @@ if ((int)$user['activo'] !== 1) {
     exit;
 }
 
-if (trim($password) !== trim($user['password_hash'])) {
+$hashGuardado = $user['password_hash'];
+$esValida = str_starts_with($hashGuardado, '$2y$')
+    ? password_verify($password, $hashGuardado)       // bcrypt
+    : ($password === $hashGuardado);                  // legado texto plano
+
+if (!$esValida) {
     $_SESSION['error'] = "Contraseña incorrecta.";
     header("Location: login.php");
     exit;
