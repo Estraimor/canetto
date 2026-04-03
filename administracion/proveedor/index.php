@@ -8,158 +8,765 @@ include '../../panel/dashboard/layaut/nav.php';
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
   :root {
-    --ink:        #0a0a0a;
-    --ink-mid:    #3a3a3a;
-    --ink-soft:   #7a7a7a;
-    --paper:      #fafafa;
-    --white:      #ffffff;
-    --rule:       #e0e0e0;
-    --rule-dark:  #c0c0c0;
-    --danger:     #c0392b;
-    --success:    #1a7a4a;
-    --warning:    #b7791f;
-    --shadow-sm:  0 1px 4px rgba(0,0,0,.08);
-    --shadow-md:  0 4px 20px rgba(0,0,0,.10);
-    --shadow-lg:  0 12px 40px rgba(0,0,0,.14);
-    --radius:     6px;
-    --transition: .22s cubic-bezier(.4,0,.2,1);
+    --ink: #0a0a0a;
+    --ink-mid: #3a3a3a;
+    --ink-soft: #7a7a7a;
+    --paper: #fafafa;
+    --white: #ffffff;
+    --rule: #e0e0e0;
+    --rule-dark: #c0c0c0;
+    --danger: #c0392b;
+    --success: #1a7a4a;
+    --warning: #b7791f;
+    --shadow-sm: 0 1px 4px rgba(0, 0, 0, .08);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, .10);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, .14);
+    --radius: 6px;
+    --transition: .22s cubic-bezier(.4, 0, .2, 1);
   }
 
-  .prov-module * { box-sizing: border-box; margin: 0; padding: 0; }
-  .prov-module { font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--paper); min-height: 100vh; padding: 2.5rem 2rem 4rem; }
+  .prov-module * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  .prov-module {
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    min-height: 100vh;
+    padding: 2.5rem 2rem 4rem;
+  }
 
   /* ── Header ── */
-  .prov-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:2.5rem; padding-bottom:1.5rem; border-bottom:2px solid var(--ink); }
-  .prov-header__title { font-family:'Playfair Display',serif; font-size:2.4rem; font-weight:700; letter-spacing:-.5px; line-height:1; }
-  .prov-header__title span { display:block; font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:.4rem; }
+  .prov-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .prov-header__title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -.5px;
+    line-height: 1;
+  }
+
+  .prov-header__title span {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: .4rem;
+  }
 
   /* ── Buttons ── */
-  .btn-primary { display:inline-flex; align-items:center; gap:.5rem; background:var(--ink); color:var(--white); border:none; padding:.7rem 1.5rem; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:600; letter-spacing:.03em; cursor:pointer; transition:background var(--transition), transform var(--transition), box-shadow var(--transition); box-shadow:var(--shadow-sm); }
-  .btn-primary:hover { background:#333; transform:translateY(-1px); box-shadow:var(--shadow-md); }
-  .btn-primary svg { width:16px; height:16px; flex-shrink:0; }
-  .btn-sm { display:inline-flex; align-items:center; gap:.35rem; padding:.38rem .85rem; border-radius:var(--radius); font-size:.75rem; font-weight:600; cursor:pointer; border:1px solid var(--rule); background:var(--white); color:var(--ink); transition:all var(--transition); }
-  .btn-sm:hover { background:var(--ink); color:var(--white); border-color:var(--ink); }
-  .btn-sm.danger:hover { background:var(--danger); border-color:var(--danger); }
-  .btn-sm.warning:hover { background:#92400e; border-color:#92400e; color:var(--white); }
-  .btn-sm svg { width:13px; height:13px; }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    padding: .7rem 1.5rem;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .btn-primary:hover {
+    background: #333;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-primary svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .btn-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .38rem .85rem;
+    border-radius: var(--radius);
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--rule);
+    background: var(--white);
+    color: var(--ink);
+    transition: all var(--transition);
+  }
+
+  .btn-sm:hover {
+    background: var(--ink);
+    color: var(--white);
+    border-color: var(--ink);
+  }
+
+  .btn-sm.danger:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+  }
+
+  .btn-sm.warning:hover {
+    background: #92400e;
+    border-color: #92400e;
+    color: var(--white);
+  }
+
+  .btn-sm svg {
+    width: 13px;
+    height: 13px;
+  }
 
   /* ── Tabs ── */
-  .prov-tabs { display:flex; border-bottom:2px solid var(--rule); margin-bottom:2rem; flex-wrap:wrap; }
-  .prov-tab { background:none; border:none; padding:.75rem 1.4rem; font-family:'DM Sans',sans-serif; font-size:.875rem; font-weight:500; color:var(--ink-soft); cursor:pointer; position:relative; transition:color var(--transition); white-space:nowrap; }
-  .prov-tab::after { content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px; background:var(--ink); transform:scaleX(0); transition:transform var(--transition); }
-  .prov-tab.active { color:var(--ink); font-weight:600; }
-  .prov-tab.active::after { transform:scaleX(1); }
-  .prov-tab:hover { color:var(--ink); }
+  .prov-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--rule);
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .prov-tab {
+    background: none;
+    border: none;
+    padding: .75rem 1.4rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+    position: relative;
+    transition: color var(--transition);
+    white-space: nowrap;
+  }
+
+  .prov-tab::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--ink);
+    transform: scaleX(0);
+    transition: transform var(--transition);
+  }
+
+  .prov-tab.active {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .prov-tab.active::after {
+    transform: scaleX(1);
+  }
+
+  .prov-tab:hover {
+    color: var(--ink);
+  }
 
   /* ── Panels ── */
-  .prov-panel { display:none; animation:fadeUp .3s ease both; }
-  .prov-panel.active { display:block; }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .prov-panel {
+    display: none;
+    animation: fadeUp .3s ease both;
+  }
+
+  .prov-panel.active {
+    display: block;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px)
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0)
+    }
+  }
 
   /* ── Cards grid ── */
-  .prov-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.2rem; }
-  .prov-card { background:var(--white); border:1px solid var(--rule); border-radius:var(--radius); padding:1.4rem 1.5rem; transition:box-shadow var(--transition),border-color var(--transition),transform var(--transition); position:relative; overflow:hidden; }
-  .prov-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--ink); transform:scaleY(0); transform-origin:bottom; transition:transform var(--transition); }
-  .prov-card:hover { box-shadow:var(--shadow-md); border-color:var(--rule-dark); transform:translateY(-2px); }
-  .prov-card:hover::before { transform:scaleY(1); }
-  .prov-card__name { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; }
-  .prov-card__meta { font-size:.78rem; color:var(--ink-soft); display:flex; flex-direction:column; gap:.2rem; margin-top:.6rem; }
-  .prov-card__meta span { display:flex; align-items:center; gap:.4rem; }
-  .prov-card__meta svg { width:13px; height:13px; opacity:.6; }
-  .prov-card__badge { display:inline-block; padding:.2rem .6rem; border-radius:20px; font-size:.7rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
-  .badge-active   { background:#e8f5e9; color:var(--success); }
-  .badge-inactive { background:#fce8e6; color:var(--danger); }
-  .prov-card__actions { display:flex; gap:.5rem; margin-top:1rem; padding-top:.8rem; border-top:1px solid var(--rule); }
+  .prov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .prov-card {
+    background: var(--white);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.5rem;
+    transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .prov-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--ink);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform var(--transition);
+  }
+
+  .prov-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--rule-dark);
+    transform: translateY(-2px);
+  }
+
+  .prov-card:hover::before {
+    transform: scaleY(1);
+  }
+
+  .prov-card__name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .prov-card__meta {
+    font-size: .78rem;
+    color: var(--ink-soft);
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    margin-top: .6rem;
+  }
+
+  .prov-card__meta span {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+
+  .prov-card__meta svg {
+    width: 13px;
+    height: 13px;
+    opacity: .6;
+  }
+
+  .prov-card__badge {
+    display: inline-block;
+    padding: .2rem .6rem;
+    border-radius: 20px;
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .badge-active {
+    background: #e8f5e9;
+    color: var(--success);
+  }
+
+  .badge-inactive {
+    background: #fce8e6;
+    color: var(--danger);
+  }
+
+  .prov-card__actions {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--rule);
+  }
 
   /* ── Empty state ── */
-  .empty-state { text-align:center; padding:4rem 2rem; color:var(--ink-soft); }
-  .empty-state svg { width:52px; height:52px; margin-bottom:1rem; opacity:.3; }
-  .empty-state h3 { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--ink); margin-bottom:.4rem; }
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--ink-soft);
+  }
+
+  .empty-state svg {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 1rem;
+    opacity: .3;
+  }
+
+  .empty-state h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--ink);
+    margin-bottom: .4rem;
+  }
 
   /* ── Modal ── */
-  .modal-overlay { position:fixed; inset:0; background:rgba(10,10,10,.55); backdrop-filter:blur(3px); z-index:1000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity var(--transition); padding:1rem; }
-  .modal-overlay.open { opacity:1; pointer-events:auto; }
-  .modal { background:var(--white); border-radius:10px; width:100%; max-width:620px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg); transform:translateY(20px) scale(.97); transition:transform .28s cubic-bezier(.4,0,.2,1); }
-  .modal-overlay.open .modal { transform:translateY(0) scale(1); }
-  .modal-header { display:flex; align-items:center; justify-content:space-between; padding:1.4rem 1.8rem; border-bottom:1px solid var(--rule); position:sticky; top:0; background:var(--white); z-index:1; }
-  .modal-header h2 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; }
-  .modal-close { background:none; border:none; cursor:pointer; color:var(--ink-soft); padding:.3rem; border-radius:4px; display:flex; transition:color var(--transition),background var(--transition); }
-  .modal-close:hover { color:var(--ink); background:var(--rule); }
-  .modal-body   { padding:1.8rem; }
-  .modal-footer { padding:1rem 1.8rem 1.4rem; display:flex; justify-content:flex-end; gap:.75rem; border-top:1px solid var(--rule); }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, .55);
+    backdrop-filter: blur(3px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition);
+    padding: 1rem;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal {
+    background: var(--white);
+    border-radius: 10px;
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(20px) scale(.97);
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  .modal-overlay.open .modal {
+    transform: translateY(0) scale(1);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.4rem 1.8rem;
+    border-bottom: 1px solid var(--rule);
+    position: sticky;
+    top: 0;
+    background: var(--white);
+    z-index: 1;
+  }
+
+  .modal-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-soft);
+    padding: .3rem;
+    border-radius: 4px;
+    display: flex;
+    transition: color var(--transition), background var(--transition);
+  }
+
+  .modal-close:hover {
+    color: var(--ink);
+    background: var(--rule);
+  }
+
+  .modal-body {
+    padding: 1.8rem;
+  }
+
+  .modal-footer {
+    padding: 1rem 1.8rem 1.4rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: .75rem;
+    border-top: 1px solid var(--rule);
+  }
 
   /* ── Forms ── */
-  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; }
-  .form-group { display:flex; flex-direction:column; gap:.4rem; }
-  .form-group.full { grid-column:1/-1; }
-  .form-group label { font-size:.775rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+
+  .form-group.full {
+    grid-column: 1/-1;
+  }
+
+  .form-group label {
+    font-size: .775rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
   .form-group input,
   .form-group select,
-  .form-group textarea { padding:.65rem .9rem; border:1px solid var(--rule-dark); border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.875rem; color:var(--ink); background:var(--paper); transition:border-color var(--transition),box-shadow var(--transition); outline:none; }
+  .form-group textarea {
+    padding: .65rem .9rem;
+    border: 1px solid var(--rule-dark);
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .875rem;
+    color: var(--ink);
+    background: var(--paper);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+  }
+
   .form-group input:focus,
   .form-group select:focus,
-  .form-group textarea:focus { border-color:var(--ink); box-shadow:0 0 0 3px rgba(10,10,10,.07); }
-  .form-group textarea { resize:vertical; min-height:70px; }
-  .form-section-title { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:600; color:var(--ink); padding-bottom:.4rem; border-bottom:1px solid var(--rule); grid-column:1/-1; margin-top:.4rem; }
+  .form-group textarea:focus {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(10, 10, 10, .07);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 70px;
+  }
+
+  .form-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--ink);
+    padding-bottom: .4rem;
+    border-bottom: 1px solid var(--rule);
+    grid-column: 1/-1;
+    margin-top: .4rem;
+  }
 
   /* ── Compras layout ── */
-  .compra-layout { display:grid; grid-template-columns:1fr 1.2fr; gap:1.5rem; align-items:start; }
-  @media(max-width:860px){ .compra-layout,.form-grid { grid-template-columns:1fr; } }
-  .compra-form-card { background:var(--white); border:1px solid var(--rule); border-radius:var(--radius); padding:1.8rem; }
-  .compra-form-card h3 { font-family:'Playfair Display',serif; font-size:1.15rem; margin-bottom:1.2rem; padding-bottom:.7rem; border-bottom:1px solid var(--rule); }
+  .compra-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media(max-width:860px) {
+
+    .compra-layout,
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .compra-form-card {
+    background: var(--white);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 1.8rem;
+  }
+
+  .compra-form-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px solid var(--rule);
+  }
 
   /* ── Table ── */
-  .table-wrap { background:var(--white); border:1px solid var(--rule); border-radius:var(--radius); overflow:hidden; }
-  .table-wrap table { width:100%; border-collapse:collapse; font-size:.82rem; }
-  .table-wrap thead { background:var(--ink); color:var(--white); }
-  .table-wrap thead th { padding:.7rem 1rem; text-align:left; font-weight:600; letter-spacing:.04em; text-transform:uppercase; font-size:.7rem; }
-  .table-wrap tbody tr { border-bottom:1px solid var(--rule); transition:background var(--transition); }
-  .table-wrap tbody tr:last-child { border-bottom:none; }
-  .table-wrap tbody tr:hover { background:#f5f5f5; }
-  .table-wrap tbody tr.row-cancelada { opacity:.6; background:#fef2f2; }
-  .table-wrap tbody tr.row-cancelada:hover { background:#fde8e8; }
-  .table-wrap td { padding:.75rem 1rem; color:var(--ink-mid); vertical-align:middle; }
-  .table-wrap td strong { color:var(--ink); font-weight:600; }
+  .table-wrap {
+    background: var(--white);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+  }
+
+  .table-wrap thead {
+    background: var(--ink);
+    color: var(--white);
+  }
+
+  .table-wrap thead th {
+    padding: .7rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    font-size: .7rem;
+  }
+
+  .table-wrap tbody tr {
+    border-bottom: 1px solid var(--rule);
+    transition: background var(--transition);
+  }
+
+  .table-wrap tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .table-wrap tbody tr:hover {
+    background: #f5f5f5;
+  }
+
+  .table-wrap tbody tr.row-cancelada {
+    opacity: .6;
+    background: #fef2f2;
+  }
+
+  .table-wrap tbody tr.row-cancelada:hover {
+    background: #fde8e8;
+  }
+
+  .table-wrap td {
+    padding: .75rem 1rem;
+    color: var(--ink-mid);
+    vertical-align: middle;
+  }
+
+  .table-wrap td strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
 
   /* Estado badges */
-  .badge-estado { display:inline-flex; align-items:center; gap:.3rem; padding:.2rem .65rem; border-radius:20px; font-size:.7rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
-  .badge-activa    { background:#e8f5e9; color:var(--success); }
-  .badge-cancelada { background:#fce8e6; color:var(--danger); }
+  .badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .2rem .65rem;
+    border-radius: 20px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .badge-activa {
+    background: #e8f5e9;
+    color: var(--success);
+  }
+
+  .badge-cancelada {
+    background: #fce8e6;
+    color: var(--danger);
+  }
 
   /* stock up/down */
-  .stock-up   { color:var(--success); font-weight:700; display:inline-flex; align-items:center; gap:.25rem; }
-  .stock-down { color:var(--danger);  font-weight:700; display:inline-flex; align-items:center; gap:.25rem; }
-  .stock-up svg,.stock-down svg { width:14px; height:14px; }
+  .stock-up {
+    color: var(--success);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+  }
+
+  .stock-down {
+    color: var(--danger);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+  }
+
+  .stock-up svg,
+  .stock-down svg {
+    width: 14px;
+    height: 14px;
+  }
 
   /* ── Toast ── */
-  .toast-container { position:fixed; bottom:1.5rem; right:1.5rem; z-index:2000; display:flex; flex-direction:column; gap:.5rem; }
-  .toast { background:var(--ink); color:var(--white); padding:.75rem 1.2rem; border-radius:var(--radius); font-size:.82rem; font-weight:500; display:flex; align-items:center; gap:.6rem; box-shadow:var(--shadow-lg); animation:slideIn .3s ease both; max-width:320px; }
-  .toast.success { border-left:4px solid #4caf50; }
-  .toast.error   { border-left:4px solid var(--danger); }
-  @keyframes slideIn { from{transform:translateX(30px);opacity:0} to{transform:translateX(0);opacity:1} }
-  @keyframes slideOut { to{transform:translateX(30px);opacity:0} }
+  .toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+
+  .toast {
+    background: var(--ink);
+    color: var(--white);
+    padding: .75rem 1.2rem;
+    border-radius: var(--radius);
+    font-size: .82rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    box-shadow: var(--shadow-lg);
+    animation: slideIn .3s ease both;
+    max-width: 320px;
+  }
+
+  .toast.success {
+    border-left: 4px solid #4caf50;
+  }
+
+  .toast.error {
+    border-left: 4px solid var(--danger);
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(30px);
+      opacity: 0
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1
+    }
+  }
+
+  @keyframes slideOut {
+    to {
+      transform: translateX(30px);
+      opacity: 0
+    }
+  }
 
   /* ── Loader ── */
-  .loader { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:var(--white); border-radius:50%; animation:spin .6s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
+  .loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, .3);
+    border-top-color: var(--white);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg)
+    }
+  }
 
   /* ── Search bar ── */
-  .search-bar { display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem; }
-  .search-bar input { flex:1; max-width:320px; padding:.6rem 1rem; border:1px solid var(--rule-dark); border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.875rem; outline:none; background:var(--white); transition:border-color var(--transition),box-shadow var(--transition); }
-  .search-bar input:focus { border-color:var(--ink); box-shadow:0 0 0 3px rgba(10,10,10,.07); }
-  .badge-count { background:var(--ink); color:var(--white); font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:20px; margin-left:.5rem; }
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-bar input {
+    flex: 1;
+    max-width: 320px;
+    padding: .6rem 1rem;
+    border: 1px solid var(--rule-dark);
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .875rem;
+    outline: none;
+    background: var(--white);
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+
+  .search-bar input:focus {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(10, 10, 10, .07);
+  }
+
+  .badge-count {
+    background: var(--ink);
+    color: var(--white);
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .15rem .5rem;
+    border-radius: 20px;
+    margin-left: .5rem;
+  }
 
   /* ── DataTables override ── */
-  .dt-wrapper { padding:1rem 1rem .5rem; }
-  div.dataTables_wrapper div.dataTables_filter input { border:1px solid var(--rule-dark); border-radius:var(--radius); padding:.4rem .7rem; font-family:'DM Sans',sans-serif; font-size:.82rem; outline:none; }
-  div.dataTables_wrapper div.dataTables_filter input:focus { border-color:var(--ink); }
-  div.dataTables_wrapper div.dataTables_length select { border:1px solid var(--rule-dark); border-radius:var(--radius); padding:.3rem .5rem; font-family:'DM Sans',sans-serif; font-size:.82rem; }
-  div.dataTables_wrapper div.dataTables_info { font-size:.78rem; color:var(--ink-soft); padding:0 1rem .8rem; }
-  div.dataTables_wrapper div.dataTables_paginate { padding:.5rem 1rem 1rem; }
-  div.dataTables_wrapper div.dataTables_paginate .paginate_button { border-radius:var(--radius) !important; font-family:'DM Sans',sans-serif; font-size:.78rem !important; }
-  div.dataTables_wrapper div.dataTables_paginate .paginate_button.current { background:var(--ink) !important; color:var(--white) !important; border-color:var(--ink) !important; }
-  table.dataTable thead th { background:var(--ink); color:var(--white); border-bottom:none !important; }
-  table.dataTable.no-footer { border-bottom:none; }
+  .dt-wrapper {
+    padding: 1rem 1rem .5rem;
+  }
+
+  div.dataTables_wrapper div.dataTables_filter input {
+    border: 1px solid var(--rule-dark);
+    border-radius: var(--radius);
+    padding: .4rem .7rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem;
+    outline: none;
+  }
+
+  div.dataTables_wrapper div.dataTables_filter input:focus {
+    border-color: var(--ink);
+  }
+
+  div.dataTables_wrapper div.dataTables_length select {
+    border: 1px solid var(--rule-dark);
+    border-radius: var(--radius);
+    padding: .3rem .5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem;
+  }
+
+  div.dataTables_wrapper div.dataTables_info {
+    font-size: .78rem;
+    color: var(--ink-soft);
+    padding: 0 1rem .8rem;
+  }
+
+  div.dataTables_wrapper div.dataTables_paginate {
+    padding: .5rem 1rem 1rem;
+  }
+
+  div.dataTables_wrapper div.dataTables_paginate .paginate_button {
+    border-radius: var(--radius) !important;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .78rem !important;
+  }
+
+  div.dataTables_wrapper div.dataTables_paginate .paginate_button.current {
+    background: var(--ink) !important;
+    color: var(--white) !important;
+    border-color: var(--ink) !important;
+  }
+
+  table.dataTable thead th {
+    background: var(--ink);
+    color: var(--white);
+    border-bottom: none !important;
+  }
+
+  table.dataTable.no-footer {
+    border-bottom: none;
+  }
 </style>
 
 <div class="prov-module">
@@ -171,7 +778,10 @@ include '../../panel/dashboard/layaut/nav.php';
       Proveedores
     </div>
     <button class="btn-primary" onclick="openModal('modalAltaProveedor')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
       Nuevo proveedor
     </button>
   </div>
@@ -206,23 +816,36 @@ include '../../panel/dashboard/layaut/nav.php';
       <div class="form-grid">
         <div class="form-group">
           <label>Proveedor</label>
-          <select id="selectProvAsignacion"><option value="">— Seleccioná proveedor —</option></select>
+          <select id="selectProvAsignacion">
+            <option value="">— Seleccioná proveedor —</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Materia prima</label>
-          <select id="selectMateriaAsignacion"><option value="">— Seleccioná materia prima —</option></select>
+          <select id="selectMateriaAsignacion">
+            <option value="">— Seleccioná materia prima —</option>
+          </select>
         </div>
       </div>
       <div style="margin-top:1.2rem;display:flex;justify-content:flex-end;">
         <button class="btn-primary" onclick="asignarMateriaProveedor()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
           Asignar
         </button>
       </div>
     </div>
     <div class="table-wrap">
       <table id="tablaAsignacionesDT" style="width:100%">
-        <thead><tr><th>Proveedor</th><th>Materia prima</th><th>Costo registrado</th><th>Acción</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Proveedor</th>
+            <th>Materia prima</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
         <tbody id="tablaAsignaciones"></tbody>
       </table>
     </div>
@@ -261,7 +884,9 @@ include '../../panel/dashboard/layaut/nav.php';
         </div>
         <div style="margin-top:1.4rem;display:flex;justify-content:flex-end;">
           <button class="btn-primary" onclick="registrarCompra()" id="btnRegistrar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
             Registrar y actualizar stock
           </button>
         </div>
@@ -283,9 +908,16 @@ include '../../panel/dashboard/layaut/nav.php';
       <table id="tablaHistorialDT" style="width:100%">
         <thead>
           <tr>
-            <th>#</th><th>Proveedor</th><th>Materia prima</th>
-            <th>Cantidad</th><th>Costo unit.</th><th>Fecha</th>
-            <th>Stock ant.</th><th>Stock result.</th><th>Estado</th><th>Acción</th>
+            <th>#</th>
+            <th>Proveedor</th>
+            <th>Materia prima</th>
+            <th>Cantidad</th>
+            <th>Costo unit.</th>
+            <th>Fecha</th>
+            <th>Stock ant.</th>
+            <th>Stock result.</th>
+            <th>Estado</th>
+            <th>Acción</th>
           </tr>
         </thead>
         <tbody id="tablaHistorial"></tbody>
@@ -301,7 +933,10 @@ include '../../panel/dashboard/layaut/nav.php';
     <div class="modal-header">
       <h2 id="modalTitle">Nuevo proveedor</h2>
       <button class="modal-close" onclick="closeModal('modalAltaProveedor')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
       </button>
     </div>
     <div class="modal-body">
@@ -350,7 +985,11 @@ include '../../panel/dashboard/layaut/nav.php';
     <div class="modal-footer">
       <button class="btn-sm" onclick="closeModal('modalAltaProveedor')">Cancelar</button>
       <button class="btn-primary" onclick="guardarProveedor()" id="btnGuardar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+          <polyline points="17 21 17 13 7 13 7 21" />
+          <polyline points="7 3 7 8 15 8" />
+        </svg>
         Guardar proveedor
       </button>
     </div>
@@ -360,100 +999,147 @@ include '../../panel/dashboard/layaut/nav.php';
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-/* ══ STATE ══ */
-let proveedores = [], materias = [], editId = null;
-let dtAsignaciones = null, dtHistorial = null;
+  /* ══ STATE ══ */
+  let proveedores = [],
+    materias = [],
+    editId = null;
+  let dtAsignaciones = null,
+    dtHistorial = null;
 
-/* ══ INIT ══ */
-document.addEventListener('DOMContentLoaded', () => {
-  initDataTables();
-  cargarProveedores();
-  cargarTodasMaterias();
-  cargarHistorial();
-  cargarAsignaciones();
-});
-
-/* ══ DataTables init ══ */
-function initDataTables() {
-  dtAsignaciones = $('#tablaAsignacionesDT').DataTable({
-    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
-    pageLength: 10,
-    order: [[0,'asc']],
-    columnDefs: [{ orderable: false, targets: 3 }],
-    drawCallback: function(){ aplicarEstilosTabla(); }
+  /* ══ INIT ══ */
+  document.addEventListener('DOMContentLoaded', () => {
+    initDataTables();
+    cargarProveedores();
+    cargarTodasMaterias();
+    cargarHistorial();
+    cargarAsignaciones();
   });
-  dtHistorial = $('#tablaHistorialDT').DataTable({
-    language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
-    pageLength: 15,
-    order: [[5,'desc']],
-    columnDefs: [{ orderable: false, targets: 9 }],
-    drawCallback: function(){ aplicarEstilosTabla(); }
-  });
-}
 
-function aplicarEstilosTabla(){
-  // Filas canceladas
-  $('#tablaHistorialDT tbody tr').each(function(){
-    if($(this).find('.badge-cancelada').length) $(this).addClass('row-cancelada');
-  });
-}
+  /* ══ DataTables init ══ */
+  function initDataTables() {
+    dtAsignaciones = $('#tablaAsignacionesDT').DataTable({
+      language: {
+        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+      },
+      pageLength: 10,
+      order: [
+        [0, 'asc']
+      ],
+      columnDefs: [{
+        orderable: false,
+        targets: 2
+      }],
+      drawCallback: function() {
+        aplicarEstilosTabla();
+      }
+    });
+    dtHistorial = $('#tablaHistorialDT').DataTable({
+      language: {
+        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+      },
+      pageLength: 15,
+      order: [
+        [5, 'desc']
+      ],
+      columnDefs: [{
+        orderable: false,
+        targets: 9
+      }],
+      drawCallback: function() {
+        aplicarEstilosTabla();
+      }
+    });
+  }
 
-/* ══ TABS ══ */
-function switchTab(tab, btn) {
-  document.querySelectorAll('.prov-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.prov-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'asignaciones') cargarAsignaciones();
-  if (tab === 'historial')    cargarHistorial();
-}
+  function aplicarEstilosTabla() {
+    // Filas canceladas
+    $('#tablaHistorialDT tbody tr').each(function() {
+      if ($(this).find('.badge-cancelada').length) $(this).addClass('row-cancelada');
+    });
+  }
 
-/* ══ MODAL ══ */
-function openModal(id)  { document.getElementById(id).classList.add('open');    document.body.style.overflow='hidden'; }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; if(id==='modalAltaProveedor') resetForm(); }
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) closeModal(o.id); }));
-function resetForm() { document.getElementById('formProveedor').reset(); editId=null; document.getElementById('modalTitle').textContent='Nuevo proveedor'; }
+  /* ══ TABS ══ */
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.prov-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.prov-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+    if (tab === 'asignaciones') cargarAsignaciones();
+    if (tab === 'historial') cargarHistorial();
+  }
 
-/* ══ TOAST ══ */
-function toast(msg, type='success') {
-  const c=document.getElementById('toastContainer'), t=document.createElement('div');
-  t.className=`toast ${type}`;
-  const icon = type==='success' ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
-  t.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">${icon}</svg>${msg}`;
-  c.appendChild(t);
-  setTimeout(()=>{ t.style.animation='slideOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 3000);
-}
+  /* ══ MODAL ══ */
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
 
-/* ══ AJAX ══ */
-async function ajax(url, data=null) {
-  const opts = { method: data?'POST':'GET', headers:{'Content-Type':'application/json'} };
-  if(data) opts.body = JSON.stringify(data);
-  const r = await fetch(url, opts);
-  return r.json();
-}
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+    if (id === 'modalAltaProveedor') resetForm();
+  }
+  document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => {
+    if (e.target === o) closeModal(o.id);
+  }));
 
-/* ══════════════════════════
-   PROVEEDORES
-══════════════════════════ */
-async function cargarProveedores() {
-  try {
-    const res = await ajax('ajax/get_proveedores.php');
-    proveedores = res.data || [];
-    renderGrid(proveedores);
-    poblarSelectsProveedores();
-    document.getElementById('badgeCount').textContent = proveedores.filter(p=>p.activo==1).length;
-  } catch(e) { toast('Error al cargar proveedores','error'); }
-}
+  function resetForm() {
+    document.getElementById('formProveedor').reset();
+    editId = null;
+    document.getElementById('modalTitle').textContent = 'Nuevo proveedor';
+  }
 
-function renderGrid(lista) {
-  const g = document.getElementById('gridProveedores');
-  if (!lista.length) {
-    g.innerHTML=`<div class="empty-state" style="grid-column:1/-1">
+  /* ══ TOAST ══ */
+  function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer'),
+      t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icon = type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+    t.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">${icon}</svg>${msg}`;
+    c.appendChild(t);
+    setTimeout(() => {
+      t.style.animation = 'slideOut .3s ease forwards';
+      setTimeout(() => t.remove(), 300);
+    }, 3000);
+  }
+
+  /* ══ AJAX ══ */
+  async function ajax(url, data = null) {
+    const opts = {
+      method: data ? 'POST' : 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    if (data) opts.body = JSON.stringify(data);
+    const r = await fetch(url, opts);
+    return r.json();
+  }
+
+  /* ══════════════════════════
+     PROVEEDORES
+  ══════════════════════════ */
+  async function cargarProveedores() {
+    try {
+      const res = await ajax('ajax/get_proveedores.php');
+      proveedores = res.data || [];
+      renderGrid(proveedores);
+      poblarSelectsProveedores();
+      document.getElementById('badgeCount').textContent = proveedores.filter(p => p.activo == 1).length;
+    } catch (e) {
+      toast('Error al cargar proveedores', 'error');
+    }
+  }
+
+  function renderGrid(lista) {
+    const g = document.getElementById('gridProveedores');
+    if (!lista.length) {
+      g.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <h3>Sin proveedores aún</h3><p>Creá tu primer proveedor.</p></div>`;
-    return;
-  }
-  g.innerHTML = lista.map((p,i) => `
+      return;
+    }
+    g.innerHTML = lista.map((p, i) => `
     <div class="prov-card" style="animation:fadeUp .3s ease ${i*.05}s both">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div class="prov-card__name">${esc(p.nombre)}</div>
@@ -475,202 +1161,276 @@ function renderGrid(lista) {
         </button>
       </div>
     </div>`).join('');
-}
+  }
 
-function filtrarProveedores() {
-  const q = document.getElementById('searchProv').value.toLowerCase();
-  renderGrid(proveedores.filter(p => p.nombre.toLowerCase().includes(q)||(p.email||'').toLowerCase().includes(q)));
-}
+  function filtrarProveedores() {
+    const q = document.getElementById('searchProv').value.toLowerCase();
+    renderGrid(proveedores.filter(p => p.nombre.toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q)));
+  }
 
-function poblarSelectsProveedores() {
-  const activos = proveedores.filter(p => p.activo==1);
-  const base = (ph) => `<option value="">— ${ph} —</option>` + activos.map(p=>`<option value="${p.idproveedor}">${esc(p.nombre)}</option>`).join('');
-  document.getElementById('selectProvAsignacion').innerHTML = base('Seleccioná proveedor');
-  document.getElementById('selectProvCompra').innerHTML     = base('Seleccioná un proveedor');
-}
+  function poblarSelectsProveedores() {
+    const activos = proveedores.filter(p => p.activo == 1);
+    const base = (ph) => `<option value="">— ${ph} —</option>` + activos.map(p => `<option value="${p.idproveedor}">${esc(p.nombre)}</option>`).join('');
+    document.getElementById('selectProvAsignacion').innerHTML = base('Seleccioná proveedor');
+    document.getElementById('selectProvCompra').innerHTML = base('Seleccioná un proveedor');
+  }
 
-async function guardarProveedor() {
-  const btn = document.getElementById('btnGuardar');
-  const data = {
-    idproveedor: editId,
-    nombre:            document.getElementById('pNombre').value.trim(),
-    telefono:          document.getElementById('pTelefono').value.trim(),
-    email:             document.getElementById('pEmail').value.trim(),
-    direccion:         document.getElementById('pDireccion').value.trim(),
-    contacto_nombre:   document.getElementById('pContactoNombre').value.trim(),
-    contacto_telefono: document.getElementById('pContactoTel').value.trim(),
-    observaciones:     document.getElementById('pObservaciones').value.trim(),
-    activo:            document.getElementById('pActivo').value,
-  };
-  if (!data.nombre) { toast('El nombre es requerido','error'); return; }
-  btn.innerHTML = '<span class="loader"></span>'; btn.disabled = true;
-  try {
-    const res = await ajax('ajax/guardar_proveedor.php', data);
-    if (res.ok) {
-      closeModal('modalAltaProveedor');
-      await cargarProveedores();
-      // SweetAlert éxito
-      Swal.fire({
-        icon: 'success',
-        title: editId ? '¡Proveedor actualizado!' : '¡Proveedor creado!',
-        text: editId ? `Los datos de "${data.nombre}" fueron guardados.` : `"${data.nombre}" fue agregado al sistema.`,
-        confirmButtonColor: '#0a0a0a',
-        confirmButtonText: 'Continuar',
-        timer: 3000,
-        timerProgressBar: true,
-      });
-    } else {
-      Swal.fire({ icon:'error', title:'Error', text: res.msg || 'No se pudo guardar', confirmButtonColor:'#0a0a0a' });
+  async function guardarProveedor() {
+    const btn = document.getElementById('btnGuardar');
+    const data = {
+      idproveedor: editId,
+      nombre: document.getElementById('pNombre').value.trim(),
+      telefono: document.getElementById('pTelefono').value.trim(),
+      email: document.getElementById('pEmail').value.trim(),
+      direccion: document.getElementById('pDireccion').value.trim(),
+      contacto_nombre: document.getElementById('pContactoNombre').value.trim(),
+      contacto_telefono: document.getElementById('pContactoTel').value.trim(),
+      observaciones: document.getElementById('pObservaciones').value.trim(),
+      activo: document.getElementById('pActivo').value,
+    };
+    if (!data.nombre) {
+      toast('El nombre es requerido', 'error');
+      return;
     }
-  } catch(e) { toast('Error de conexión','error'); }
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar proveedor';
-  btn.disabled = false;
-}
-
-function editarProveedor(id) {
-  const p = proveedores.find(x=>x.idproveedor==id); if(!p) return;
-  editId = id;
-  document.getElementById('pNombre').value          = p.nombre||'';
-  document.getElementById('pTelefono').value        = p.telefono||'';
-  document.getElementById('pEmail').value           = p.email||'';
-  document.getElementById('pDireccion').value       = p.direccion||'';
-  document.getElementById('pContactoNombre').value  = p.contacto_nombre||'';
-  document.getElementById('pContactoTel').value     = p.contacto_telefono||'';
-  document.getElementById('pObservaciones').value   = p.observaciones||'';
-  document.getElementById('pActivo').value          = p.activo;
-  document.getElementById('modalTitle').textContent = 'Editar proveedor';
-  openModal('modalAltaProveedor');
-}
-
-function confirmarEliminarProveedor(id, nombre) {
-  Swal.fire({
-    title: '¿Eliminar proveedor?',
-    html: `Vas a eliminar a <strong>${nombre}</strong>.<br>Esta acción no se puede deshacer.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#c0392b',
-    cancelButtonColor:  '#6b7280',
-    confirmButtonText: 'Sí, eliminar',
-    cancelButtonText:  'Cancelar',
-  }).then(async (result) => {
-    if (!result.isConfirmed) return;
+    btn.innerHTML = '<span class="loader"></span>';
+    btn.disabled = true;
     try {
-      const res = await ajax('ajax/eliminar_proveedor.php', {idproveedor: id});
+      const res = await ajax('ajax/guardar_proveedor.php', data);
       if (res.ok) {
+        closeModal('modalAltaProveedor');
         await cargarProveedores();
-        Swal.fire({ icon:'success', title:'Eliminado', text:`"${nombre}" fue eliminado.`, confirmButtonColor:'#0a0a0a', timer:2500, timerProgressBar:true });
+        // SweetAlert éxito
+        Swal.fire({
+          icon: 'success',
+          title: editId ? '¡Proveedor actualizado!' : '¡Proveedor creado!',
+          text: editId ? `Los datos de "${data.nombre}" fueron guardados.` : `"${data.nombre}" fue agregado al sistema.`,
+          confirmButtonColor: '#0a0a0a',
+          confirmButtonText: 'Continuar',
+          timer: 3000,
+          timerProgressBar: true,
+        });
       } else {
-        Swal.fire({ icon:'error', title:'No se pudo eliminar', text: res.msg||'Tiene registros asociados.', confirmButtonColor:'#0a0a0a' });
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.msg || 'No se pudo guardar',
+          confirmButtonColor: '#0a0a0a'
+        });
       }
-    } catch(e) { toast('Error de conexión','error'); }
-  });
-}
+    } catch (e) {
+      toast('Error de conexión', 'error');
+    }
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar proveedor';
+    btn.disabled = false;
+  }
 
-/* ══════════════════════════
-   ASIGNACIONES
-══════════════════════════ */
-async function cargarTodasMaterias() {
-  try {
-    const res = await ajax('ajax/get_materias.php');
-    materias = res.data || [];
-    const s = document.getElementById('selectMateriaAsignacion');
-    s.innerHTML = '<option value="">— Seleccioná materia prima —</option>' +
-      materias.map(m=>`<option value="${m.idmateria_prima}">${esc(m.nombre)}</option>`).join('');
-  } catch(e) {}
-}
+  function editarProveedor(id) {
+    const p = proveedores.find(x => x.idproveedor == id);
+    if (!p) return;
+    editId = id;
+    document.getElementById('pNombre').value = p.nombre || '';
+    document.getElementById('pTelefono').value = p.telefono || '';
+    document.getElementById('pEmail').value = p.email || '';
+    document.getElementById('pDireccion').value = p.direccion || '';
+    document.getElementById('pContactoNombre').value = p.contacto_nombre || '';
+    document.getElementById('pContactoTel').value = p.contacto_telefono || '';
+    document.getElementById('pObservaciones').value = p.observaciones || '';
+    document.getElementById('pActivo').value = p.activo;
+    document.getElementById('modalTitle').textContent = 'Editar proveedor';
+    openModal('modalAltaProveedor');
+  }
 
-async function cargarAsignaciones() {
-  try {
-    const res   = await ajax('ajax/get_asignaciones.php');
-    const lista = res.data || [];
-    // Limpiar DT y reinsertar
-    dtAsignaciones.clear();
-    lista.forEach((a,i) => {
-      dtAsignaciones.row.add([
-        `<strong>${esc(a.proveedor_nombre)}</strong>`,
-        esc(a.materia_nombre),
-        a.costo ? '$'+parseFloat(a.costo).toFixed(5) : '<span style="color:var(--ink-soft)">—</span>',
-        `<button class="btn-sm danger" onclick="confirmarEliminarAsignacion(${a.idproveedor},${a.idmateria_prima},'${esc(a.materia_nombre)}','${esc(a.proveedor_nombre)}')">
+  function confirmarEliminarProveedor(id, nombre) {
+    Swal.fire({
+      title: '¿Eliminar proveedor?',
+      html: `Vas a eliminar a <strong>${nombre}</strong>.<br>Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#c0392b',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        const res = await ajax('ajax/eliminar_proveedor.php', {
+          idproveedor: id
+        });
+        if (res.ok) {
+          await cargarProveedores();
+          Swal.fire({
+            icon: 'success',
+            title: 'Eliminado',
+            text: `"${nombre}" fue eliminado.`,
+            confirmButtonColor: '#0a0a0a',
+            timer: 2500,
+            timerProgressBar: true
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo eliminar',
+            text: res.msg || 'Tiene registros asociados.',
+            confirmButtonColor: '#0a0a0a'
+          });
+        }
+      } catch (e) {
+        toast('Error de conexión', 'error');
+      }
+    });
+  }
+
+  /* ══════════════════════════
+     ASIGNACIONES
+  ══════════════════════════ */
+  async function cargarTodasMaterias() {
+    try {
+      const res = await ajax('ajax/get_materias.php');
+      materias = res.data || [];
+      const s = document.getElementById('selectMateriaAsignacion');
+      s.innerHTML = '<option value="">— Seleccioná materia prima —</option>' +
+        materias.map(m => `<option value="${m.idmateria_prima}">${esc(m.nombre)}</option>`).join('');
+    } catch (e) {}
+  }
+
+  async function cargarAsignaciones() {
+    try {
+      const res = await ajax('ajax/get_asignaciones.php');
+      const lista = res.data || [];
+      // Limpiar DT y reinsertar
+      dtAsignaciones.clear();
+      lista.forEach((a, i) => {
+        dtAsignaciones.row.add([
+          `<strong>${esc(a.proveedor_nombre)}</strong>`,
+          esc(a.materia_nombre),
+          `<button class="btn-sm danger" onclick="confirmarEliminarAsignacion(${a.idproveedor},${a.idmateria_prima},'${esc(a.materia_nombre)}','${esc(a.proveedor_nombre)}')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           Quitar
         </button>`
-      ]);
-    });
-    dtAsignaciones.draw();
-  } catch(e) { toast('Error al cargar asignaciones','error'); }
-}
-
-async function asignarMateriaProveedor() {
-  const idproveedor = document.getElementById('selectProvAsignacion').value;
-  const idmateria   = document.getElementById('selectMateriaAsignacion').value;
-  if (!idproveedor || !idmateria) { toast('Seleccioná proveedor y materia prima','error'); return; }
-  try {
-    const res = await ajax('ajax/asignar_materia_proveedor.php', {idproveedor, idmateria_prima: idmateria});
-    if (res.ok) {
-      // Reset selects
-      document.getElementById('selectProvAsignacion').value    = '';
-      document.getElementById('selectMateriaAsignacion').value = '';
-      await cargarAsignaciones();
-      Swal.fire({ icon:'success', title:'¡Asignación creada!', text:'La materia prima fue vinculada al proveedor.', confirmButtonColor:'#0a0a0a', timer:2500, timerProgressBar:true });
-    } else {
-      Swal.fire({ icon:'error', title:'Error', text: res.msg||'No se pudo asignar.', confirmButtonColor:'#0a0a0a' });
+        ]);
+      });
+      dtAsignaciones.draw();
+    } catch (e) {
+      toast('Error al cargar asignaciones', 'error');
     }
-  } catch(e) { toast('Error de conexión','error'); }
-}
+  }
 
-function confirmarEliminarAsignacion(idproveedor, idmateria, materia, proveedor) {
-  Swal.fire({
-    title: '¿Quitar asignación?',
-    html: `Desvincular <strong>${materia}</strong> del proveedor <strong>${proveedor}</strong>.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#c0392b',
-    cancelButtonColor:  '#6b7280',
-    confirmButtonText: 'Sí, quitar',
-    cancelButtonText:  'Cancelar',
-  }).then(async (result) => {
-    if (!result.isConfirmed) return;
+  async function asignarMateriaProveedor() {
+    const idproveedor = document.getElementById('selectProvAsignacion').value;
+    const idmateria = document.getElementById('selectMateriaAsignacion').value;
+    if (!idproveedor || !idmateria) {
+      toast('Seleccioná proveedor y materia prima', 'error');
+      return;
+    }
     try {
-      const res = await ajax('ajax/eliminar_asignacion.php', {idproveedor, idmateria_prima: idmateria});
+      const res = await ajax('ajax/asignar_materia_proveedor.php', {
+        idproveedor,
+        idmateria_prima: idmateria
+      });
       if (res.ok) {
+        // Reset selects
+        document.getElementById('selectProvAsignacion').value = '';
+        document.getElementById('selectMateriaAsignacion').value = '';
         await cargarAsignaciones();
-        Swal.fire({ icon:'success', title:'Eliminada', text:'La asignación fue removida.', confirmButtonColor:'#0a0a0a', timer:2000, timerProgressBar:true });
+        Swal.fire({
+          icon: 'success',
+          title: '¡Asignación creada!',
+          text: 'La materia prima fue vinculada al proveedor.',
+          confirmButtonColor: '#0a0a0a',
+          timer: 2500,
+          timerProgressBar: true
+        });
       } else {
-        Swal.fire({ icon:'error', title:'Error', text: res.msg||'No se pudo eliminar.', confirmButtonColor:'#0a0a0a' });
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.msg || 'No se pudo asignar.',
+          confirmButtonColor: '#0a0a0a'
+        });
       }
-    } catch(e) { toast('Error de conexión','error'); }
-  });
-}
+    } catch (e) {
+      toast('Error de conexión', 'error');
+    }
+  }
 
-/* ══════════════════════════
-   COMPRAS
-══════════════════════════ */
-async function cargarMateriasPorProveedor() {
-  const idProv = document.getElementById('selectProvCompra').value;
-  const s      = document.getElementById('selectMateriaCompra');
-  document.getElementById('stockInfoContent').innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
-  if (!idProv) { s.innerHTML='<option value="">— Primero seleccioná proveedor —</option>'; return; }
-  s.innerHTML = '<option value="">Cargando…</option>';
-  try {
-    const res   = await ajax(`ajax/get_materias_proveedor.php?idproveedor=${idProv}`);
-    const lista = res.data || [];
-    s.innerHTML = lista.length
-      ? '<option value="">— Seleccioná materia prima —</option>' +
-        lista.map(m=>`<option value="${m.idmateria_prima}" data-stock="${m.stock_actual}" data-min="${m.stock_minimo}" data-costo="${m.costo||''}">${esc(m.nombre)}</option>`).join('')
-      : '<option value="">Sin materias primas asignadas</option>';
-  } catch(e) { s.innerHTML='<option value="">Error al cargar</option>'; }
-}
+  function confirmarEliminarAsignacion(idproveedor, idmateria, materia, proveedor) {
+    Swal.fire({
+      title: '¿Quitar asignación?',
+      html: `Desvincular <strong>${materia}</strong> del proveedor <strong>${proveedor}</strong>.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#c0392b',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, quitar',
+      cancelButtonText: 'Cancelar',
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        const res = await ajax('ajax/eliminar_asignacion.php', {
+          idproveedor,
+          idmateria_prima: idmateria
+        });
+        if (res.ok) {
+          await cargarAsignaciones();
+          Swal.fire({
+            icon: 'success',
+            title: 'Eliminada',
+            text: 'La asignación fue removida.',
+            confirmButtonColor: '#0a0a0a',
+            timer: 2000,
+            timerProgressBar: true
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res.msg || 'No se pudo eliminar.',
+            confirmButtonColor: '#0a0a0a'
+          });
+        }
+      } catch (e) {
+        toast('Error de conexión', 'error');
+      }
+    });
+  }
 
-function mostrarStockInfo() {
-  const opt = document.getElementById('selectMateriaCompra').selectedOptions[0];
-  const c   = document.getElementById('stockInfoContent');
-  if (!opt||!opt.value) { c.innerHTML='Seleccioná una materia prima para ver el stock actual.'; return; }
-  const stock = parseFloat(opt.dataset.stock)||0;
-  const min   = parseFloat(opt.dataset.min)||0;
-  const costo = opt.dataset.costo ? `$${parseFloat(opt.dataset.costo).toFixed(5)}` : '—';
-  const pct   = min>0 ? Math.min(100,(stock/min)*100) : 100;
-  const color = stock>=min ? '#1a7a4a' : '#c0392b';
-  c.innerHTML=`<div style="display:grid;gap:.9rem;">
+  /* ══════════════════════════
+     COMPRAS
+  ══════════════════════════ */
+  async function cargarMateriasPorProveedor() {
+    const idProv = document.getElementById('selectProvCompra').value;
+    const s = document.getElementById('selectMateriaCompra');
+    document.getElementById('stockInfoContent').innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
+    if (!idProv) {
+      s.innerHTML = '<option value="">— Primero seleccioná proveedor —</option>';
+      return;
+    }
+    s.innerHTML = '<option value="">Cargando…</option>';
+    try {
+      const res = await ajax(`ajax/get_materias_proveedor.php?idproveedor=${idProv}`);
+      const lista = res.data || [];
+      s.innerHTML = lista.length ?
+        '<option value="">— Seleccioná materia prima —</option>' +
+        lista.map(m => `<option value="${m.idmateria_prima}" data-stock="${m.stock_actual}" data-min="${m.stock_minimo}" data-costo="${m.costo||''}">${esc(m.nombre)}</option>`).join('') :
+        '<option value="">Sin materias primas asignadas</option>';
+    } catch (e) {
+      s.innerHTML = '<option value="">Error al cargar</option>';
+    }
+  }
+
+  function mostrarStockInfo() {
+    const opt = document.getElementById('selectMateriaCompra').selectedOptions[0];
+    const c = document.getElementById('stockInfoContent');
+    if (!opt || !opt.value) {
+      c.innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
+      return;
+    }
+    const stock = parseFloat(opt.dataset.stock) || 0;
+    const min = parseFloat(opt.dataset.min) || 0;
+    const costo = opt.dataset.costo ? `$${parseFloat(opt.dataset.costo).toFixed(5)}` : '—';
+    const pct = min > 0 ? Math.min(100, (stock / min) * 100) : 100;
+    const color = stock >= min ? '#1a7a4a' : '#c0392b';
+    c.innerHTML = `<div style="display:grid;gap:.9rem;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
       <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
         <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:${color}">${stock}</div>
@@ -689,154 +1449,212 @@ function mostrarStockInfo() {
     </div>
     <div style="font-size:.8rem;color:var(--ink-soft);">Costo registrado: <strong style="color:var(--ink)">${costo}</strong></div>
   </div>`;
-  if (opt.dataset.costo) document.getElementById('inputCosto').value = parseFloat(opt.dataset.costo).toFixed(5);
-}
+    if (opt.dataset.costo) document.getElementById('inputCosto').value = parseFloat(opt.dataset.costo).toFixed(5);
+  }
 
-async function registrarCompra() {
-  const idProv    = document.getElementById('selectProvCompra').value;
-  const idMateria = document.getElementById('selectMateriaCompra').value;
-  const cantidad  = parseFloat(document.getElementById('inputCantidad').value);
-  const costo     = document.getElementById('inputCosto').value;
-  const obs       = document.getElementById('inputObsCompra').value;
-  if (!idProv)           { toast('Seleccioná un proveedor','error');   return; }
-  if (!idMateria)        { toast('Seleccioná una materia prima','error'); return; }
-  if (!cantidad||cantidad<=0) { toast('Ingresá una cantidad válida','error'); return; }
-
-  const btn = document.getElementById('btnRegistrar');
-  btn.innerHTML = '<span class="loader"></span> Procesando…'; btn.disabled=true;
-  try {
-    const res = await ajax('ajax/registrar_compra.php', {idproveedor:idProv, idmateria_prima:idMateria, cantidad, costo:costo||null, observaciones:obs});
-    if (res.ok) {
-      // Reset form
-      document.getElementById('selectProvCompra').value    = '';
-      document.getElementById('selectMateriaCompra').innerHTML = '<option value="">— Primero seleccioná proveedor —</option>';
-      document.getElementById('inputCantidad').value  = '';
-      document.getElementById('inputCosto').value     = '';
-      document.getElementById('inputObsCompra').value = '';
-      document.getElementById('stockInfoContent').innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
-      await cargarHistorial();
-      Swal.fire({
-        icon: 'success',
-        title: '¡Compra registrada!',
-        html: `Se sumaron <strong>+${cantidad}</strong> unidades al stock.`,
-        confirmButtonColor: '#0a0a0a',
-        confirmButtonText: 'Continuar',
-        timer: 3000,
-        timerProgressBar: true,
-      });
-    } else {
-      Swal.fire({ icon:'error', title:'Error', text: res.msg||'No se pudo registrar.', confirmButtonColor:'#0a0a0a' });
+  async function registrarCompra() {
+    const idProv = document.getElementById('selectProvCompra').value;
+    const idMateria = document.getElementById('selectMateriaCompra').value;
+    const cantidad = parseFloat(document.getElementById('inputCantidad').value);
+    const costo = document.getElementById('inputCosto').value;
+    const obs = document.getElementById('inputObsCompra').value;
+    if (!idProv) {
+      toast('Seleccioná un proveedor', 'error');
+      return;
     }
-  } catch(e) { toast('Error de conexión','error'); }
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar y actualizar stock';
-  btn.disabled=false;
-}
+    if (!idMateria) {
+      toast('Seleccioná una materia prima', 'error');
+      return;
+    }
+    if (!cantidad || cantidad <= 0) {
+      toast('Ingresá una cantidad válida', 'error');
+      return;
+    }
 
-/* ══════════════════════════
-   CANCELAR COMPRA
-══════════════════════════ */
-function confirmarCancelarCompra(id, materia, cantidad) {
-  Swal.fire({
-    title: '¿Cancelar esta compra?',
-    html: `<p style="margin-bottom:.8rem">Compra de <strong>${cantidad} uds</strong> de <strong>${materia}</strong>.</p>
+    const btn = document.getElementById('btnRegistrar');
+    btn.innerHTML = '<span class="loader"></span> Procesando…';
+    btn.disabled = true;
+    try {
+      const res = await ajax('ajax/registrar_compra.php', {
+        idproveedor: idProv,
+        idmateria_prima: idMateria,
+        cantidad,
+        costo: costo || null,
+        observaciones: obs
+      });
+      if (res.ok) {
+        // Reset form
+        document.getElementById('selectProvCompra').value = '';
+        document.getElementById('selectMateriaCompra').innerHTML = '<option value="">— Primero seleccioná proveedor —</option>';
+        document.getElementById('inputCantidad').value = '';
+        document.getElementById('inputCosto').value = '';
+        document.getElementById('inputObsCompra').value = '';
+        document.getElementById('stockInfoContent').innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
+        await cargarHistorial();
+        Swal.fire({
+          icon: 'success',
+          title: '¡Compra registrada!',
+          html: `Se sumaron <strong>+${cantidad}</strong> unidades al stock.`,
+          confirmButtonColor: '#0a0a0a',
+          confirmButtonText: 'Continuar',
+          timer: 3000,
+          timerProgressBar: true,
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.msg || 'No se pudo registrar.',
+          confirmButtonColor: '#0a0a0a'
+        });
+      }
+    } catch (e) {
+      toast('Error de conexión', 'error');
+    }
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar y actualizar stock';
+    btn.disabled = false;
+  }
+
+  /* ══════════════════════════
+     CANCELAR COMPRA
+  ══════════════════════════ */
+  function confirmarCancelarCompra(id, materia, cantidad) {
+    Swal.fire({
+      title: '¿Cancelar esta compra?',
+      html: `<p style="margin-bottom:.8rem">Compra de <strong>${cantidad} uds</strong> de <strong>${materia}</strong>.</p>
            <p style="font-size:.85rem;color:#6b7280;margin-bottom:.5rem">Se <strong>restará del stock</strong> la cantidad indicada.</p>
            <label style="font-size:.8rem;font-weight:600;color:#374151;display:block;text-align:left;margin-bottom:.3rem">Motivo (opcional)</label>
            <input id="swal-motivo" class="swal2-input" placeholder="Ej: Error de carga, devolución…" style="font-size:.85rem;">`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#c0392b',
-    cancelButtonColor:  '#6b7280',
-    confirmButtonText: 'Sí, cancelar compra',
-    cancelButtonText:  'No, mantener',
-    preConfirm: () => {
-      return document.getElementById('swal-motivo').value;
-    }
-  }).then(async (result) => {
-    if (!result.isConfirmed) return;
-    try {
-      const res = await ajax('ajax/cancelar_compra.php', { id, motivo: result.value || '' });
-      if (res.ok) {
-        await cargarHistorial();
-        Swal.fire({ icon:'success', title:'Compra cancelada', text:'El stock fue ajustado correctamente.', confirmButtonColor:'#0a0a0a', timer:2500, timerProgressBar:true });
-      } else {
-        Swal.fire({ icon:'error', title:'Error', text: res.msg||'No se pudo cancelar.', confirmButtonColor:'#0a0a0a' });
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#c0392b',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, cancelar compra',
+      cancelButtonText: 'No, mantener',
+      preConfirm: () => {
+        return document.getElementById('swal-motivo').value;
       }
-    } catch(e) { toast('Error de conexión','error'); }
-  });
-}
-
-/* ══════════════════════════
-   REACTIVAR COMPRA
-══════════════════════════ */
-function confirmarReactivarCompra(id, materia, cantidad) {
-  Swal.fire({
-    title: '¿Reactivar esta compra?',
-    html: `<p>Se sumarán nuevamente <strong>+${cantidad} uds</strong> de <strong>${materia}</strong> al stock.</p>`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#1a7a4a',
-    cancelButtonColor:  '#6b7280',
-    confirmButtonText: 'Sí, reactivar',
-    cancelButtonText:  'No',
-  }).then(async (result) => {
-    if (!result.isConfirmed) return;
-    try {
-      const res = await ajax('ajax/reactivar_compra.php', { id });
-      if (res.ok) {
-        await cargarHistorial();
-        Swal.fire({ icon:'success', title:'Compra reactivada', text:'El stock fue actualizado correctamente.', confirmButtonColor:'#0a0a0a', timer:2500, timerProgressBar:true });
-      } else {
-        Swal.fire({ icon:'error', title:'Error', text: res.msg||'No se pudo reactivar.', confirmButtonColor:'#0a0a0a' });
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        const res = await ajax('ajax/cancelar_compra.php', {
+          id,
+          motivo: result.value || ''
+        });
+        if (res.ok) {
+          await cargarHistorial();
+          Swal.fire({
+            icon: 'success',
+            title: 'Compra cancelada',
+            text: 'El stock fue ajustado correctamente.',
+            confirmButtonColor: '#0a0a0a',
+            timer: 2500,
+            timerProgressBar: true
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res.msg || 'No se pudo cancelar.',
+            confirmButtonColor: '#0a0a0a'
+          });
+        }
+      } catch (e) {
+        toast('Error de conexión', 'error');
       }
-    } catch(e) { toast('Error de conexión','error'); }
-  });
-}
+    });
+  }
 
-/* ══════════════════════════
-   HISTORIAL
-══════════════════════════ */
-async function cargarHistorial() {
-  try {
-    const res   = await ajax('ajax/get_historial_compras.php');
-    const lista = res.data || [];
-    dtHistorial.clear();
-    lista.forEach(c => {
-      const esActiva    = c.estado === 'activa';
-      const cantHtml    = esActiva
-        ? `<span class="stock-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+${parseFloat(c.cantidad).toFixed(2)}</span>`
-        : `<span class="stock-down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 9 12 15 6 9"/></svg>${parseFloat(c.cantidad).toFixed(2)}</span>`;
-      const estadoHtml  = `<span class="badge-estado badge-${c.estado}">${c.estado}</span>`;
-      const accionHtml  = esActiva
-        ? `<button class="btn-sm warning" onclick="confirmarCancelarCompra(${c.id},'${esc(c.materia_nombre)}',${parseFloat(c.cantidad).toFixed(2)})">
+  /* ══════════════════════════
+     REACTIVAR COMPRA
+  ══════════════════════════ */
+  function confirmarReactivarCompra(id, materia, cantidad) {
+    Swal.fire({
+      title: '¿Reactivar esta compra?',
+      html: `<p>Se sumarán nuevamente <strong>+${cantidad} uds</strong> de <strong>${materia}</strong> al stock.</p>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1a7a4a',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, reactivar',
+      cancelButtonText: 'No',
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        const res = await ajax('ajax/reactivar_compra.php', {
+          id
+        });
+        if (res.ok) {
+          await cargarHistorial();
+          Swal.fire({
+            icon: 'success',
+            title: 'Compra reactivada',
+            text: 'El stock fue actualizado correctamente.',
+            confirmButtonColor: '#0a0a0a',
+            timer: 2500,
+            timerProgressBar: true
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res.msg || 'No se pudo reactivar.',
+            confirmButtonColor: '#0a0a0a'
+          });
+        }
+      } catch (e) {
+        toast('Error de conexión', 'error');
+      }
+    });
+  }
+
+  /* ══════════════════════════
+     HISTORIAL
+  ══════════════════════════ */
+  async function cargarHistorial() {
+    try {
+      const res = await ajax('ajax/get_historial_compras.php');
+      const lista = res.data || [];
+      dtHistorial.clear();
+      lista.forEach(c => {
+        const esActiva = c.estado === 'activa';
+        const cantHtml = esActiva ?
+          `<span class="stock-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+${parseFloat(c.cantidad).toFixed(2)}</span>` :
+          `<span class="stock-down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 9 12 15 6 9"/></svg>${parseFloat(c.cantidad).toFixed(2)}</span>`;
+        const estadoHtml = `<span class="badge-estado badge-${c.estado}">${c.estado}</span>`;
+        const accionHtml = esActiva ?
+          `<button class="btn-sm warning" onclick="confirmarCancelarCompra(${c.id},'${esc(c.materia_nombre)}',${parseFloat(c.cantidad).toFixed(2)})">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
              Cancelar
-           </button>`
-        : `<div style="display:flex;flex-direction:column;gap:.35rem;align-items:flex-start;">
+           </button>` :
+          `<div style="display:flex;flex-direction:column;gap:.35rem;align-items:flex-start;">
              <span style="font-size:.75rem;color:var(--ink-soft);">${c.cancelado_motivo||'—'}</span>
              <button class="btn-sm" onclick="confirmarReactivarCompra(${c.id},'${esc(c.materia_nombre)}',${parseFloat(c.cantidad).toFixed(2)})" style="color:var(--success);border-color:var(--success);">
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
                Reactivar
              </button>
            </div>`;
-      dtHistorial.row.add([
-        `<strong>${c.id}</strong>`,
-        esc(c.proveedor_nombre),
-        esc(c.materia_nombre),
-        cantHtml,
-        c.costo ? '$'+parseFloat(c.costo).toFixed(5) : '—',
-        c.created_at,
-        c.stock_anterior != null ? parseFloat(c.stock_anterior).toFixed(2) : '—',
-        `<strong>${parseFloat(c.stock_nuevo||0).toFixed(2)}</strong>`,
-        estadoHtml,
-        accionHtml
-      ]);
-    });
-    dtHistorial.draw();
-  } catch(e) {}
-}
+        dtHistorial.row.add([
+          `<strong>${c.id}</strong>`,
+          esc(c.proveedor_nombre),
+          esc(c.materia_nombre),
+          cantHtml,
+          c.costo ? '$' + parseFloat(c.costo).toFixed(5) : '—',
+          c.created_at,
+          c.stock_anterior != null ? parseFloat(c.stock_anterior).toFixed(2) : '—',
+          `<strong>${parseFloat(c.stock_nuevo||0).toFixed(2)}</strong>`,
+          estadoHtml,
+          accionHtml
+        ]);
+      });
+      dtHistorial.draw();
+    } catch (e) {}
+  }
 
-/* ══ Util ══ */
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  /* ══ Util ══ */
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 </script>
 
 <?php include '../../panel/dashboard/layaut/footer.php'; ?>
