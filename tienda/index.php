@@ -254,6 +254,11 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
           <button class="box-sz-btn" data-size="6"  onclick="selectBoxSize(6,this)"><div class="box-sz-num">6</div><div class="box-sz-lbl">unidades</div></button>
           <button class="box-sz-btn" data-size="12" onclick="selectBoxSize(12,this)"><div class="box-sz-num">12</div><div class="box-sz-lbl">unidades</div></button>
           <button class="box-sz-btn" data-size="24" onclick="selectBoxSize(24,this)"><div class="box-sz-num">24</div><div class="box-sz-lbl">unidades</div></button>
+          <button class="box-sz-btn box-sz-custom" onclick="selectBoxSize(0,this)">
+            <div class="box-sz-num" style="font-size:20px">✏️</div>
+            <div class="box-sz-lbl">Personalizado</div>
+            <input class="box-custom-input" id="customSizeInput" type="number" min="1" max="200" placeholder="¿Cuántas?" onclick="event.stopPropagation()" oninput="onCustomSizeInput(this)">
+          </button>
         </div>
       </div>
       <div class="box-step" id="boxStep2">
@@ -390,7 +395,16 @@ const CK='canetto_cart';
 const getCart=()=>{try{return JSON.parse(localStorage.getItem(CK)||'[]')}catch{return[]}};
 const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart()};
 
+function requireLogin(){
+  if(!CLIENTE_PHP){
+    showToast('Iniciá sesión para continuar 👤','err');
+    setTimeout(()=>window.location.href='login.php',1400);
+    return true;
+  }
+  return false;
+}
 function addToCart(btn){
+  if(requireLogin()) return;
   const id=+btn.dataset.id,nombre=btn.dataset.nombre,precio=+btn.dataset.precio,tipo=btn.dataset.tipo,stock=+btn.dataset.stock;
   const cart=getCart(),ex=cart.find(i=>i.id===id);
   if(ex){if(ex.cantidad>=stock){showToast('Máximo stock disponible','err');return}ex.cantidad++}
@@ -430,6 +444,7 @@ document.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',f
 // ── BOX BUILDER ─────────────────────────
 let box={size:0,items:{}};
 function openBoxModal(){
+  if(requireLogin()) return;
   box={size:0,items:{}};
   document.getElementById('boxStep1').classList.add('on');
   document.getElementById('boxStep2').classList.remove('on');
@@ -437,11 +452,24 @@ function openBoxModal(){
   document.getElementById('boxFoot2').style.display='none';
   document.getElementById('btnBoxNext').disabled=true;
   document.querySelectorAll('.box-sz-btn').forEach(b=>b.classList.remove('on'));
+  const ci=document.getElementById('customSizeInput');if(ci)ci.value='';
   document.getElementById('boxModal').classList.add('on');
   document.body.style.overflow='hidden';
 }
 function closeBoxModal(){document.getElementById('boxModal').classList.remove('on');document.body.style.overflow=''}
-function selectBoxSize(s,b){box.size=s;document.querySelectorAll('.box-sz-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('btnBoxNext').disabled=false}
+function selectBoxSize(s,b){
+  box.size=s;
+  document.querySelectorAll('.box-sz-btn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  document.getElementById('btnBoxNext').disabled=(s<=0);
+}
+function onCustomSizeInput(inp){
+  const v=parseInt(inp.value)||0;
+  box.size=v>0?v:0;
+  document.querySelectorAll('.box-sz-btn').forEach(x=>x.classList.remove('on'));
+  if(v>0) inp.closest('.box-sz-btn').classList.add('on');
+  document.getElementById('btnBoxNext').disabled=(box.size<=0);
+}
 function goBoxStep2(){
   if(!box.size)return;box.items={};
   document.getElementById('boxStep1').classList.remove('on');document.getElementById('boxStep2').classList.add('on');

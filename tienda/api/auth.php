@@ -11,7 +11,9 @@ if ($action === 'logout_redirect') {
 }
 
 header('Content-Type: application/json');
-$pdo = Conexion::conectar();
+try { $pdo = Conexion::conectar(); } catch (Throwable $e) {
+    echo json_encode(['success'=>false,'message'=>'Error de base de datos']); exit;
+}
 
 switch ($action) {
 

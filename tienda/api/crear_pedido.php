@@ -5,15 +5,6 @@ require_once __DIR__ . '/../../config/audit.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 header('Content-Type: application/json');
 
-$pdo = Conexion::conectar();
-
-// Add tienda columns to ventas if they don't exist yet (idempotent via try/catch)
-foreach ([
-    "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
-    "ALTER TABLE ventas ADD COLUMN sucursal_retiro_idsucursal INT NULL",
-    "ALTER TABLE ventas ADD COLUMN observacion_cliente TEXT NULL",
-] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
-
 $input       = json_decode(file_get_contents('php://input'), true) ?: [];
 $carrito     = $input['carrito']     ?? [];
 $cliente     = $input['cliente']     ?? null;
@@ -27,6 +18,14 @@ if (empty($carrito) || !$metodo_pago) {
 }
 
 try {
+    $pdo = Conexion::conectar();
+
+    // Add tienda columns to ventas if they don't exist yet (idempotent via try/catch)
+    foreach ([
+        "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
+        "ALTER TABLE ventas ADD COLUMN sucursal_retiro_idsucursal INT NULL",
+        "ALTER TABLE ventas ADD COLUMN observacion_cliente TEXT NULL",
+    ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
     $pdo->beginTransaction();
 
     // --- Resolver cliente ---
@@ -95,6 +94,6 @@ try {
     echo json_encode(['success'=>true, 'id_venta'=>$id_venta]);
 
 } catch (Throwable $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
+    if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
     echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
 }
