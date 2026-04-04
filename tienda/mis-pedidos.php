@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/conexion.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (!isset($_SESSION['tienda_cliente_id'])) {
-    header('Location: login.php'); exit;
+    header('Location: /canetto/login/login.php'); exit;
 }
 
 $pdo = Conexion::conectar();

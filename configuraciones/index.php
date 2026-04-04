@@ -7,7 +7,7 @@ include '../panel/dashboard/layaut/nav.php';
 $pdo = Conexion::conectar();
 
 $counts = ['usuarios' => 0, 'roles' => 0, 'roles_usuario' => 0,
-           'metodos_pago' => 0, 'sucursales' => 0, 'auditoria' => 0];
+           'metodos_pago' => 0, 'sucursales' => 0, 'auditoria' => 0, 'ofertas' => 0];
 
 try { $counts['usuarios']      = (int)$pdo->query("SELECT COUNT(*) FROM usuario")->fetchColumn(); }      catch(Exception $e) {}
 try { $counts['roles']         = (int)$pdo->query("SELECT COUNT(*) FROM roles")->fetchColumn(); }        catch(Exception $e) {}
@@ -15,6 +15,7 @@ try { $counts['roles_usuario'] = (int)$pdo->query("SELECT COUNT(DISTINCT usuario
 try { $counts['metodos_pago']  = (int)$pdo->query("SELECT COUNT(*) FROM metodo_pago")->fetchColumn(); }  catch(Exception $e) {}
 try { $counts['sucursales']    = (int)$pdo->query("SELECT COUNT(*) FROM sucursal")->fetchColumn(); }     catch(Exception $e) {}
 try { $counts['auditoria']     = (int)$pdo->query("SELECT COUNT(*) FROM auditoria")->fetchColumn(); }    catch(Exception $e) {}
+try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta WHERE activo=1")->fetchColumn(); } catch(Exception $e) {}
 ?>
 
 <link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
@@ -279,6 +280,22 @@ try { $counts['auditoria']     = (int)$pdo->query("SELECT COUNT(*) FROM auditori
                     <div class="hub-card__count-label">registradas</div>
                 </div>
                 <div class="hub-card__btn">Acceder <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i></div>
+            </div>
+        </a>
+
+        <!-- Ofertas Tienda -->
+        <a class="hub-card" href="/canetto/configuraciones/ofertas.php">
+            <div class="hub-card__icon"><i class="fa-solid fa-tag"></i></div>
+            <div>
+                <div class="hub-card__title">Ofertas Tienda</div>
+                <div class="hub-card__desc">Carrusel de promociones y ofertas que aparecen en la tienda online.</div>
+            </div>
+            <div class="hub-card__footer">
+                <div>
+                    <div class="hub-card__count"><?= $counts['ofertas'] ?></div>
+                    <div class="hub-card__count-label">activas</div>
+                </div>
+                <div class="hub-card__btn">Gestionar <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i></div>
             </div>
         </a>
 

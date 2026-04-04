@@ -14,14 +14,16 @@ try {
         `emoji` VARCHAR(10) DEFAULT '🎉',
         `tipo` VARCHAR(20) DEFAULT 'promo',
         `valor` DECIMAL(10,2) NULL,
+        `imagen` VARCHAR(255) NULL,
         `activo` TINYINT DEFAULT 1,
         `fecha_inicio` DATE NULL,
         `fecha_fin` DATE NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    try { $pdo->exec("ALTER TABLE oferta ADD COLUMN imagen VARCHAR(255) NULL"); } catch (Throwable $e) {}
 
     $ofertas = $pdo->query("
-        SELECT titulo, descripcion, emoji, tipo, valor FROM oferta
+        SELECT titulo, descripcion, emoji, tipo, valor, imagen FROM oferta
         WHERE activo = 1
           AND (fecha_inicio IS NULL OR fecha_inicio <= CURDATE())
           AND (fecha_fin   IS NULL OR fecha_fin   >= CURDATE())
@@ -45,8 +47,14 @@ try {
         ORDER BY CASE p.tipo WHEN 'box' THEN 0 ELSE 1 END, p.nombre ASC
     ")->fetchAll();
 
+    try {
+        $pdo->exec("ALTER TABLE sucursal ADD COLUMN latitud DECIMAL(10,8) NULL");
+        $pdo->exec("ALTER TABLE sucursal ADD COLUMN longitud DECIMAL(11,8) NULL");
+    } catch (Throwable $e) {}
+
     $sucursales = $pdo->query("
-        SELECT idsucursal, nombre, direccion, ciudad, provincia, telefono, email
+        SELECT idsucursal, nombre, direccion, ciudad, provincia, telefono, email,
+               latitud, longitud
         FROM sucursal WHERE activo = 1 ORDER BY nombre
     ")->fetchAll();
 
@@ -70,6 +78,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <title>Canetto — Galletitas Artesanales</title>
 <meta name="description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="tienda.css">
 </head>
 <body class="has-bottom-nav">
@@ -96,7 +105,11 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   <div class="swiper-wrapper">
     <?php foreach ($ofertas as $i => $o): ?>
     <div class="swiper-slide">
-      <div class="slide-bg <?= $bgClasses[$i % 4] ?>"><?= htmlspecialchars($o['emoji'] ?? '🍪') ?></div>
+      <?php if (!empty($o['imagen'])): ?>
+        <div class="slide-bg" style="background:url('/canetto/img/ofertas/<?= rawurlencode($o['imagen']) ?>') center/cover no-repeat;"></div>
+      <?php else: ?>
+        <div class="slide-bg <?= $bgClasses[$i % 4] ?>"><?= htmlspecialchars($o['emoji'] ?? '🍪') ?></div>
+      <?php endif; ?>
       <div class="slide-content">
         <span class="slide-tag"><?= htmlspecialchars($tagLabels[$o['tipo']] ?? 'Canetto') ?></span>
         <div class="slide-title"><?= htmlspecialchars($o['titulo']) ?></div>
@@ -184,32 +197,43 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
     <div class="sec-title">Nuestras <em>sucursales</em></div>
     <div class="sec-sub">Retirá tu pedido en la más cercana</div>
   </div>
+  <button class="btn-nearest" id="btnNearest" onclick="findNearest()">
+    📍 La más cercana
+  </button>
 </div>
-<div class="branch-grid">
-  <?php foreach ($sucursales as $s):
+
+<!-- Banner "más cercana" -->
+<div id="nearestBanner" style="display:none;margin:0 20px 12px;padding:12px 16px;background:var(--pk-lt);border-left:3px solid var(--pk);border-radius:10px;font-size:13px;color:var(--dk)"></div>
+
+<div class="branch-grid" id="branchGrid">
+  <?php foreach ($sucursales as $i => $s):
     $addr = implode(', ', array_filter([$s['direccion'], $s['ciudad'], $s['provincia']]));
+    $lat  = !empty($s['latitud'])  ? (float)$s['latitud']  : null;
+    $lng  = !empty($s['longitud']) ? (float)$s['longitud'] : null;
+    $osmDir = ($lat && $lng)
+        ? "https://www.openstreetmap.org/directions?to={$lat},{$lng}"
+        : ($addr ? "https://www.openstreetmap.org/search?query=" . urlencode($addr) : null);
   ?>
-  <div class="branch-card">
+  <div class="branch-card" id="branch-<?= $i ?>"
+       data-lat="<?= $lat ?? '' ?>" data-lng="<?= $lng ?? '' ?>"
+       data-nombre="<?= htmlspecialchars($s['nombre']) ?>">
     <div class="branch-head">
       <div class="branch-ic">📍</div>
       <div class="branch-name"><?= htmlspecialchars($s['nombre']) ?></div>
+      <span class="branch-nearest-badge" id="badge-<?= $i ?>" style="display:none">⭐ Más cercana</span>
     </div>
     <?php if ($addr): ?><div class="branch-addr"><?= htmlspecialchars($addr) ?></div><?php endif; ?>
-    <?php if ($addr): ?>
-    <iframe
-      class="branch-map"
-      loading="lazy"
-      allowfullscreen
-      referrerpolicy="no-referrer-when-downgrade"
-      src="https://maps.google.com/maps?q=<?= urlencode($addr) ?>&output=embed&z=15">
-    </iframe>
+    <?php if ($lat && $lng): ?>
+    <div class="branch-map" id="bmap-<?= $i ?>"></div>
+    <?php elseif ($addr): ?>
+    <div class="branch-no-map">📍 <?= htmlspecialchars($addr) ?></div>
     <?php endif; ?>
     <div class="branch-chips">
       <?php if ($s['telefono']): ?><span class="branch-chip">📞 <?= htmlspecialchars($s['telefono']) ?></span><?php endif; ?>
       <?php if ($s['email']): ?><span class="branch-chip">✉️ <?= htmlspecialchars($s['email']) ?></span><?php endif; ?>
     </div>
-    <?php if ($addr): ?>
-    <a href="https://www.google.com/maps/search/<?= urlencode($addr) ?>" target="_blank" rel="noopener" class="btn-dir">🗺️ Abrir en Maps</a>
+    <?php if ($osmDir): ?>
+    <a href="<?= $osmDir ?>" target="_blank" rel="noopener" class="btn-dir">🗺️ Cómo llegar</a>
     <?php endif; ?>
   </div>
   <?php endforeach; ?>
@@ -389,6 +413,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <button class="fab" id="fabCart" onclick="openCart()">🛒<span class="fab-badge" id="fabBadge">0</span></button>
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── PHP DATA ────────────────────────────
 const PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
@@ -406,7 +431,7 @@ const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart()};
 function requireLogin(){
   if(!CLIENTE_PHP){
     showToast('Iniciá sesión para continuar 👤','err');
-    setTimeout(()=>window.location.href='login.php',1400);
+    setTimeout(()=>window.location.href='/canetto/login/login.php',1400);
     return true;
   }
   return false;
@@ -592,6 +617,147 @@ function showToast(msg,type){const t=document.getElementById('toast');t.textCont
 // ── INIT ──────────────────────────────────
 renderCart();
 document.getElementById('btnOpenCart').addEventListener('click',openCart);
+
+// ── BRANCH MAPS (Leaflet + OpenStreetMap) ──────────────────────────────
+const pinkIcon = L.divIcon({
+  html:'<div style="width:14px;height:14px;background:#E91E63;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>',
+  iconSize:[14,14], iconAnchor:[7,7], className:''
+});
+
+function initBranchMaps(){
+  document.querySelectorAll('[id^="bmap-"]').forEach(el=>{
+    const card = el.closest('.branch-card');
+    const lat  = parseFloat(card.dataset.lat);
+    const lng  = parseFloat(card.dataset.lng);
+    if(!lat||!lng) return;
+    const m = L.map(el,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+    L.marker([lat,lng],{icon:pinkIcon}).addTo(m);
+    m.setView([lat,lng],16);
+  });
+}
+initBranchMaps();
+
+// ── GEOLOCATION: sucursal más cercana ──────────────────────────────────
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371, dL=Math.PI/180;
+  const a=Math.sin((lat2-lat1)*dL/2)**2 + Math.cos(lat1*dL)*Math.cos(lat2*dL)*Math.sin((lng2-lng1)*dL/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+async function findNearest() {
+
+  const btn = document.getElementById('btnNearest');
+
+  // 🔥 detectar estado del permiso
+  if (navigator.permissions) {
+    const perm = await navigator.permissions.query({ name: 'geolocation' });
+
+    // ❌ BLOQUEADO
+    if (perm.state === 'denied') {
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Ubicación bloqueada',
+        html: `
+          Tenés la ubicación bloqueada ❌<br><br>
+          👉 Tocá el candado 🔒 arriba en la barra del navegador<br>
+          👉 Activá <b>Ubicación → Permitir</b><br><br>
+          Luego recargá la página
+        `,
+        confirmButtonText: 'Entendido'
+      });
+
+      return;
+    }
+  }
+
+  const cards = [...document.querySelectorAll('.branch-card[data-lat]')]
+    .filter(c => c.dataset.lat && c.dataset.lng);
+
+  if (!cards.length) {
+    showToast('Las sucursales aún no tienen coordenadas cargadas', 'err');
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    showToast('Tu navegador no soporta geolocalización', 'err');
+    return;
+  }
+
+  btn.textContent = '📍 Buscando...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+
+    // ✅ SUCCESS
+    pos => {
+
+      const ulat = pos.coords.latitude;
+      const ulng = pos.coords.longitude;
+
+      let minDist = Infinity, nearest = null, nearestIdx = null;
+
+      cards.forEach(c => {
+        const d = haversine(
+          ulat,
+          ulng,
+          parseFloat(c.dataset.lat),
+          parseFloat(c.dataset.lng)
+        );
+
+        if (d < minDist) {
+          minDist = d;
+          nearest = c;
+          nearestIdx = c.id.split('-')[1];
+        }
+      });
+
+      document.querySelectorAll('.branch-card')
+        .forEach(c => c.classList.remove('branch-highlight'));
+
+      document.querySelectorAll('.branch-nearest-badge')
+        .forEach(b => b.style.display = 'none');
+
+      nearest.classList.add('branch-highlight');
+      document.getElementById('badge-' + nearestIdx).style.display = 'inline-flex';
+
+      const km = minDist < 1
+        ? (minDist * 1000).toFixed(0) + ' m'
+        : (minDist.toFixed(1) + ' km');
+
+      document.getElementById('nearestBanner').style.display = 'block';
+      document.getElementById('nearestBanner').innerHTML =
+        `📍 La sucursal más cercana es <strong>${nearest.dataset.nombre}</strong> — a <strong>${km}</strong> de tu ubicación`;
+
+      nearest.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      btn.textContent = '📍 La más cercana';
+      btn.disabled = false;
+    },
+
+    // ❌ ERROR
+    err => {
+
+      btn.textContent = '📍 La más cercana';
+      btn.disabled = false;
+
+      if (err.code === 1) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Permiso necesario',
+          text: 'Debés permitir la ubicación para continuar'
+        });
+      } else {
+        showToast('Error obteniendo ubicación', 'err');
+      }
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 10000
+    }
+  );
+}
 </script>
 
 <nav class="bottom-nav">

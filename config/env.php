@@ -11,3 +11,6 @@ define('DB_HOST', 'localhost');
 define('DB_NAME', 'canetto');
 define('DB_USER', 'root');
 define('DB_PASS', '');
+
+// Google Maps API Key — reemplazá con tu clave real
+define('MAPS_API_KEY', '');

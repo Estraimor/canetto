@@ -245,6 +245,12 @@ $current = $_SERVER['PHP_SELF'];
                 Sucursales
             </a>
 
+            <a href="<?= $baseUrl ?>/configuraciones/ofertas.php"
+               class="<?= str_contains($current,'ofertas') ? 'active' : '' ?>">
+                <i class="fa-solid fa-tag"></i>
+                Ofertas Tienda
+            </a>
+
             <a href="<?= $baseUrl ?>/configuraciones/auditoria.php"
                class="<?= str_contains($current,'auditoria') ? 'active' : '' ?>">
                 <i class="fa-solid fa-clipboard-list"></i>
@@ -273,6 +279,9 @@ $current = $_SERVER['PHP_SELF'];
             <span id="navClock">--:--:--</span>
         </div>
         <i class="fa-regular fa-user"></i>
-        <span>Luciano</span>
+        <span><?= htmlspecialchars(($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '')) ?></span>
+        <a href="/canetto/login/logout.php" title="Cerrar sesión" style="color:inherit;text-decoration:none;margin-left:6px;opacity:.6;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
     </div>
 </header>

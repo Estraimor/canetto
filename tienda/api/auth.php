@@ -6,8 +6,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 if ($action === 'logout_redirect') {
-    unset($_SESSION['tienda_cliente_id'], $_SESSION['tienda_cliente_nombre']);
-    header('Location: ../index.php'); exit;
+    header('Location: /canetto/login/logout.php'); exit;
 }
 
 header('Content-Type: application/json');
@@ -69,7 +68,12 @@ switch ($action) {
         break;
 
     case 'logout':
-        unset($_SESSION['tienda_cliente_id'], $_SESSION['tienda_cliente_nombre']);
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $p = session_get_cookie_params();
+            setcookie(session_name(), '', time()-42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+        }
+        session_destroy();
         echo json_encode(['success'=>true]);
         break;
 

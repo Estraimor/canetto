@@ -15,17 +15,23 @@ $ciudad    = trim($data['ciudad']    ?? '');
 $provincia = trim($data['provincia'] ?? '');
 $telefono  = trim($data['telefono']  ?? '');
 $email     = trim($data['email']     ?? '');
+$latitud   = isset($data['latitud'])  && $data['latitud']  !== null ? (float)$data['latitud']  : null;
+$longitud  = isset($data['longitud']) && $data['longitud'] !== null ? (float)$data['longitud'] : null;
 $activo    = isset($data['activo'])  ? (int)$data['activo'] : 1;
 
 if (!$nombre) { echo json_encode(['ok' => false, 'msg' => 'El nombre es requerido.']); exit; }
 
+// Ensure columns exist
+try { $pdo->exec("ALTER TABLE sucursal ADD COLUMN latitud DECIMAL(10,8) NULL");  } catch (Throwable $e) {}
+try { $pdo->exec("ALTER TABLE sucursal ADD COLUMN longitud DECIMAL(11,8) NULL"); } catch (Throwable $e) {}
+
 if ($id) {
-    $stmt = $pdo->prepare("UPDATE sucursal SET nombre=?,direccion=?,ciudad=?,provincia=?,telefono=?,email=?,activo=? WHERE idsucursal=?");
-    $stmt->execute([$nombre, $direccion ?: null, $ciudad ?: null, $provincia ?: null, $telefono ?: null, $email ?: null, $activo, $id]);
+    $stmt = $pdo->prepare("UPDATE sucursal SET nombre=?,direccion=?,ciudad=?,provincia=?,telefono=?,email=?,latitud=?,longitud=?,activo=? WHERE idsucursal=?");
+    $stmt->execute([$nombre, $direccion ?: null, $ciudad ?: null, $provincia ?: null, $telefono ?: null, $email ?: null, $latitud, $longitud, $activo, $id]);
     _audit($pdo, 'editar', 'sucursales', 'Editó sucursal: ' . $nombre);
 } else {
-    $stmt = $pdo->prepare("INSERT INTO sucursal (nombre,direccion,ciudad,provincia,telefono,email,activo) VALUES (?,?,?,?,?,?,?)");
-    $stmt->execute([$nombre, $direccion ?: null, $ciudad ?: null, $provincia ?: null, $telefono ?: null, $email ?: null, $activo]);
+    $stmt = $pdo->prepare("INSERT INTO sucursal (nombre,direccion,ciudad,provincia,telefono,email,latitud,longitud,activo) VALUES (?,?,?,?,?,?,?,?,?)");
+    $stmt->execute([$nombre, $direccion ?: null, $ciudad ?: null, $provincia ?: null, $telefono ?: null, $email ?: null, $latitud, $longitud, $activo]);
     _audit($pdo, 'crear', 'sucursales', 'Creó sucursal: ' . $nombre);
 }
 

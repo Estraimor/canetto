@@ -20,5 +20,5 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `sucursal` (
     PRIMARY KEY (`idsucursal`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-$rows = $pdo->query("SELECT idsucursal, nombre, direccion, ciudad, provincia, telefono, email, activo FROM sucursal ORDER BY nombre")->fetchAll(PDO::FETCH_ASSOC);
+$rows = $pdo->query("SELECT idsucursal, nombre, direccion, ciudad, provincia, telefono, email, latitud, longitud, activo FROM sucursal ORDER BY nombre")->fetchAll(PDO::FETCH_ASSOC);
 echo json_encode($rows);
