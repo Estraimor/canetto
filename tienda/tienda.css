@@ -47,6 +47,8 @@ body {
    para que position:fixed (bottom-nav, fab, drawers) siga pegado al viewport */
 #page-wrap {
   animation: pgFadeIn .22s ease both;
+  /* Empuja el contenido para que no quede bajo el bottom-nav (62px) + margen */
+  padding-bottom: 80px;
 }
 body.page-exit #page-wrap {
   animation: pgFadeOut .2s ease both;
@@ -887,7 +889,7 @@ body.page-exit #page-wrap {
   border-radius: 22px 22px 0 0;
   width: 100%;
   max-width: 580px;
-  max-height: 92vh;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
   animation: su 0.3s ease;
@@ -928,6 +930,7 @@ body.page-exit #page-wrap {
 }
 .modal-foot {
   padding: 14px 20px;
+  padding-bottom: max(20px, calc(14px + env(safe-area-inset-bottom, 0px)));
   border-top: 1px solid #f0f0f0;
   flex-shrink: 0;
 }
