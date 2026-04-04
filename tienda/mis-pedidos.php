@@ -66,16 +66,16 @@ $tl = [
 <title>Mis Pedidos — Canetto</title>
 <link rel="stylesheet" href="tienda.css">
 </head>
-<body>
+<body class="has-bottom-nav">
+<div id="page-wrap">
 
 <header class="t-nav">
   <a href="index.php" class="t-brand">
-    <div class="t-brand-icon">🍪</div>
+    <div class="t-brand-icon">
+      <img src="img/logo.png" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
+    </div>
     <span class="t-brand-name">Canetto</span>
   </a>
-  <div class="t-actions">
-    <a href="api/auth.php?action=logout_redirect" class="t-btn" title="Cerrar sesión">🚪</a>
-  </div>
 </header>
 
 <div class="page-hd">
@@ -147,7 +147,34 @@ $tl = [
 
 <footer class="t-footer">
   <div class="t-footer-brand">Canetto</div>
+  <div class="t-footer-tag">Galletitas artesanales hechas con amor ❤️</div>
+  <div class="t-footer-links">
+    <a href="index.php">Tienda</a>
+    <a href="mis-pedidos.php">Mis pedidos</a>
+    <a href="login.php">Mi cuenta</a>
+  </div>
   <div class="t-footer-copy">&copy; <?= date('Y') ?> Canetto. Todos los derechos reservados.</div>
 </footer>
+</div><!-- /page-wrap -->
+
+<nav class="bottom-nav">
+  <a href="index.php" class="bn-item">
+    <span class="bn-ic">🏠</span>
+    <span>Inicio</span>
+  </a>
+  <a href="mis-pedidos.php" class="bn-item active">
+    <span class="bn-ic">📦</span>
+    <span>Mis pedidos</span>
+  </a>
+  <a href="index.php#sucursales" class="bn-item">
+    <span class="bn-ic">📍</span>
+    <span>Sucursales</span>
+  </a>
+  <a href="mi-cuenta.php" class="bn-item">
+    <span class="bn-ic">👤</span>
+    <span>Mi cuenta</span>
+  </a>
+</nav>
+<script src="transitions.js"></script>
 </body>
 </html>

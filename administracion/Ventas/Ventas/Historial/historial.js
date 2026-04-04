@@ -225,15 +225,15 @@ const HistorialApp = (() => {
 
   // ─── INIT ─────────────────────────────────
   function init() {
+    // Hoy por defecto en el filtro de fecha (ANTES de cargarVentas para que el filtro aplique desde el inicio)
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('filtro-fecha').value = hoy;
+
     cargarVentas();
 
     document.getElementById('modal-detalle').addEventListener('click', (e) => {
       if (e.target === document.getElementById('modal-detalle')) cerrarDetalle();
     });
-
-    // Hoy por defecto en el filtro de fecha
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('filtro-fecha').value = hoy;
   }
 
   document.addEventListener('DOMContentLoaded', init);

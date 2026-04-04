@@ -16,6 +16,7 @@ if (isset($_SESSION['tienda_cliente_id'])) {
 <link rel="stylesheet" href="tienda.css">
 </head>
 <body>
+<div id="page-wrap">
 <div class="auth-wrap">
   <div class="auth-card">
     <div class="auth-logo">
@@ -57,6 +58,7 @@ if (isset($_SESSION['tienda_cliente_id'])) {
     </p>
   </div>
 </div>
+</div><!-- /page-wrap -->
 
 <script>
 function sw(tab){
@@ -92,5 +94,6 @@ async function doRegister(){
   btn.disabled=false;btn.textContent='Crear cuenta →';
 }
 </script>
+<script src="transitions.js"></script>
 </body>
 </html>

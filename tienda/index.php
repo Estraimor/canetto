@@ -72,20 +72,18 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 <link rel="stylesheet" href="tienda.css">
 </head>
-<body>
+<body class="has-bottom-nav">
+<div id="page-wrap">
 
 <!-- ── HEADER ──────────────────── -->
 <header class="t-nav">
   <a href="index.php" class="t-brand">
-    <div class="t-brand-icon">🍪</div>
+    <div class="t-brand-icon">
+      <img src="../img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
+    </div>
     <span class="t-brand-name">Canetto</span>
   </a>
   <div class="t-actions">
-    <?php if ($cliente_id): ?>
-      <a href="mis-pedidos.php" class="t-btn" title="Mis pedidos">👤</a>
-    <?php else: ?>
-      <a href="login.php" class="t-btn" title="Iniciar sesión">👤</a>
-    <?php endif; ?>
     <button class="t-btn" id="btnOpenCart" title="Carrito">
       🛒
       <span class="t-cart-badge" id="cartBadge">0</span>
@@ -197,12 +195,21 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
       <div class="branch-name"><?= htmlspecialchars($s['nombre']) ?></div>
     </div>
     <?php if ($addr): ?><div class="branch-addr"><?= htmlspecialchars($addr) ?></div><?php endif; ?>
+    <?php if ($addr): ?>
+    <iframe
+      class="branch-map"
+      loading="lazy"
+      allowfullscreen
+      referrerpolicy="no-referrer-when-downgrade"
+      src="https://maps.google.com/maps?q=<?= urlencode($addr) ?>&output=embed&z=15">
+    </iframe>
+    <?php endif; ?>
     <div class="branch-chips">
       <?php if ($s['telefono']): ?><span class="branch-chip">📞 <?= htmlspecialchars($s['telefono']) ?></span><?php endif; ?>
       <?php if ($s['email']): ?><span class="branch-chip">✉️ <?= htmlspecialchars($s['email']) ?></span><?php endif; ?>
     </div>
     <?php if ($addr): ?>
-    <a href="https://www.google.com/maps/search/<?= urlencode($addr) ?>" target="_blank" rel="noopener" class="btn-dir">🗺️ Cómo llegar</a>
+    <a href="https://www.google.com/maps/search/<?= urlencode($addr) ?>" target="_blank" rel="noopener" class="btn-dir">🗺️ Abrir en Maps</a>
     <?php endif; ?>
   </div>
   <?php endforeach; ?>
@@ -220,6 +227,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   </div>
   <div class="t-footer-copy">&copy; <?= date('Y') ?> Canetto. Todos los derechos reservados.</div>
 </footer>
+</div><!-- /page-wrap -->
 
 <!-- ── CART DRAWER ─────────────── -->
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
@@ -569,7 +577,7 @@ async function confirmOrder(){
   if(!met){setAlert('dAlert','Seleccioná un método de pago','err');return}
   const btn=document.getElementById('btnConfirm');btn.disabled=true;btn.textContent='Procesando...';
   try{const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({carrito:getCart(),cliente:ckCliente,metodo_pago:+met,sucursal_id:document.getElementById('ckSuc').value||null,observacion:document.getElementById('ckObs').value.trim(),total:total(getCart())})})).json();
-    if(d.success){document.getElementById('ckOrderNum').textContent='#'+d.id_venta;showCkStep('ckSuccess')}
+    if(d.success){document.getElementById('ckOrderNum').textContent='#'+d.id_venta;saveCart([]);renderCart();showCkStep('ckSuccess')}
     else setAlert('dAlert',d.message||'Error al procesar','err');
   }catch{setAlert('dAlert','Error de conexión. Intentá nuevamente.','err')}
   btn.disabled=false;btn.textContent='Confirmar pedido ✓';
@@ -585,5 +593,39 @@ function showToast(msg,type){const t=document.getElementById('toast');t.textCont
 renderCart();
 document.getElementById('btnOpenCart').addEventListener('click',openCart);
 </script>
+
+<nav class="bottom-nav">
+  <a href="index.php" class="bn-item active">
+    <span class="bn-ic">🏠</span>
+    <span>Inicio</span>
+  </a>
+  <?php if ($cliente_id): ?>
+  <a href="mis-pedidos.php" class="bn-item">
+    <span class="bn-ic">📦</span>
+    <span>Mis pedidos</span>
+  </a>
+  <?php else: ?>
+  <a href="login.php" class="bn-item">
+    <span class="bn-ic">📦</span>
+    <span>Mis pedidos</span>
+  </a>
+  <?php endif; ?>
+  <a href="#sucursales" class="bn-item">
+    <span class="bn-ic">📍</span>
+    <span>Sucursales</span>
+  </a>
+  <?php if ($cliente_id): ?>
+  <a href="mi-cuenta.php" class="bn-item">
+    <span class="bn-ic">👤</span>
+    <span>Mi cuenta</span>
+  </a>
+  <?php else: ?>
+  <a href="login.php" class="bn-item">
+    <span class="bn-ic">👤</span>
+    <span>Ingresar</span>
+  </a>
+  <?php endif; ?>
+</nav>
+<script src="transitions.js"></script>
 </body>
 </html>

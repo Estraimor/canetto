@@ -33,11 +33,39 @@ try {
     $stmtAnterior->execute([$id_venta]);
     $estadoAnterior = $stmtAnterior->fetchColumn() ?: '?';
 
+    // Obtener estado anterior numérico
+    $stmtEstAnterior = $pdo->prepare("SELECT estado_venta_idestado_venta FROM ventas WHERE idventas = ?");
+    $stmtEstAnterior->execute([$id_venta]);
+    $estadoAnteriorId = (int)$stmtEstAnterior->fetchColumn();
+
     $stmt = $pdo->prepare(
         "UPDATE ventas SET estado_venta_idestado_venta = :estado, updated_at = NOW()
          WHERE idventas = :id"
     );
     $stmt->execute([':estado' => $estado, ':id' => $id_venta]);
+
+    // Si pasa de Pendiente (1) a En Preparación (2), descontar stock HECHO
+    if ($estadoAnteriorId === 1 && $estado === 2) {
+        $stmtItems = $pdo->prepare("
+            SELECT productos_idproductos, cantidad
+            FROM detalle_ventas
+            WHERE ventas_idventas = ?
+        ");
+        $stmtItems->execute([$id_venta]);
+        $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtStock = $pdo->prepare("
+            UPDATE stock_productos
+            SET stock_actual = GREATEST(0, stock_actual - :cantidad)
+            WHERE productos_idproductos = :prod_id AND tipo_stock = 'HECHO'
+        ");
+        foreach ($items as $item) {
+            $stmtStock->execute([
+                ':cantidad' => $item['cantidad'],
+                ':prod_id'  => $item['productos_idproductos'],
+            ]);
+        }
+    }
 
     audit($pdo, 'editar', 'ventas',
         "Actualizó estado de venta #{$id_venta}: '{$estadoAnterior}' → '{$nombreEstado}'"

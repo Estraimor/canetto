@@ -73,6 +73,40 @@ switch ($action) {
         echo json_encode(['success'=>true]);
         break;
 
+    case 'update_profile':
+        if (!isset($_SESSION['tienda_cliente_id'])) {
+            echo json_encode(['success'=>false,'message'=>'No autenticado']); exit;
+        }
+        $uid      = (int)$_SESSION['tienda_cliente_id'];
+        $nombre   = trim($_POST['nombre']   ?? '');
+        $apellido = trim($_POST['apellido'] ?? '');
+        if (!$nombre) { echo json_encode(['success'=>false,'message'=>'El nombre es obligatorio']); exit; }
+        $upd = $pdo->prepare("UPDATE usuario SET nombre=?, apellido=?, updated_at=NOW() WHERE idusuario=?");
+        $upd->execute([$nombre, $apellido ?: null, $uid]);
+        $_SESSION['tienda_cliente_nombre'] = trim("$nombre $apellido");
+        echo json_encode(['success'=>true]);
+        break;
+
+    case 'change_password':
+        if (!isset($_SESSION['tienda_cliente_id'])) {
+            echo json_encode(['success'=>false,'message'=>'No autenticado']); exit;
+        }
+        $uid      = (int)$_SESSION['tienda_cliente_id'];
+        $actual   = $_POST['password_actual'] ?? '';
+        $nueva    = $_POST['password_nueva']  ?? '';
+        if (!$actual || !$nueva) { echo json_encode(['success'=>false,'message'=>'Datos incompletos']); exit; }
+        if (strlen($nueva) < 6)  { echo json_encode(['success'=>false,'message'=>'La contraseña debe tener al menos 6 caracteres']); exit; }
+        $row = $pdo->prepare("SELECT password_hash FROM usuario WHERE idusuario=?");
+        $row->execute([$uid]);
+        $hash = $row->fetchColumn();
+        if (!$hash || !password_verify($actual, $hash)) {
+            echo json_encode(['success'=>false,'message'=>'La contraseña actual es incorrecta']); exit;
+        }
+        $newHash = password_hash($nueva, PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE usuario SET password_hash=?, updated_at=NOW() WHERE idusuario=?")->execute([$newHash, $uid]);
+        echo json_encode(['success'=>true]);
+        break;
+
     default:
         echo json_encode(['success'=>false,'message'=>'Acción no reconocida']);
 }
