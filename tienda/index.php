@@ -78,7 +78,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <title>Canetto — Galletitas Artesanales</title>
 <meta name="description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <link rel="stylesheet" href="tienda.css">
 </head>
 <body class="has-bottom-nav">
@@ -224,16 +224,36 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
     </div>
     <?php if ($addr): ?><div class="branch-addr"><?= htmlspecialchars($addr) ?></div><?php endif; ?>
     <?php if ($lat && $lng): ?>
-    <div class="branch-map" id="bmap-<?= $i ?>"></div>
-    <?php elseif ($addr): ?>
-    <div class="branch-no-map">📍 <?= htmlspecialchars($addr) ?></div>
-    <?php endif; ?>
+  <iframe
+    width="100%"
+    height="200"
+    style="border:0; border-radius:12px;"
+    loading="lazy"
+    allowfullscreen
+    src="https://www.google.com/maps?q=<?= $lat ?>,<?= $lng ?>&z=15&output=embed">
+  </iframe>
+<?php elseif ($addr): ?>
+  <iframe
+    width="100%"
+    height="200"
+    style="border:0; border-radius:12px;"
+    loading="lazy"
+    allowfullscreen
+    src="https://www.google.com/maps?q=<?= urlencode($addr) ?>&z=15&output=embed">
+  </iframe>
+<?php endif; ?>
     <div class="branch-chips">
       <?php if ($s['telefono']): ?><span class="branch-chip">📞 <?= htmlspecialchars($s['telefono']) ?></span><?php endif; ?>
       <?php if ($s['email']): ?><span class="branch-chip">✉️ <?= htmlspecialchars($s['email']) ?></span><?php endif; ?>
     </div>
     <?php if ($osmDir): ?>
-    <a href="<?= $osmDir ?>" target="_blank" rel="noopener" class="btn-dir">🗺️ Cómo llegar</a>
+    <?php if ($lat && $lng): ?>
+<a href="https://www.google.com/maps/dir/?api=1&destination=<?= $lat ?>,<?= $lng ?>"
+   target="_blank"
+   class="btn-dir">
+   🧭 Cómo llegar
+</a>
+<?php endif; ?>
     <?php endif; ?>
   </div>
   <?php endforeach; ?>
@@ -413,7 +433,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <button class="fab" id="fabCart" onclick="openCart()">🛒<span class="fab-badge" id="fabBadge">0</span></button>
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 // ── PHP DATA ────────────────────────────
 const PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
@@ -619,24 +639,7 @@ renderCart();
 document.getElementById('btnOpenCart').addEventListener('click',openCart);
 
 // ── BRANCH MAPS (Leaflet + OpenStreetMap) ──────────────────────────────
-const pinkIcon = L.divIcon({
-  html:'<div style="width:14px;height:14px;background:#E91E63;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>',
-  iconSize:[14,14], iconAnchor:[7,7], className:''
-});
 
-function initBranchMaps(){
-  document.querySelectorAll('[id^="bmap-"]').forEach(el=>{
-    const card = el.closest('.branch-card');
-    const lat  = parseFloat(card.dataset.lat);
-    const lng  = parseFloat(card.dataset.lng);
-    if(!lat||!lng) return;
-    const m = L.map(el,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false});
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
-    L.marker([lat,lng],{icon:pinkIcon}).addTo(m);
-    m.setView([lat,lng],16);
-  });
-}
-initBranchMaps();
 
 // ── GEOLOCATION: sucursal más cercana ──────────────────────────────────
 function haversine(lat1,lng1,lat2,lng2){
