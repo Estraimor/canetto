@@ -1,7 +1,8 @@
 <?php
-// api/crear_venta.php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../../../config/conexion.php';
+require_once __DIR__ . '/../../../../config/audit.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -24,13 +25,22 @@ if (!$carrito || !$cliente || !$metodo_pago) {
 
 try {
     $pdo = Conexion::conectar();
+
+    // Obtener nombre del método de pago para auditoría
+    $stmtMP = $pdo->prepare("SELECT nombre FROM metodo_pago WHERE idmetodo_pago = ?");
+    $stmtMP->execute([$metodo_pago]);
+    $nombreMetodo = $stmtMP->fetchColumn() ?: "ID {$metodo_pago}";
+
     $pdo->beginTransaction();
 
     // 1. Resolver usuario
+    $clienteNuevo = false;
     if (isset($cliente['id'])) {
-        $idusuario = intval($cliente['id']);
+        $idusuario    = intval($cliente['id']);
+        $clienteNombre = trim(($cliente['nombre'] ?? '') . ' ' . ($cliente['apellido'] ?? ''));
     } else {
-        // Usuario nuevo — tabla tiene: nombre, apellido, dni, celular, password_hash
+        $clienteNuevo  = true;
+        $clienteNombre = trim(($cliente['nombre'] ?? '') . ' ' . ($cliente['apellido'] ?? ''));
         $pass_hash = password_hash(uniqid('', true), PASSWORD_DEFAULT);
         $stmt = $pdo->prepare(
             "INSERT INTO usuario (nombre, apellido, dni, celular, password_hash, activo, created_at, updated_at)
@@ -46,17 +56,13 @@ try {
         $idusuario = $pdo->lastInsertId();
     }
 
-    // 2. Crear venta — estado 2 = "En Preparacion" (venta presencial)
+    // 2. Crear venta
     $stmt = $pdo->prepare(
         "INSERT INTO ventas (usuario_idusuario, total, estado_venta_idestado_venta,
                              metodo_pago_idmetodo_pago, fecha, created_at, updated_at)
          VALUES (:usuario, :total, 2, :metodo, NOW(), NOW(), NOW())"
     );
-    $stmt->execute([
-        ':usuario' => $idusuario,
-        ':total'   => $total,
-        ':metodo'  => $metodo_pago,
-    ]);
+    $stmt->execute([':usuario' => $idusuario, ':total' => $total, ':metodo' => $metodo_pago]);
     $id_venta = $pdo->lastInsertId();
 
     // 3. Detalle de venta
@@ -64,6 +70,7 @@ try {
         "INSERT INTO detalle_ventas (ventas_idventas, productos_idproductos, cantidad, precio_unitario)
          VALUES (:venta, :producto, :cantidad, :precio)"
     );
+    $productosResumen = [];
     foreach ($carrito as $item) {
         $stmtDet->execute([
             ':venta'    => $id_venta,
@@ -71,9 +78,19 @@ try {
             ':cantidad' => intval($item['cantidad']),
             ':precio'   => floatval($item['precio']),
         ]);
+        $productosResumen[] = ($item['nombre'] ?? "Prod #{$item['id']}") . " x{$item['cantidad']}";
     }
 
     $pdo->commit();
+
+    audit($pdo, 'crear', 'ventas',
+        "Nueva venta #{$id_venta}" .
+        " | Cliente: {$clienteNombre}" . ($clienteNuevo ? ' (nuevo)' : '') .
+        " | Productos: " . implode(', ', $productosResumen) .
+        " | Total: $" . number_format($total, 2) .
+        " | Método: {$nombreMetodo}"
+    );
+
     echo json_encode(['success' => true, 'id_venta' => $id_venta]);
 
 } catch (Exception $e) {

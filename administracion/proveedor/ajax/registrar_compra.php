@@ -2,6 +2,7 @@
 define('APP_BOOT', true);
 session_start();
 require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../config/audit.php';
 
 header('Content-Type: application/json');
 
@@ -16,14 +17,19 @@ $costo         = isset($data['costo']) && $data['costo'] !== null && $data['cost
 $observaciones = trim($data['observaciones'] ?? '');
 
 if (!$idproveedor || !$idmateria || $cantidad <= 0) {
-    echo json_encode([
-        'ok'  => false,
-        'msg' => 'Datos incompletos o inválidos'
-    ]);
+    echo json_encode(['ok' => false, 'msg' => 'Datos incompletos o inválidos']);
     exit;
 }
 
 try {
+    // Obtener nombres para la auditoría antes de la transacción
+    $stmtMP = $pdo->prepare("SELECT nombre FROM materia_prima WHERE idmateria_prima = ?");
+    $stmtMP->execute([$idmateria]);
+    $nombreMateria = $stmtMP->fetchColumn() ?: "ID {$idmateria}";
+
+    $stmtProv = $pdo->prepare("SELECT nombre FROM proveedor WHERE idproveedor = ?");
+    $stmtProv->execute([$idproveedor]);
+    $nombreProveedor = $stmtProv->fetchColumn() ?: "ID {$idproveedor}";
 
     $pdo->beginTransaction();
 
@@ -59,53 +65,32 @@ try {
 
     // 4. Historial
     try {
-
         $stmtHist = $pdo->prepare("
             INSERT INTO compra_materia_prima
-            (
-                proveedor_idproveedor,
-                materia_prima_idmateria_prima,
-                cantidad,
-                costo,
-                stock_anterior,
-                stock_nuevo,
-                observaciones,
-                usuario_id,
-                created_at
-            )
+            (proveedor_idproveedor, materia_prima_idmateria_prima, cantidad, costo,
+             stock_anterior, stock_nuevo, observaciones, usuario_id, created_at)
             VALUES (?,?,?,?,?,?,?,?,NOW())
         ");
-
         $stmtHist->execute([
-            $idproveedor,
-            $idmateria,
-            $cantidad,
-            $costo,
-            $stockAnterior,
-            $nuevoStock,
-            $observaciones ?: null,
-            $usuario_id,
+            $idproveedor, $idmateria, $cantidad, $costo,
+            $stockAnterior, $nuevoStock, $observaciones ?: null, $usuario_id,
         ]);
-
-    } catch (PDOException $ignored) {
-        // tabla puede no existir
-    }
+    } catch (PDOException $ignored) {}
 
     $pdo->commit();
 
-    echo json_encode([
-        'ok'          => true,
-        'stock_nuevo' => $nuevoStock
-    ]);
+    $costoStr = $costo !== null ? '$' . number_format($costo, 2) : 'sin costo';
+    audit($pdo, 'registrar', 'compras',
+        "Compra registrada: {$nombreMateria} x {$cantidad} u." .
+        " | Proveedor: {$nombreProveedor}" .
+        " | Costo unitario: {$costoStr}" .
+        " | Stock anterior: {$stockAnterior} → Stock nuevo: {$nuevoStock}" .
+        ($observaciones ? " | Obs: {$observaciones}" : '')
+    );
+
+    echo json_encode(['ok' => true, 'stock_nuevo' => $nuevoStock]);
 
 } catch (Exception $e) {
-
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-
-    echo json_encode([
-        'ok'  => false,
-        'msg' => $e->getMessage()
-    ]);
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    echo json_encode(['ok' => false, 'msg' => $e->getMessage()]);
 }

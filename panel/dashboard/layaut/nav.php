@@ -209,10 +209,34 @@ $current = $_SERVER['PHP_SELF'];
             Configuraciones
         </span>
         <div class="submenu">
+            <a href="<?= $baseUrl ?>/configuraciones/index.php"
+               class="<?= str_ends_with($current,'configuraciones/index.php') ? 'active' : '' ?>">
+                <i class="fa-solid fa-grip"></i>
+                Panel general
+            </a>
+
             <a href="<?= $baseUrl ?>/configuraciones/usuarios.php"
-               class="<?= str_contains($current,'usuarios') ? 'active' : '' ?>">
-                <i class="fa-solid fa-gears"></i>
-                Configuraciones Generales
+               class="<?= str_contains($current,'configuraciones/usuarios') ? 'active' : '' ?>">
+                <i class="fa-solid fa-users"></i>
+                Usuarios
+            </a>
+
+            <a href="<?= $baseUrl ?>/configuraciones/roles.php"
+               class="<?= str_contains($current,'configuraciones/roles.php') ? 'active' : '' ?>">
+                <i class="fa-solid fa-shield-halved"></i>
+                Roles
+            </a>
+
+            <a href="<?= $baseUrl ?>/configuraciones/roles_usuario.php"
+               class="<?= str_contains($current,'roles_usuario') ? 'active' : '' ?>">
+                <i class="fa-solid fa-user-tag"></i>
+                Roles por usuario
+            </a>
+
+            <a href="<?= $baseUrl ?>/configuraciones/metodos_pago.php"
+               class="<?= str_contains($current,'metodos_pago') ? 'active' : '' ?>">
+                <i class="fa-solid fa-credit-card"></i>
+                Métodos de pago
             </a>
 
             <a href="<?= $baseUrl ?>/configuraciones/sucursales.php"
@@ -221,10 +245,10 @@ $current = $_SERVER['PHP_SELF'];
                 Sucursales
             </a>
 
-            <a href="<?= $baseUrl ?>/ventas/metodos_pago.php"
-               class="<?= str_contains($current,'metodos_pago') ? 'active' : '' ?>">
-                <i class="fa-solid fa-credit-card"></i>
-                Métodos de pago
+            <a href="<?= $baseUrl ?>/configuraciones/auditoria.php"
+               class="<?= str_contains($current,'auditoria') ? 'active' : '' ?>">
+                <i class="fa-solid fa-clipboard-list"></i>
+                Auditoría
             </a>
         </div>
     </div>
@@ -238,9 +262,16 @@ $current = $_SERVER['PHP_SELF'];
 <header class="topbar">
     <div class="left">
         <span>Sucursal: <strong>Casa Central</strong></span>
+        <?php if (isset($topbarStats)): ?>
+            <span class="topbar-stat"><?= htmlspecialchars($topbarStats) ?></span>
+        <?php endif; ?>
     </div>
 
     <div class="right">
+        <div class="topbar-clock">
+            <i class="fa-regular fa-clock"></i>
+            <span id="navClock">--:--:--</span>
+        </div>
         <i class="fa-regular fa-user"></i>
         <span>Luciano</span>
     </div>

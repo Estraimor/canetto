@@ -25,8 +25,41 @@
 
 
 
-<!-- ================= LOADER ================= -->
+<!-- ================= SIDEBAR TOGGLE ================= -->
+<script>
+(function() {
+    document.querySelectorAll('.menu-title').forEach(function(title) {
+        title.addEventListener('click', function() {
+            var group = this.closest('.menu-group');
+            var isOpen = group.classList.contains('open');
+            // Cerrar todos
+            document.querySelectorAll('.menu-group').forEach(function(g) {
+                g.classList.remove('open');
+            });
+            // Abrir el clickeado si estaba cerrado
+            if (!isOpen) {
+                group.classList.add('open');
+            }
+        });
+    });
+})();
+</script>
 
+<!-- ================= RELOJ GLOBAL ================= -->
+<script>
+(function tickNav() {
+    const el = document.getElementById('navClock');
+    const ed = document.getElementById('dashClock');
+    const d  = new Date();
+    const p  = x => String(x).padStart(2, '0');
+    const t  = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    if (el) el.textContent = t;
+    if (ed) ed.textContent = t;
+    setTimeout(tickNav, 1000);
+})();
+</script>
+
+<!-- ================= LOADER ================= -->
 <script>
 window.addEventListener("load", function() {
     const loader = document.getElementById("loader");

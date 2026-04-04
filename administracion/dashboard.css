@@ -1,11 +1,11 @@
 /* =========================================================
    dashboard.css — Canetto Dashboard
-   NOTA: agregar estas fuentes en el <head> del nav.php:
-   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
    ========================================================= */
 
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+
 /* ---------------------------------------------------------
-   Variables de color
+   Variables
 --------------------------------------------------------- */
 :root {
     --db-blue:        #378ADD;
@@ -24,12 +24,12 @@
     --db-red-bg:      #FCEBEB;
     --db-red-text:    #791F1F;
 
-    --db-border:      rgba(0,0,0,.08);
-    --db-border-md:   rgba(0,0,0,.13);
+    --db-border:      rgba(0,0,0,.07);
+    --db-border-md:   rgba(0,0,0,.12);
 
     --db-bg-page:     #F7F6F3;
     --db-bg-card:     #FFFFFF;
-    --db-bg-surface:  #F1EFE8;
+    --db-bg-surface:  #F4F3EF;
 
     --db-text:        #1a1a18;
     --db-text-muted:  #6b6b67;
@@ -38,11 +38,13 @@
     --db-radius-sm:   6px;
     --db-radius-md:   10px;
     --db-radius-lg:   14px;
+
+    --db-shadow-sm:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --db-shadow-md:   0 4px 12px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.05);
 }
 
 /* ---------------------------------------------------------
-   Wrapper principal
-   El .db vive dentro del .main del layout de Canetto
+   Base
 --------------------------------------------------------- */
 .db {
     font-family: 'DM Sans', sans-serif;
@@ -51,82 +53,222 @@
     line-height: 1.5;
 }
 
-/* ---------------------------------------------------------
-   Contenido principal
---------------------------------------------------------- */
 .db-main {
-    padding: 28px 28px 48px;
-    max-width: 1200px;
+    padding: 32px 32px 60px;
+    max-width: 1240px;
 }
 
 /* ---------------------------------------------------------
-   Page header
+   PAGE HEADER
 --------------------------------------------------------- */
 .db-page-header {
-    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--db-border);
 }
 
-.db-page-header h1 {
+.db-header-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--db-text-hint);
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.db-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--db-text);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+}
+
+.db-title em {
+    font-style: italic;
+    color: var(--db-text-muted);
+}
+
+.db-subtitle {
+    font-size: 13px;
+    color: var(--db-text-hint);
+    margin-top: 4px;
+}
+
+.db-header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------
+   RELOJ (dashboard header)
+--------------------------------------------------------- */
+.db-clock-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: var(--db-bg-surface);
+    border: 1px solid var(--db-border-md);
+    border-radius: var(--db-radius-md);
+    padding: 8px 16px;
+}
+
+.db-clock-time {
+    font-family: 'DM Mono', monospace;
     font-size: 22px;
     font-weight: 500;
     color: var(--db-text);
-    letter-spacing: -0.02em;
-    line-height: 1.2;
+    letter-spacing: .04em;
+    line-height: 1;
 }
 
-.db-page-header p {
-    font-size: 13px;
-    color: var(--db-text-muted);
+.db-clock-label {
+    font-size: 10px;
+    color: var(--db-text-hint);
+    text-transform: uppercase;
+    letter-spacing: .06em;
     margin-top: 3px;
 }
 
 /* ---------------------------------------------------------
-   KPI row
+   BOTÓN PRIMARIO
+--------------------------------------------------------- */
+.db-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--db-text);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    padding: 10px 18px;
+    border-radius: var(--db-radius-md);
+    text-decoration: none;
+    transition: opacity .15s, transform .15s;
+    white-space: nowrap;
+}
+
+.db-btn-primary:hover {
+    opacity: .85;
+    transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------
+   ACCESOS RÁPIDOS
+--------------------------------------------------------- */
+.db-quick-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.db-qa {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--db-text-muted);
+    background: var(--db-bg-card);
+    border: 1px solid var(--db-border-md);
+    border-radius: 50px;
+    padding: 7px 14px;
+    text-decoration: none;
+    transition: all .15s cubic-bezier(.4,0,.2,1);
+}
+
+.db-qa i {
+    font-size: 11px;
+    color: var(--db-text-hint);
+    transition: color .15s;
+}
+
+.db-qa:hover {
+    background: var(--db-text);
+    color: #fff;
+    border-color: var(--db-text);
+    transform: translateY(-1px);
+    box-shadow: var(--db-shadow-sm);
+}
+
+.db-qa:hover i {
+    color: rgba(255,255,255,.75);
+}
+
+/* ---------------------------------------------------------
+   KPI ROW
 --------------------------------------------------------- */
 .db-kpi-row {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 20px;
 }
 
-@media (max-width: 860px) {
-    .db-kpi-row {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 480px) {
-    .db-kpi-row {
-        grid-template-columns: 1fr;
-    }
-}
+@media (max-width: 900px) { .db-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .db-kpi-row { grid-template-columns: 1fr; } }
 
 .db-kpi {
     background: var(--db-bg-card);
-    border: 0.5px solid var(--db-border);
+    border: 1px solid var(--db-border);
     border-radius: var(--db-radius-lg);
-    padding: 18px 20px;
-    border-left-width: 3px;
-    border-left-style: solid;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    box-shadow: var(--db-shadow-sm);
+    transition: box-shadow .2s, transform .2s;
 }
 
-.db-kpi--blue  { border-left-color: var(--db-blue); }
-.db-kpi--green { border-left-color: var(--db-green); }
-.db-kpi--teal  { border-left-color: var(--db-teal); }
-.db-kpi--amber { border-left-color: var(--db-amber); }
+.db-kpi:hover {
+    box-shadow: var(--db-shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Icono coloreado */
+.db-kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 17px;
+}
+
+.db-kpi-icon--blue  { background: var(--db-blue-bg);  color: var(--db-blue); }
+.db-kpi-icon--green { background: var(--db-green-bg); color: var(--db-green); }
+.db-kpi-icon--teal  { background: var(--db-teal-bg);  color: var(--db-teal); }
+.db-kpi-icon--amber { background: var(--db-amber-bg); color: var(--db-amber); }
+
+.db-kpi-body {
+    min-width: 0;
+}
 
 .db-kpi-label {
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .07em;
     color: var(--db-text-muted);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .db-kpi-val {
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 500;
     font-family: 'DM Mono', monospace;
     color: var(--db-text);
@@ -137,7 +279,7 @@
 .db-kpi-sub {
     font-size: 11px;
     color: var(--db-text-hint);
-    margin-top: 7px;
+    margin-top: 6px;
 }
 
 /* ---------------------------------------------------------
@@ -150,49 +292,42 @@
     margin-bottom: 20px;
 }
 
-@media (max-width: 720px) {
-    .db-grid2 {
-        grid-template-columns: 1fr;
-    }
-}
+@media (max-width: 720px) { .db-grid2 { grid-template-columns: 1fr; } }
 
 /* ---------------------------------------------------------
    Cards genéricas
 --------------------------------------------------------- */
 .db-card {
     background: var(--db-bg-card);
-    border: 0.5px solid var(--db-border);
+    border: 1px solid var(--db-border);
     border-radius: var(--db-radius-lg);
-    padding: 20px;
+    padding: 22px;
+    box-shadow: var(--db-shadow-sm);
 }
 
 .db-card-title {
     display: flex;
     align-items: center;
-    gap: 7px;
-    font-size: 12px;
-    font-weight: 500;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--db-text-muted);
     text-transform: uppercase;
-    letter-spacing: .06em;
+    letter-spacing: .07em;
     margin-bottom: 18px;
 }
 
-.db-card-title svg {
+.db-card-title i {
     opacity: .5;
+    font-size: 12px;
     flex-shrink: 0;
 }
 
 /* ---------------------------------------------------------
    Stock — barras
 --------------------------------------------------------- */
-.db-stock-item {
-    margin-bottom: 16px;
-}
-
-.db-stock-item:last-of-type {
-    margin-bottom: 0;
-}
+.db-stock-item { margin-bottom: 16px; }
+.db-stock-item:last-of-type { margin-bottom: 0; }
 
 .db-stock-row {
     display: flex;
@@ -211,7 +346,7 @@
 
 .db-stock-tipo {
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .05em;
     color: var(--db-text-hint);
@@ -228,7 +363,7 @@
 }
 
 .db-bar-track {
-    height: 6px;
+    height: 5px;
     border-radius: 3px;
     background: var(--db-bg-surface);
     overflow: hidden;
@@ -237,7 +372,7 @@
 .db-bar-fill {
     height: 100%;
     border-radius: 3px;
-    transition: width .4s ease;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
 }
 
 .db-bar--blue  { background: var(--db-blue); }
@@ -254,13 +389,12 @@
     display: inline-block;
 }
 
-/* Leyenda barras */
 .db-legend {
     display: flex;
     gap: 16px;
     padding-top: 16px;
     margin-top: 16px;
-    border-top: 0.5px solid var(--db-border);
+    border-top: 1px solid var(--db-border);
 }
 
 .db-legend-item {
@@ -296,20 +430,9 @@
     line-height: 1.4;
 }
 
-.db-alert--ok {
-    background: var(--db-green-bg);
-    color: var(--db-green-text);
-}
-
-.db-alert--warn {
-    background: var(--db-amber-bg);
-    color: var(--db-amber-text);
-}
-
-.db-alert--danger {
-    background: var(--db-red-bg);
-    color: var(--db-red-text);
-}
+.db-alert--ok     { background: var(--db-green-bg); color: var(--db-green-text); }
+.db-alert--warn   { background: var(--db-amber-bg); color: var(--db-amber-text); }
+.db-alert--danger { background: var(--db-red-bg);   color: var(--db-red-text); }
 
 .db-dot {
     width: 7px;
@@ -334,8 +457,32 @@
     color: var(--db-text-hint);
     margin-top: 14px;
     padding-top: 14px;
-    border-top: 0.5px solid var(--db-border);
+    border-top: 1px solid var(--db-border);
     line-height: 1.5;
+}
+
+/* ---------------------------------------------------------
+   Gráfico 7 días
+--------------------------------------------------------- */
+.db-chart-card {
+    background: var(--db-bg-card);
+    border: 1px solid var(--db-border);
+    border-radius: var(--db-radius-lg);
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: var(--db-shadow-sm);
+}
+
+.db-chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--db-border);
+}
+
+.db-chart-wrap {
+    padding: 20px 22px 16px;
 }
 
 /* ---------------------------------------------------------
@@ -343,9 +490,10 @@
 --------------------------------------------------------- */
 .db-table-card {
     background: var(--db-bg-card);
-    border: 0.5px solid var(--db-border);
+    border: 1px solid var(--db-border);
     border-radius: var(--db-radius-lg);
     overflow: hidden;
+    box-shadow: var(--db-shadow-sm);
 }
 
 .db-table-head {
@@ -353,15 +501,15 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 22px;
-    border-bottom: 0.5px solid var(--db-border);
+    border-bottom: 1px solid var(--db-border);
 }
 
 .db-table-head span {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--db-text-muted);
     text-transform: uppercase;
-    letter-spacing: .06em;
+    letter-spacing: .07em;
 }
 
 .db-count {
@@ -371,7 +519,7 @@
     letter-spacing: 0 !important;
     padding: 2px 10px;
     background: var(--db-bg-surface);
-    border: 0.5px solid var(--db-border);
+    border: 1px solid var(--db-border-md);
     border-radius: 20px;
     color: var(--db-text-muted) !important;
 }
@@ -383,27 +531,22 @@
 
 .db-table-card thead th {
     font-size: 10px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .07em;
     color: var(--db-text-hint);
     text-align: left;
     padding: 10px 22px;
-    border-bottom: 0.5px solid var(--db-border);
+    border-bottom: 1px solid var(--db-border);
 }
 
 .db-table-card tbody tr {
-    border-bottom: 0.5px solid var(--db-border);
+    border-bottom: 1px solid var(--db-border);
     transition: background .12s;
 }
 
-.db-table-card tbody tr:last-child {
-    border-bottom: none;
-}
-
-.db-table-card tbody tr:hover {
-    background: var(--db-bg-surface);
-}
+.db-table-card tbody tr:last-child { border-bottom: none; }
+.db-table-card tbody tr:hover { background: var(--db-bg-surface); }
 
 .db-table-card tbody td {
     font-size: 13px;
@@ -411,14 +554,8 @@
     color: var(--db-text);
 }
 
-.db-mono {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px !important;
-}
-
-.db-muted {
-    color: var(--db-text-muted) !important;
-}
+.db-mono  { font-family: 'DM Mono', monospace; font-size: 12px !important; }
+.db-muted { color: var(--db-text-muted) !important; }
 
 /* ---------------------------------------------------------
    Pills / badges
@@ -426,35 +563,27 @@
 .db-pill {
     display: inline-flex;
     align-items: center;
-    padding: 2px 9px;
+    padding: 2px 10px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 500;
 }
 
 .db-pill--green { background: var(--db-green-bg); color: var(--db-green-text); }
-.db-pill--blue  { background: var(--db-blue-bg);  color: var(--db-blue-text);  }
+.db-pill--blue  { background: var(--db-blue-bg);  color: var(--db-blue-text); }
 
 /* ---------------------------------------------------------
    Vacío / sin datos
 --------------------------------------------------------- */
-.db-empty {
-    font-size: 13px;
-    color: var(--db-text-hint);
-}
-
-.db-empty--padded {
-    padding: 20px 22px;
-}
+.db-empty { font-size: 13px; color: var(--db-text-hint); }
+.db-empty--padded { padding: 20px 22px; }
 
 /* ---------------------------------------------------------
    Responsive general
 --------------------------------------------------------- */
-@media (max-width: 600px) {
-    .db-main {
-        padding: 18px 16px 40px;
-    }
-    .db-topbar {
-        padding: 10px 16px;
-    }
+@media (max-width: 700px) {
+    .db-main { padding: 20px 16px 40px; }
+    .db-page-header { flex-direction: column; gap: 16px; }
+    .db-header-right { width: 100%; justify-content: space-between; }
+    .db-title { font-size: 24px; }
 }

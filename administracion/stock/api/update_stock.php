@@ -1,48 +1,48 @@
 <?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../config/audit.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-$pdo = Conexion::conectar();
+header('Content-Type: application/json');
 
+$pdo  = Conexion::conectar();
 $data = json_decode(file_get_contents("php://input"), true);
 
-$id = $data['id'];
-$congelado = $data['congelado'];
-$hecho = $data['hecho'];
+$id           = $data['id'];
+$congelado    = $data['congelado'];
+$hecho        = $data['hecho'];
 $minCongelado = $data['minCongelado'];
-$minHecho = $data['minHecho'];
+$minHecho     = $data['minHecho'];
 
 try {
+    // Obtener nombre del producto para auditoría
+    $stmtNom = $pdo->prepare("SELECT nombre FROM productos WHERE idproductos = ?");
+    $stmtNom->execute([$id]);
+    $nombreProducto = $stmtNom->fetchColumn() ?: "ID {$id}";
 
-    /* =========================
-    CONGELADO
-    ========================= */
-    $stmt = $pdo->prepare("
+    // Congelado
+    $pdo->prepare("
         UPDATE stock_productos
         SET stock_actual = ?, stock_minimo = ?, updated_at = NOW()
-        WHERE productos_idproductos = ?
-        AND tipo_stock = 'CONGELADO'
-    ");
-    $stmt->execute([$congelado, $minCongelado, $id]);
+        WHERE productos_idproductos = ? AND tipo_stock = 'CONGELADO'
+    ")->execute([$congelado, $minCongelado, $id]);
 
-    /* =========================
-    HECHO
-    ========================= */
-    $stmt = $pdo->prepare("
+    // Hecho
+    $pdo->prepare("
         UPDATE stock_productos
         SET stock_actual = ?, stock_minimo = ?, updated_at = NOW()
-        WHERE productos_idproductos = ?
-        AND tipo_stock = 'HECHO'
-    ");
-    $stmt->execute([$hecho, $minHecho, $id]);
+        WHERE productos_idproductos = ? AND tipo_stock = 'HECHO'
+    ")->execute([$hecho, $minHecho, $id]);
+
+    audit($pdo, 'editar', 'stock',
+        "Ajuste manual de stock: {$nombreProducto}" .
+        " | Congelado: {$congelado} u. (mín: {$minCongelado})" .
+        " | Hecho: {$hecho} u. (mín: {$minHecho})"
+    );
 
     echo json_encode(["ok" => true]);
 
 } catch (Exception $e) {
-
-    echo json_encode([
-        "ok" => false,
-        "error" => $e->getMessage()
-    ]);
-
+    echo json_encode(["ok" => false, "error" => $e->getMessage()]);
 }

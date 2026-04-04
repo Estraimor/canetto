@@ -106,18 +106,59 @@ SUBMENUS
     padding: 10px 12px;
     cursor: pointer;
     border-radius: 8px;
-    transition: all .2s ease;
+    transition: background .2s ease, color .2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
 }
 
 .menu-title:hover {
     background: #f5f5f5;
 }
 
+/* Chevron rotativo */
+.menu-title::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid #bbb;
+    border-bottom: 1.5px solid #bbb;
+    transform: rotate(45deg);
+    transition: transform .25s cubic-bezier(.4,0,.2,1), border-color .2s;
+    flex-shrink: 0;
+    margin-top: -2px;
+}
+
+.menu-group.open > .menu-title::after {
+    transform: rotate(-135deg);
+    margin-top: 3px;
+    border-color: #E91E63;
+}
+
+.menu-group.open > .menu-title {
+    color: #E91E63;
+    background: #ffeaf2;
+    font-weight: 500;
+}
+
+/* Submenu colapsado por defecto */
 .submenu {
     display: flex;
     flex-direction: column;
     margin-left: 15px;
-    gap: 5px;
+    gap: 3px;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height .3s cubic-bezier(.4,0,.2,1),
+                opacity .25s ease;
+}
+
+.menu-group.open > .submenu {
+    max-height: 500px;
+    opacity: 1;
 }
 
 .submenu a {
@@ -126,12 +167,18 @@ SUBMENUS
     text-decoration: none;
     padding: 6px 12px;
     border-radius: 6px;
-    transition: all .2s ease;
+    transition: all .15s ease;
 }
 
 .submenu a:hover {
     background: #ffeaf2;
     color: #E91E63;
+}
+
+.submenu a.active {
+    background: #ffeaf2;
+    color: #E91E63;
+    font-weight: 500;
 }
 
 /* =========================
@@ -158,11 +205,49 @@ TOPBAR
     box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
+.topbar .left {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    font-size: 14px;
+}
+
 .topbar .right {
     display: flex;
     align-items: center;
     gap: 10px;
     font-size: 14px;
+}
+
+.topbar-stat {
+    font-size: 11px;
+    color: #999;
+    margin-left: 14px;
+    padding: 3px 10px;
+    background: #f5f5f5;
+    border: 1px solid #eee;
+    border-radius: 20px;
+}
+
+.topbar-clock {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-weight: 500;
+    color: #333;
+    background: #f5f5f5;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 5px 12px;
+    margin-right: 4px;
+    letter-spacing: .03em;
+}
+
+.topbar-clock i {
+    font-size: 11px;
+    color: #aaa;
 }
 
 /* =========================

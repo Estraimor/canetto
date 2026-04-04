@@ -2,6 +2,7 @@
 define('APP_BOOT', true);
 session_start();
 require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../config/audit.php';
 
 header('Content-Type: application/json');
 
@@ -17,14 +18,10 @@ if (!$id) {
 }
 
 try {
-
     $pdo->beginTransaction();
 
     // Obtener compra cancelada
-    $stmt = $pdo->prepare("
-        SELECT * FROM compra_materia_prima
-        WHERE id = ? AND estado = 'cancelada'
-    ");
+    $stmt = $pdo->prepare("SELECT * FROM compra_materia_prima WHERE id = ? AND estado = 'cancelada'");
     $stmt->execute([$id]);
     $compra = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -34,43 +31,41 @@ try {
         exit;
     }
 
+    // Obtener nombre de materia prima para auditoría
+    $stmtMP = $pdo->prepare("SELECT nombre FROM materia_prima WHERE idmateria_prima = ?");
+    $stmtMP->execute([$compra['materia_prima_idmateria_prima']]);
+    $nombreMateria = $stmtMP->fetchColumn() ?: "ID {$compra['materia_prima_idmateria_prima']}";
+
     // Sumar stock nuevamente
-    $stmtStock = $pdo->prepare("
+    $pdo->prepare("
         UPDATE materia_prima
         SET stock_actual = stock_actual + ?, updated_at = NOW()
         WHERE idmateria_prima = ?
-    ");
-    $stmtStock->execute([
-        $compra['cantidad'],
-        $compra['materia_prima_idmateria_prima']
-    ]);
+    ")->execute([$compra['cantidad'], $compra['materia_prima_idmateria_prima']]);
 
-    // Obtener nuevo stock para actualizar stock_nuevo
+    // Obtener nuevo stock
     $stmtSN = $pdo->prepare("SELECT stock_actual FROM materia_prima WHERE idmateria_prima = ?");
     $stmtSN->execute([$compra['materia_prima_idmateria_prima']]);
     $stockNuevo = $stmtSN->fetchColumn();
 
     // Reactivar compra
-    $stmtReact = $pdo->prepare("
+    $pdo->prepare("
         UPDATE compra_materia_prima
-        SET estado          = 'activa',
-            stock_nuevo     = ?,
-            cancelado_at    = NULL,
-            cancelado_motivo= NULL,
-            cancelado_por   = NULL
+        SET estado = 'activa', stock_nuevo = ?,
+            cancelado_at = NULL, cancelado_motivo = NULL, cancelado_por = NULL
         WHERE id = ?
-    ");
-    $stmtReact->execute([$stockNuevo, $id]);
+    ")->execute([$stockNuevo, $id]);
 
     $pdo->commit();
+
+    audit($pdo, 'reactivar', 'compras',
+        "Reactivó compra #{$id}: {$nombreMateria} x {$compra['cantidad']} u." .
+        " | Stock restaurado: +{$compra['cantidad']} → Nuevo stock: {$stockNuevo}"
+    );
 
     echo json_encode(['ok' => true]);
 
 } catch (Exception $e) {
-
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-
+    if ($pdo->inTransaction()) $pdo->rollBack();
     echo json_encode(['ok' => false, 'msg' => $e->getMessage()]);
 }
