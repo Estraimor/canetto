@@ -1,0 +1,100 @@
+<?php
+define('APP_BOOT', true);
+require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../config/audit.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+header('Content-Type: application/json');
+
+$pdo = Conexion::conectar();
+
+// Add tienda columns to ventas if they don't exist yet (idempotent via try/catch)
+foreach ([
+    "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
+    "ALTER TABLE ventas ADD COLUMN sucursal_retiro_idsucursal INT NULL",
+    "ALTER TABLE ventas ADD COLUMN observacion_cliente TEXT NULL",
+] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+
+$input       = json_decode(file_get_contents('php://input'), true) ?: [];
+$carrito     = $input['carrito']     ?? [];
+$cliente     = $input['cliente']     ?? null;
+$metodo_pago = (int)($input['metodo_pago'] ?? 0);
+$sucursal_id = isset($input['sucursal_id']) && $input['sucursal_id'] ? (int)$input['sucursal_id'] : null;
+$observacion = trim($input['observacion'] ?? '');
+$total       = (float)($input['total'] ?? 0);
+
+if (empty($carrito) || !$metodo_pago) {
+    echo json_encode(['success'=>false,'message'=>'Faltan datos obligatorios']); exit;
+}
+
+try {
+    $pdo->beginTransaction();
+
+    // --- Resolver cliente ---
+    $cNombre = 'Cliente';
+    if (isset($_SESSION['tienda_cliente_id'])) {
+        $idusuario = (int)$_SESSION['tienda_cliente_id'];
+        $u = $pdo->prepare("SELECT CONCAT(nombre,' ',COALESCE(apellido,'')) FROM usuario WHERE idusuario=?");
+        $u->execute([$idusuario]);
+        $cNombre = trim($u->fetchColumn() ?: 'Cliente');
+    } elseif ($cliente) {
+        $nombre  = trim($cliente['nombre']  ?? '');
+        $celular = trim($cliente['celular'] ?? '');
+        if (!$nombre) throw new Exception("Nombre del cliente requerido");
+        $existing = null;
+        if ($celular) {
+            $s = $pdo->prepare("SELECT idusuario FROM usuario WHERE celular=? AND activo=1");
+            $s->execute([$celular]); $existing = $s->fetchColumn();
+        }
+        if ($existing) {
+            $idusuario = (int)$existing;
+        } else {
+            $pass = password_hash(uniqid('g_',true), PASSWORD_DEFAULT);
+            $ins  = $pdo->prepare("INSERT INTO usuario (nombre,apellido,celular,password_hash,activo,created_at,updated_at) VALUES (?,?,?,?,1,NOW(),NOW())");
+            $ins->execute([$nombre, $cliente['apellido'] ?? null, $celular ?: null, $pass]);
+            $idusuario = (int)$pdo->lastInsertId();
+        }
+        $cNombre = $nombre;
+    } else {
+        throw new Exception("Información del cliente requerida");
+    }
+
+    // --- Crear venta ---
+    $pdo->prepare("
+        INSERT INTO ventas
+        (usuario_idusuario, total, estado_venta_idestado_venta,
+         metodo_pago_idmetodo_pago, sucursal_retiro_idsucursal,
+         observacion_cliente, origen, fecha, created_at, updated_at)
+        VALUES (?,?,1,?,?,?,'tienda',NOW(),NOW(),NOW())
+    ")->execute([$idusuario, $total, $metodo_pago, $sucursal_id, $observacion ?: null]);
+    $id_venta = (int)$pdo->lastInsertId();
+
+    // --- Detalle ---
+    $stmtD = $pdo->prepare("INSERT INTO detalle_ventas (ventas_idventas, productos_idproductos, cantidad, precio_unitario) VALUES (?,?,?,?)");
+    $resumen = [];
+    foreach ($carrito as $item) {
+        $stmtD->execute([$id_venta, (int)$item['id'], (int)$item['cantidad'], (float)$item['precio']]);
+        $resumen[] = ($item['nombre'] ?? "Prod #{$item['id']}") . " ×{$item['cantidad']}";
+    }
+
+    $pdo->commit();
+
+    $sucNombre = '';
+    if ($sucursal_id) {
+        $sn = $pdo->prepare("SELECT nombre FROM sucursal WHERE idsucursal=?");
+        $sn->execute([$sucursal_id]);
+        $sucNombre = ' | Retiro: '.($sn->fetchColumn() ?: "Suc #{$sucursal_id}");
+    }
+
+    audit($pdo, 'crear', 'ventas',
+        "Pedido online #{$id_venta} | Cliente: {$cNombre}" .
+        " | ".implode(', ', $resumen).
+        " | Total: $".number_format($total, 2) .
+        $sucNombre
+    );
+
+    echo json_encode(['success'=>true, 'id_venta'=>$id_venta]);
+
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+}

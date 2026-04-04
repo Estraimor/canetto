@@ -1,0 +1,561 @@
+<?php
+define('APP_BOOT', true);
+require_once __DIR__ . '/../config/conexion.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+try {
+    $pdo = Conexion::conectar();
+
+    // Create oferta table if needed
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `oferta` (
+        `idoferta` INT AUTO_INCREMENT PRIMARY KEY,
+        `titulo` VARCHAR(200) NOT NULL,
+        `descripcion` TEXT,
+        `emoji` VARCHAR(10) DEFAULT '🎉',
+        `tipo` VARCHAR(20) DEFAULT 'promo',
+        `valor` DECIMAL(10,2) NULL,
+        `activo` TINYINT DEFAULT 1,
+        `fecha_inicio` DATE NULL,
+        `fecha_fin` DATE NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $ofertas = $pdo->query("
+        SELECT titulo, descripcion, emoji, tipo, valor FROM oferta
+        WHERE activo = 1
+          AND (fecha_inicio IS NULL OR fecha_inicio <= CURDATE())
+          AND (fecha_fin   IS NULL OR fecha_fin   >= CURDATE())
+        ORDER BY created_at DESC
+    ")->fetchAll();
+
+    if (empty($ofertas)) {
+        $ofertas = [
+            ['titulo' => '¡Bienvenidos a Canetto!', 'descripcion' => 'Las mejores galletitas artesanales, hechas con amor', 'emoji' => '🍪', 'tipo' => 'promo', 'valor' => null],
+            ['titulo' => 'Armá tu Box', 'descripcion' => 'Combinaciones únicas para cada momento especial', 'emoji' => '📦', 'tipo' => 'promo', 'valor' => null],
+        ];
+    }
+
+    $productos = $pdo->query("
+        SELECT p.idproductos, p.nombre, p.precio, p.tipo,
+            COALESCE(MAX(CASE WHEN sp.tipo_stock='HECHO' THEN sp.stock_actual END), 0) AS stock_hecho
+        FROM productos p
+        LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos
+        WHERE p.activo = 1
+        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo
+        ORDER BY CASE p.tipo WHEN 'box' THEN 0 ELSE 1 END, p.nombre ASC
+    ")->fetchAll();
+
+    $sucursales = $pdo->query("
+        SELECT idsucursal, nombre, direccion, ciudad, provincia, telefono, email
+        FROM sucursal WHERE activo = 1 ORDER BY nombre
+    ")->fetchAll();
+
+    $metodos_pago = $pdo->query("SELECT idmetodo_pago, nombre FROM metodo_pago ORDER BY nombre")->fetchAll();
+
+} catch (Throwable $e) {
+    $ofertas = [['titulo' => '¡Bienvenidos a Canetto!', 'descripcion' => 'Galletitas artesanales', 'emoji' => '🍪', 'tipo' => 'promo', 'valor' => null]];
+    $productos = []; $sucursales = []; $metodos_pago = [];
+}
+
+$cliente_id     = $_SESSION['tienda_cliente_id']     ?? null;
+$cliente_nombre = $_SESSION['tienda_cliente_nombre'] ?? null;
+$bgClasses      = ['slide-bg-0','slide-bg-1','slide-bg-2','slide-bg-3'];
+$tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada' => 'Temporada'];
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Canetto — Galletitas Artesanales</title>
+<meta name="description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+<link rel="stylesheet" href="tienda.css">
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────── -->
+<header class="t-nav">
+  <a href="index.php" class="t-brand">
+    <div class="t-brand-icon">🍪</div>
+    <span class="t-brand-name">Canetto</span>
+  </a>
+  <div class="t-actions">
+    <?php if ($cliente_id): ?>
+      <a href="mis-pedidos.php" class="t-btn" title="Mis pedidos">👤</a>
+    <?php else: ?>
+      <a href="login.php" class="t-btn" title="Iniciar sesión">👤</a>
+    <?php endif; ?>
+    <button class="t-btn" id="btnOpenCart" title="Carrito">
+      🛒
+      <span class="t-cart-badge" id="cartBadge">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- ── CAROUSEL ────────────────── -->
+<div class="swiper" id="mainSwiper">
+  <div class="swiper-wrapper">
+    <?php foreach ($ofertas as $i => $o): ?>
+    <div class="swiper-slide">
+      <div class="slide-bg <?= $bgClasses[$i % 4] ?>"><?= htmlspecialchars($o['emoji'] ?? '🍪') ?></div>
+      <div class="slide-content">
+        <span class="slide-tag"><?= htmlspecialchars($tagLabels[$o['tipo']] ?? 'Canetto') ?></span>
+        <div class="slide-title"><?= htmlspecialchars($o['titulo']) ?></div>
+        <?php if (!empty($o['descripcion'])): ?>
+          <div class="slide-desc"><?= htmlspecialchars($o['descripcion']) ?></div>
+        <?php endif; ?>
+        <?php if (!empty($o['valor'])): ?>
+          <div class="slide-desc" style="margin-top:6px;font-size:15px;font-weight:700">
+            <?= $o['tipo'] === 'descuento' ? number_format($o['valor'],0).'% OFF' : '$'.number_format($o['valor'],0,',','.') ?>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endforeach; ?>
+  </div>
+  <div class="swiper-pagination"></div>
+</div>
+
+<!-- ── PRODUCTS ────────────────── -->
+<div class="sec-head">
+  <div>
+    <div class="sec-title">Nuestros <em>productos</em></div>
+    <div class="sec-sub"><?= count($productos) ?> productos disponibles</div>
+  </div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn on" data-filter="all">Todos</button>
+  <button class="filter-btn" data-filter="producto">Galletitas</button>
+  <button class="filter-btn" data-filter="box">Boxes</button>
+</div>
+
+<div class="prods-grid" id="prodsGrid">
+<?php if (empty($productos)): ?>
+  <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#888">
+    <div style="font-size:52px;margin-bottom:14px">🍪</div>
+    <div style="font-size:14px">Próximamente más productos</div>
+  </div>
+<?php else: foreach ($productos as $p):
+  $stock   = (float)$p['stock_hecho'];
+  $disabled = $stock <= 0 ? 'disabled' : '';
+  if ($stock <= 0)  { $pill = 'sp-out'; $pillTxt = 'Sin stock';       $stockTxt = 'No disponible'; }
+  elseif ($stock <= 10) { $pill = 'sp-low'; $pillTxt = 'Pocas unidades'; $stockTxt = 'Quedan '.(int)$stock.' u.'; }
+  else              { $pill = 'sp-ok';  $pillTxt = 'Disponible';      $stockTxt = (int)$stock.' disponibles'; }
+  $emoji  = $p['tipo'] === 'box' ? '📦' : '🍪';
+  $nombre = htmlspecialchars($p['nombre']);
+  $precio = number_format((float)$p['precio'], 0, ',', '.');
+?>
+<div class="prod-card" data-tipo="<?= $p['tipo'] ?>">
+  <div class="prod-thumb">
+    <?= $emoji ?>
+    <span class="stock-pill <?= $pill ?>"><?= $pillTxt ?></span>
+  </div>
+  <div class="prod-body">
+    <div class="prod-name"><?= $nombre ?></div>
+    <div class="prod-price">$<?= $precio ?></div>
+    <div class="prod-stock-txt"><?= $stockTxt ?></div>
+    <?php if ($p['tipo'] === 'box'): ?><span class="prod-type-tag">Box</span><?php endif; ?>
+  </div>
+  <button class="btn-add-cart" <?= $disabled ?>
+    data-id="<?= (int)$p['idproductos'] ?>"
+    data-nombre="<?= $nombre ?>"
+    data-precio="<?= (float)$p['precio'] ?>"
+    data-tipo="<?= $p['tipo'] ?>"
+    data-stock="<?= (int)$stock ?>"
+    onclick="addToCart(this)">
+    + Agregar
+  </button>
+</div>
+<?php endforeach; endif; ?>
+</div>
+
+<!-- ── BOX BUILDER CTA ─────────── -->
+<div class="box-cta">
+  <div class="box-cta-tag">Personalizado</div>
+  <div class="box-cta-title">Armá <em>tu Box</em></div>
+  <div class="box-cta-desc">Elegí tus galletitas favoritas y armá tu combinación ideal para regalar o darte un gusto</div>
+  <button class="btn-box-open" id="btnOpenBox">📦 Armar mi Box</button>
+</div>
+
+<!-- ── BRANCHES ────────────────── -->
+<?php if (!empty($sucursales)): ?>
+<div class="sec-head" id="sucursales">
+  <div>
+    <div class="sec-title">Nuestras <em>sucursales</em></div>
+    <div class="sec-sub">Retirá tu pedido en la más cercana</div>
+  </div>
+</div>
+<div class="branch-grid">
+  <?php foreach ($sucursales as $s):
+    $addr = implode(', ', array_filter([$s['direccion'], $s['ciudad'], $s['provincia']]));
+  ?>
+  <div class="branch-card">
+    <div class="branch-head">
+      <div class="branch-ic">📍</div>
+      <div class="branch-name"><?= htmlspecialchars($s['nombre']) ?></div>
+    </div>
+    <?php if ($addr): ?><div class="branch-addr"><?= htmlspecialchars($addr) ?></div><?php endif; ?>
+    <div class="branch-chips">
+      <?php if ($s['telefono']): ?><span class="branch-chip">📞 <?= htmlspecialchars($s['telefono']) ?></span><?php endif; ?>
+      <?php if ($s['email']): ?><span class="branch-chip">✉️ <?= htmlspecialchars($s['email']) ?></span><?php endif; ?>
+    </div>
+    <?php if ($addr): ?>
+    <a href="https://www.google.com/maps/search/<?= urlencode($addr) ?>" target="_blank" rel="noopener" class="btn-dir">🗺️ Cómo llegar</a>
+    <?php endif; ?>
+  </div>
+  <?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+<!-- ── FOOTER ──────────────────── -->
+<footer class="t-footer">
+  <div class="t-footer-brand">Canetto</div>
+  <div class="t-footer-tag">Galletitas artesanales hechas con amor ❤️</div>
+  <div class="t-footer-links">
+    <a href="mis-pedidos.php">Mis pedidos</a>
+    <a href="login.php">Mi cuenta</a>
+    <a href="#sucursales">Sucursales</a>
+  </div>
+  <div class="t-footer-copy">&copy; <?= date('Y') ?> Canetto. Todos los derechos reservados.</div>
+</footer>
+
+<!-- ── CART DRAWER ─────────────── -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<aside class="cart-drawer" id="cartDrawer">
+  <div class="cart-dhead">
+    <span class="cart-dhead-title">Mi Carrito</span>
+    <span class="cart-count-tag" id="cartCountTag">0 items</span>
+    <button class="btn-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items-wrap" id="cartItemsWrap"></div>
+  <div class="cart-dfooter">
+    <div class="cart-total">
+      <span class="cart-total-lbl">Total</span>
+      <span class="cart-total-amt" id="cartTotal">$0</span>
+    </div>
+    <button class="btn-checkout" onclick="openCheckout()">Finalizar pedido →</button>
+    <button class="btn-clear" onclick="clearCart()">Vaciar carrito</button>
+  </div>
+</aside>
+
+<!-- ── BOX BUILDER MODAL ────────── -->
+<div class="modal-bg" id="boxModal">
+  <div class="modal-sheet">
+    <div class="modal-hd">
+      <span class="modal-title">📦 Armá tu Box</span>
+      <button class="btn-close" onclick="closeBoxModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="box-step on" id="boxStep1">
+        <p style="font-size:13px;color:#666;margin-bottom:16px">¿De cuántas unidades querés tu box?</p>
+        <div class="box-sizes">
+          <button class="box-sz-btn" data-size="6"  onclick="selectBoxSize(6,this)"><div class="box-sz-num">6</div><div class="box-sz-lbl">unidades</div></button>
+          <button class="box-sz-btn" data-size="12" onclick="selectBoxSize(12,this)"><div class="box-sz-num">12</div><div class="box-sz-lbl">unidades</div></button>
+          <button class="box-sz-btn" data-size="24" onclick="selectBoxSize(24,this)"><div class="box-sz-num">24</div><div class="box-sz-lbl">unidades</div></button>
+        </div>
+      </div>
+      <div class="box-step" id="boxStep2">
+        <div class="box-bar-wrap"><div class="box-bar" id="boxBar" style="width:0%"></div></div>
+        <div class="box-prog-txt" id="boxProgTxt">Seleccioná productos</div>
+        <div class="box-prod-grid" id="boxProdGrid"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div id="boxFoot1">
+        <button class="btn-pk" id="btnBoxNext" onclick="goBoxStep2()" disabled>Elegir productos →</button>
+      </div>
+      <div id="boxFoot2" style="display:none">
+        <button class="btn-pk" id="btnBoxAdd" onclick="addBoxToCart()">Agregar al carrito</button>
+        <button class="btn-sec" onclick="backBoxStep1()">← Cambiar tamaño</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CHECKOUT MODAL ───────────── -->
+<div class="modal-bg" id="checkoutModal">
+  <div class="modal-sheet">
+    <div class="modal-hd">
+      <span class="modal-title">Finalizar pedido</span>
+      <button class="btn-close" onclick="closeCheckout()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Paso A: quién sos -->
+      <div class="ck-step on" id="ckAuth">
+        <div class="ck-tabs">
+          <button class="ck-tab on" onclick="switchCkTab('guest',this)">Invitado</button>
+          <button class="ck-tab"   onclick="switchCkTab('login',this)">Ingresar</button>
+          <button class="ck-tab"   onclick="switchCkTab('reg',this)">Registrarse</button>
+        </div>
+
+        <div class="ck-form on" id="ckGuest">
+          <div class="ck-alert" id="gAlert"></div>
+          <div class="fg-row">
+            <div class="fg"><label>Nombre *</label><input id="gNom" type="text" placeholder="Tu nombre"></div>
+            <div class="fg"><label>Apellido</label><input id="gApe" type="text" placeholder="Apellido"></div>
+          </div>
+          <div class="fg"><label>Celular</label><input id="gCel" type="tel" placeholder="Ej: 1123456789"></div>
+          <button class="btn-pk" onclick="guestContinue()">Continuar →</button>
+        </div>
+
+        <div class="ck-form" id="ckLogin">
+          <div class="ck-alert" id="lAlert"></div>
+          <div class="fg"><label>Celular *</label><input id="lCel" type="tel" placeholder="Número de celular"></div>
+          <div class="fg"><label>Contraseña *</label><input id="lPass" type="password" placeholder="Tu contraseña"></div>
+          <button class="btn-pk" onclick="doLogin()">Ingresar →</button>
+          <div class="ck-divider">o</div>
+          <button class="btn-sec" onclick="switchCkTab('reg',null)">Crear cuenta</button>
+        </div>
+
+        <div class="ck-form" id="ckReg">
+          <div class="ck-alert" id="rAlert"></div>
+          <div class="fg-row">
+            <div class="fg"><label>Nombre *</label><input id="rNom" type="text" placeholder="Nombre"></div>
+            <div class="fg"><label>Apellido</label><input id="rApe" type="text" placeholder="Apellido"></div>
+          </div>
+          <div class="fg"><label>Celular *</label><input id="rCel" type="tel" placeholder="1123456789"></div>
+          <div class="fg"><label>Contraseña *</label><input id="rPass" type="password" placeholder="Mínimo 6 caracteres"></div>
+          <button class="btn-pk" onclick="doRegister()">Crear cuenta →</button>
+        </div>
+      </div>
+
+      <!-- Paso B: detalles -->
+      <div class="ck-step" id="ckDetails">
+        <div class="ck-summary" id="ckSummary"></div>
+        <div class="fg">
+          <label>Sucursal de retiro<?php if (!empty($sucursales)): ?> *<?php endif; ?></label>
+          <select id="ckSuc">
+            <option value="">— Elegí una sucursal —</option>
+            <?php foreach ($sucursales as $s): ?>
+            <option value="<?= $s['idsucursal'] ?>"><?= htmlspecialchars($s['nombre']) ?><?= $s['ciudad'] ? ' — '.htmlspecialchars($s['ciudad']) : '' ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Método de pago *</label>
+          <select id="ckMetodo">
+            <option value="">— Cómo vas a pagar —</option>
+            <?php foreach ($metodos_pago as $m): ?>
+            <option value="<?= $m['idmetodo_pago'] ?>"><?= htmlspecialchars($m['nombre']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Observaciones (opcional)</label>
+          <textarea id="ckObs" rows="2" placeholder="Ej: Sin gluten, para regalo..."></textarea>
+        </div>
+        <div class="ck-alert" id="dAlert"></div>
+        <button class="btn-pk" id="btnConfirm" onclick="confirmOrder()">Confirmar pedido ✓</button>
+        <button class="btn-sec" onclick="backToAuth()">← Volver</button>
+      </div>
+
+      <!-- Paso C: éxito -->
+      <div class="ck-step" id="ckSuccess">
+        <div class="ck-success">
+          <div class="ck-success-ic">🎉</div>
+          <div class="ck-success-title">¡Pedido realizado!</div>
+          <div class="ck-success-sub">Tu pedido fue registrado. Te esperamos en la sucursal.</div>
+          <div class="ck-success-order" id="ckOrderNum">#0</div>
+          <button class="btn-pk" onclick="closeCheckout();clearCart()">¡Entendido! 🍪</button>
+          <?php if ($cliente_id): ?>
+            <a href="mis-pedidos.php" class="btn-sec">Ver mis pedidos →</a>
+          <?php else: ?>
+            <a href="login.php" class="btn-sec">Crear cuenta para seguir mis pedidos</a>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST + FAB -->
+<div class="toast" id="toast"></div>
+<button class="fab" id="fabCart" onclick="openCart()">🛒<span class="fab-badge" id="fabBadge">0</span></button>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+// ── PHP DATA ────────────────────────────
+const PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
+const SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
+const CLIENTE_PHP = <?= json_encode($cliente_id ? ['id'=>$cliente_id,'nombre'=>$cliente_nombre] : null) ?>;
+
+// ── SWIPER ──────────────────────────────
+new Swiper('#mainSwiper',{loop:true,autoplay:{delay:4500,disableOnInteraction:false},pagination:{el:'.swiper-pagination',clickable:true}});
+
+// ── CART ────────────────────────────────
+const CK='canetto_cart';
+const getCart=()=>{try{return JSON.parse(localStorage.getItem(CK)||'[]')}catch{return[]}};
+const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart()};
+
+function addToCart(btn){
+  const id=+btn.dataset.id,nombre=btn.dataset.nombre,precio=+btn.dataset.precio,tipo=btn.dataset.tipo,stock=+btn.dataset.stock;
+  const cart=getCart(),ex=cart.find(i=>i.id===id);
+  if(ex){if(ex.cantidad>=stock){showToast('Máximo stock disponible','err');return}ex.cantidad++}
+  else cart.push({id,nombre,precio,tipo,cantidad:1});
+  saveCart(cart);showToast(nombre+' agregado ✓','ok');
+  const o=btn.innerHTML;btn.innerHTML='✓ Listo';btn.style.background='#2d8a4e';
+  setTimeout(()=>{btn.innerHTML=o;btn.style.background=''},1200);
+}
+function updateQty(id,d){const c=getCart(),i=c.findIndex(x=>x.id===id);if(i<0)return;c[i].cantidad+=d;if(c[i].cantidad<=0)c.splice(i,1);saveCart(c)}
+function clearCart(){if(!confirm('¿Vaciar el carrito?'))return;saveCart([]);showToast('Carrito vaciado')}
+const total=c=>c.reduce((s,i)=>s+i.precio*i.cantidad,0);
+const count=c=>c.reduce((s,i)=>s+i.cantidad,0);
+const fmt=n=>'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:0});
+function emoji(n,t){if(t==='box')return'📦';const l=(n||'').toLowerCase();if(l.includes('alfajor'))return'🍫';if(l.includes('torta'))return'🎂';if(l.includes('brownie'))return'🟫';if(l.includes('muffin')||l.includes('cupcake'))return'🧁';return'🍪'}
+
+function renderCart(){
+  const c=getCart(),n=count(c),t=total(c);
+  ['cartBadge','fabBadge'].forEach(id=>{const el=document.getElementById(id);el.textContent=n>99?'99+':n;el.classList.toggle('on',n>0)});
+  document.getElementById('cartCountTag').textContent=n+(n===1?' item':' items');
+  document.getElementById('cartTotal').textContent=fmt(t);
+  const w=document.getElementById('cartItemsWrap');
+  if(!c.length){w.innerHTML='<div class="cart-empty"><div class="cart-empty-ic">🛒</div><div class="cart-empty-txt">Tu carrito está vacío</div></div>';return}
+  w.innerHTML=c.map(it=>`<div class="cart-item"><div class="cart-item-ic">${emoji(it.nombre,it.tipo)}</div><div class="cart-item-inf"><div class="cart-item-name">${it.nombre}</div><div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="updateQty(${it.id},-1)">−</button><span class="qty-num">${it.cantidad}</span><button class="qty-btn" onclick="updateQty(${it.id},1)">+</button></div></div>`).join('');
+}
+
+// ── CART DRAWER ─────────────────────────
+function openCart(){document.getElementById('cartDrawer').classList.add('on');document.getElementById('cartOverlay').classList.add('on');document.body.style.overflow='hidden'}
+function closeCart(){document.getElementById('cartDrawer').classList.remove('on');document.getElementById('cartOverlay').classList.remove('on');document.body.style.overflow=''}
+
+// ── FILTER ──────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',function(){
+  document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('on'));this.classList.add('on');
+  const f=this.dataset.filter;
+  document.querySelectorAll('.prod-card').forEach(c=>c.style.display=(f==='all'||c.dataset.tipo===f)?'':'none');
+}));
+
+// ── BOX BUILDER ─────────────────────────
+let box={size:0,items:{}};
+function openBoxModal(){
+  box={size:0,items:{}};
+  document.getElementById('boxStep1').classList.add('on');
+  document.getElementById('boxStep2').classList.remove('on');
+  document.getElementById('boxFoot1').style.display='';
+  document.getElementById('boxFoot2').style.display='none';
+  document.getElementById('btnBoxNext').disabled=true;
+  document.querySelectorAll('.box-sz-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('boxModal').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeBoxModal(){document.getElementById('boxModal').classList.remove('on');document.body.style.overflow=''}
+function selectBoxSize(s,b){box.size=s;document.querySelectorAll('.box-sz-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('btnBoxNext').disabled=false}
+function goBoxStep2(){
+  if(!box.size)return;box.items={};
+  document.getElementById('boxStep1').classList.remove('on');document.getElementById('boxStep2').classList.add('on');
+  document.getElementById('boxFoot1').style.display='none';document.getElementById('boxFoot2').style.display='';
+  const avail=PRODUCTOS.filter(p=>p.tipo==='producto'&&parseFloat(p.stock_hecho)>0);
+  document.getElementById('boxProdGrid').innerHTML=avail.length
+    ?avail.map(p=>`<div class="box-prod-item"><div class="box-prod-ic">${emoji(p.nombre,p.tipo)}</div><div class="box-prod-name">${p.nombre}</div><div class="box-prod-price">${fmt(p.precio)}</div><div class="box-prod-qty"><button class="bqb" onclick="bqChange(${p.idproductos},-1,event)">−</button><span class="bqn" id="bq${p.idproductos}">0</span><button class="bqb" onclick="bqChange(${p.idproductos},1,event)">+</button></div></div>`).join('')
+    :'<div style="grid-column:1/-1;text-align:center;padding:30px;color:#888;font-size:13px">No hay productos con stock disponible.</div>';
+  updateBoxUI();
+}
+function bqChange(id,d,e){
+  e.stopPropagation();
+  const p=PRODUCTOS.find(x=>x.idproductos==id);if(!p)return;
+  const cur=box.items[id]?box.items[id].cantidad:0,tot=Object.values(box.items).reduce((s,i)=>s+i.cantidad,0);
+  if(d>0&&tot>=box.size){showToast('Tu box solo tiene '+box.size+' lugares','err');return}
+  const nq=cur+d;
+  if(nq<=0)delete box.items[id];
+  else box.items[id]={id,nombre:p.nombre,precio:+p.precio,cantidad:nq};
+  const el=document.getElementById('bq'+id);if(el)el.textContent=box.items[id]?box.items[id].cantidad:0;
+  updateBoxUI();
+}
+function updateBoxUI(){
+  const filled=Object.values(box.items).reduce((s,i)=>s+i.cantidad,0),pct=box.size?Math.round(filled/box.size*100):0;
+  document.getElementById('boxBar').style.width=pct+'%';
+  document.getElementById('boxProgTxt').textContent=filled+' de '+box.size+' productos seleccionados';
+  const btn=document.getElementById('btnBoxAdd');
+  btn.disabled=filled===0;
+  btn.textContent=filled===box.size?'🎉 Box completa — Agregar al carrito':'Agregar al carrito ('+filled+'/'+box.size+')';
+  btn.style.background=filled===box.size?'#2d8a4e':'';
+}
+function addBoxToCart(){
+  const items=Object.values(box.items);if(!items.length){showToast('Seleccioná al menos un producto','err');return}
+  const cart=getCart();
+  items.forEach(it=>{const ex=cart.find(i=>i.id===it.id);if(ex)ex.cantidad+=it.cantidad;else cart.push({id:it.id,nombre:it.nombre,precio:it.precio,tipo:'producto',cantidad:it.cantidad})});
+  saveCart(cart);closeBoxModal();openCart();showToast('Box de '+box.size+' agregada al carrito 🎉','ok');
+}
+function backBoxStep1(){document.getElementById('boxStep2').classList.remove('on');document.getElementById('boxStep1').classList.add('on');document.getElementById('boxFoot2').style.display='none';document.getElementById('boxFoot1').style.display=''}
+document.getElementById('btnOpenBox').addEventListener('click',openBoxModal);
+document.getElementById('boxModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeBoxModal()});
+
+// ── CHECKOUT ────────────────────────────
+let ckCliente=null;
+function openCheckout(){
+  if(!getCart().length){showToast('Tu carrito está vacío','err');return}
+  closeCart();
+  if(CLIENTE_PHP){ckCliente={id:CLIENTE_PHP.id,nombre:CLIENTE_PHP.nombre};showCkStep('ckDetails');buildSummary()}
+  else{showCkStep('ckAuth');syncCkTab()}
+  document.getElementById('checkoutModal').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeCheckout(){document.getElementById('checkoutModal').classList.remove('on');document.body.style.overflow=''}
+function showCkStep(id){document.querySelectorAll('.ck-step').forEach(s=>s.classList.remove('on'));document.getElementById(id)?.classList.add('on')}
+let _currentTab='guest';
+function switchCkTab(tab,btn){
+  _currentTab=tab;
+  document.querySelectorAll('.ck-tab').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');
+  document.querySelectorAll('.ck-form').forEach(f=>f.classList.remove('on'));
+  ({guest:'ckGuest',login:'ckLogin',reg:'ckReg'}[tab]&&document.getElementById({guest:'ckGuest',login:'ckLogin',reg:'ckReg'}[tab])?.classList.add('on'));
+}
+function syncCkTab(){document.querySelectorAll('.ck-form').forEach(f=>f.classList.remove('on'));document.getElementById('ckGuest')?.classList.add('on');document.querySelectorAll('.ck-tab').forEach((b,i)=>{b.classList.toggle('on',i===0)})}
+function buildSummary(){
+  const c=getCart();
+  document.getElementById('ckSummary').innerHTML=c.map(i=>`<div class="ck-sum-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('')+`<div class="ck-sum-row tot"><span>Total</span><span>${fmt(total(c))}</span></div>`;
+}
+function guestContinue(){
+  const n=document.getElementById('gNom').value.trim();
+  if(!n){setAlert('gAlert','Ingresá tu nombre','err');return}
+  ckCliente={nombre:n,apellido:document.getElementById('gApe').value.trim(),celular:document.getElementById('gCel').value.trim()};
+  showCkStep('ckDetails');buildSummary();
+}
+async function doLogin(){
+  const cel=document.getElementById('lCel').value.trim(),pass=document.getElementById('lPass').value;
+  if(!cel||!pass){setAlert('lAlert','Completá todos los campos','err');return}
+  const btn=document.querySelector('#ckLogin .btn-pk');btn.disabled=true;btn.textContent='Ingresando...';
+  try{const fd=new FormData();fd.append('action','login');fd.append('celular',cel);fd.append('password',pass);
+    const d=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
+    if(d.success){ckCliente={id:d.id,nombre:d.nombre};showCkStep('ckDetails');buildSummary()}
+    else setAlert('lAlert',d.message||'Datos incorrectos','err');
+  }catch{setAlert('lAlert','Error de conexión','err')}
+  btn.disabled=false;btn.textContent='Ingresar →';
+}
+async function doRegister(){
+  const n=document.getElementById('rNom').value.trim(),cel=document.getElementById('rCel').value.trim(),p=document.getElementById('rPass').value;
+  if(!n||!cel||!p){setAlert('rAlert','Completá los campos obligatorios','err');return}
+  if(p.length<6){setAlert('rAlert','Contraseña de al menos 6 caracteres','err');return}
+  const btn=document.querySelector('#ckReg .btn-pk');btn.disabled=true;btn.textContent='Registrando...';
+  try{const fd=new FormData();fd.append('action','register');fd.append('nombre',n);fd.append('apellido',document.getElementById('rApe').value.trim());fd.append('celular',cel);fd.append('password',p);
+    const d=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
+    if(d.success){ckCliente={id:d.id,nombre:d.nombre};showCkStep('ckDetails');buildSummary()}
+    else setAlert('rAlert',d.message||'Error al registrar','err');
+  }catch{setAlert('rAlert','Error de conexión','err')}
+  btn.disabled=false;btn.textContent='Crear cuenta →';
+}
+function backToAuth(){ckCliente=null;showCkStep('ckAuth');syncCkTab()}
+async function confirmOrder(){
+  const met=document.getElementById('ckMetodo').value;
+  if(!met){setAlert('dAlert','Seleccioná un método de pago','err');return}
+  const btn=document.getElementById('btnConfirm');btn.disabled=true;btn.textContent='Procesando...';
+  try{const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({carrito:getCart(),cliente:ckCliente,metodo_pago:+met,sucursal_id:document.getElementById('ckSuc').value||null,observacion:document.getElementById('ckObs').value.trim(),total:total(getCart())})})).json();
+    if(d.success){document.getElementById('ckOrderNum').textContent='#'+d.id_venta;showCkStep('ckSuccess')}
+    else setAlert('dAlert',d.message||'Error al procesar','err');
+  }catch{setAlert('dAlert','Error de conexión. Intentá nuevamente.','err')}
+  btn.disabled=false;btn.textContent='Confirmar pedido ✓';
+}
+function setAlert(id,msg,type){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='ck-alert on '+(type==='err'?'err':'ok');setTimeout(()=>el.classList.remove('on'),5000)}
+document.getElementById('checkoutModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCheckout()});
+
+// ── TOAST ────────────────────────────────
+let _tt;
+function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast on'+(type==='ok'?' ok-t':type==='err'?' err-t':'');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),2500)}
+
+// ── INIT ──────────────────────────────────
+renderCart();
+document.getElementById('btnOpenCart').addEventListener('click',openCart);
+</script>
+</body>
+</html>
