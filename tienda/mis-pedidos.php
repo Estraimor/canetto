@@ -72,7 +72,7 @@ $tl = [
 <header class="t-nav">
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
-      <img src="img/logo.png" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
+      <img src="../img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo">
     </div>
     <span class="t-brand-name">Canetto</span>
   </a>
@@ -141,6 +141,16 @@ $tl = [
     📍 Retiro en: <strong><?= htmlspecialchars($p['sucursal_nombre']) ?></strong>
   </div>
   <?php endif; ?>
+
+  <?php if ($eid === 3): ?>
+  <div style="padding:12px 16px;border-top:1px solid #f5f5f5">
+    <button class="btn-confirmar-entrega" data-id="<?= $p['idventas'] ?>"
+      onclick="confirmarEntrega(<?= $p['idventas'] ?>, this)"
+      style="width:100%;padding:13px;background:#111;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+      ✅ Confirmar que lo recibí
+    </button>
+  </div>
+  <?php endif; ?>
 </div>
 <?php endforeach; endif; ?>
 </div>
@@ -175,6 +185,35 @@ $tl = [
     <span>Mi cuenta</span>
   </a>
 </nav>
+<script>
+async function confirmarEntrega(idVenta, btn) {
+  if (!confirm('¿Confirmás que recibiste tu pedido #' + idVenta + '?')) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Confirmando...';
+  try {
+    const fd = new FormData();
+    fd.append('id_venta', idVenta);
+    const res  = await fetch('api/marcar_entregado.php', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      btn.closest('.ped-card').querySelector('.ped-estado').textContent = '✅ Entregado';
+      btn.closest('.ped-card').querySelector('.ped-estado').className = 'ped-estado ped-e4';
+      btn.parentElement.remove();
+      // update timeline
+      const steps = btn.closest('.ped-card')?.querySelectorAll('.tl-step');
+      if (steps) steps.forEach(s => { s.classList.add('done'); s.querySelector('.tl-dot').textContent = '✓'; });
+    } else {
+      alert(data.message || 'No se pudo confirmar');
+      btn.disabled = false;
+      btn.textContent = '✅ Confirmar que lo recibí';
+    }
+  } catch {
+    alert('Error de conexión');
+    btn.disabled = false;
+    btn.textContent = '✅ Confirmar que lo recibí';
+  }
+}
+</script>
 <script src="transitions.js"></script>
 </body>
 </html>

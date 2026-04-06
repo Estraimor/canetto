@@ -132,7 +132,7 @@ if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
 <header class="t-nav">
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
-      <img src="img/logo.png" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
+      <img src="../img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo">
     </div>
     <span class="t-brand-name">Canetto</span>
   </a>

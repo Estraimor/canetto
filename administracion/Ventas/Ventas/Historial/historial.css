@@ -296,6 +296,13 @@ body {
 .btn-guardar-estado:hover { opacity: .85; }
 .btn-guardar-estado:disabled { opacity: .35; cursor: not-allowed; }
 
+.btn-whatsapp {
+  background: #25d366; color: #fff;
+  border-color: #25d366;
+}
+.btn-whatsapp:hover:not(:disabled) { background: #1ebe5d; border-color: #1ebe5d; }
+.btn-whatsapp:disabled { opacity: .4; cursor: not-allowed; background: #ccc; border-color: #ccc; color: #fff; }
+
 /* ────────────────────────────
    MODAL DETALLE
 ──────────────────────────── */

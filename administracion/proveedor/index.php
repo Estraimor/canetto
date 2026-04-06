@@ -183,6 +183,24 @@ include '../../panel/dashboard/layaut/nav.php';
     color: var(--ink);
   }
 
+  /* ── Info banner ── */
+  .info-banner {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #f0f4ff;
+    border: 1px solid #c7d7f7;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 1.4rem;
+    font-size: .84rem;
+    color: #2c3e6e;
+    line-height: 1.6;
+  }
+  .info-banner__icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+  .info-banner strong { color: #1a2a5e; }
+  .info-banner em { font-style: normal; font-weight: 600; text-decoration: underline dotted; }
+
   /* ── Panels ── */
   .prov-panel {
     display: none;
@@ -798,6 +816,15 @@ include '../../panel/dashboard/layaut/nav.php';
 
   <!-- ══ Panel: Proveedores ══ -->
   <div class="prov-panel active" id="panel-proveedores">
+    <div class="info-banner">
+      <span class="info-banner__icon">ℹ️</span>
+      <div>
+        <strong>¿Para qué sirve esta sección?</strong>
+        Los proveedores son las empresas o personas que te venden las materias primas (harina, manteca, huevos, etc.).
+        Registrá acá a cada uno con sus datos de contacto. Luego, en la pestaña <em>Materias por proveedor</em> asignás qué materiales te provee cada uno,
+        y en <em>Registrar compra</em> ingresás cada compra para actualizar el stock automáticamente.
+      </div>
+    </div>
     <div class="search-bar">
       <input type="text" id="searchProv" placeholder="Buscar proveedor…" oninput="filtrarProveedores()">
     </div>
@@ -811,6 +838,15 @@ include '../../panel/dashboard/layaut/nav.php';
 
   <!-- ══ Panel: Asignaciones ══ -->
   <div class="prov-panel" id="panel-asignaciones">
+    <div class="info-banner">
+      <span class="info-banner__icon">🔗</span>
+      <div>
+        <strong>¿Para qué sirve esta sección?</strong>
+        Acá vinculás cada proveedor con las materias primas que te puede suministrar.
+        Esta relación es necesaria para que, al registrar una compra, solo veas los insumos que corresponden a ese proveedor.
+        Un mismo insumo puede estar asignado a varios proveedores (por ejemplo, podés comprar harina de dos distribuidores distintos).
+      </div>
+    </div>
     <div class="compra-form-card" style="margin-bottom:1.5rem;">
       <h3>Asignar materia prima a proveedor</h3>
       <div class="form-grid">
@@ -853,6 +889,16 @@ include '../../panel/dashboard/layaut/nav.php';
 
   <!-- ══ Panel: Registrar compra ══ -->
   <div class="prov-panel" id="panel-compras">
+    <div class="info-banner">
+      <span class="info-banner__icon">🛒</span>
+      <div>
+        <strong>¿Cómo funciona registrar una compra?</strong>
+        Seleccioná el proveedor y la materia prima. Ingresá la <strong>cantidad</strong> recibida (en la unidad de medida del insumo: g, ml, u.).
+        El <strong>costo unitario</strong> es opcional pero recomendado — se usa para calcular el costo de producción y la rentabilidad en el módulo de Analítica.
+        Al confirmar, el stock de esa materia prima se actualiza automáticamente y la compra queda en el historial.
+        <br><span style="color:#b7791f">⚠️ Si cometiste un error, podés cancelar la compra desde el Historial — esto revierte el stock.</span>
+      </div>
+    </div>
     <div class="compra-layout">
       <div class="compra-form-card">
         <h3>Nueva orden de compra</h3>
@@ -870,12 +916,19 @@ include '../../panel/dashboard/layaut/nav.php';
             </select>
           </div>
           <div class="form-group">
-            <label>Cantidad a comprar (G, ML, U)</label>
-            <input type="number" id="inputCantidad" placeholder="0.00" min="0" step="0.01">
+            <label>Cantidad a comprar</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="number" id="inputCantidad" placeholder="0.00" min="0" step="0.01" style="flex:1" oninput="actualizarConversion()">
+              <select id="selectUnidadCompra" style="width:90px;padding:10px 8px;border:1.5px solid var(--rule);border-radius:var(--radius);font-family:inherit;font-size:.85rem;background:#fff;color:var(--ink);outline:none;" onchange="actualizarConversion()">
+                <option value="">—</option>
+              </select>
+            </div>
+            <div id="conversionNote" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f8f0;border:1px solid #b8e0c0;border-radius:6px;font-size:.8rem;color:#1a5c30;line-height:1.5;"></div>
           </div>
           <div class="form-group">
-            <label>Costo unitario (opcional)</label>
-            <input type="number" id="inputCosto" placeholder="0.00000" min="0" step="0.00001">
+            <label id="labelCosto">Costo unitario (opcional)</label>
+            <input type="number" id="inputCosto" placeholder="0.00" min="0" step="0.01">
+            <div style="margin-top:4px;font-size:.75rem;color:var(--ink-soft)" id="costoHint">Ingresá el precio que pagás por cada unidad de compra.</div>
           </div>
           <div class="form-group">
             <label>Observaciones</label>
@@ -904,6 +957,17 @@ include '../../panel/dashboard/layaut/nav.php';
 
   <!-- ══ Panel: Historial ══ -->
   <div class="prov-panel" id="panel-historial">
+    <div class="info-banner">
+      <span class="info-banner__icon">📋</span>
+      <div>
+        <strong>Historial de compras</strong>
+        Acá están todas las compras de materias primas registradas.
+        <strong>ACTIVA</strong> significa que el stock ya fue sumado y la compra está vigente.
+        <strong>Cancelada</strong> significa que se revirtió — el stock volvió a su estado anterior.
+        Podés <em>cancelar</em> una compra activa (por error de carga o devolución) o <em>reactivar</em> una cancelada.
+        El campo <strong>Costo unit.</strong> es el precio por unidad pagado al proveedor; se usa para calcular la inversión en materiales.
+      </div>
+    </div>
     <div class="table-wrap">
       <table id="tablaHistorialDT" style="width:100%">
         <thead>
@@ -1397,10 +1461,27 @@ include '../../panel/dashboard/layaut/nav.php';
   /* ══════════════════════════
      COMPRAS
   ══════════════════════════ */
+  // Mapa de conversiones entre unidades compatibles
+  // Formato: { 'desde_abrev|hasta_abrev': factor }
+  const CONV = {
+    'Kg|G': 1000, 'G|Kg': 0.001,
+    'L|ml': 1000, 'ml|L': 0.001,
+  };
+
+  // Unidades de compra disponibles según la unidad base del insumo
+  const UNIDADES_COMPATIBLES = {
+    'G':  [{ abrev:'G',  nombre:'Gramos (G)' }, { abrev:'Kg', nombre:'Kilogramos (Kg)' }],
+    'Kg': [{ abrev:'Kg', nombre:'Kilogramos (Kg)' }, { abrev:'G', nombre:'Gramos (G)' }],
+    'ml': [{ abrev:'ml', nombre:'Mililitros (ml)' }, { abrev:'L', nombre:'Litros (L)' }],
+    'L':  [{ abrev:'L',  nombre:'Litros (L)' }, { abrev:'ml', nombre:'Mililitros (ml)' }],
+    'U':  [{ abrev:'U',  nombre:'Unidades (U)' }],
+  };
+
   async function cargarMateriasPorProveedor() {
     const idProv = document.getElementById('selectProvCompra').value;
     const s = document.getElementById('selectMateriaCompra');
     document.getElementById('stockInfoContent').innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
+    resetUnidadSelector();
     if (!idProv) {
       s.innerHTML = '<option value="">— Primero seleccioná proveedor —</option>';
       return;
@@ -1409,13 +1490,29 @@ include '../../panel/dashboard/layaut/nav.php';
     try {
       const res = await ajax(`ajax/get_materias_proveedor.php?idproveedor=${idProv}`);
       const lista = res.data || [];
-      s.innerHTML = lista.length ?
-        '<option value="">— Seleccioná materia prima —</option>' +
-        lista.map(m => `<option value="${m.idmateria_prima}" data-stock="${m.stock_actual}" data-min="${m.stock_minimo}" data-costo="${m.costo||''}">${esc(m.nombre)}</option>`).join('') :
-        '<option value="">Sin materias primas asignadas</option>';
+      s.innerHTML = lista.length
+        ? '<option value="">— Seleccioná materia prima —</option>' +
+          lista.map(m =>
+            `<option value="${m.idmateria_prima}"
+              data-stock="${m.stock_actual}"
+              data-min="${m.stock_minimo}"
+              data-costo="${m.costo||''}"
+              data-unidad-abrev="${m.unidad_abrev||''}"
+              data-unidad-nombre="${m.unidad_nombre||''}"
+            >${esc(m.nombre)} (${m.unidad_abrev||'?'})</option>`
+          ).join('')
+        : '<option value="">Sin materias primas asignadas</option>';
     } catch (e) {
       s.innerHTML = '<option value="">Error al cargar</option>';
     }
+  }
+
+  function resetUnidadSelector() {
+    const sel = document.getElementById('selectUnidadCompra');
+    sel.innerHTML = '<option value="">—</option>';
+    document.getElementById('conversionNote').style.display = 'none';
+    document.getElementById('labelCosto').textContent = 'Costo unitario (opcional)';
+    document.getElementById('costoHint').textContent  = 'Ingresá el precio que pagás por cada unidad de compra.';
   }
 
   function mostrarStockInfo() {
@@ -1423,64 +1520,110 @@ include '../../panel/dashboard/layaut/nav.php';
     const c = document.getElementById('stockInfoContent');
     if (!opt || !opt.value) {
       c.innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
+      resetUnidadSelector();
       return;
     }
-    const stock = parseFloat(opt.dataset.stock) || 0;
-    const min = parseFloat(opt.dataset.min) || 0;
-    const costo = opt.dataset.costo ? `$${parseFloat(opt.dataset.costo).toFixed(5)}` : '—';
-    const pct = min > 0 ? Math.min(100, (stock / min) * 100) : 100;
-    const color = stock >= min ? '#1a7a4a' : '#c0392b';
-    c.innerHTML = `<div style="display:grid;gap:.9rem;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
-      <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
-        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:${color}">${stock}</div>
-        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock actual</div>
+
+    const stock      = parseFloat(opt.dataset.stock)       || 0;
+    const min        = parseFloat(opt.dataset.min)         || 0;
+    const costo      = opt.dataset.costo ? `$${parseFloat(opt.dataset.costo).toFixed(2)}` : '—';
+    const unidAbrev  = opt.dataset.unidadAbrev  || '';
+    const pct        = min > 0 ? Math.min(100, (stock / min) * 100) : 100;
+    const color      = stock >= min ? '#1a7a4a' : '#c0392b';
+
+    c.innerHTML = `
+    <div style="display:grid;gap:.9rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+        <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
+          <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:${color}">${stock} <span style="font-size:.9rem">${unidAbrev}</span></div>
+          <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock actual</div>
+        </div>
+        <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
+          <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;">${min} <span style="font-size:.9rem">${unidAbrev}</span></div>
+          <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock mínimo</div>
+        </div>
       </div>
-      <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
-        <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;">${min}</div>
-        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock mínimo</div>
+      <div>
+        <div style="font-size:.72rem;color:var(--ink-soft);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em;">Nivel de stock</div>
+        <div style="background:var(--rule);border-radius:20px;height:6px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:20px;transition:width .6s ease;"></div>
+        </div>
       </div>
-    </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--ink-soft);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em;">Nivel de stock</div>
-      <div style="background:var(--rule);border-radius:20px;height:6px;overflow:hidden;">
-        <div style="height:100%;width:${pct}%;background:${color};border-radius:20px;transition:width .6s ease;"></div>
-      </div>
-    </div>
-    <div style="font-size:.8rem;color:var(--ink-soft);">Costo registrado: <strong style="color:var(--ink)">${costo}</strong></div>
-  </div>`;
-    if (opt.dataset.costo) document.getElementById('inputCosto').value = parseFloat(opt.dataset.costo).toFixed(5);
+      <div style="font-size:.8rem;color:var(--ink-soft);">Costo registrado: <strong style="color:var(--ink)">${costo}</strong></div>
+    </div>`;
+
+    if (opt.dataset.costo) document.getElementById('inputCosto').value = parseFloat(opt.dataset.costo).toFixed(2);
+
+    // Poblar selector de unidades de compra
+    const sel = document.getElementById('selectUnidadCompra');
+    const compatibles = UNIDADES_COMPATIBLES[unidAbrev] || [{ abrev: unidAbrev, nombre: unidAbrev }];
+    sel.innerHTML = compatibles.map(u =>
+      `<option value="${u.abrev}" ${u.abrev === unidAbrev ? 'selected' : ''}>${u.abrev}</option>`
+    ).join('');
+    actualizarConversion();
+  }
+
+  function actualizarConversion() {
+    const opt     = document.getElementById('selectMateriaCompra').selectedOptions[0];
+    const unidBase= opt?.dataset?.unidadAbrev || '';
+    const unidComp= document.getElementById('selectUnidadCompra').value;
+    const cantStr = document.getElementById('inputCantidad').value;
+    const cant    = parseFloat(cantStr);
+    const note    = document.getElementById('conversionNote');
+    const label   = document.getElementById('labelCosto');
+    const hint    = document.getElementById('costoHint');
+
+    if (!unidComp) { note.style.display = 'none'; return; }
+
+    // Actualizar etiqueta del costo
+    label.textContent = `Costo por ${unidComp} (opcional)`;
+    hint.textContent  = `Precio que pagás por cada ${unidComp}. El sistema convierte al stock en ${unidBase}.`;
+
+    if (!cant || isNaN(cant) || !unidBase) { note.style.display = 'none'; return; }
+
+    const factor = CONV[`${unidComp}|${unidBase}`] ?? 1;
+    const cantBase = cant * factor;
+
+    if (factor === 1) {
+      note.style.display = 'none';
+    } else {
+      note.style.display = 'block';
+      const fmtN = n => n % 1 === 0 ? n.toLocaleString('es-AR') : n.toLocaleString('es-AR', {maximumFractionDigits:3});
+      note.innerHTML = `📦 <strong>${fmtN(cant)} ${unidComp}</strong> → se agregarán <strong>${fmtN(cantBase)} ${unidBase}</strong> al stock`;
+    }
   }
 
   async function registrarCompra() {
-    const idProv = document.getElementById('selectProvCompra').value;
+    const idProv    = document.getElementById('selectProvCompra').value;
     const idMateria = document.getElementById('selectMateriaCompra').value;
-    const cantidad = parseFloat(document.getElementById('inputCantidad').value);
-    const costo = document.getElementById('inputCosto').value;
-    const obs = document.getElementById('inputObsCompra').value;
-    if (!idProv) {
-      toast('Seleccioná un proveedor', 'error');
-      return;
-    }
-    if (!idMateria) {
-      toast('Seleccioná una materia prima', 'error');
-      return;
-    }
-    if (!cantidad || cantidad <= 0) {
-      toast('Ingresá una cantidad válida', 'error');
-      return;
-    }
+    const cantOrig  = parseFloat(document.getElementById('inputCantidad').value);
+    const unidComp  = document.getElementById('selectUnidadCompra').value;
+    const costo     = document.getElementById('inputCosto').value;
+    const obs       = document.getElementById('inputObsCompra').value;
+    const opt       = document.getElementById('selectMateriaCompra').selectedOptions[0];
+    const unidBase  = opt?.dataset?.unidadAbrev || '';
+
+    if (!idProv)              { toast('Seleccioná un proveedor', 'error'); return; }
+    if (!idMateria)           { toast('Seleccioná una materia prima', 'error'); return; }
+    if (!cantOrig || cantOrig <= 0) { toast('Ingresá una cantidad válida', 'error'); return; }
+    if (!unidComp)            { toast('Seleccioná la unidad de compra', 'error'); return; }
+
+    // Convertir a unidad base para el stock
+    const factor   = CONV[`${unidComp}|${unidBase}`] ?? 1;
+    const cantBase = cantOrig * factor;
 
     const btn = document.getElementById('btnRegistrar');
     btn.innerHTML = '<span class="loader"></span> Procesando…';
     btn.disabled = true;
     try {
       const res = await ajax('ajax/registrar_compra.php', {
-        idproveedor: idProv,
-        idmateria_prima: idMateria,
-        cantidad,
-        costo: costo || null,
-        observaciones: obs
+        idproveedor:       idProv,
+        idmateria_prima:   idMateria,
+        cantidad:          cantBase,        // en unidad BASE → para el stock
+        cantidad_original: cantOrig,        // en unidad de compra → para historial
+        unidad_compra:     unidComp,        // abreviatura ej. "Kg"
+        costo:             costo || null,   // precio por unidad de compra
+        observaciones:     obs,
       });
       if (res.ok) {
         // Reset form
@@ -1490,11 +1633,14 @@ include '../../panel/dashboard/layaut/nav.php';
         document.getElementById('inputCosto').value = '';
         document.getElementById('inputObsCompra').value = '';
         document.getElementById('stockInfoContent').innerHTML = 'Seleccioná una materia prima para ver el stock actual.';
+        resetUnidadSelector();
         await cargarHistorial();
         Swal.fire({
           icon: 'success',
           title: '¡Compra registrada!',
-          html: `Se sumaron <strong>+${cantidad}</strong> unidades al stock.`,
+          html: factor !== 1
+            ? `Se sumaron <strong>+${cantOrig} ${unidComp}</strong> = <strong>+${cantBase} ${unidBase}</strong> al stock.`
+            : `Se sumaron <strong>+${cantBase} ${unidBase}</strong> al stock.`,
           confirmButtonColor: '#0a0a0a',
           confirmButtonText: 'Continuar',
           timer: 3000,
@@ -1617,32 +1763,53 @@ include '../../panel/dashboard/layaut/nav.php';
       const lista = res.data || [];
       dtHistorial.clear();
       lista.forEach(c => {
-        const esActiva = c.estado === 'activa';
-        const cantHtml = esActiva ?
-          `<span class="stock-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>+${parseFloat(c.cantidad).toFixed(2)}</span>` :
-          `<span class="stock-down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 9 12 15 6 9"/></svg>${parseFloat(c.cantidad).toFixed(2)}</span>`;
+        const esActiva   = c.estado === 'activa';
+        const unidBase   = c.unidad_base   || '';
+        const unidComp   = c.unidad_compra || unidBase;
+        const cantOrig   = c.cantidad_original != null ? parseFloat(c.cantidad_original) : null;
+        const cantBase   = parseFloat(c.cantidad);
+
+        // Etiqueta de cantidad: muestra unidad de compra + equivalente en base si difieren
+        let cantLabel;
+        if (cantOrig !== null && unidComp && unidComp !== unidBase) {
+          cantLabel = `${cantOrig.toLocaleString('es-AR')} ${unidComp}<br><span style="font-size:.72rem;color:var(--ink-soft)">${cantBase.toLocaleString('es-AR')} ${unidBase}</span>`;
+        } else {
+          cantLabel = `${cantBase.toLocaleString('es-AR')} ${unidBase}`;
+        }
+
+        const cantHtml = esActiva
+          ? `<span class="stock-up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>${cantLabel}</span>`
+          : `<span class="stock-down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 9 12 15 6 9"/></svg>${cantLabel}</span>`;
+
+        // Costo: muestra precio por unidad de compra
+        const costoHtml = c.costo
+          ? `$${parseFloat(c.costo).toFixed(2)}<span style="font-size:.72rem;color:var(--ink-soft)">/${unidComp||unidBase}</span>`
+          : '—';
+
         const estadoHtml = `<span class="badge-estado badge-${c.estado}">${c.estado}</span>`;
         const accionHtml = esActiva ?
-          `<button class="btn-sm warning" onclick="confirmarCancelarCompra(${c.id},'${esc(c.materia_nombre)}',${parseFloat(c.cantidad).toFixed(2)})">
+          `<button class="btn-sm warning" onclick="confirmarCancelarCompra(${c.id},'${esc(c.materia_nombre)}',${cantBase})">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
              Cancelar
            </button>` :
           `<div style="display:flex;flex-direction:column;gap:.35rem;align-items:flex-start;">
              <span style="font-size:.75rem;color:var(--ink-soft);">${c.cancelado_motivo||'—'}</span>
-             <button class="btn-sm" onclick="confirmarReactivarCompra(${c.id},'${esc(c.materia_nombre)}',${parseFloat(c.cantidad).toFixed(2)})" style="color:var(--success);border-color:var(--success);">
+             <button class="btn-sm" onclick="confirmarReactivarCompra(${c.id},'${esc(c.materia_nombre)}',${cantBase})" style="color:var(--success);border-color:var(--success);">
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
                Reactivar
              </button>
            </div>`;
+
+        const unidStr = unidBase || '';
         dtHistorial.row.add([
           `<strong>${c.id}</strong>`,
           esc(c.proveedor_nombre),
           esc(c.materia_nombre),
           cantHtml,
-          c.costo ? '$' + parseFloat(c.costo).toFixed(5) : '—',
+          costoHtml,
           c.created_at,
-          c.stock_anterior != null ? parseFloat(c.stock_anterior).toFixed(2) : '—',
-          `<strong>${parseFloat(c.stock_nuevo||0).toFixed(2)}</strong>`,
+          c.stock_anterior != null ? `${parseFloat(c.stock_anterior).toLocaleString('es-AR')} ${unidStr}` : '—',
+          `<strong>${parseFloat(c.stock_nuevo||0).toLocaleString('es-AR')} ${unidStr}</strong>`,
           estadoHtml,
           accionHtml
         ]);

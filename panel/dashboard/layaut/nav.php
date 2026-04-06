@@ -160,6 +160,13 @@ $current = $_SERVER['PHP_SELF'];
         </div>
     </div>
 
+    <!-- ANALÍTICA -->
+    <a href="<?= $baseUrl ?>/administracion/analitica/index.php"
+       class="<?= str_contains($current,'analitica') ? 'active' : '' ?>">
+        <i class="fa-solid fa-chart-bar"></i>
+        <span>Analítica</span>
+    </a>
+
     <!-- VENTAS -->
     <div class="menu-group <?= str_contains($current,'ventas') ? 'open' : '' ?>">
         <span class="menu-title">

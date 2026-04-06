@@ -9,12 +9,21 @@ header('Content-Type: application/json');
 $pdo        = Conexion::conectar();
 $usuario_id = $_SESSION['usuario_id'] ?? null;
 
-$data          = json_decode(file_get_contents('php://input'), true);
-$idproveedor   = intval($data['idproveedor'] ?? 0);
-$idmateria     = intval($data['idmateria_prima'] ?? 0);
-$cantidad      = floatval($data['cantidad'] ?? 0);
-$costo         = isset($data['costo']) && $data['costo'] !== null && $data['costo'] !== '' ? floatval($data['costo']) : null;
-$observaciones = trim($data['observaciones'] ?? '');
+// Agregar columnas nuevas si no existen (migración segura)
+foreach ([
+    "ALTER TABLE compra_materia_prima ADD COLUMN unidad_compra   VARCHAR(10)    NULL AFTER costo",
+    "ALTER TABLE compra_materia_prima ADD COLUMN cantidad_original DECIMAL(10,3) NULL AFTER unidad_compra",
+] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+
+$data             = json_decode(file_get_contents('php://input'), true);
+$idproveedor      = intval($data['idproveedor']        ?? 0);
+$idmateria        = intval($data['idmateria_prima']     ?? 0);
+$cantidad         = floatval($data['cantidad']          ?? 0);  // ya en unidad BASE
+$cantidad_original= isset($data['cantidad_original'])   ? floatval($data['cantidad_original']) : null;
+$unidad_compra    = trim($data['unidad_compra']         ?? ''); // abreviatura ej. "Kg"
+$costo            = (isset($data['costo']) && $data['costo'] !== null && $data['costo'] !== '')
+                    ? floatval($data['costo']) : null;          // costo por unidad de compra
+$observaciones    = trim($data['observaciones']         ?? '');
 
 if (!$idproveedor || !$idmateria || $cantidad <= 0) {
     echo json_encode(['ok' => false, 'msg' => 'Datos incompletos o inválidos']);
@@ -22,10 +31,17 @@ if (!$idproveedor || !$idmateria || $cantidad <= 0) {
 }
 
 try {
-    // Obtener nombres para la auditoría antes de la transacción
-    $stmtMP = $pdo->prepare("SELECT nombre FROM materia_prima WHERE idmateria_prima = ?");
+    // Nombres para auditoría
+    $stmtMP = $pdo->prepare("
+        SELECT mp.nombre, um.abreviatura AS unidad_base
+        FROM materia_prima mp
+        LEFT JOIN unidad_medida um ON um.idunidad_medida = mp.unidad_medida_idunidad_medida
+        WHERE mp.idmateria_prima = ?
+    ");
     $stmtMP->execute([$idmateria]);
-    $nombreMateria = $stmtMP->fetchColumn() ?: "ID {$idmateria}";
+    $mp = $stmtMP->fetch();
+    $nombreMateria = $mp['nombre'] ?? "ID {$idmateria}";
+    $unidadBase    = $mp['unidad_base'] ?? '';
 
     $stmtProv = $pdo->prepare("SELECT nombre FROM proveedor WHERE idproveedor = ?");
     $stmtProv->execute([$idproveedor]);
@@ -33,58 +49,60 @@ try {
 
     $pdo->beginTransaction();
 
-    // 1. Obtener stock anterior
+    // Stock anterior
     $stmtAntes = $pdo->prepare("SELECT stock_actual FROM materia_prima WHERE idmateria_prima = ?");
     $stmtAntes->execute([$idmateria]);
     $stockAnterior = $stmtAntes->fetchColumn();
+    if ($stockAnterior === false) throw new Exception('Materia prima no encontrada');
 
-    if ($stockAnterior === false) {
-        throw new Exception('Materia prima no encontrada');
-    }
-
-    // 2. Actualizar stock
-    $stmt = $pdo->prepare("
-        UPDATE materia_prima
-        SET stock_actual = stock_actual + ?, updated_at = NOW()
+    // Actualizar stock (cantidad ya viene en unidad BASE)
+    $pdo->prepare("
+        UPDATE materia_prima SET stock_actual = stock_actual + ?, updated_at = NOW()
         WHERE idmateria_prima = ?
-    ");
-    $stmt->execute([$cantidad, $idmateria]);
+    ")->execute([$cantidad, $idmateria]);
 
     $nuevoStock = $stockAnterior + $cantidad;
 
-    // 3. Actualizar costo en pivot (si viene)
+    // Actualizar costo en pivot proveedor-materia (guardamos costo por unidad de compra)
     if ($costo !== null) {
-        $stmtCosto = $pdo->prepare("
+        $pdo->prepare("
             UPDATE materia_prima_has_proveedor
             SET costo = ?, updated_at = NOW()
-            WHERE materia_prima_idmateria_prima = ?
-            AND proveedor_idproveedor = ?
-        ");
-        $stmtCosto->execute([$costo, $idmateria, $idproveedor]);
+            WHERE materia_prima_idmateria_prima = ? AND proveedor_idproveedor = ?
+        ")->execute([$costo, $idmateria, $idproveedor]);
     }
 
-    // 4. Historial
+    // Historial
     try {
-        $stmtHist = $pdo->prepare("
+        $pdo->prepare("
             INSERT INTO compra_materia_prima
-            (proveedor_idproveedor, materia_prima_idmateria_prima, cantidad, costo,
+            (proveedor_idproveedor, materia_prima_idmateria_prima,
+             cantidad, costo, unidad_compra, cantidad_original,
              stock_anterior, stock_nuevo, observaciones, usuario_id, created_at)
-            VALUES (?,?,?,?,?,?,?,?,NOW())
-        ");
-        $stmtHist->execute([
-            $idproveedor, $idmateria, $cantidad, $costo,
-            $stockAnterior, $nuevoStock, $observaciones ?: null, $usuario_id,
+            VALUES (?,?,?,?,?,?,?,?,?,?,NOW())
+        ")->execute([
+            $idproveedor, $idmateria,
+            $cantidad, $costo,
+            $unidad_compra ?: null,
+            $cantidad_original !== null ? $cantidad_original : null,
+            $stockAnterior, $nuevoStock,
+            $observaciones ?: null, $usuario_id,
         ]);
     } catch (PDOException $ignored) {}
 
     $pdo->commit();
 
-    $costoStr = $costo !== null ? '$' . number_format($costo, 2) : 'sin costo';
+    // Descripción legible para auditoría
+    $cantDesc = ($cantidad_original !== null && $unidad_compra)
+        ? "{$cantidad_original} {$unidad_compra} = {$cantidad} {$unidadBase}"
+        : "{$cantidad} {$unidadBase}";
+    $costoDesc = $costo !== null
+        ? '$' . number_format($costo, 2) . ($unidad_compra ? "/{$unidad_compra}" : '')
+        : 'sin costo';
+
     audit($pdo, 'registrar', 'compras',
-        "Compra registrada: {$nombreMateria} x {$cantidad} u." .
-        " | Proveedor: {$nombreProveedor}" .
-        " | Costo unitario: {$costoStr}" .
-        " | Stock anterior: {$stockAnterior} → Stock nuevo: {$nuevoStock}" .
+        "Compra: {$nombreMateria} × {$cantDesc} | Proveedor: {$nombreProveedor}" .
+        " | Costo: {$costoDesc} | Stock {$stockAnterior} → {$nuevoStock}" .
         ($observaciones ? " | Obs: {$observaciones}" : '')
     );
 

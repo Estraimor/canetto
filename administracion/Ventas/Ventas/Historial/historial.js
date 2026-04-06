@@ -109,6 +109,14 @@ const HistorialApp = (() => {
                       onclick="HistorialApp.guardarEstado(${v.idventas})" disabled>
                 💾
               </button>
+              ${parseInt(v.estado_id) === 3 ? `
+              <button class="btn-accion btn-whatsapp" title="Mandar mensaje al cliente"
+                      onclick="HistorialApp.mensajeCliente('${(v.cliente_telefono||'').replace(/\D/g,'')}', ${v.idventas})">
+                💬 Mensaje
+              </button>` : (parseInt(v.estado_id) === 4 ? `
+              <button class="btn-accion btn-whatsapp" disabled title="Pedido ya entregado" style="opacity:.4;cursor:not-allowed;">
+                💬 Mensaje
+              </button>` : '')}
             </div>
           </td>
         </tr>
@@ -223,6 +231,23 @@ const HistorialApp = (() => {
     document.getElementById('modal-detalle').style.display = 'none';
   }
 
+  // ─── WHATSAPP MENSAJE AL CLIENTE ──────────
+  function mensajeCliente(telefono, idVenta) {
+    if (!telefono) {
+      showToast('Este cliente no tiene número de teléfono registrado', 'error');
+      return;
+    }
+    // Normalizar número argentino: quitar 0 inicial, agregar +54
+    let num = telefono.replace(/\D/g, '');
+    if (num.startsWith('0')) num = num.slice(1);
+    if (!num.startsWith('54')) num = '54' + num;
+
+    const mensaje = encodeURIComponent(
+      `¡Hola! 👋 Te escribimos desde Canetto. Queríamos saber si recibiste bien tu pedido #${idVenta}. ¿Todo llegó bien? ¡Gracias por elegirnos! 🍪`
+    );
+    window.open(`https://wa.me/${num}?text=${mensaje}`, '_blank');
+  }
+
   // ─── INIT ─────────────────────────────────
   function init() {
     // Hoy por defecto en el filtro de fecha (ANTES de cargarVentas para que el filtro aplique desde el inicio)
@@ -238,5 +263,5 @@ const HistorialApp = (() => {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { cargarVentas, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle };
+  return { cargarVentas, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente };
 })();
