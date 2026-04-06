@@ -8,16 +8,17 @@ if (!isset($_SESSION['usuario_id'])) { http_response_code(403); exit; }
 header('Content-Type: application/json; charset=utf-8');
 $pdo = Conexion::conectar();
 
-$id           = !empty($_POST['idoferta'])    ? (int)$_POST['idoferta']    : 0;
-$titulo       = trim($_POST['titulo']         ?? '');
-$descripcion  = trim($_POST['descripcion']    ?? '');
-$emoji        = trim($_POST['emoji']          ?? '🎉');
-$tipo         = trim($_POST['tipo']           ?? 'promo');
-$valor        = $_POST['valor'] !== '' ? (float)$_POST['valor'] : null;
-$activo       = (int)($_POST['activo']        ?? 1);
-$fecha_inicio = $_POST['fecha_inicio'] !== '' ? $_POST['fecha_inicio'] : null;
-$fecha_fin    = $_POST['fecha_fin']    !== '' ? $_POST['fecha_fin']    : null;
-$imagenActual = trim($_POST['imagen_actual']  ?? '');
+$id                    = !empty($_POST['idoferta'])              ? (int)$_POST['idoferta']    : 0;
+$titulo                = trim($_POST['titulo']                   ?? '');
+$descripcion           = trim($_POST['descripcion']              ?? '');
+$emoji                 = trim($_POST['emoji']                    ?? '🎉');
+$tipo                  = trim($_POST['tipo']                     ?? 'promo');
+$valor                 = ($_POST['valor'] ?? '') !== '' ? (float)$_POST['valor'] : null;
+$activo                = (int)($_POST['activo']                  ?? 1);
+$fecha_inicio          = ($_POST['fecha_inicio'] ?? '') !== '' ? $_POST['fecha_inicio'] : null;
+$fecha_fin             = ($_POST['fecha_fin']    ?? '') !== '' ? $_POST['fecha_fin']    : null;
+$imagenActual          = trim($_POST['imagen_actual']            ?? '');
+$productos_idproductos = ($_POST['productos_idproductos'] ?? '') !== '' ? (int)$_POST['productos_idproductos'] : null;
 
 if (!$titulo) { echo json_encode(['ok'=>false,'msg'=>'El título es obligatorio.']); exit; }
 
@@ -54,12 +55,12 @@ if (empty($_POST['imagen_actual']) && empty($_FILES['imagen']['name'])) {
 }
 
 if ($id) {
-    $stmt = $pdo->prepare("UPDATE oferta SET titulo=?,descripcion=?,emoji=?,tipo=?,valor=?,imagen=?,activo=?,fecha_inicio=?,fecha_fin=? WHERE idoferta=?");
-    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $id]);
+    $stmt = $pdo->prepare("UPDATE oferta SET titulo=?,descripcion=?,emoji=?,tipo=?,valor=?,imagen=?,activo=?,fecha_inicio=?,fecha_fin=?,productos_idproductos=? WHERE idoferta=?");
+    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $id]);
     audit($pdo, 'editar', 'ofertas', 'Editó oferta: ' . $titulo);
 } else {
-    $stmt = $pdo->prepare("INSERT INTO oferta (titulo,descripcion,emoji,tipo,valor,imagen,activo,fecha_inicio,fecha_fin) VALUES (?,?,?,?,?,?,?,?,?)");
-    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin]);
+    $stmt = $pdo->prepare("INSERT INTO oferta (titulo,descripcion,emoji,tipo,valor,imagen,activo,fecha_inicio,fecha_fin,productos_idproductos) VALUES (?,?,?,?,?,?,?,?,?,?)");
+    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos]);
     audit($pdo, 'crear', 'ofertas', 'Creó oferta: ' . $titulo);
 }
 

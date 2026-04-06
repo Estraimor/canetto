@@ -25,6 +25,8 @@ try {
         "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
         "ALTER TABLE ventas ADD COLUMN sucursal_retiro_idsucursal INT NULL",
         "ALTER TABLE ventas ADD COLUMN observacion_cliente TEXT NULL",
+        "ALTER TABLE detalle_ventas ADD COLUMN precio_original DECIMAL(10,2) NULL",
+        "ALTER TABLE detalle_ventas ADD COLUMN descuento_pct DECIMAL(5,2) NULL",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
     $pdo->beginTransaction();
 
@@ -68,11 +70,20 @@ try {
     $id_venta = (int)$pdo->lastInsertId();
 
     // --- Detalle ---
-    $stmtD = $pdo->prepare("INSERT INTO detalle_ventas (ventas_idventas, productos_idproductos, cantidad, precio_unitario) VALUES (?,?,?,?)");
+    $stmtD = $pdo->prepare("INSERT INTO detalle_ventas (ventas_idventas, productos_idproductos, cantidad, precio_unitario, precio_original, descuento_pct) VALUES (?,?,?,?,?,?)");
     $resumen = [];
     foreach ($carrito as $item) {
-        $stmtD->execute([$id_venta, (int)$item['id'], (int)$item['cantidad'], (float)$item['precio']]);
-        $resumen[] = ($item['nombre'] ?? "Prod #{$item['id']}") . " ×{$item['cantidad']}";
+        $stmtD->execute([
+            $id_venta,
+            (int)$item['id'],
+            (int)$item['cantidad'],
+            (float)$item['precio'],
+            isset($item['precio_original']) && $item['precio_original'] ? (float)$item['precio_original'] : null,
+            isset($item['descuento_pct'])   && $item['descuento_pct']   ? (float)$item['descuento_pct']   : null,
+        ]);
+        $label = $item['nombre'] ?? "Prod #{$item['id']}";
+        if (!empty($item['descuento_pct'])) $label .= " ({$item['descuento_pct']}% OFF)";
+        $resumen[] = $label . " ×{$item['cantidad']}";
     }
 
     $pdo->commit();

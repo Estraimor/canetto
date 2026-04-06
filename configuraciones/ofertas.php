@@ -20,9 +20,14 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `oferta` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 try { $pdo->exec("ALTER TABLE oferta ADD COLUMN imagen VARCHAR(255) NULL"); } catch (Throwable $e) {}
+try { $pdo->exec("ALTER TABLE oferta ADD COLUMN productos_idproductos INT NULL"); } catch (Throwable $e) {}
 
 $total   = (int)$pdo->query("SELECT COUNT(*) FROM oferta")->fetchColumn();
 $activas = (int)$pdo->query("SELECT COUNT(*) FROM oferta WHERE activo=1")->fetchColumn();
+
+$productos_lista = $pdo->query("
+    SELECT idproductos, nombre, precio, tipo FROM productos WHERE activo=1 ORDER BY nombre ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
@@ -96,6 +101,20 @@ $activas = (int)$pdo->query("SELECT COUNT(*) FROM oferta WHERE activo=1")->fetch
         </div>
         <div class="modal-body">
             <div class="form-grid">
+                <div class="form-group full">
+                    <label>Producto vinculado <span style="font-size:11px;color:#888">(opcional — permite agregar al carrito desde el carrusel)</span></label>
+                    <select id="oProducto" onchange="onProductoChange(this)">
+                        <option value="">— Sin producto vinculado —</option>
+                        <?php foreach ($productos_lista as $pr): ?>
+                        <option value="<?= $pr['idproductos'] ?>"
+                                data-nombre="<?= htmlspecialchars($pr['nombre']) ?>"
+                                data-precio="<?= (float)$pr['precio'] ?>"
+                                data-tipo="<?= $pr['tipo'] ?>">
+                            <?= htmlspecialchars($pr['nombre']) ?> — $<?= number_format($pr['precio'],0,',','.') ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <div class="form-group full">
                     <label>Título *</label>
                     <input type="text" id="oTitulo" placeholder="Ej: ¡50% OFF en Boxes!">
@@ -228,8 +247,9 @@ function openModal() {
     editId = null;
     document.getElementById('modalTitle').textContent = 'Nueva oferta';
     ['oTitulo','oDesc','oValor','oFechaIni','oFechaFin','oImagenActual'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('oEmoji').value  = '🎉';
-    document.getElementById('oTipo').value   = 'promo';
+    document.getElementById('oEmoji').value    = '🎉';
+    document.getElementById('oTipo').value     = 'promo';
+    document.getElementById('oProducto').value = '';
     document.getElementById('oActivo').checked = true;
     document.getElementById('oToggleLbl').textContent = 'Activa';
     document.getElementById('oImagen').value  = '';
@@ -256,6 +276,7 @@ function editarRow(row) {
     document.getElementById('oFechaIni').value  = row.fecha_inicio || '';
     document.getElementById('oFechaFin').value  = row.fecha_fin   || '';
     document.getElementById('oImagenActual').value = row.imagen   || '';
+    document.getElementById('oProducto').value  = row.productos_idproductos || '';
     const activo = row.activo == 1;
     document.getElementById('oActivo').checked = activo;
     document.getElementById('oToggleLbl').textContent = activo ? 'Activa' : 'Inactiva';
@@ -284,6 +305,7 @@ async function guardar() {
     try {
         const fd = new FormData();
         fd.append('idoferta',    editId || '');
+        fd.append('productos_idproductos', document.getElementById('oProducto').value || '');
         fd.append('titulo',      titulo);
         fd.append('descripcion', document.getElementById('oDesc').value.trim());
         fd.append('emoji',       document.getElementById('oEmoji').value.trim() || '🎉');
@@ -361,5 +383,19 @@ function removeImage() {
 
 function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function onProductoChange(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt.value) return;
+    const nombre = opt.dataset.nombre;
+    const precio = opt.dataset.precio;
+    // Autocompletar título y precio si están vacíos
+    if (!document.getElementById('oTitulo').value.trim()) {
+        document.getElementById('oTitulo').value = nombre;
+    }
+    if (!document.getElementById('oValor').value.trim()) {
+        document.getElementById('oValor').value = precio;
+    }
 }
 </script>

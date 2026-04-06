@@ -22,12 +22,32 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     try { $pdo->exec("ALTER TABLE oferta ADD COLUMN imagen VARCHAR(255) NULL"); } catch (Throwable $e) {}
 
+    try { $pdo->exec("ALTER TABLE oferta ADD COLUMN productos_idproductos INT NULL"); } catch (Throwable $e) {}
+
     $ofertas = $pdo->query("
-        SELECT titulo, descripcion, emoji, tipo, valor, imagen FROM oferta
-        WHERE activo = 1
-          AND (fecha_inicio IS NULL OR fecha_inicio <= CURDATE())
-          AND (fecha_fin   IS NULL OR fecha_fin   >= CURDATE())
-        ORDER BY created_at DESC
+        SELECT o.titulo, o.descripcion, o.emoji, o.tipo, o.valor, o.imagen,
+               o.productos_idproductos,
+               p.nombre AS prod_nombre, p.precio AS prod_precio, p.tipo AS prod_tipo,
+               CASE
+                   WHEN p.tipo = 'box' THEN (
+                       SELECT COALESCE(MIN(FLOOR(sp2.stock_actual / bp.cantidad)), 0)
+                       FROM box_productos bp
+                       JOIN stock_productos sp2
+                           ON sp2.productos_idproductos = bp.producto_item
+                           AND sp2.tipo_stock = 'HECHO'
+                       WHERE bp.producto_box = p.idproductos
+                   )
+                   ELSE COALESCE(MAX(CASE WHEN sp.tipo_stock='HECHO' THEN sp.stock_actual END), 0)
+               END AS prod_stock
+        FROM oferta o
+        LEFT JOIN productos p ON p.idproductos = o.productos_idproductos AND p.activo = 1
+        LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
+        WHERE o.activo = 1
+          AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+          AND (o.fecha_fin   IS NULL OR o.fecha_fin   >= CURDATE())
+        GROUP BY o.idoferta, o.titulo, o.descripcion, o.emoji, o.tipo, o.valor, o.imagen,
+                 o.productos_idproductos, p.nombre, p.precio, p.tipo
+        ORDER BY o.created_at DESC
     ")->fetchAll();
 
     if (empty($ofertas)) {
@@ -39,13 +59,35 @@ try {
 
     $productos = $pdo->query("
         SELECT p.idproductos, p.nombre, p.precio, p.tipo,
-            COALESCE(MAX(CASE WHEN sp.tipo_stock='HECHO' THEN sp.stock_actual END), 0) AS stock_hecho
+            CASE
+                WHEN p.tipo = 'box' THEN (
+                    SELECT COALESCE(MIN(FLOOR(sp2.stock_actual / bp.cantidad)), 0)
+                    FROM box_productos bp
+                    JOIN stock_productos sp2
+                        ON sp2.productos_idproductos = bp.producto_item
+                        AND sp2.tipo_stock = 'HECHO'
+                    WHERE bp.producto_box = p.idproductos
+                )
+                ELSE COALESCE(MAX(CASE WHEN sp.tipo_stock='HECHO' THEN sp.stock_actual END), 0)
+            END AS stock_hecho
         FROM productos p
-        LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos
+        LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
         WHERE p.activo = 1
         GROUP BY p.idproductos, p.nombre, p.precio, p.tipo
         ORDER BY CASE p.tipo WHEN 'box' THEN 0 ELSE 1 END, p.nombre ASC
     ")->fetchAll();
+
+    // Contenido de cada box (para mostrar en modal)
+    $boxContenidoRaw = $pdo->query("
+        SELECT bp.producto_box, p.nombre, bp.cantidad
+        FROM box_productos bp
+        JOIN productos p ON p.idproductos = bp.producto_item
+        ORDER BY bp.producto_box, p.nombre
+    ")->fetchAll();
+    $boxContenido = [];
+    foreach ($boxContenidoRaw as $row) {
+        $boxContenido[$row['producto_box']][] = ['nombre' => $row['nombre'], 'cantidad' => $row['cantidad']];
+    }
 
     try {
         $pdo->exec("ALTER TABLE sucursal ADD COLUMN latitud DECIMAL(10,8) NULL");
@@ -120,6 +162,45 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
           <div class="slide-desc" style="margin-top:6px;font-size:15px;font-weight:700">
             <?= $o['tipo'] === 'descuento' ? number_format($o['valor'],0).'% OFF' : '$'.number_format($o['valor'],0,',','.') ?>
           </div>
+        <?php endif; ?>
+        <?php if (!empty($o['productos_idproductos']) && !empty($o['prod_nombre'])): ?>
+          <?php
+            $pStock      = (float)($o['prod_stock'] ?? 0);
+            $pid         = (int)$o['productos_idproductos'];
+            $pNombre     = htmlspecialchars($o['prod_nombre']);
+            $pPrecio     = (float)$o['prod_precio'];
+            $pTipo       = $o['prod_tipo'];
+            $esBox       = $pTipo === 'box';
+            $ofTipo      = $o['tipo'];
+            $ofValor     = (float)($o['valor'] ?? 0);
+            $esDescuento = $ofTipo === 'descuento' && $ofValor > 0;
+            $pPrecioFinal = $esDescuento ? round($pPrecio * (1 - $ofValor / 100)) : $pPrecio;
+          ?>
+          <?php if ($esBox): ?>
+            <button class="slide-cart-btn" <?= $pStock <= 0 ? 'disabled' : '' ?>
+              data-boxid="<?= $pid ?>"
+              data-nombre="<?= $pNombre ?>"
+              data-precio="<?= $pPrecioFinal ?>"
+              data-precio-original="<?= $pPrecio ?>"
+              data-descuento="<?= $esDescuento ? $ofValor : 0 ?>"
+              data-stock="<?= (int)$pStock ?>"
+              onclick="abrirModalBox(this)">
+              <?= $pStock <= 0 ? 'Sin stock' : '📦 Ver contenido' ?>
+            </button>
+          <?php else: ?>
+            <button class="btn-add-cart slide-cart-btn"
+              <?= $pStock <= 0 ? 'disabled' : '' ?>
+              data-id="<?= $pid ?>"
+              data-nombre="<?= $pNombre ?>"
+              data-precio="<?= $pPrecioFinal ?>"
+              data-precio-original="<?= $pPrecio ?>"
+              data-descuento="<?= $esDescuento ? $ofValor : 0 ?>"
+              data-tipo="<?= $pTipo ?>"
+              data-stock="<?= (int)$pStock ?>"
+              onclick="addToCart(this)">
+              <?= $pStock <= 0 ? 'Sin stock' : '+ Agregar al carrito' ?>
+            </button>
+          <?php endif; ?>
         <?php endif; ?>
       </div>
     </div>
@@ -272,6 +353,24 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   <div class="t-footer-copy">&copy; <?= date('Y') ?> Canetto. Todos los derechos reservados.</div>
 </footer>
 </div><!-- /page-wrap -->
+
+<!-- ── BOX DETAIL MODAL ─────────── -->
+<div class="cart-overlay" id="boxModalOverlay" onclick="cerrarModalBox()"></div>
+<div class="box-detail-modal" id="boxDetailModal">
+  <div class="box-detail-header">
+    <span id="boxModalNombre" style="font-weight:700;font-size:17px"></span>
+    <button onclick="cerrarModalBox()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1">×</button>
+  </div>
+  <div class="box-detail-body">
+    <div style="font-size:13px;color:#666;margin-bottom:10px">Contenido del box:</div>
+    <ul id="boxModalItems" style="list-style:none;padding:0;margin:0 0 16px"></ul>
+    <div style="font-size:20px;font-weight:800;margin-bottom:16px" id="boxModalPrecio"></div>
+    <button class="btn-add-cart" id="boxModalBtn" style="width:100%;justify-content:center;font-size:15px;padding:14px"
+      onclick="addBoxDesdeModal()">
+      + Agregar al carrito
+    </button>
+  </div>
+</div>
 
 <!-- ── CART DRAWER ─────────────── -->
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
@@ -433,12 +532,14 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <button class="fab" id="fabCart" onclick="openCart()">🛒<span class="fab-badge" id="fabBadge">0</span></button>
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 // ── PHP DATA ────────────────────────────
 const PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
 const SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
 const CLIENTE_PHP = <?= json_encode($cliente_id ? ['id'=>$cliente_id,'nombre'=>$cliente_nombre] : null) ?>;
+const BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
 
 // ── SWIPER ──────────────────────────────
 new Swiper('#mainSwiper',{loop:true,autoplay:{delay:4500,disableOnInteraction:false},pagination:{el:'.swiper-pagination',clickable:true}});
@@ -459,9 +560,13 @@ function requireLogin(){
 function addToCart(btn){
   if(requireLogin()) return;
   const id=+btn.dataset.id,nombre=btn.dataset.nombre,precio=+btn.dataset.precio,tipo=btn.dataset.tipo,stock=+btn.dataset.stock;
+  const precioOriginal=btn.dataset.precioOriginal?+btn.dataset.precioOriginal:null;
+  const descuentoPct=btn.dataset.descuento?+btn.dataset.descuento:null;
   const cart=getCart(),ex=cart.find(i=>i.id===id);
   if(ex){if(ex.cantidad>=stock){showToast('Máximo stock disponible','err');return}ex.cantidad++}
-  else cart.push({id,nombre,precio,tipo,cantidad:1});
+  else cart.push({id,nombre,precio,tipo,cantidad:1,
+    precio_original: descuentoPct>0 ? precioOriginal : null,
+    descuento_pct:   descuentoPct>0 ? descuentoPct   : null});
   saveCart(cart);showToast(nombre+' agregado ✓','ok');
   const o=btn.innerHTML;btn.innerHTML='✓ Listo';btn.style.background='#2d8a4e';
   setTimeout(()=>{btn.innerHTML=o;btn.style.background=''},1200);
@@ -651,26 +756,32 @@ async function findNearest() {
 
   const btn = document.getElementById('btnNearest');
 
-  // 🔥 detectar estado del permiso
+  // detectar si ya está bloqueado (no soportado en iOS Safari, por eso el try/catch)
   if (navigator.permissions) {
-    const perm = await navigator.permissions.query({ name: 'geolocation' });
-
-    // ❌ BLOQUEADO
-    if (perm.state === 'denied') {
-
-      Swal.fire({
-        icon: 'error',
-        title: 'Ubicación bloqueada',
-        html: `
-          Tenés la ubicación bloqueada ❌<br><br>
-          👉 Tocá el candado 🔒 arriba en la barra del navegador<br>
-          👉 Activá <b>Ubicación → Permitir</b><br><br>
-          Luego recargá la página
-        `,
-        confirmButtonText: 'Entendido'
-      });
-
-      return;
+    try {
+      const perm = await navigator.permissions.query({ name: 'geolocation' });
+      if (perm.state === 'denied') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Ubicación bloqueada',
+          html: `
+            Tenés la ubicación bloqueada ❌<br><br>
+            👉 Tocá el candado 🔒 arriba en la barra del navegador<br>
+            👉 Activá <b>Ubicación → Permitir</b><br><br>
+            Luego recargá la página
+          `,
+          showCancelButton: true,
+          cancelButtonText: 'Entendido',
+          cancelButtonColor: '#888',
+          confirmButtonText: '📍 Permitir ubicación',
+          confirmButtonColor: '#22c55e',
+        }).then(result => {
+          if (result.isConfirmed) pedirUbicacion();
+        });
+        return;
+      }
+    } catch(e) {
+      // navigator.permissions.query no soportado (iOS Safari) — continuar normalmente
     }
   }
 
@@ -748,7 +859,14 @@ async function findNearest() {
         Swal.fire({
           icon: 'warning',
           title: 'Permiso necesario',
-          text: 'Debés permitir la ubicación para continuar'
+          html: 'Es necesario <strong>permitir la ubicación</strong> para encontrar la sucursal más cercana.',
+          showCancelButton: true,
+          cancelButtonText: 'Entendido',
+          cancelButtonColor: '#888',
+          confirmButtonText: '📍 Permitir ubicación',
+          confirmButtonColor: '#22c55e',
+        }).then(result => {
+          if (result.isConfirmed) pedirUbicacion();
         });
       } else {
         showToast('Error obteniendo ubicación', 'err');
@@ -760,6 +878,95 @@ async function findNearest() {
       timeout: 10000
     }
   );
+}
+
+function pedirUbicacion() {
+  if (!navigator.geolocation) {
+    showToast('Tu navegador no soporta geolocalización', 'err');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    () => {
+      showToast('Ubicación permitida ✓', 'ok');
+      findNearest();
+    },
+    err => {
+      if (err.code === 1) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Ubicación bloqueada',
+          html: 'Bloqueaste la ubicación en este sitio.<br><br>👉 Tocá el candado 🔒 en la barra del navegador y activá <b>Ubicación → Permitir</b>, luego recargá la página.',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#0a0a0a',
+        });
+      } else {
+        showToast('No se pudo obtener la ubicación', 'err');
+      }
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// ── Modal detalle box ──
+let _boxModal = { id: null, nombre: null, precio: null, stock: null };
+
+function abrirModalBox(btn) {
+  const id             = +btn.dataset.boxid;
+  const nombre         = btn.dataset.nombre;
+  const precio         = +btn.dataset.precio;
+  const precioOriginal = +btn.dataset.precioOriginal;
+  const descuento      = +btn.dataset.descuento;
+  const stock          = +btn.dataset.stock;
+  _boxModal = { id, nombre, precio, precioOriginal, descuento, stock };
+  document.getElementById('boxModalNombre').textContent = nombre;
+
+  const precioEl = document.getElementById('boxModalPrecio');
+  if (descuento > 0) {
+    precioEl.innerHTML =
+      `<span style="text-decoration:line-through;color:#aaa;font-size:14px;font-weight:400">$${Number(precioOriginal).toLocaleString('es-AR')}</span>
+       <span style="color:#e11d48;margin-left:8px">$${Number(precio).toLocaleString('es-AR')}</span>
+       <span style="font-size:12px;background:#e11d48;color:#fff;border-radius:20px;padding:2px 8px;margin-left:6px">${descuento}% OFF</span>`;
+  } else {
+    precioEl.textContent = '$' + Number(precio).toLocaleString('es-AR');
+  }
+
+  const items = BOX_CONTENIDO[id] || [];
+  const ul = document.getElementById('boxModalItems');
+  if (items.length) {
+    ul.innerHTML = items.map(i =>
+      `<li class="box-item-row">
+        <span>${i.nombre}</span>
+        <span class="box-item-qty">x${i.cantidad}</span>
+      </li>`
+    ).join('');
+  } else {
+    ul.innerHTML = '<li style="color:#888;font-size:13px">Sin detalle de contenido cargado.</li>';
+  }
+
+  document.getElementById('boxModalOverlay').classList.add('on');
+  document.getElementById('boxDetailModal').classList.add('open');
+}
+
+function cerrarModalBox() {
+  document.getElementById('boxModalOverlay').classList.remove('on');
+  document.getElementById('boxDetailModal').classList.remove('open');
+}
+
+function addBoxDesdeModal() {
+  if (requireLogin()) return;
+  const { id, nombre, precio, precioOriginal, descuento, stock } = _boxModal;
+  const cart = getCart(), ex = cart.find(i => i.id === id);
+  if (ex) {
+    if (ex.cantidad >= stock) { showToast('Máximo stock disponible', 'err'); return; }
+    ex.cantidad++;
+  } else {
+    cart.push({ id, nombre, precio, tipo: 'box', cantidad: 1,
+      precio_original: descuento > 0 ? precioOriginal : null,
+      descuento_pct:   descuento > 0 ? descuento : null });
+  }
+  saveCart(cart);
+  showToast(nombre + ' agregado ✓', 'ok');
+  cerrarModalBox();
 }
 </script>
 

@@ -390,7 +390,6 @@ function showMapPreview(lat, lng) {
         document.getElementById('coordsDisplay').textContent =
             'Coordenadas: ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
     } else {
-        // Small delay so the div is visible before Leaflet measures it
         setTimeout(() => {
             _adminMap = L.map('mapPreview').setView([lat, lng], 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
