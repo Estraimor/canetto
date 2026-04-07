@@ -39,7 +39,7 @@ SIDEBAR
     font-size: 22px;
     font-weight: 600;
     margin-bottom: 40px;
-    color: #E91E63;
+    color: #c88e99;
 }
 
 /* =========================
@@ -69,7 +69,7 @@ NAV
     top: 0;
     height: 100%;
     width: 3px;
-    background: #E91E63;
+    background: #c88e99;
     transform: scaleY(0);
     transform-origin: top;
     transition: transform .2s ease;
@@ -86,8 +86,8 @@ NAV
 }
 
 .nav-menu a.active {
-    background: #ffeaf2;
-    color: #E91E63;
+    background: #f9edf0;
+    color: #c88e99;
     font-weight: 500;
 }
 
@@ -134,12 +134,12 @@ SUBMENUS
 .menu-group.open > .menu-title::after {
     transform: rotate(-135deg);
     margin-top: 3px;
-    border-color: #E91E63;
+    border-color: #c88e99;
 }
 
 .menu-group.open > .menu-title {
-    color: #E91E63;
-    background: #ffeaf2;
+    color: #c88e99;
+    background: #f9edf0;
     font-weight: 500;
 }
 
@@ -171,13 +171,13 @@ SUBMENUS
 }
 
 .submenu a:hover {
-    background: #ffeaf2;
-    color: #E91E63;
+    background: #f9edf0;
+    color: #c88e99;
 }
 
 .submenu a.active {
-    background: #ffeaf2;
-    color: #E91E63;
+    background: #f9edf0;
+    color: #c88e99;
     font-weight: 500;
 }
 
@@ -296,7 +296,7 @@ CARDS
 .card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 25px rgba(0,0,0,0.06);
-    border-color: #ffeaf2;
+    border-color: #f9edf0;
 }
 
 .card span {
@@ -357,7 +357,7 @@ LOADER PREMIUM
 .logo-loader {
     font-size: 34px;
     font-weight: 600;
-    color: #E91E63;
+    color: #c88e99;
     margin-bottom: 30px;
     letter-spacing: 2px;
     animation: fadeInLogo 2s ease forwards;
@@ -367,7 +367,7 @@ LOADER PREMIUM
     width: 55px;
     height: 55px;
     border: 4px solid rgba(255, 255, 255, 0.6);
-    border-top: 4px solid #E91E63;
+    border-top: 4px solid #c88e99;
     border-radius: 50%;
     margin: 0 auto 20px;
     animation: spin 2.5s linear infinite;

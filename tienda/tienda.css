@@ -14,9 +14,9 @@ html, body {
 }
 
 :root {
-  --pk: #e91e63;
-  --pk-lt: #ffeaf2;
-  --pk-dk: #c2185b;
+  --pk: #c88e99;
+  --pk-lt: #f9edf0;
+  --pk-dk: #a46678;
   --dk: #111;
   --gr: #666;
   --lt: #f8f9fa;
@@ -167,10 +167,10 @@ body.page-exit #page-wrap {
   font-size: 90px;
 }
 .slide-bg-0 {
-  background: linear-gradient(135deg, #e91e63, #9c27b0);
+  background: linear-gradient(135deg, #c88e99, #9c27b0);
 }
 .slide-bg-1 {
-  background: linear-gradient(135deg, #111, #c2185b);
+  background: linear-gradient(135deg, #111, #a46678);
 }
 .slide-bg-2 {
   background: linear-gradient(135deg, #ff6d00, #ffca28);
@@ -335,7 +335,7 @@ body.page-exit #page-wrap {
 }
 .prod-thumb {
   height: 100px;
-  background: linear-gradient(135deg, #ffeaf2, #fff8fb);
+  background: linear-gradient(135deg, #f9edf0, #fff5f7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -368,8 +368,8 @@ body.page-exit #page-wrap {
   color: #856404;
 }
 .sp-out {
-  background: #fde8e8;
-  color: #c0392b;
+  background: #f9edf0;
+  color: #c88e99;
 }
 .prod-body {
   padding: 10px 11px;
@@ -922,7 +922,7 @@ body.page-exit #page-wrap {
   margin-top: 6px;
 }
 .btn-clear:hover {
-  color: #c0392b;
+  color: #c88e99;
 }
 @media (max-width: 400px) {
   .cart-dhead {
@@ -1239,8 +1239,8 @@ body.page-exit #page-wrap {
   display: block;
 }
 .ck-alert.err {
-  background: #fde8e8;
-  color: #c0392b;
+  background: #f9edf0;
+  color: #c88e99;
 }
 .ck-alert.ok {
   background: #e8f5e9;
@@ -1449,7 +1449,7 @@ body.has-bottom-nav .fab {
   background: #2d8a4e;
 }
 .toast.err-t {
-  background: #c0392b;
+  background: #c88e99;
 }
 
 /* ═══ TRACKING PAGE ═══ */
@@ -1615,7 +1615,7 @@ body.has-bottom-nav .fab {
   align-items: center;
   justify-content: center;
   padding: 24px 20px;
-  background: linear-gradient(135deg, #ffeaf2, #fff8fb, #fff);
+  background: linear-gradient(135deg, #f9edf0, #fff5f7, #fff);
 }
 .auth-card {
   background: #fff;
@@ -1694,8 +1694,8 @@ body.has-bottom-nav .fab {
   display: block;
 }
 .auth-alert.e {
-  background: #fde8e8;
-  color: #c0392b;
+  background: #f9edf0;
+  color: #c88e99;
 }
 .auth-alert.s {
   background: #e8f5e9;

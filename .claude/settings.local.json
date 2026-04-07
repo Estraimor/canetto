@@ -3,7 +3,11 @@
     "allow": [
       "Bash(xargs grep:*)",
       "Bash(xargs wc:*)",
-      "Bash(php -r ':*)"
+      "Bash(php -r ':*)",
+      "Bash(\"/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe\" -u root -e \"ALTER TABLE canetto.materia_prima ADD COLUMN IF NOT EXISTS peso_unitario_g DECIMAL\\(8,3\\) DEFAULT NULL COMMENT 'Peso en gramos por unidad. Completar si la unidad es contable \\(huevos, piezas, etc.\\)';\")",
+      "Bash(\"/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe\" -u root -e \"ALTER TABLE canetto.materia_prima ADD COLUMN peso_unitario_g DECIMAL\\(8,3\\) DEFAULT NULL COMMENT 'Peso en gramos por unidad. Completar si la unidad es contable \\(huevos, piezas, etc.\\)';\")",
+      "Bash(grep -r \"CREATE TABLE IF NOT EXISTS \\\\`oferta\" /c/wamp64/www/canetto --include=\"*.php\" -A 20)",
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root canetto -e ':*)"
     ]
   }
 }

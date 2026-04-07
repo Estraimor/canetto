@@ -15,7 +15,7 @@ include '../../panel/dashboard/layaut/nav.php';
     --white: #ffffff;
     --rule: #e0e0e0;
     --rule-dark: #c0c0c0;
-    --danger: #c0392b;
+    --danger: #c88e99;
     --success: #1a7a4a;
     --warning: #b7791f;
     --shadow-sm: 0 1px 4px rgba(0, 0, 0, .08);
@@ -562,7 +562,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .table-wrap tbody tr.row-cancelada:hover {
-    background: #fde8e8;
+    background: #f9edf0;
   }
 
   .table-wrap td {
@@ -1310,7 +1310,7 @@ include '../../panel/dashboard/layaut/nav.php';
       html: `Vas a eliminar a <strong>${nombre}</strong>.<br>Esta acción no se puede deshacer.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#c0392b',
+      confirmButtonColor: '#c88e99',
       cancelButtonColor: '#6b7280',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
@@ -1423,7 +1423,7 @@ include '../../panel/dashboard/layaut/nav.php';
       html: `Desvincular <strong>${materia}</strong> del proveedor <strong>${proveedor}</strong>.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#c0392b',
+      confirmButtonColor: '#c88e99',
       cancelButtonColor: '#6b7280',
       confirmButtonText: 'Sí, quitar',
       cancelButtonText: 'Cancelar',
@@ -1529,7 +1529,7 @@ include '../../panel/dashboard/layaut/nav.php';
     const costo      = opt.dataset.costo ? `$${parseFloat(opt.dataset.costo).toFixed(2)}` : '—';
     const unidAbrev  = opt.dataset.unidadAbrev  || '';
     const pct        = min > 0 ? Math.min(100, (stock / min) * 100) : 100;
-    const color      = stock >= min ? '#1a7a4a' : '#c0392b';
+    const color      = stock >= min ? '#1a7a4a' : '#c88e99';
 
     c.innerHTML = `
     <div style="display:grid;gap:.9rem;">
@@ -1673,7 +1673,7 @@ include '../../panel/dashboard/layaut/nav.php';
            <input id="swal-motivo" class="swal2-input" placeholder="Ej: Error de carga, devolución…" style="font-size:.85rem;">`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#c0392b',
+      confirmButtonColor: '#c88e99',
       cancelButtonColor: '#6b7280',
       confirmButtonText: 'Sí, cancelar compra',
       cancelButtonText: 'No, mantener',

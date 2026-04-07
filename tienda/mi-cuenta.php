@@ -83,8 +83,8 @@ if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
 .btn-logout {
   width: 100%;
   padding: 14px;
-  background: #fde8e8;
-  color: #c0392b;
+  background: #f9edf0;
+  color: #c88e99;
   border: none;
   border-radius: 12px;
   font-size: 14px;
@@ -106,11 +106,11 @@ if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
 }
 .c-alert.on { display: block; }
 .c-alert.ok { background: #e8f5e9; color: #1d8348; }
-.c-alert.err { background: #fde8e8; color: #c0392b; }
+.c-alert.err { background: #f9edf0; color: #c88e99; }
 .avatar-circle {
   width: 72px;
   height: 72px;
-  background: linear-gradient(135deg, #e91e63, #9c27b0);
+  background: linear-gradient(135deg, #c88e99, #9c27b0);
   border-radius: 50%;
   display: flex;
   align-items: center;

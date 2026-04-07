@@ -8,7 +8,7 @@
   --white:      #ffffff;
   --rule:       #e0e0e0;
   --rule-dark:  #c0c0c0;
-  --danger:     #c0392b;
+  --danger:     #c88e99;
   --success:    #1a7a4a;
   --warning:    #b7791f;
   --shadow-sm:  0 1px 4px rgba(0,0,0,.08);
@@ -478,4 +478,28 @@ div.dataTables_wrapper div.dataTables_length { padding: .8rem 1rem .4rem; }
 @media (max-width: 520px) {
   .mp-actions { flex-direction: column; align-items: stretch; }
   .content-body { padding: 1.5rem 1rem 3rem; }
+}
+
+/* ── Peso unitario field ── */
+.mp-label-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-soft);
+  margin-left: 4px;
+}
+
+.mp-field-hint {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: #8a8a8a;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  line-height: 1.45;
+}
+
+.mp-field-hint i {
+  color: #c88e99;
+  margin-top: 1px;
+  flex-shrink: 0;
 }

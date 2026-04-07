@@ -26,11 +26,11 @@ unset($_SESSION['error']);
 .panel{display:none}.panel.on{display:block}
 /* ── alert ── */
 .lc-alert{padding:9px 13px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none}
-.lc-alert.err{background:#fde8e8;color:#c0392b;display:block}
+.lc-alert.err{background:#f9edf0;color:#c88e99;display:block}
 .lc-alert.ok{background:#e8f5e9;color:#1d8348;display:block}
 /* ── register btn ── */
-.btn-register{width:100%;padding:14px;background:#E91E63;color:#fff;border:none;border-radius:10px;font-weight:600;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:.25s;margin-top:4px}
-.btn-register:hover{background:#c2185b;transform:translateY(-1px)}
+.btn-register{width:100%;padding:14px;background:#c88e99;color:#fff;border:none;border-radius:10px;font-weight:600;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:.25s;margin-top:4px}
+.btn-register:hover{background:#a46678;transform:translateY(-1px)}
 .btn-register:disabled{background:#ccc;cursor:default;transform:none}
 /* ── back link ── */
 .lc-back{display:block;text-align:center;font-size:13px;color:#888;margin-top:14px;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;width:100%}

@@ -165,7 +165,7 @@ $productos_lista = $pdo->query("
                     <input type="hidden" id="oImagenActual">
                     <div id="previewWrap">
                         <img id="imgPreview" class="of-preview" src="" alt="Preview">
-                        <button type="button" onclick="removeImage()" style="font-size:12px;color:#c0392b;background:none;border:none;cursor:pointer;margin-top:4px">✕ Quitar imagen</button>
+                        <button type="button" onclick="removeImage()" style="font-size:12px;color:#c88e99;background:none;border:none;cursor:pointer;margin-top:4px">✕ Quitar imagen</button>
                     </div>
                     <p style="font-size:11px;color:#888;margin-top:5px">Si no subís imagen, se usará el emoji como fondo del slide.</p>
                 </div>

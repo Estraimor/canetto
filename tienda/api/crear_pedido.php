@@ -86,6 +86,26 @@ try {
         $resumen[] = $label . " ×{$item['cantidad']}";
     }
 
+    // --- Consumir packaging ---
+    $stmtGetPkg = $pdo->prepare("
+        SELECT pp.packaging_idpackaging, pp.cantidad AS cant_pkg, pk.nombre AS pkg_nombre
+        FROM producto_packaging pp
+        JOIN packaging pk ON pk.idpackaging = pp.packaging_idpackaging
+        WHERE pp.productos_idproductos = ?
+    ");
+    $stmtDescPkg = $pdo->prepare("
+        UPDATE packaging
+        SET stock_actual = stock_actual - ?, updated_at = NOW()
+        WHERE idpackaging = ?
+    ");
+    foreach ($carrito as $item) {
+        $stmtGetPkg->execute([(int)$item['id']]);
+        foreach ($stmtGetPkg->fetchAll(PDO::FETCH_ASSOC) as $pkg) {
+            $consumo = $pkg['cant_pkg'] * (int)$item['cantidad'];
+            $stmtDescPkg->execute([$consumo, $pkg['packaging_idpackaging']]);
+        }
+    }
+
     $pdo->commit();
 
     $sucNombre = '';

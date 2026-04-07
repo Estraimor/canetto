@@ -200,6 +200,16 @@ $pdo = Conexion::conectar();
             <input type="number" step="0.01" id="mp_stock_minimo" placeholder="0.00">
           </div>
 
+          <div class="mp-field">
+            <label>Peso por unidad (g) <span class="mp-label-hint">— solo si se mide en unidades</span></label>
+            <input type="number" step="0.01" min="0" id="mp_peso_unitario_g" placeholder="Ej: 55 para huevo grande">
+            <div class="mp-field-hint">
+              <i class="fa-solid fa-circle-info"></i>
+              Completar cuando el ingrediente se cuenta por unidades (huevos, piezas, etc.).
+              El sistema usará este valor para calcular el peso total de la receta.
+            </div>
+          </div>
+
           <div class="mp-field mp-switch">
   <label>Activo</label>
 
@@ -518,13 +528,14 @@ if (btnLimpiar) {
   const btnNuevaMP = $("#btnNuevaMP");
   const formMP = $("#formMP");
 
-  const mp_id = $("#mp_id");
-  const mp_nombre = $("#mp_nombre");
-  const mp_unidad = $("#mp_unidad");
-  const mp_stock_actual = $("#mp_stock_actual");
-  const mp_stock_minimo = $("#mp_stock_minimo");
-  const mp_activo = $("#mp_activo");
-  const mp_nota = $("#mp_nota");
+  const mp_id              = $("#mp_id");
+  const mp_nombre          = $("#mp_nombre");
+  const mp_unidad          = $("#mp_unidad");
+  const mp_stock_actual    = $("#mp_stock_actual");
+  const mp_stock_minimo    = $("#mp_stock_minimo");
+  const mp_peso_unitario_g = $("#mp_peso_unitario_g");
+  const mp_activo          = $("#mp_activo");
+  const mp_nota            = $("#mp_nota");
 
   btnNuevaMP.addEventListener("click", () => {
     formMP.reset();
@@ -549,6 +560,7 @@ if (btnLimpiar) {
       mp_unidad.value = data.unidad_medida_idunidad_medida;
       mp_stock_actual.value = data.stock_actual;
       mp_stock_minimo.value = data.stock_minimo;
+      mp_peso_unitario_g.value = data.peso_unitario_g != null ? data.peso_unitario_g : '';
       mp_activo.checked = data.activo == 1;
       mp_nota.value = data.nota || "";
 
@@ -571,6 +583,7 @@ if (btnLimpiar) {
       unidad: mp_unidad.value,
       stock_actual: mp_stock_actual.value || 0,
       stock_minimo: mp_stock_minimo.value || 0,
+      peso_unitario_g: mp_peso_unitario_g.value !== '' ? mp_peso_unitario_g.value : '',
       activo: mp_activo.checked ? 1 : 0,
       nota: mp_nota.value.trim()
     };
@@ -622,6 +635,15 @@ if (btnLimpiar) {
         if (resp.success) {
           tabla.ajax.reload(null, false);
           Swal.fire({ icon: "success", title: "Eliminado", text: "La materia prima fue eliminada correctamente", timer: 1800, showConfirmButton: false });
+        } else if (resp.en_uso) {
+          const lista = resp.recetas.map(r => `• ${r}`).join("<br>");
+          Swal.fire({
+            icon: "warning",
+            title: "No se puede eliminar",
+            html: `<p style="margin-bottom:10px">Esta materia prima está siendo usada en las siguientes recetas:</p><div style="text-align:left;background:#f9edf0;border-radius:8px;padding:12px 16px;font-size:14px;line-height:1.8">${lista}</div><p style="margin-top:12px;font-size:13px;color:#888">Eliminala de esas recetas antes de continuar.</p>`,
+            confirmButtonColor: "#c88e99",
+            confirmButtonText: "Entendido"
+          });
         } else {
           Swal.fire("Error", resp?.message || "No se pudo eliminar", "error");
         }

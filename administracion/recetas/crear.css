@@ -404,6 +404,45 @@
     text-align: center;
 }
 
+.receta-crear .tabla-ingredientes .th-aporte,
+.receta-crear .tabla-ingredientes .td-aporte{
+    width: 140px;
+    text-align: right;
+    padding-right: 18px;
+}
+
+/* Celda aporte — calculado desde peso_unitario_g */
+.receta-crear .aporte-calc{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+}
+.receta-crear .aporte-calc strong{
+    font-size: 14px;
+    font-weight: 800;
+    color: #b06070;
+    letter-spacing: -.2px;
+}
+.receta-crear .aporte-calc small{
+    font-size: 10.5px;
+    color: #9aa1ad;
+    font-weight: 500;
+}
+
+/* Celda aporte — cantidad directa (sin peso_unitario_g) */
+.receta-crear .aporte-directo strong{
+    font-size: 14px;
+    font-weight: 700;
+    color: #4b5563;
+}
+
+/* Celda aporte — vacía */
+.receta-crear .aporte-empty{
+    color: #d1d5db;
+    font-size: 15px;
+}
+
 .receta-crear .tabla-ingredientes select,
 .receta-crear .tabla-ingredientes input{
     height: 44px;
@@ -446,21 +485,26 @@
 
 .receta-crear .resumen-label{
     display: block;
-    margin-bottom: 8px;
-    font-size: 12px;
-    font-weight: 700;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: .6px;
+    letter-spacing: .7px;
     color: #9aa1ad;
+}
+
+.receta-crear .resumen-card-top .resumen-label{
+    margin-bottom: 0;
 }
 
 .receta-crear .resumen-card strong{
     display: block;
-    font-size: 22px;
-    line-height: 1.1;
+    font-size: 32px;
+    line-height: 1.05;
     color: #1f2937;
     font-weight: 800;
-    letter-spacing: -.4px;
+    letter-spacing: -.6px;
+    margin-bottom: 2px;
 }
 
 /* ==========================================================
@@ -532,27 +576,147 @@
 }
 
 
-/* INPUT KPI */
+/* ==========================================================
+   RESUMEN CARD ENHANCEMENTS
+========================================================== */
 
+.receta-crear .resumen-card-top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    min-height: 22px;
+}
+
+.receta-crear .resumen-card-top .resumen-label{
+    margin-bottom: 0;
+}
+
+/* CARD PESO TOTAL */
+.receta-crear .resumen-card--peso{
+    border-color: rgba(200,142,153,.3);
+    background: linear-gradient(160deg, #fff7f9, #ffffff);
+    box-shadow:
+        0 10px 20px rgba(200,142,153,.08),
+        0 2px 8px rgba(200,142,153,.06);
+}
+
+@keyframes pesoPulse{
+    0%   { box-shadow: 0 10px 20px rgba(200,142,153,.08), 0 2px 8px rgba(200,142,153,.06); }
+    40%  { box-shadow: 0 12px 28px rgba(200,142,153,.22), 0 4px 12px rgba(200,142,153,.12); }
+    100% { box-shadow: 0 10px 20px rgba(200,142,153,.08), 0 2px 8px rgba(200,142,153,.06); }
+}
+
+.receta-crear .resumen-card--peso.peso-pulse{
+    animation: pesoPulse .38s ease;
+}
+
+/* BADGE AUTO / MANUAL */
+.receta-crear .peso-meta{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.receta-crear .peso-badge{
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    line-height: 1.6;
+}
+
+.receta-crear .peso-badge--auto{
+    background: rgba(200,142,153,.14);
+    color: #c88e99;
+    border: 1px solid rgba(200,142,153,.28);
+}
+
+.receta-crear .peso-badge--manual{
+    background: rgba(107,114,128,.10);
+    color: #6b7280;
+    border: 1px solid rgba(107,114,128,.18);
+}
+
+.receta-crear .btn-reset-peso{
+    display: none;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #c88e99;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color .18s;
+}
+
+.receta-crear .btn-reset-peso:hover{
+    color: #a46678;
+}
+
+/* HINT */
+.receta-crear .peso-hint{
+    margin-top: 8px;
+    font-size: 11px;
+    color: #9aa1ad;
+    line-height: 1.4;
+    min-height: 14px;
+}
+
+/* INPUT KPI */
 .receta-crear .resumen-input{
-    display:flex;
-    align-items:center;
-    gap:6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .receta-crear .resumen-input input{
-    width:90px;
-    height:42px;
-    border-radius:10px;
-    border:1px solid #e5e7eb;
-    text-align:center;
-    font-size:18px;
-    font-weight:700;
-    background:#fff;
+    width: 100px;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 800;
+    background: #fff;
+    color: #1f2937;
+    transition: border-color .22s, box-shadow .22s;
 }
 
-.receta-crear .resumen-input span{
-    font-size:14px;
-    color:#6b7280;
-    font-weight:600;
+.receta-crear .resumen-card--peso .resumen-input input{
+    border-color: rgba(200,142,153,.35);
+    color: #b06070;
+}
+
+.receta-crear .resumen-card--peso .resumen-input input:focus{
+    border-color: #c88e99;
+    box-shadow: 0 0 0 3px rgba(200,142,153,.18);
+    outline: none;
+}
+
+.receta-crear .resumen-input select{
+    flex: 1;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+}
+
+.receta-crear .resumen-unit{
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 700;
+}
+
+.receta-crear .cantidad-wrap{
+    position: relative;
 }

@@ -22,6 +22,27 @@ try {
     $stmtNom->execute([$id]);
     $nombre = $stmtNom->fetchColumn() ?: "ID {$id}";
 
+    // Verificar si está en uso en alguna receta
+    $stmtUso = $pdo->prepare("
+        SELECT r.nombre
+        FROM receta_ingredientes ri
+        JOIN recetas r ON r.idrecetas = ri.recetas_idrecetas
+        WHERE ri.materia_prima_idmateria_prima = ?
+        GROUP BY r.idrecetas, r.nombre
+        ORDER BY r.nombre ASC
+    ");
+    $stmtUso->execute([$id]);
+    $recetas = $stmtUso->fetchAll(PDO::FETCH_COLUMN);
+
+    if (!empty($recetas)) {
+        echo json_encode([
+            'success' => false,
+            'en_uso'  => true,
+            'recetas' => $recetas
+        ]);
+        exit;
+    }
+
     $pdo->prepare("UPDATE materia_prima SET activo = 0, updated_at = NOW() WHERE idmateria_prima = ?")
         ->execute([$id]);
 

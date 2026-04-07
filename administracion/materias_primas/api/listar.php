@@ -10,16 +10,17 @@ try {
 
     $pdo = Conexion::conectar();
 
-    $sql = "SELECT 
+    $sql = "SELECT
                 mp.idmateria_prima,
                 mp.nombre,
                 mp.stock_actual,
                 mp.stock_minimo,
                 mp.activo,
                 mp.nota,
+                mp.peso_unitario_g,
                 um.abreviatura AS unidad
             FROM materia_prima mp
-            INNER JOIN unidad_medida um 
+            INNER JOIN unidad_medida um
                 ON um.idunidad_medida = mp.unidad_medida_idunidad_medida
             ORDER BY mp.nombre ASC";
 

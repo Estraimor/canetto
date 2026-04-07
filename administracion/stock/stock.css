@@ -193,7 +193,7 @@ BODY (DIVISION FRIO/CALOR)
 
 .lado input:focus {
     outline: none;
-    border-color: #E91E63;
+    border-color: #c88e99;
 }
 
 /* =========================
@@ -207,7 +207,7 @@ FOOTER
 
 /* BOTON */
 .btn-guardar {
-    background: #E91E63;
+    background: #c88e99;
     color: #fff;
     border: none;
     padding: 10px 18px;

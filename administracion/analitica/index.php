@@ -221,8 +221,8 @@ function renderKPIs(k, c) {
     card.style.borderLeftColor = '#1a7a4a';
     card.style.background = '#f0faf4';
   } else {
-    el.style.color = '#c0392b';
-    card.style.borderLeftColor = '#c0392b';
+    el.style.color = '#c88e99';
+    card.style.borderLeftColor = '#c88e99';
     card.style.background = '#fff8f7';
   }
 }
@@ -276,8 +276,8 @@ function renderChartResumen(k, c, rango) {
 
   document.getElementById('resumen-totales').innerHTML = `
     <div class="resumen-fila"><span class="rf-dot" style="background:#378ADD"></span><span>Ingresos</span><strong>${fmt(ing)}</strong></div>
-    <div class="resumen-fila"><span class="rf-dot" style="background:#c0392b"></span><span>Costos mat.</span><strong style="color:#c0392b">${fmt(cost)}</strong></div>
-    <div class="resumen-fila resumen-total"><span></span><span>Beneficio est.</span><strong style="color:${beneficio>=0?'#1a7a4a':'#c0392b'}">${fmt(beneficio)}</strong></div>
+    <div class="resumen-fila"><span class="rf-dot" style="background:#c88e99"></span><span>Costos mat.</span><strong style="color:#c88e99">${fmt(cost)}</strong></div>
+    <div class="resumen-fila resumen-total"><span></span><span>Beneficio est.</span><strong style="color:${beneficio>=0?'#1a7a4a':'#c88e99'}">${fmt(beneficio)}</strong></div>
   `;
 
   const ctx = document.getElementById('chartResumen').getContext('2d');
@@ -288,8 +288,8 @@ function renderChartResumen(k, c, rango) {
       labels: ['Ingresos', 'Costos mat.', 'Beneficio'],
       datasets: [{
         data: [ing, cost, Math.max(0, beneficio)],
-        backgroundColor: ['rgba(55,138,221,.7)', 'rgba(192,57,43,.7)', beneficio >= 0 ? 'rgba(26,122,74,.7)' : 'rgba(192,57,43,.3)'],
-        borderColor:     ['#378ADD', '#c0392b', beneficio >= 0 ? '#1a7a4a' : '#c0392b'],
+        backgroundColor: ['rgba(55,138,221,.7)', 'rgba(200,142,153,.7)', beneficio >= 0 ? 'rgba(26,122,74,.7)' : 'rgba(200,142,153,.3)'],
+        borderColor:     ['#378ADD', '#c88e99', beneficio >= 0 ? '#1a7a4a' : '#c88e99'],
         borderWidth: 1.5, borderRadius: 5,
       }]
     },

@@ -357,7 +357,7 @@ async function searchAddress(q) {
             return `<div onclick='pickPlace(${JSON.stringify({label,lat,lng,addr})})' style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f5f5f5;transition:background .15s" onmouseover="this.style.background='#f8f8f8'" onmouseout="this.style.background=''">${esc(label)}</div>`;
         }).join('');
     } catch {
-        res.innerHTML = '<div style="padding:10px 14px;color:#c0392b;font-size:13px">Error al buscar. Verificá tu conexión.</div>';
+        res.innerHTML = '<div style="padding:10px 14px;color:#c88e99;font-size:13px">Error al buscar. Verificá tu conexión.</div>';
     }
 }
 

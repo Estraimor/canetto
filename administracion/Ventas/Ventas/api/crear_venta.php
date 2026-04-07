@@ -81,6 +81,25 @@ try {
         $productosResumen[] = ($item['nombre'] ?? "Prod #{$item['id']}") . " x{$item['cantidad']}";
     }
 
+    // 4. Consumir packaging
+    $stmtGetPkg = $pdo->prepare("
+        SELECT pp.packaging_idpackaging, pp.cantidad AS cant_pkg
+        FROM producto_packaging pp
+        WHERE pp.productos_idproductos = ?
+    ");
+    $stmtDescPkg = $pdo->prepare("
+        UPDATE packaging
+        SET stock_actual = stock_actual - ?, updated_at = NOW()
+        WHERE idpackaging = ?
+    ");
+    foreach ($carrito as $item) {
+        $stmtGetPkg->execute([intval($item['id'])]);
+        foreach ($stmtGetPkg->fetchAll(PDO::FETCH_ASSOC) as $pkg) {
+            $consumo = $pkg['cant_pkg'] * intval($item['cantidad']);
+            $stmtDescPkg->execute([$consumo, $pkg['packaging_idpackaging']]);
+        }
+    }
+
     $pdo->commit();
 
     audit($pdo, 'crear', 'ventas',

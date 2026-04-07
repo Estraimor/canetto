@@ -138,14 +138,14 @@ $current = $_SERVER['PHP_SELF'];
 
 
     <!-- STOCK -->
-    <div class="menu-group <?= str_contains($current,'stock') || str_contains($current,'materias_primas') ? 'open' : '' ?>">
+    <div class="menu-group <?= str_contains($current,'stock') || str_contains($current,'materias_primas') || str_contains($current,'packaging') ? 'open' : '' ?>">
         <span class="menu-title">
             <i class="fa-solid fa-boxes-stacked"></i>
             Stock
         </span>
         <div class="submenu">
             <a href="<?= $baseUrl ?>/administracion/stock/index.php"
-               class="<?= str_contains($current,'productos') ? 'active' : '' ?>">
+               class="<?= str_contains($current,'administracion/stock') ? 'active' : '' ?>">
                 <i class="fa-solid fa-cookie-bite"></i>
                 Productos
             </a>
@@ -156,7 +156,11 @@ $current = $_SERVER['PHP_SELF'];
                 Materias primas
             </a>
 
-            
+            <a href="<?= $baseUrl ?>/administracion/packaging/index.php"
+               class="<?= str_contains($current,'packaging') ? 'active' : '' ?>">
+                <i class="fa-solid fa-box-open"></i>
+                Packaging
+            </a>
         </div>
     </div>
 

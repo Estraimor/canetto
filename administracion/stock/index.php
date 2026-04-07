@@ -207,7 +207,7 @@ function guardarStock() {
         `,
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#E91E63",
+        confirmButtonColor: "#c88e99",
         cancelButtonColor: "#999",
         confirmButtonText: "Sí, guardar",
         cancelButtonText: "Cancelar"
@@ -235,7 +235,7 @@ function guardarStock() {
                         title: "Guardado",
                         text: "El stock se actualizó correctamente",
                         icon: "success",
-                        confirmButtonColor: "#E91E63"
+                        confirmButtonColor: "#c88e99"
                     }).then(() => {
                         location.reload(); // opcional
                     });
