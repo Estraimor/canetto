@@ -652,6 +652,223 @@ table.pkg-table {
 input:checked + .slider { background: var(--pk); }
 input:checked + .slider::before { transform: translateX(20px); }
 
+/* ================================================================
+   SPLIT LAYOUT — Tab "Por producto"
+================================================================ */
+
+/* Estado vacío (sin producto seleccionado) */
+.asig-empty-product {
+  background: var(--white);
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius);
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.asig-empty-product i {
+  font-size: 36px;
+  color: #ddd;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.asig-empty-product p { margin: 0; }
+
+/* Panel split */
+.asig-split-panel {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.asig-split-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--rule);
+  background: #fafafa;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.asig-split-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.asig-split-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.asig-count-badge {
+  background: var(--pk-lt);
+  color: var(--pk-dk);
+  border: 1px solid rgba(200,142,153,.25);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Body split: dos columnas */
+.asig-split-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 260px;
+}
+
+.asig-split-col {
+  padding: 16px;
+}
+
+.asig-split-left {
+  border-right: 1px solid var(--rule);
+}
+
+.asig-split-col-head {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Estado vacío dentro de columna */
+.asig-empty-inner {
+  text-align: center;
+  color: #bbb;
+  font-size: 13px;
+  padding: 28px 0;
+  line-height: 1.8;
+}
+
+/* Item asignado (izquierda) */
+.asig-item-assigned {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid var(--rule);
+  border-radius: 9px;
+  margin-bottom: 8px;
+  transition: border-color var(--transition);
+}
+
+.asig-item-assigned:hover { border-color: #ccc; }
+
+.asig-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.asig-item-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.asig-item-unit-badge {
+  background: #f3f4f6;
+  color: var(--ink-soft);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.asig-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.asig-cant-label {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.asig-item-controls input[type="number"] {
+  width: 72px;
+  height: 34px;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  text-align: center;
+  font-weight: 700;
+  background: var(--white);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.asig-item-controls input[type="number"]:focus {
+  outline: none;
+  border-color: var(--pk);
+  box-shadow: 0 0 0 3px rgba(200,142,153,.14);
+}
+
+/* Item disponible (derecha) */
+.asig-item-available {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 9px;
+  margin-bottom: 8px;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.asig-item-available:hover {
+  background: var(--pk-lt);
+  border-color: rgba(200,142,153,.3);
+}
+
+.btn-add-pkg {
+  height: 32px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Footer split */
+.asig-split-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--rule);
+  background: #fafafa;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .pkg-stats { grid-template-columns: repeat(2, 1fr); }

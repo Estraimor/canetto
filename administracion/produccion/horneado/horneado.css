@@ -2,16 +2,80 @@
 CONTENEDOR
 ========================= */
 .horneado-container {
-    padding: 25px;
+    padding: 30px 28px 60px;
+    font-family: "Inter", sans-serif;
+    background: #f1f4f8;
+    min-height: 100vh;
+}
+
+/* =========================
+HEADER
+========================= */
+.horneado-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 24px;
 }
 
 /* =========================
 TITULO
 ========================= */
 .titulo-horneado {
-    font-size: 22px;
+    font-size: 24px;
+    font-weight: 800;
+    color: #2c3e50;
+    margin: 0;
+}
+
+/* Badge selección */
+.horn-sel-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff5ee;
+    border: 1px solid #ff7a1844;
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 13.5px;
     font-weight: 700;
-    margin-bottom: 20px;
+    color: #e67e22;
+    flex-wrap: wrap;
+}
+
+.btn-horn-lote {
+    background: #ff7a18;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+}
+.btn-horn-lote:hover { background: #e06010; }
+
+.btn-horn-soft {
+    background: white;
+    color: #7a7a7a;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s;
+}
+.btn-horn-soft:hover { background: #f5f5f5; }
+
+/* Card seleccionada */
+.horneado-card.selected {
+    border: 2px solid #ff7a18 !important;
+    background: #fff8f3 !important;
+    box-shadow: 0 0 0 3px rgba(255,122,24,0.15) !important;
 }
 
 /* =========================
@@ -33,6 +97,7 @@ CARD
     box-shadow: 0 10px 25px rgba(0,0,0,0.05);
     transition: all 0.25s ease;
     position: relative;
+    border: 2px solid transparent;
 }
 
 .horneado-card:hover {
@@ -245,12 +310,283 @@ ERROR
 ANIMACION
 ========================= */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* =========================
+CHECKBOX EN CARD
+========================= */
+.horn-check-wrap {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    cursor: pointer;
+    z-index: 2;
+}
+.horn-check-wrap input[type="checkbox"] { display: none; }
+
+.horn-check-box {
+    display: block;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 2px solid #d0d0d0;
+    background: white;
+    transition: .2s;
+    position: relative;
+}
+.horn-check-wrap:hover .horn-check-box { border-color: #ff7a18; }
+.horn-check-wrap input:checked + .horn-check-box {
+    background: #ff7a18;
+    border-color: #ff7a18;
+}
+.horn-check-wrap input:checked + .horn-check-box::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* =========================
+PANEL LOTE
+========================= */
+.panel-horn-lote {
+    margin-top: 32px;
+    background: white;
+    border-radius: 16px;
+    border: 2px solid #ff7a1833;
+    box-shadow: 0 8px 24px rgba(255,122,24,0.12);
+    overflow: hidden;
+}
+
+.panel-horn-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    background: #fff8f3;
+    border-bottom: 1px solid #ff7a1822;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.panel-horn-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-horn-sub { font-size: 12px; color: #7f8c8d; margin-top: 2px; }
+
+.btn-horn-action {
+    background: linear-gradient(135deg, #ff7a18, #ffb347);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.btn-horn-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(255,122,24,0.35);
+}
+.btn-horn-action:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.panel-horn-body { padding: 16px; overflow-x: auto; }
+
+.horn-lote-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.horn-lote-table thead th {
+    background: #f8fafc;
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #64748b;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.horn-lote-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.horn-lote-table tbody tr:last-child td { border-bottom: none; }
+.horn-lote-table tbody tr:hover td { background: #fafafa; }
+
+/* Reusar de congelado */
+.lote-td-nombre { font-weight: 700; color: #2c3e50; }
+.lote-inp {
+    width: 110px;
+    height: 36px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    transition: .2s;
+}
+.lote-inp:focus {
+    outline: none;
+    border-color: #ff7a18;
+    box-shadow: 0 0 0 3px rgba(255,122,24,0.15);
+}
+.lote-btn-quitar {
+    width: 32px; height: 32px;
+    border: 1px solid #eee;
+    border-radius: 7px;
+    background: white;
+    color: #bbb;
+    cursor: pointer;
+    font-size: 14px;
+    transition: .2s;
+}
+.lote-btn-quitar:hover { background: #fdf0f3; color: #e74c3c; border-color: #f7c6ce; }
+
+/* =========================
+MODO CAJA
+========================= */
+.modo-caja-section {
+    margin-top: 36px;
+    background: white;
+    border-radius: 18px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+.modo-caja-head {
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #fff8f3, #fff);
+    border-bottom: 1px solid #eeddd4;
+}
+
+.modo-caja-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.modo-caja-sub { font-size: 12.5px; color: #7f8c8d; margin-top: 4px; }
+
+.modo-caja-body {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+.mc-field { display: flex; flex-direction: column; gap: 6px; }
+
+.mc-field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+}
+
+.mc-field select,
+.mc-field input {
+    height: 42px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 0 12px;
+    font-size: 14px;
+    transition: .2s;
+    background: #fafafa;
+}
+
+.mc-field select:focus,
+.mc-field input:focus {
+    outline: none;
+    border-color: #ff7a18;
+    box-shadow: 0 0 0 3px rgba(255,122,24,0.14);
+    background: white;
+}
+
+/* Resultado calculado */
+.mc-resultado {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #fff8f3;
+    border: 1px solid #ffe0c8;
+    border-radius: 12px;
+    padding: 14px 16px;
+    min-width: 150px;
+}
+
+.mc-res-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #b8700f;
+    margin-bottom: 4px;
+}
+
+.mc-res-valor {
+    font-size: 22px;
+    font-weight: 900;
+    color: #c05e00;
+    line-height: 1.1;
+}
+
+.mc-res-sub { font-size: 12px; color: #b8700f; margin-top: 4px; }
+
+/* Footer modo caja */
+.mc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-top: 1px solid #f0e0d8;
+    background: #fafafa;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.mc-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff3cd;
+    border: 1px solid #ffc10744;
+    color: #856404;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
 }

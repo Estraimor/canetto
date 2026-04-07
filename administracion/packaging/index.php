@@ -6,7 +6,13 @@ include '../../panel/dashboard/layaut/nav.php';
 $pdo      = Conexion::conectar();
 $unidades = $pdo->query("SELECT idunidad_medida, nombre, abreviatura FROM unidad_medida ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
 $productos = $pdo->query("SELECT idproductos, nombre, tipo FROM productos WHERE activo = 1 ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
-$allPkg   = $pdo->query("SELECT idpackaging, nombre, unidad_medida_idunidad_medida FROM packaging WHERE activo = 1 ORDER BY nombre ASC")->fetchAll(PDO::FETCH_ASSOC);
+$allPkg   = $pdo->query("
+    SELECT pk.idpackaging, pk.nombre, pk.unidad_medida_idunidad_medida, um.abreviatura AS unidad_abrev
+    FROM packaging pk
+    JOIN unidad_medida um ON um.idunidad_medida = pk.unidad_medida_idunidad_medida
+    WHERE pk.activo = 1
+    ORDER BY pk.nombre ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <link rel="stylesheet" href="packaging.css">
@@ -54,7 +60,9 @@ $allPkg   = $pdo->query("SELECT idpackaging, nombre, unidad_medida_idunidad_medi
     </button>
   </div>
 
-  <!-- TAB: STOCK -->
+  <!-- ================================================================
+       TAB: STOCK
+  ================================================================ -->
   <div class="pkg-tab-panel active" id="tab-stock">
 
     <div class="pkg-toolbar">
@@ -97,9 +105,12 @@ $allPkg   = $pdo->query("SELECT idpackaging, nombre, unidad_medida_idunidad_medi
 
   </div><!-- /tab-stock -->
 
-  <!-- TAB: POR PRODUCTO -->
+  <!-- ================================================================
+       TAB: POR PRODUCTO
+  ================================================================ -->
   <div class="pkg-tab-panel" id="tab-productos">
 
+    <!-- Selector de producto -->
     <div class="asig-producto-selector">
       <label><i class="fa-solid fa-cookie-bite" style="margin-right:6px;color:#c88e99"></i>Producto</label>
       <select id="selectProducto">
@@ -111,41 +122,63 @@ $allPkg   = $pdo->query("SELECT idpackaging, nombre, unidad_medida_idunidad_medi
           </option>
         <?php endforeach; ?>
       </select>
-      <button class="btn-pkg" id="btnAgregarPkg" disabled>
-        <i class="fa-solid fa-plus"></i> Agregar packaging
-      </button>
       <button class="btn-pkg" id="btnGuardarAsig" disabled>
         <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
       </button>
     </div>
 
-    <div class="asig-panel" id="asigPanel">
-      <div class="asig-panel-head">
+    <!-- Estado vacío (sin producto seleccionado) -->
+    <div id="asigEmpty" class="asig-empty-product">
+      <i class="fa-regular fa-box-open"></i>
+      <p>Seleccioná un producto para ver y editar los materiales de empaque</p>
+    </div>
+
+    <!-- Panel split (visible al seleccionar producto) -->
+    <div id="asigSplitPanel" class="asig-split-panel" style="display:none">
+
+      <div class="asig-split-header">
         <div>
-          <h3 id="asigTitulo">Packaging asignado</h3>
-          <p id="asigSub">Seleccioná un producto para ver y editar los materiales de empaque</p>
+          <div class="asig-split-title" id="asigTitulo">Packaging asignado</div>
+          <div class="asig-split-sub" id="asigSub">Editá los materiales de empaque para este producto</div>
         </div>
+        <div class="asig-count-badge" id="asigCountBadge">0 asignados</div>
       </div>
 
-      <div id="asigCuerpo">
-        <div class="asig-empty">
-          <i class="fa-regular fa-box-open"></i>
-          Seleccioná un producto para ver su packaging
-        </div>
-      </div>
+      <div class="asig-split-body">
 
-      <div class="asig-foot" id="asigFoot" style="display:none">
+        <!-- Izquierda: asignado -->
+        <div class="asig-split-col asig-split-left">
+          <div class="asig-split-col-head">
+            <i class="fa-solid fa-circle-check" style="color:#1a7a4a"></i>
+            Asignado al producto
+          </div>
+          <div id="asigLeft"></div>
+        </div>
+
+        <!-- Derecha: disponible -->
+        <div class="asig-split-col asig-split-right">
+          <div class="asig-split-col-head">
+            <i class="fa-solid fa-circle-plus" style="color:#c88e99"></i>
+            Disponible para agregar
+          </div>
+          <div id="asigRight"></div>
+        </div>
+
+      </div><!-- /asig-split-body -->
+
+      <div class="asig-split-foot">
         <div class="asig-foot-info">
           <strong id="asigCount">0</strong> tipo(s) de packaging asignado(s)
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn-pkg btn-pkg-soft" id="btnCancelarAsig">Descartar</button>
+          <button class="btn-pkg btn-pkg-soft" id="btnCancelarAsig">Descartar cambios</button>
           <button class="btn-pkg" id="btnGuardarAsig2">
             <i class="fa-solid fa-floppy-disk"></i> Guardar
           </button>
         </div>
       </div>
-    </div>
+
+    </div><!-- /asig-split-panel -->
 
   </div><!-- /tab-productos -->
 
@@ -223,38 +256,6 @@ $allPkg   = $pdo->query("SELECT idpackaging, nombre, unidad_medida_idunidad_medi
 </div>
 
 
-<!-- ==============================
-     MODAL ELIMINAR
-============================== -->
-<div class="pkg-modal" id="modalDeletePkg">
-  <div class="pkg-modal-backdrop" data-close="true"></div>
-  <div class="pkg-modal-dialog pkg-modal-sm">
-    <div class="pkg-modal-head">
-      <div>
-        <div class="pkg-modal-title">Eliminar packaging</div>
-        <div class="pkg-modal-sub">Esta acción no se puede deshacer</div>
-      </div>
-      <button class="pkg-x" data-close="true"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="pkg-modal-body">
-      <div class="pkg-danger">
-        <div class="pkg-danger-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div>
-          <div class="pkg-danger-title" id="delPkgName">¿Eliminar packaging?</div>
-          <div class="pkg-danger-sub">Se desactivará del sistema.</div>
-        </div>
-      </div>
-      <div class="pkg-modal-actions">
-        <button class="btn-pkg btn-pkg-soft" data-close="true">Cancelar</button>
-        <button class="btn-pkg btn-pkg-danger" id="btnConfirmDeletePkg">
-          <i class="fa-solid fa-trash"></i> Eliminar
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 <!-- TOAST -->
 <div class="pkg-toast" id="pkgToast">
   <div class="pkg-toast-inner">
@@ -297,7 +298,7 @@ $$('.pkg-tab').forEach(btn => {
   });
 });
 
-/* ── Modales ── */
+/* ── Modal CRUD ── */
 function openModal(m){ m.classList.add('open'); }
 function closeModal(m){ m.classList.remove('open'); }
 
@@ -310,6 +311,7 @@ $$('[data-close="true"]').forEach(el => {
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape') $$('.pkg-modal.open').forEach(closeModal);
 });
+
 
 /* ================================================================
    TAB 1 — STOCK
@@ -362,11 +364,11 @@ const tablaPkg = jQuery('#tablaPkg').DataTable({
 /* Stats */
 function refreshStats(){
   const rows = tablaPkg.rows({ search: 'applied' }).data().toArray();
-  let ok = 0, low = 0, sinStock = 0, critical = 0;
+  let ok = 0, low = 0, sinStock = 0;
   rows.forEach(r => {
     if(r.estado_key === 'ok')     ok++;
     if(r.estado_key === 'low')    low++;
-    if(r.estado_key === 'critical' || r.estado_key === 'nostock') { sinStock++; }
+    if(r.estado_key === 'critical' || r.estado_key === 'nostock') sinStock++;
   });
   $('#statTotal').textContent    = rows.length;
   $('#statSinStock').textContent = sinStock;
@@ -376,9 +378,9 @@ function refreshStats(){
 tablaPkg.on('xhr.dt draw.dt', refreshStats);
 
 /* Filtros */
-const pkgSearch      = $('#pkgSearch');
-const pkgFiltroEst   = $('#pkgFiltroEstado');
-const pkgFiltroAct   = $('#pkgFiltroActivo');
+const pkgSearch    = $('#pkgSearch');
+const pkgFiltroEst = $('#pkgFiltroEstado');
+const pkgFiltroAct = $('#pkgFiltroActivo');
 
 jQuery.fn.DataTable.ext.search.push(function(settings, data, idx){
   if(settings.nTable.id !== 'tablaPkg') return true;
@@ -389,15 +391,13 @@ jQuery.fn.DataTable.ext.search.push(function(settings, data, idx){
   return true;
 });
 
-function applyFilters(){
-  tablaPkg.search(pkgSearch.value).draw();
-}
+function applyFilters(){ tablaPkg.search(pkgSearch.value).draw(); }
 [pkgSearch, pkgFiltroEst, pkgFiltroAct].forEach(el => {
-  el.addEventListener('input', applyFilters);
+  el.addEventListener('input',  applyFilters);
   el.addEventListener('change', applyFilters);
 });
 
-/* CRUD */
+/* ── CRUD ── */
 const modalPkg = $('#modalPkg');
 const formPkg  = $('#formPkg');
 
@@ -413,15 +413,15 @@ $('#btnNuevoPkg').addEventListener('click', () => {
 jQuery('#tablaPkg').on('click', '.editar-pkg', function(){
   const id = jQuery(this).data('id');
   jQuery.get('api/obtener.php', { id }, function(data){
-    $('#pkg_id').value                 = data.idpackaging;
-    $('#pkg_nombre').value             = data.nombre;
-    $('#pkg_descripcion').value        = data.descripcion || '';
-    $('#pkg_unidad').value             = data.unidad_medida_idunidad_medida;
-    $('#pkg_stock_actual').value       = data.stock_actual;
-    $('#pkg_stock_minimo').value       = data.stock_minimo;
-    $('#pkg_activo').checked           = data.activo == 1;
-    $('#modalPkgTitle').textContent    = 'Editar packaging';
-    $('#modalPkgSub').textContent      = 'Actualizá la información';
+    $('#pkg_id').value           = data.idpackaging;
+    $('#pkg_nombre').value       = data.nombre;
+    $('#pkg_descripcion').value  = data.descripcion || '';
+    $('#pkg_unidad').value       = data.unidad_medida_idunidad_medida;
+    $('#pkg_stock_actual').value = data.stock_actual;
+    $('#pkg_stock_minimo').value = data.stock_minimo;
+    $('#pkg_activo').checked     = data.activo == 1;
+    $('#modalPkgTitle').textContent = 'Editar packaging';
+    $('#modalPkgSub').textContent   = 'Actualizá la información';
     openModal(modalPkg);
   }, 'json');
 });
@@ -449,203 +449,211 @@ formPkg.addEventListener('submit', function(e){
   }, 'json');
 });
 
-/* Eliminar */
-const modalDeletePkg = $('#modalDeletePkg');
-let deletePkgId = null;
-
+/* ── Eliminar (SweetAlert) ── */
 jQuery('#tablaPkg').on('click', '.eliminar-pkg', function(){
-  deletePkgId = jQuery(this).data('id');
-  $('#delPkgName').textContent = `¿Eliminar "${jQuery(this).data('nombre')}"?`;
-  openModal(modalDeletePkg);
-});
+  const id     = jQuery(this).data('id');
+  const nombre = jQuery(this).data('nombre');
 
-$('#btnConfirmDeletePkg').addEventListener('click', () => {
-  if(!deletePkgId) return;
-  jQuery.post('api/eliminar.php', { id: deletePkgId }, function(resp){
-    closeModal(modalDeletePkg);
-    if(resp.success){
-      tablaPkg.ajax.reload(null, false);
-      toast('Packaging eliminado');
-    } else if(resp.en_uso){
-      const lista = resp.productos.map(p => `• ${p}`).join('<br>');
-      Swal.fire({
-        icon: 'warning',
-        title: 'No se puede eliminar',
-        html: `<p style="margin-bottom:10px">Este packaging está asignado a:</p>
-               <div style="text-align:left;background:#f9edf0;border-radius:8px;padding:12px 16px;font-size:14px;line-height:1.8">${lista}</div>
-               <p style="margin-top:12px;font-size:13px;color:#888">Quitalo de esos productos antes de eliminarlo.</p>`,
-        confirmButtonColor: '#c88e99',
-        confirmButtonText: 'Entendido'
-      });
-    } else {
-      toast(resp.message || 'Error al eliminar', false);
-    }
-  }, 'json');
+  Swal.fire({
+    title: `¿Eliminar "${nombre}"?`,
+    text: 'Se desactivará del sistema. Esta acción no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#c88e99',
+    cancelButtonColor: '#9aa1ad',
+    confirmButtonText: '<i class="fa fa-trash"></i> Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true
+  }).then(result => {
+    if(!result.isConfirmed) return;
+
+    jQuery.post('api/eliminar.php', { id }, function(resp){
+      if(resp.success){
+        tablaPkg.ajax.reload(null, false);
+        toast('Packaging eliminado');
+      } else if(resp.en_uso){
+        const lista = resp.productos.map(p => `• ${p}`).join('<br>');
+        Swal.fire({
+          icon: 'warning',
+          title: 'No se puede eliminar',
+          html: `<p style="margin-bottom:10px">Este packaging está asignado a:</p>
+                 <div style="text-align:left;background:#f9edf0;border-radius:8px;padding:12px 16px;font-size:14px;line-height:1.8">${lista}</div>
+                 <p style="margin-top:12px;font-size:13px;color:#888">Quitalo de esos productos antes de eliminarlo.</p>`,
+          confirmButtonColor: '#c88e99',
+          confirmButtonText: 'Entendido'
+        });
+      } else {
+        toast(resp.message || 'Error al eliminar', false);
+      }
+    }, 'json');
+  });
 });
 
 
 /* ================================================================
-   TAB 2 — POR PRODUCTO
+   TAB 2 — POR PRODUCTO (split layout)
 ================================================================ */
-const selectProducto = $('#selectProducto');
-const btnAgregarPkg  = $('#btnAgregarPkg');
-const btnGuardarAsig = $('#btnGuardarAsig');
+const selectProducto  = $('#selectProducto');
+const btnGuardarAsig  = $('#btnGuardarAsig');
 const btnGuardarAsig2 = $('#btnGuardarAsig2');
 const btnCancelarAsig = $('#btnCancelarAsig');
-const asigCuerpo     = $('#asigCuerpo');
-const asigFoot       = $('#asigFoot');
-const asigCount      = $('#asigCount');
-const asigTitulo     = $('#asigTitulo');
-const asigSub        = $('#asigSub');
+const asigEmpty       = $('#asigEmpty');
+const asigSplitPanel  = $('#asigSplitPanel');
 
-// Filas en memoria
-let asigFilas = [];
+let asigFilas    = [];   // [{packaging_idpackaging, cantidad}]
 let asigOriginal = [];
 
-function opcionesPackaging(selectedId = ''){
-  return allPackaging.map(p =>
-    `<option value="${p.idpackaging}" ${p.idpackaging == selectedId ? 'selected' : ''}>${p.nombre}</option>`
-  ).join('');
-}
+/* Renderiza el panel split */
+function renderSplit(){
+  const assignedIds = asigFilas.map(f => String(f.packaging_idpackaging));
 
-function renderAsig(){
+  /* — Izquierda: asignado — */
+  const leftEl = $('#asigLeft');
   if(!asigFilas.length){
-    asigCuerpo.innerHTML = `
-      <div class="asig-empty">
-        <i class="fa-solid fa-box-open"></i>
-        No hay packaging asignado a este producto
-      </div>`;
-    asigFoot.style.display = 'none';
-    return;
+    leftEl.innerHTML = '<div class="asig-empty-inner"><i class="fa-solid fa-inbox"></i><br>Sin materiales asignados</div>';
+  } else {
+    leftEl.innerHTML = asigFilas.map((fila, idx) => {
+      const pkg = allPackaging.find(p => String(p.idpackaging) === String(fila.packaging_idpackaging));
+      if(!pkg) return '';
+      return `
+        <div class="asig-item-assigned">
+          <div class="asig-item-info">
+            <span class="asig-item-name">${pkg.nombre}</span>
+            <span class="asig-item-unit-badge">${pkg.unidad_abrev || ''}</span>
+          </div>
+          <div class="asig-item-controls">
+            <label class="asig-cant-label">Cant.</label>
+            <input type="number" step="0.01" min="0.01" class="asig-inp-cant" data-idx="${idx}"
+                   value="${fila.cantidad}" title="Cantidad">
+            <button class="btn-del-asig" data-idx="${idx}" title="Quitar">
+              <i class="fa fa-xmark"></i>
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+
+    leftEl.querySelectorAll('.asig-inp-cant').forEach(inp => {
+      inp.addEventListener('input', function(){
+        asigFilas[this.dataset.idx].cantidad = parseFloat(this.value) || 0;
+        updateCountBadge();
+      });
+    });
+    leftEl.querySelectorAll('.btn-del-asig').forEach(btn => {
+      btn.addEventListener('click', function(){
+        asigFilas.splice(parseInt(this.dataset.idx), 1);
+        renderSplit();
+      });
+    });
   }
 
-  asigCuerpo.innerHTML = `
-    <table class="asig-table">
-      <thead>
-        <tr>
-          <th>Packaging</th>
-          <th style="width:130px">Cantidad</th>
-          <th style="width:80px">Unidad</th>
-          <th style="width:50px"></th>
-        </tr>
-      </thead>
-      <tbody id="asigTbody"></tbody>
-    </table>`;
+  /* — Derecha: disponible — */
+  const rightEl = $('#asigRight');
+  const available = allPackaging.filter(p => !assignedIds.includes(String(p.idpackaging)));
 
-  const tbody = $('#asigTbody');
-  asigFilas.forEach((fila, idx) => {
-    const tr = document.createElement('tr');
-    const pkg = allPackaging.find(p => p.idpackaging == fila.packaging_idpackaging);
-    tr.innerHTML = `
-      <td>
-        <select class="asig-sel-pkg" data-idx="${idx}">
-          ${opcionesPackaging(fila.packaging_idpackaging)}
-        </select>
-      </td>
-      <td>
-        <input type="number" step="0.01" min="0.01" class="asig-inp-cant" data-idx="${idx}"
-               value="${fila.cantidad}" placeholder="1">
-      </td>
-      <td>
-        <span style="font-size:13px;color:#9aa1ad;font-weight:600">${pkg ? pkg.unidad_abrev || '' : ''}</span>
-      </td>
-      <td>
-        <button class="btn-del-asig" data-idx="${idx}" title="Quitar">
-          <i class="fa fa-xmark"></i>
+  if(!available.length){
+    rightEl.innerHTML = '<div class="asig-empty-inner"><i class="fa-solid fa-circle-check" style="color:#1a7a4a"></i><br>Todos los materiales ya están asignados</div>';
+  } else {
+    rightEl.innerHTML = available.map(pkg => `
+      <div class="asig-item-available">
+        <div class="asig-item-info">
+          <span class="asig-item-name">${pkg.nombre}</span>
+          <span class="asig-item-unit-badge">${pkg.unidad_abrev || ''}</span>
+        </div>
+        <button class="btn-add-pkg btn-pkg" data-pkg-id="${pkg.idpackaging}" title="Agregar">
+          <i class="fa fa-plus"></i> Agregar
         </button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
+      </div>`).join('');
 
-  // Bind events
-  tbody.querySelectorAll('.asig-sel-pkg').forEach(sel => {
-    sel.addEventListener('change', function(){
-      asigFilas[this.dataset.idx].packaging_idpackaging = this.value;
+    rightEl.querySelectorAll('.btn-add-pkg').forEach(btn => {
+      btn.addEventListener('click', function(){
+        asigFilas.push({ packaging_idpackaging: this.dataset.pkgId, cantidad: 1 });
+        renderSplit();
+      });
     });
-  });
-  tbody.querySelectorAll('.asig-inp-cant').forEach(inp => {
-    inp.addEventListener('input', function(){
-      asigFilas[this.dataset.idx].cantidad = parseFloat(this.value) || 0;
-    });
-  });
-  tbody.querySelectorAll('.btn-del-asig').forEach(btn => {
-    btn.addEventListener('click', function(){
-      asigFilas.splice(parseInt(this.dataset.idx), 1);
-      renderAsig();
-    });
-  });
+  }
 
-  asigCount.textContent = asigFilas.length;
-  asigFoot.style.display = 'flex';
+  updateCountBadge();
+}
+
+function updateCountBadge(){
+  const n = asigFilas.length;
+  $('#asigCount').textContent     = n;
+  $('#asigCountBadge').textContent = n + (n === 1 ? ' asignado' : ' asignados');
 }
 
 function cargarAsignacion(idProducto){
   jQuery.get('api/listar_asignacion.php', { producto: idProducto }, function(data){
-    asigFilas    = data.map(d => ({ packaging_idpackaging: d.packaging_idpackaging, cantidad: d.cantidad }));
+    asigFilas    = data.map(d => ({ packaging_idpackaging: String(d.packaging_idpackaging), cantidad: d.cantidad }));
     asigOriginal = JSON.parse(JSON.stringify(asigFilas));
-    renderAsig();
+    renderSplit();
   }, 'json');
 }
 
 selectProducto.addEventListener('change', function(){
   const id = this.value;
   if(!id){
-    btnAgregarPkg.disabled   = true;
-    btnGuardarAsig.disabled  = true;
-    asigCuerpo.innerHTML = `<div class="asig-empty"><i class="fa-regular fa-box-open"></i>Seleccioná un producto para ver su packaging</div>`;
-    asigFoot.style.display = 'none';
-    asigTitulo.textContent = 'Packaging asignado';
-    asigSub.textContent    = 'Seleccioná un producto para ver y editar los materiales de empaque';
+    asigEmpty.style.display      = '';
+    asigSplitPanel.style.display = 'none';
+    btnGuardarAsig.disabled = true;
     return;
   }
-  btnAgregarPkg.disabled  = false;
   btnGuardarAsig.disabled = false;
-  const nomProd = this.options[this.selectedIndex].text;
-  asigTitulo.textContent = `Packaging — ${nomProd}`;
-  asigSub.textContent    = 'Editá los materiales de empaque para este producto';
-  cargarAsignacion(id);
-});
+  asigEmpty.style.display      = 'none';
+  asigSplitPanel.style.display = '';
 
-btnAgregarPkg.addEventListener('click', () => {
-  if(!allPackaging.length){
-    toast('Primero creá al menos un tipo de packaging', false);
-    return;
-  }
-  asigFilas.push({ packaging_idpackaging: allPackaging[0].idpackaging, cantidad: 1 });
-  renderAsig();
+  const nomProd = this.options[this.selectedIndex].text.trim();
+  $('#asigTitulo').textContent = `Packaging — ${nomProd}`;
+  $('#asigSub').textContent    = 'Gestioná los materiales de empaque para este producto';
+  cargarAsignacion(id);
 });
 
 function guardarAsignacion(){
   const idProducto = selectProducto.value;
   if(!idProducto) return;
 
-  // Validar que no haya duplicados
-  const ids = asigFilas.map(f => f.packaging_idpackaging);
+  const ids    = asigFilas.map(f => f.packaging_idpackaging);
   const unicos = new Set(ids);
   if(unicos.size !== ids.length){
-    toast('Hay packaging duplicado — revisá la lista', false);
+    Swal.fire({
+      icon: 'warning',
+      title: 'Packaging duplicado',
+      text: 'Hay materiales repetidos en la lista. Revisalos antes de guardar.',
+      confirmButtonColor: '#c88e99'
+    });
     return;
   }
 
+  const items = asigFilas.map(f => ({
+    packaging_idpackaging: f.packaging_idpackaging,
+    cantidad: f.cantidad
+  }));
+
   jQuery.post('api/guardar_asignacion.php', {
     producto: idProducto,
-    items: JSON.stringify(asigFilas)
+    items: JSON.stringify(items)
   }, function(resp){
     if(resp.success){
       asigOriginal = JSON.parse(JSON.stringify(asigFilas));
-      toast('Packaging guardado correctamente');
+      Swal.fire({
+        icon: 'success',
+        title: 'Guardado',
+        text: 'El packaging del producto fue actualizado correctamente.',
+        timer: 1800,
+        showConfirmButton: false,
+        confirmButtonColor: '#c88e99'
+      });
     } else {
       toast(resp.message || 'Error al guardar', false);
     }
   }, 'json');
 }
 
-btnGuardarAsig.addEventListener('click', guardarAsignacion);
+btnGuardarAsig.addEventListener('click',  guardarAsignacion);
 btnGuardarAsig2.addEventListener('click', guardarAsignacion);
 
 btnCancelarAsig.addEventListener('click', () => {
   asigFilas = JSON.parse(JSON.stringify(asigOriginal));
-  renderAsig();
+  renderSplit();
   toast('Cambios descartados');
 });
 

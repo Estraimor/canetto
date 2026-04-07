@@ -28,7 +28,7 @@ try {
     ");
 
     foreach ($items as $item) {
-        $pkgId    = (int)($item['packaging_id'] ?? 0);
+        $pkgId    = (int)($item['packaging_idpackaging'] ?? $item['packaging_id'] ?? 0);
         $cantidad = (float)($item['cantidad'] ?? 0);
         if ($pkgId > 0 && $cantidad > 0) {
             $stmt->execute([$idProducto, $pkgId, $cantidad]);
