@@ -122,6 +122,14 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 
 <link rel="stylesheet" href="tienda.css">
+<style>
+.ck-entrega-toggle label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:8px}
+.ck-toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ck-toggle-btn{padding:12px 8px;border:2px solid #e2e8f0;border-radius:12px;background:white;font-size:14px;font-weight:600;color:#64748b;cursor:pointer;transition:all .18s;font-family:inherit}
+.ck-toggle-btn.on{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
+.btn-geo{width:100%;margin-top:8px;padding:10px;background:#f0f9ff;border:1.5px solid #bfdbfe;border-radius:10px;color:#1d4ed8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .18s}
+.btn-geo:hover{background:#dbeafe}
+</style>
 </head>
 <body class="has-bottom-nav">
 <div id="page-wrap">
@@ -473,6 +481,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
             <div class="fg"><label>Apellido</label><input id="rApe" type="text" placeholder="Apellido"></div>
           </div>
           <div class="fg"><label>Celular *</label><input id="rCel" type="tel" placeholder="1123456789"></div>
+          <div class="fg"><label>DNI</label><input id="rDni" type="text" placeholder="Ej: 38123456"></div>
           <div class="fg"><label>Contraseña *</label><input id="rPass" type="password" placeholder="Mínimo 6 caracteres"></div>
           <button class="btn-pk" onclick="doRegister()">Crear cuenta →</button>
         </div>
@@ -481,7 +490,22 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
       <!-- Paso B: detalles -->
       <div class="ck-step" id="ckDetails">
         <div class="ck-summary" id="ckSummary"></div>
-        <div class="fg">
+
+        <!-- Toggle retiro / envío -->
+        <div class="fg ck-entrega-toggle">
+          <label>¿Cómo recibís tu pedido?</label>
+          <div class="ck-toggle-row">
+            <button type="button" class="ck-toggle-btn on" id="btnRetiro" onclick="setEntrega('retiro')">
+              🏪 Retiro en local
+            </button>
+            <button type="button" class="ck-toggle-btn" id="btnEnvio" onclick="setEntrega('envio')">
+              🛵 Envío a domicilio
+            </button>
+          </div>
+        </div>
+
+        <!-- Sucursal (solo retiro) -->
+        <div class="fg" id="wrapSucursal">
           <label>Sucursal de retiro<?php if (!empty($sucursales)): ?> *<?php endif; ?></label>
           <select id="ckSuc">
             <option value="">— Elegí una sucursal —</option>
@@ -490,6 +514,19 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
             <?php endforeach; ?>
           </select>
         </div>
+
+        <!-- Dirección (solo envío) -->
+        <div class="fg" id="wrapEnvio" style="display:none">
+          <label>Tu dirección de entrega *</label>
+          <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA">
+          <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
+            📍 Usar mi ubicación actual
+          </button>
+          <input type="hidden" id="ckLat">
+          <input type="hidden" id="ckLng">
+          <div id="geoStatus" style="font-size:12px;color:#64748b;margin-top:4px"></div>
+        </div>
+
         <div class="fg">
           <label>Método de pago *</label>
           <select id="ckMetodo">
@@ -714,19 +751,85 @@ async function doRegister(){
   if(!n||!cel||!p){setAlert('rAlert','Completá los campos obligatorios','err');return}
   if(p.length<6){setAlert('rAlert','Contraseña de al menos 6 caracteres','err');return}
   const btn=document.querySelector('#ckReg .btn-pk');btn.disabled=true;btn.textContent='Registrando...';
-  try{const fd=new FormData();fd.append('action','register');fd.append('nombre',n);fd.append('apellido',document.getElementById('rApe').value.trim());fd.append('celular',cel);fd.append('password',p);
+  try{
+    const fd=new FormData();
+    fd.append('action','register');fd.append('nombre',n);
+    fd.append('apellido',document.getElementById('rApe').value.trim());
+    fd.append('celular',cel);fd.append('password',p);
+    const dni=document.getElementById('rDni')?.value.trim();
+    if(dni) fd.append('dni',dni);
     const d=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
     if(d.success){ckCliente={id:d.id,nombre:d.nombre};showCkStep('ckDetails');buildSummary()}
+    else if(d.merge_required){
+      // DNI ya existe en otra cuenta
+      if(d.has_email){
+        setAlert('rAlert', d.message + ' Revisá tu casilla de correo y hacé clic en el enlace de verificación.', 'err');
+      } else {
+        // Sin email: confirmación directa con token (caso sin email registrado)
+        if(confirm(d.message + '\n\n¿Querés vincular la nueva información a esa cuenta?')){
+          window.location.href='verificar_cuenta.php?token='+d.token;
+        }
+      }
+    }
     else setAlert('rAlert',d.message||'Error al registrar','err');
   }catch{setAlert('rAlert','Error de conexión','err')}
   btn.disabled=false;btn.textContent='Crear cuenta →';
 }
 function backToAuth(){ckCliente=null;showCkStep('ckAuth');syncCkTab()}
+
+let _tipoEntrega = 'retiro';
+function setEntrega(tipo){
+  _tipoEntrega = tipo;
+  document.getElementById('btnRetiro').classList.toggle('on', tipo==='retiro');
+  document.getElementById('btnEnvio').classList.toggle('on', tipo==='envio');
+  document.getElementById('wrapSucursal').style.display = tipo==='retiro' ? '' : 'none';
+  document.getElementById('wrapEnvio').style.display    = tipo==='envio'  ? '' : 'none';
+  // Actualizar mensaje de éxito
+  const sub = document.querySelector('.ck-success-sub');
+  if(sub) sub.textContent = tipo==='envio'
+    ? 'Tu pedido fue registrado. Un repartidor lo llevará a tu domicilio.'
+    : 'Tu pedido fue registrado. Te esperamos en la sucursal.';
+}
+
+function usarMiUbicacion(){
+  if(!navigator.geolocation){setAlert('dAlert','Tu navegador no soporta geolocalización','err');return}
+  const btn=document.getElementById('btnGeo'),st=document.getElementById('geoStatus');
+  btn.disabled=true;btn.textContent='📍 Obteniendo...';st.textContent='';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      document.getElementById('ckLat').value=pos.coords.latitude;
+      document.getElementById('ckLng').value=pos.coords.longitude;
+      st.textContent='✅ Ubicación obtenida. Podés completar la dirección arriba para más detalle.';
+      btn.disabled=false;btn.textContent='📍 Usar mi ubicación actual';
+    },
+    ()=>{st.textContent='No se pudo obtener la ubicación. Escribí tu dirección manualmente.';btn.disabled=false;btn.textContent='📍 Usar mi ubicación actual'}
+  );
+}
+
 async function confirmOrder(){
   const met=document.getElementById('ckMetodo').value;
   if(!met){setAlert('dAlert','Seleccioná un método de pago','err');return}
+  if(_tipoEntrega==='retiro'){
+    const suc=document.getElementById('ckSuc').value;
+    if(!suc&&<?= !empty($sucursales)?'true':'false'?>){setAlert('dAlert','Seleccioná una sucursal de retiro','err');return}
+  }
+  if(_tipoEntrega==='envio'){
+    const dir=document.getElementById('ckDireccion').value.trim();
+    if(!dir){setAlert('dAlert','Ingresá tu dirección de entrega','err');return}
+  }
   const btn=document.getElementById('btnConfirm');btn.disabled=true;btn.textContent='Procesando...';
-  try{const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({carrito:getCart(),cliente:ckCliente,metodo_pago:+met,sucursal_id:document.getElementById('ckSuc').value||null,observacion:document.getElementById('ckObs').value.trim(),total:total(getCart())})})).json();
+  try{
+    const body={
+      carrito:getCart(),cliente:ckCliente,metodo_pago:+met,
+      sucursal_id:_tipoEntrega==='retiro'?document.getElementById('ckSuc').value||null:null,
+      observacion:document.getElementById('ckObs').value.trim(),
+      total:total(getCart()),
+      tipo_entrega:_tipoEntrega,
+      direccion_entrega:_tipoEntrega==='envio'?document.getElementById('ckDireccion').value.trim():'',
+      lat_entrega:document.getElementById('ckLat')?.value||null,
+      lng_entrega:document.getElementById('ckLng')?.value||null,
+    };
+    const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
     if(d.success){document.getElementById('ckOrderNum').textContent='#'+d.id_venta;saveCart([]);renderCart();showCkStep('ckSuccess')}
     else setAlert('dAlert',d.message||'Error al procesar','err');
   }catch{setAlert('dAlert','Error de conexión. Intentá nuevamente.','err')}

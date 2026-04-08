@@ -80,13 +80,23 @@ const HistorialApp = (() => {
         `<span class="prod-tag">${p.nombre} ×${p.cantidad}</span>`
       ).join('');
 
+      const tipoEntrega   = v.tipo_entrega || 'retiro';
+      const esEnvio       = tipoEntrega === 'envio';
+      const badgeEntrega  = esEnvio
+        ? `<span class="badge-envio">🛵 Envío</span>`
+        : `<span class="badge-retiro">🏪 Retiro</span>`;
+      const repInfo = v.repartidor_nombre
+        ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>`
+        : '';
+
       return `
-        <tr id="row-${v.idventas}">
-          <td><span class="venta-id">#${v.idventas}</span></td>
+        <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}">
+          <td><span class="venta-id">#${v.idventas}</span><br>${badgeEntrega}</td>
           <td>
             <div class="cliente-info">
               <strong>${v.cliente_nombre || 'Sin nombre'}</strong>
               <small>${v.cliente_telefono || v.cliente_email || '—'}</small>
+              ${repInfo}
             </div>
           </td>
           <td><div class="productos-mini">${productos || '<span class="prod-tag">—</span>'}</div></td>
@@ -129,18 +139,34 @@ const HistorialApp = (() => {
   }
 
   async function guardarEstado(idVenta) {
-    const select = document.getElementById('estado-select-' + idVenta);
-    const btn    = document.getElementById('btn-save-' + idVenta);
-    const nuevoEstado = select.value;
+    const select      = document.getElementById('estado-select-' + idVenta);
+    const btn         = document.getElementById('btn-save-' + idVenta);
+    const nuevoEstado = parseInt(select.value);
+    const row         = document.getElementById('row-' + idVenta);
+    const tipoEntrega = row?.dataset.tipoEntrega || 'retiro';
 
-    btn.disabled = true;
+    // Si pasa a estado 3 y el pedido es de envío → pedir repartidor
+    if (nuevoEstado === 3 && tipoEntrega === 'envio') {
+      await abrirModalRepartidor(idVenta);
+      return;
+    }
+
+    await ejecutarCambioEstado(idVenta, nuevoEstado, null, btn);
+  }
+
+  async function ejecutarCambioEstado(idVenta, nuevoEstado, repartidorId, btn) {
+    if (!btn) btn = document.getElementById('btn-save-' + idVenta);
+    btn.disabled    = true;
     btn.textContent = '⏳';
 
     try {
+      const body = { id_venta: idVenta, estado: nuevoEstado };
+      if (repartidorId) body.repartidor_id = repartidorId;
+
       const res  = await fetch('api/actualizar_estado.php', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_venta: idVenta, estado: nuevoEstado })
+        body:    JSON.stringify(body),
       });
       const data = await res.json();
 
@@ -148,18 +174,70 @@ const HistorialApp = (() => {
         showToast('✅ Estado actualizado', 'success');
         btn.textContent = '✓';
         setTimeout(() => { btn.textContent = '💾'; }, 2000);
-        // actualizar stats
         cargarVentas();
       } else {
         showToast('Error: ' + (data.message || 'No se pudo actualizar'), 'error');
-        btn.disabled = false;
+        btn.disabled    = false;
         btn.textContent = '💾';
       }
     } catch (e) {
       showToast('Error de conexión', 'error');
-      btn.disabled = false;
+      btn.disabled    = false;
       btn.textContent = '💾';
     }
+  }
+
+  // ─── MODAL REPARTIDOR ────────────────────
+  let _repVentaId = null;
+
+  async function abrirModalRepartidor(idVenta) {
+    _repVentaId = idVenta;
+    const modal = document.getElementById('modal-repartidor');
+    const sel   = document.getElementById('rep-select');
+    const info  = document.getElementById('rep-cliente-info');
+
+    sel.innerHTML  = '<option value="">Cargando...</option>';
+    info.innerHTML = '';
+    modal.style.display = 'flex';
+
+    try {
+      // Cargar repartidores y detalle del pedido en paralelo
+      const [reps, detalle] = await Promise.all([
+        fetch('api/get_repartidores.php').then(r => r.json()),
+        fetch('api/get_detalle_venta.php?id=' + idVenta).then(r => r.json()),
+      ]);
+
+      if (!reps.length) {
+        sel.innerHTML = '<option value="">— No hay repartidores activos —</option>';
+      } else {
+        sel.innerHTML = '<option value="">— Elegí un repartidor —</option>' +
+          reps.map(r => `<option value="${r.idrepartidor}">${r.nombre} ${r.apellido || ''} ${r.celular ? '('+r.celular+')' : ''}</option>`).join('');
+      }
+
+      const dir = detalle.direccion_entrega || detalle.cliente_direccion || 'Sin dirección';
+      const tel = detalle.cliente_telefono  || '—';
+      info.innerHTML = `
+        <div class="rep-modal-info">
+          <div><strong>Cliente:</strong> ${detalle.cliente_nombre} ${detalle.cliente_apellido || ''}</div>
+          <div><strong>Teléfono:</strong> ${tel}</div>
+          <div><strong>Dirección:</strong> ${dir}</div>
+        </div>`;
+    } catch (e) {
+      sel.innerHTML = '<option value="">Error al cargar repartidores</option>';
+    }
+  }
+
+  async function confirmarRepartidor() {
+    const sel = document.getElementById('rep-select');
+    if (!sel.value) { alert('Seleccioná un repartidor'); return; }
+    cerrarModalRep();
+    const btn = document.getElementById('btn-save-' + _repVentaId);
+    await ejecutarCambioEstado(_repVentaId, 3, parseInt(sel.value), btn);
+  }
+
+  function cerrarModalRep() {
+    document.getElementById('modal-repartidor').style.display = 'none';
+    _repVentaId = null;
   }
 
   // ─── DETALLE MODAL ────────────────────────
@@ -195,6 +273,11 @@ const HistorialApp = (() => {
           <div class="info-item"><label>Teléfono</label><span>${d.cliente_telefono || '—'}</span></div>
           <div class="info-item"><label>Email</label><span>${d.cliente_email || '—'}</span></div>
           <div class="info-item"><label>Dirección</label><span>${d.cliente_direccion || '—'}</span></div>
+          ${d.tipo_entrega === 'envio' ? `
+          <div class="info-item"><label>Tipo entrega</label><span>🛵 Envío a domicilio</span></div>
+          <div class="info-item"><label>Dirección entrega</label><span>${d.direccion_entrega || '—'}</span></div>
+          <div class="info-item"><label>Repartidor</label><span>${d.repartidor_nombre || '— Sin asignar —'}</span></div>
+          ` : `<div class="info-item"><label>Tipo entrega</label><span>🏪 Retiro en local</span></div>`}
         </div>
       </div>
 
@@ -263,5 +346,5 @@ const HistorialApp = (() => {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { cargarVentas, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente };
+  return { cargarVentas, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, confirmarRepartidor, cerrarModalRep };
 })();

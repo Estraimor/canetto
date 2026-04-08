@@ -169,7 +169,66 @@
 #modulo-congelado .receta-info {
     font-size: 13.5px;
     color: #7f8c8d;
-    margin-bottom: 18px;
+    margin-bottom: 10px;
+}
+
+/* ── Botón toggle ingredientes ── */
+#modulo-congelado .btn-ing-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 10px;
+    transition: background .15s;
+    font-family: "Inter", sans-serif;
+}
+#modulo-congelado .btn-ing-toggle:hover { background: #e8edf3; }
+#modulo-congelado .card-chevron { margin-left: auto; transition: transform .2s; font-size: 11px; }
+
+/* ── Lista ingredientes expandible ── */
+#modulo-congelado .card-ing-list {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+}
+
+#modulo-congelado .card-ing-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 4px;
+    border-bottom: 1px solid #f1f5f9;
+}
+#modulo-congelado .card-ing-row:last-child { border-bottom: none; }
+#modulo-congelado .card-ing-row.ing-faltante { background: #fff5f5; border-radius: 6px; }
+
+#modulo-congelado .ing-nombre { flex: 1; color: #334155; font-weight: 500; }
+#modulo-congelado .ing-cant   { color: #3498db; font-weight: 700; white-space: nowrap; }
+#modulo-congelado .ing-badge-low {
+    font-size: 10.5px;
+    color: #e74c3c;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ── Hint max modal ── */
+.max-hint {
+    font-size: 11.5px;
+    color: #64748b;
+    margin-top: 4px;
+    font-family: "Inter", sans-serif;
 }
 
 /* ── Botón preparar ── */
@@ -325,6 +384,112 @@
     color: #e74c3c;
     border-color: #f7c6ce;
 }
+
+/* ── Lote input con barra de progreso ── */
+#modulo-congelado .lote-inp-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+#modulo-congelado .lote-inp-bar {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+    width: 110px;
+}
+#modulo-congelado .lote-inp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2980b9);
+    border-radius: 2px;
+    transition: width .2s;
+}
+
+#modulo-congelado .badge-max {
+    display: inline-block;
+    background: #f0f8ff;
+    border: 1px solid rgba(52,152,219,0.25);
+    color: #2980b9;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 3px 8px;
+}
+
+/* ── Panel consumo estimado ── */
+#modulo-congelado .consumo-section {
+    border-top: 1px solid #e8eef4;
+    margin-top: 0;
+}
+
+#modulo-congelado .consumo-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 22px;
+    background: #f8fafc;
+    border: none;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1e3a5f;
+    font-family: "Inter", sans-serif;
+    transition: background .15s;
+    text-align: left;
+}
+#modulo-congelado .consumo-toggle:hover { background: #eef4fb; }
+#modulo-congelado .consumo-toggle i { color: #3498db; }
+
+#modulo-congelado .consumo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+#modulo-congelado .consumo-table thead th {
+    background: #f8fafc;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #64748b;
+    border-bottom: 1.5px solid #e5e7eb;
+    text-align: left;
+    font-family: "Inter", sans-serif;
+}
+#modulo-congelado .consumo-table tbody td {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+#modulo-congelado .consumo-table tbody tr:last-child td { border-bottom: none; }
+#modulo-congelado .consumo-table tbody tr:hover td { background: #f9fafb; }
+
+#modulo-congelado .consumo-bar {
+    height: 5px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    margin-top: 5px;
+    overflow: hidden;
+    max-width: 120px;
+}
+#modulo-congelado .consumo-bar-fill {
+    height: 100%;
+    background: #3498db;
+    border-radius: 3px;
+    transition: width .3s;
+}
+#modulo-congelado .consumo-bar-err { background: #e74c3c; }
+
+#modulo-congelado .consumo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 3px 9px;
+}
+#modulo-congelado .consumo-badge-ok  { background:#dcfce7; color:#166534; }
+#modulo-congelado .consumo-badge-err { background:#fee2e2; color:#991b1b; }
 
 
 /* ================================================================

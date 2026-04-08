@@ -53,11 +53,64 @@ switch ($action) {
         if (strlen($password) < 6) {
             echo json_encode(['success'=>false,'message'=>'La contraseña debe tener al menos 6 caracteres']); exit;
         }
-        $chk = $pdo->prepare("SELECT idusuario FROM usuario WHERE celular = ?");
-        $chk->execute([$celular]);
-        if ($chk->fetch()) {
+
+        // Verificar celular duplicado
+        $chkCel = $pdo->prepare("SELECT idusuario FROM usuario WHERE celular = ?");
+        $chkCel->execute([$celular]);
+        if ($chkCel->fetch()) {
             echo json_encode(['success'=>false,'message'=>'Ese número ya tiene cuenta. Iniciá sesión.']); exit;
         }
+
+        // Verificar DNI duplicado — si existe, ofrecer merge por email
+        if ($dni) {
+            $chkDni = $pdo->prepare("SELECT idusuario, email FROM usuario WHERE dni = ? AND activo = 1 LIMIT 1");
+            $chkDni->execute([$dni]);
+            $existing = $chkDni->fetch();
+            if ($existing) {
+                // Crear tabla de tokens si no existe
+                $pdo->exec("CREATE TABLE IF NOT EXISTS verificacion_token (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    token VARCHAR(64) NOT NULL UNIQUE,
+                    usuario_idusuario INT NOT NULL,
+                    datos_nuevos TEXT NOT NULL,
+                    tipo VARCHAR(30) DEFAULT 'merge_dni',
+                    expira DATETIME NOT NULL,
+                    usado TINYINT(1) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $token = bin2hex(random_bytes(32));
+                $datos = json_encode([
+                    'nombre'   => $nombre,
+                    'apellido' => $apellido,
+                    'celular'  => $celular,
+                    'password' => password_hash($password, PASSWORD_DEFAULT),
+                ]);
+                $pdo->prepare("INSERT INTO verificacion_token (token, usuario_idusuario, datos_nuevos, tipo, expira) VALUES (?,?,?,'merge_dni', DATE_ADD(NOW(), INTERVAL 24 HOUR))")
+                    ->execute([$token, $existing['idusuario'], $datos]);
+
+                $emailDestino = $existing['email'];
+                $msgEmail = '';
+                if ($emailDestino) {
+                    $link = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/canetto/tienda/verificar_cuenta.php?token=' . $token;
+                    $asunto = 'Confirmación de cuenta - Canetto';
+                    $cuerpo = "Hola,\n\nAlguien quiere vincular una nueva cuenta con tu DNI ({$dni}).\n\nSi sos vos, hacé clic en el siguiente enlace para confirmar:\n\n{$link}\n\nEste enlace vence en 24 horas.\n\nSi no fuiste vos, ignorá este mensaje.\n\n— Canetto";
+                    @mail($emailDestino, $asunto, $cuerpo, "From: noreply@canetto.com\r\nContent-Type: text/plain; charset=UTF-8");
+                    $maskedEmail = preg_replace('/(.{2}).+(@.+)/', '$1***$2', $emailDestino);
+                    $msgEmail = " Te enviamos un email a {$maskedEmail} para confirmar.";
+                }
+
+                echo json_encode([
+                    'success'          => false,
+                    'merge_required'   => true,
+                    'has_email'        => !empty($emailDestino),
+                    'token'            => !$emailDestino ? $token : null, // Si no hay email, dar token directo
+                    'message'          => "Ya existe una cuenta con ese DNI.{$msgEmail}",
+                ]);
+                exit;
+            }
+        }
+
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $ins  = $pdo->prepare("INSERT INTO usuario (nombre, apellido, celular, dni, password_hash, activo, created_at, updated_at) VALUES (?,?,?,?,?,1,NOW(),NOW())");
         $ins->execute([$nombre, $apellido ?: null, $celular, $dni ?: null, $hash]);

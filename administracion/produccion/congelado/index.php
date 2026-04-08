@@ -24,6 +24,31 @@ $stmt = $pdo->query("
 ");
 
 $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Ingredientes por receta (para precargar en cards y cálculo de consumo)
+$ingredientesPorReceta = [];
+if (!empty($productos)) {
+    $recetaIds    = array_unique(array_column($productos, 'idrecetas'));
+    $placeholders = implode(',', array_fill(0, count($recetaIds), '?'));
+    $stmtIng = $pdo->prepare("
+        SELECT
+            ri.recetas_idrecetas,
+            mp.idmateria_prima,
+            mp.nombre,
+            ri.cantidad AS cantidad_base,
+            COALESCE(um.abreviatura, um.nombre, '') AS unidad,
+            COALESCE(mp.stock_actual, 0) AS stock
+        FROM receta_ingredientes ri
+        INNER JOIN materia_prima mp ON mp.idmateria_prima = ri.materia_prima_idmateria_prima
+        LEFT JOIN unidad_medida um ON um.idunidad_medida = mp.unidad_medida_idunidad_medida
+        WHERE ri.recetas_idrecetas IN ($placeholders)
+        ORDER BY mp.nombre ASC
+    ");
+    $stmtIng->execute($recetaIds);
+    foreach ($stmtIng->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $ingredientesPorReceta[$row['recetas_idrecetas']][] = $row;
+    }
+}
 ?>
 
 <link rel="stylesheet" href="congelado.css">
@@ -48,7 +73,10 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Grid de recetas -->
     <div class="recetas-grid">
       <?php if (!empty($productos)): ?>
-        <?php foreach ($productos as $p): ?>
+        <?php foreach ($productos as $p):
+          $ings = $ingredientesPorReceta[$p['idrecetas']] ?? [];
+          $ingJson = htmlspecialchars(json_encode($ings), ENT_QUOTES);
+        ?>
           <div class="receta-card" id="card-<?= $p['idproductos'] ?>">
 
             <!-- Checkbox selección lote -->
@@ -58,12 +86,39 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 data-producto-id="<?= (int)$p['idproductos'] ?>"
                 data-receta-id="<?= (int)$p['idrecetas'] ?>"
                 data-nombre="<?= htmlspecialchars($p['producto_nombre']) ?>"
-                data-galletas="<?= (float)$p['cantidad_galletas'] ?>">
+                data-galletas="<?= (float)$p['cantidad_galletas'] ?>"
+                data-ingredientes="<?= $ingJson ?>">
               <span class="card-check-box"></span>
             </label>
 
             <div class="receta-nombre"><?= htmlspecialchars($p['producto_nombre']) ?></div>
-            <div class="receta-info">Produce <?= (int)$p['cantidad_galletas'] ?> galletas</div>
+            <div class="receta-info">
+              <i class="fa-solid fa-cookie" style="color:#3498db;margin-right:4px"></i>
+              <?= (int)$p['cantidad_galletas'] ?> galletas por lote
+            </div>
+
+            <!-- Botón expandir ingredientes -->
+            <button class="btn-ing-toggle" onclick="toggleIngCard(<?= $p['idproductos'] ?>)" title="Ver materias primas">
+              <i class="fa-solid fa-flask-vial" style="color:#64748b"></i>
+              <span><?= count($ings) ?> ingrediente<?= count($ings) !== 1 ? 's' : '' ?></span>
+              <i class="fa-solid fa-chevron-down card-chevron" id="chevron-<?= $p['idproductos'] ?>"></i>
+            </button>
+
+            <!-- Lista ingredientes expandible -->
+            <div class="card-ing-list" id="card-ing-<?= $p['idproductos'] ?>" style="display:none">
+              <?php foreach ($ings as $ing): ?>
+              <div class="card-ing-row <?= $ing['stock'] < $ing['cantidad_base'] ? 'ing-faltante' : '' ?>">
+                <span class="ing-nombre"><?= htmlspecialchars($ing['nombre']) ?></span>
+                <span class="ing-cant"><?= $ing['cantidad_base'] ?> <?= htmlspecialchars($ing['unidad']) ?></span>
+                <?php if ($ing['stock'] < $ing['cantidad_base']): ?>
+                <span class="ing-badge-low"><i class="fa-solid fa-triangle-exclamation"></i> Stock bajo</span>
+                <?php endif; ?>
+              </div>
+              <?php endforeach; ?>
+              <?php if (empty($ings)): ?>
+              <div class="card-ing-row" style="color:#94a3b8;font-style:italic">Sin ingredientes cargados</div>
+              <?php endif; ?>
+            </div>
 
             <button
               class="btn-preparar"
@@ -101,14 +156,39 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
           <thead>
             <tr>
               <th>Producto</th>
-              <th style="width:160px">Galletas a producir</th>
-              <th style="width:100px">Base receta</th>
+              <th style="width:200px">Galletas a producir</th>
+              <th style="width:110px">Máximo (receta)</th>
               <th style="width:60px"></th>
             </tr>
           </thead>
           <tbody id="loteTbody"></tbody>
         </table>
       </div>
+
+      <!-- Consumo estimado de materias primas -->
+      <div class="consumo-section">
+        <button class="consumo-toggle" onclick="toggleConsumo()">
+          <i class="fa-solid fa-flask-vial"></i>
+          Consumo estimado de materias primas
+          <i class="fa-solid fa-chevron-down" id="consumoChevron" style="margin-left:auto"></i>
+        </button>
+        <div id="consumoBody" style="display:none">
+          <table class="consumo-table">
+            <thead>
+              <tr>
+                <th>Materia prima</th>
+                <th style="width:150px">A consumir</th>
+                <th style="width:150px">Stock actual</th>
+                <th style="width:100px">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="consumoTbody">
+              <tr><td colspan="4" style="color:#94a3b8;text-align:center;padding:14px">Seleccioná productos para ver el consumo estimado</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -136,7 +216,8 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
       </div>
       <div>
         <label>Cantidad galletas</label>
-        <input type="number" id="cantidad_galletas" min="1" step="1">
+        <input type="number" id="cantidad_galletas" min="1" step="1" id="cantidad_galletas">
+        <div id="maxGalletasHint" class="max-hint" style="display:none"></div>
       </div>
     </div>
 
@@ -174,8 +255,17 @@ let productoActual = null;
 let baseGalletas   = 0;
 
 // Estado de selección para lote
-// { productoId: { recetaId, nombre, galletas, cantidad } }
+// { productoId: { recetaId, nombre, galletas, cantidad, ingredientes } }
 const seleccionados = {};
+
+// Datos de ingredientes por recetaId (precargados desde PHP)
+const ingredientesData = {};
+document.querySelectorAll(".card-check").forEach(chk => {
+  try {
+    const data = JSON.parse(chk.dataset.ingredientes || '[]');
+    ingredientesData[chk.dataset.recetaId] = data;
+  } catch(e) {}
+});
 
 /* ─── MODAL INDIVIDUAL ─── */
 function abrirModal()  { document.getElementById("modalPreparar").classList.add("open"); }
@@ -190,8 +280,16 @@ document.querySelectorAll(".btn-preparar").forEach(btn => {
     document.getElementById("tituloReceta").innerText = "Preparar " + btn.dataset.nombre;
     document.getElementById("producto_id").value  = productoActual;
     document.getElementById("receta_id").value    = recetaActual;
-    document.getElementById("cantidad_galletas").value = Math.round(baseGalletas);
-    document.getElementById("porcentaje").value   = "100";
+
+    const inputCant = document.getElementById("cantidad_galletas");
+    inputCant.value = Math.round(baseGalletas);
+    inputCant.max   = Math.round(baseGalletas);
+
+    const hint = document.getElementById("maxGalletasHint");
+    hint.style.display = "block";
+    hint.textContent   = `Máximo: ${Math.round(baseGalletas)} galletas (1 lote)`;
+
+    document.getElementById("porcentaje").value = "100";
 
     abrirModal();
     calcularPreview();
@@ -204,7 +302,13 @@ document.getElementById("porcentaje").addEventListener("change", function(){
   calcularPreview();
 });
 
-document.getElementById("cantidad_galletas").addEventListener("input", calcularPreview);
+document.getElementById("cantidad_galletas").addEventListener("input", function(){
+  const max = Math.round(baseGalletas);
+  if(parseFloat(this.value) > max){
+    this.value = max;
+  }
+  calcularPreview();
+});
 
 document.getElementById("confirmarProduccion").addEventListener("click", () => {
   const cantidad = parseFloat(document.getElementById("cantidad_galletas").value);
@@ -214,6 +318,10 @@ document.getElementById("confirmarProduccion").addEventListener("click", () => {
   }
   if(!cantidad || cantidad <= 0){
     Swal.fire({ icon:"warning", title:"Cantidad inválida", text:"Ingresá una cantidad válida" });
+    return;
+  }
+  if(cantidad > baseGalletas){
+    Swal.fire({ icon:"warning", title:"Cantidad excedida", text:`No podés producir más de ${Math.round(baseGalletas)} galletas por lote` });
     return;
   }
   cerrarModal();
@@ -272,10 +380,11 @@ document.querySelectorAll(".card-check").forEach(chk => {
 
     if(this.checked){
       seleccionados[pid] = {
-        recetaId: this.dataset.recetaId,
-        nombre:   this.dataset.nombre,
-        galletas: parseFloat(this.dataset.galletas),
-        cantidad: parseFloat(this.dataset.galletas)
+        recetaId:     this.dataset.recetaId,
+        nombre:       this.dataset.nombre,
+        galletas:     parseFloat(this.dataset.galletas),
+        cantidad:     parseFloat(this.dataset.galletas),
+        ingredientes: ingredientesData[this.dataset.recetaId] || []
       };
       card.classList.add("selected");
     } else {
@@ -285,6 +394,15 @@ document.querySelectorAll(".card-check").forEach(chk => {
     actualizarLote();
   });
 });
+
+/* ─── TOGGLE INGREDIENTES EN CARD ─── */
+function toggleIngCard(pid){
+  const el  = document.getElementById("card-ing-" + pid);
+  const chv = document.getElementById("chevron-" + pid);
+  const open = el.style.display !== "none";
+  el.style.display  = open ? "none" : "block";
+  chv.style.transform = open ? "" : "rotate(180deg)";
+}
 
 document.getElementById("btnLimpiarSel").addEventListener("click", () => {
   document.querySelectorAll(".card-check").forEach(c => {
@@ -301,30 +419,38 @@ document.getElementById("btnProducirLote").addEventListener("click", () => {
 });
 
 function actualizarLote(){
-  const ids = Object.keys(seleccionados);
+  const ids   = Object.keys(seleccionados);
   const badge = document.getElementById("seleccionBadge");
   const panel = document.getElementById("panelLote");
 
   document.getElementById("seleccionCount").textContent = ids.length;
   badge.style.display = ids.length ? "flex" : "none";
-  panel.style.display = ids.length ? "" : "none";
+  panel.style.display = ids.length ? ""    : "none";
 
-  if(!ids.length) return;
+  if(!ids.length){ actualizarConsumo(); return; }
 
   const tbody = document.getElementById("loteTbody");
   tbody.innerHTML = ids.map(pid => {
-    const s = seleccionados[pid];
+    const s   = seleccionados[pid];
+    const max = Math.round(s.galletas);
     return `
       <tr id="lote-row-${pid}">
         <td class="lote-td-nombre">${s.nombre}</td>
         <td>
-          <input type="number" min="1" step="1"
-                 class="lote-inp"
-                 value="${Math.round(s.cantidad)}"
-                 data-pid="${pid}"
-                 onchange="seleccionados['${pid}'].cantidad=parseFloat(this.value)||1">
+          <div class="lote-inp-wrap">
+            <input type="number" min="1" step="1" max="${max}"
+                   class="lote-inp"
+                   value="${Math.round(s.cantidad)}"
+                   data-pid="${pid}"
+                   oninput="loteActualizarCant('${pid}', this)">
+            <div class="lote-inp-bar">
+              <div class="lote-inp-bar-fill" id="lbar-${pid}" style="width:${Math.round(s.cantidad/max*100)}%"></div>
+            </div>
+          </div>
         </td>
-        <td class="lote-td-base">${Math.round(s.galletas)} u.</td>
+        <td class="lote-td-base">
+          <span class="badge-max">${max} gall.</span>
+        </td>
         <td>
           <button class="lote-btn-quitar" onclick="quitarDeLote('${pid}')" title="Quitar">
             <i class="fa fa-xmark"></i>
@@ -332,6 +458,19 @@ function actualizarLote(){
         </td>
       </tr>`;
   }).join('');
+
+  actualizarConsumo();
+}
+
+function loteActualizarCant(pid, input){
+  const max = Math.round(seleccionados[pid].galletas);
+  let val   = parseInt(input.value) || 1;
+  if(val > max) { val = max; input.value = max; }
+  if(val < 1)   { val = 1;   input.value = 1;   }
+  seleccionados[pid].cantidad = val;
+  const bar = document.getElementById("lbar-" + pid);
+  if(bar) bar.style.width = Math.round(val/max*100) + "%";
+  actualizarConsumo();
 }
 
 function quitarDeLote(pid){
@@ -341,6 +480,59 @@ function quitarDeLote(pid){
   const card = document.getElementById("card-" + pid);
   if(card) card.classList.remove("selected");
   actualizarLote();
+}
+
+/* ─── CONSUMO ESTIMADO ─── */
+let consumoVisible = false;
+function toggleConsumo(){
+  consumoVisible = !consumoVisible;
+  document.getElementById("consumoBody").style.display    = consumoVisible ? "" : "none";
+  document.getElementById("consumoChevron").style.transform = consumoVisible ? "rotate(180deg)" : "";
+}
+
+function actualizarConsumo(){
+  const ids = Object.keys(seleccionados);
+  const tbody = document.getElementById("consumoTbody");
+  if(!tbody) return;
+
+  if(!ids.length){
+    tbody.innerHTML = `<tr><td colspan="4" style="color:#94a3b8;text-align:center;padding:14px">Seleccioná productos para ver el consumo estimado</td></tr>`;
+    return;
+  }
+
+  // Agregar consumo por ingrediente
+  const consumo = {}; // nombre => { cantidad, unidad, stock }
+  ids.forEach(pid => {
+    const s      = seleccionados[pid];
+    const factor = s.cantidad / s.galletas;
+    (s.ingredientes || []).forEach(i => {
+      const cant = Math.round(parseFloat(i.cantidad_base) * factor * 100) / 100;
+      if(!consumo[i.nombre]){
+        consumo[i.nombre] = { cantidad: 0, unidad: i.unidad, stock: parseFloat(i.stock) };
+      }
+      consumo[i.nombre].cantidad = Math.round((consumo[i.nombre].cantidad + cant) * 100) / 100;
+    });
+  });
+
+  const rows = Object.entries(consumo).map(([nombre, d]) => {
+    const falta  = d.cantidad > d.stock;
+    const pct    = d.stock > 0 ? Math.min(100, Math.round(d.cantidad / d.stock * 100)) : 100;
+    const badgeClass = falta ? 'consumo-badge-err' : 'consumo-badge-ok';
+    const badgeTxt   = falta
+      ? `<i class="fa-solid fa-triangle-exclamation"></i> Insuficiente`
+      : `<i class="fa-solid fa-check"></i> OK`;
+    return `<tr>
+      <td class="lote-td-nombre">${nombre}</td>
+      <td><b>${d.cantidad} ${d.unidad}</b></td>
+      <td>
+        ${d.stock} ${d.unidad}
+        <div class="consumo-bar"><div class="consumo-bar-fill ${falta?'consumo-bar-err':''}" style="width:${pct}%"></div></div>
+      </td>
+      <td><span class="consumo-badge ${badgeClass}">${badgeTxt}</span></td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = rows || `<tr><td colspan="4" style="color:#94a3b8;text-align:center">Sin ingredientes registrados</td></tr>`;
 }
 
 /* ─── PRODUCIR EN LOTE ─── */

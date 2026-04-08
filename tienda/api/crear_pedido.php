@@ -5,13 +5,17 @@ require_once __DIR__ . '/../../config/audit.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 header('Content-Type: application/json');
 
-$input       = json_decode(file_get_contents('php://input'), true) ?: [];
-$carrito     = $input['carrito']     ?? [];
-$cliente     = $input['cliente']     ?? null;
-$metodo_pago = (int)($input['metodo_pago'] ?? 0);
-$sucursal_id = isset($input['sucursal_id']) && $input['sucursal_id'] ? (int)$input['sucursal_id'] : null;
-$observacion = trim($input['observacion'] ?? '');
-$total       = (float)($input['total'] ?? 0);
+$input            = json_decode(file_get_contents('php://input'), true) ?: [];
+$carrito          = $input['carrito']     ?? [];
+$cliente          = $input['cliente']     ?? null;
+$metodo_pago      = (int)($input['metodo_pago'] ?? 0);
+$sucursal_id      = isset($input['sucursal_id']) && $input['sucursal_id'] ? (int)$input['sucursal_id'] : null;
+$observacion      = trim($input['observacion'] ?? '');
+$total            = (float)($input['total'] ?? 0);
+$tipo_entrega     = in_array($input['tipo_entrega'] ?? '', ['retiro','envio']) ? $input['tipo_entrega'] : 'retiro';
+$direccion_entrega= trim($input['direccion_entrega'] ?? '');
+$lat_entrega      = isset($input['lat_entrega'])  && is_numeric($input['lat_entrega'])  ? (float)$input['lat_entrega']  : null;
+$lng_entrega      = isset($input['lng_entrega'])  && is_numeric($input['lng_entrega'])  ? (float)$input['lng_entrega']  : null;
 
 if (empty($carrito) || !$metodo_pago) {
     echo json_encode(['success'=>false,'message'=>'Faltan datos obligatorios']); exit;
@@ -59,14 +63,32 @@ try {
         throw new Exception("Información del cliente requerida");
     }
 
+    // Agregar columnas si no existen
+    foreach ([
+        "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
+        "ALTER TABLE ventas ADD COLUMN repartidor_idusuario INT NULL",
+        "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
+        "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
+    ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+
     // --- Crear venta ---
     $pdo->prepare("
         INSERT INTO ventas
         (usuario_idusuario, total, estado_venta_idestado_venta,
          metodo_pago_idmetodo_pago, sucursal_retiro_idsucursal,
-         observacion_cliente, origen, fecha, created_at, updated_at)
-        VALUES (?,?,1,?,?,?,'tienda',NOW(),NOW(),NOW())
-    ")->execute([$idusuario, $total, $metodo_pago, $sucursal_id, $observacion ?: null]);
+         observacion_cliente, tipo_entrega, direccion_entrega,
+         lat_entrega, lng_entrega, origen, fecha, created_at, updated_at)
+        VALUES (?,?,1,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
+    ")->execute([
+        $idusuario, $total, $metodo_pago,
+        $tipo_entrega === 'retiro' ? $sucursal_id : null,
+        $observacion ?: null,
+        $tipo_entrega,
+        $direccion_entrega ?: null,
+        $lat_entrega,
+        $lng_entrega,
+    ]);
     $id_venta = (int)$pdo->lastInsertId();
 
     // --- Detalle ---

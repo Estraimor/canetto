@@ -262,6 +262,12 @@ $current = $_SERVER['PHP_SELF'];
                 Ofertas Tienda
             </a>
 
+            <a href="<?= $baseUrl ?>/configuraciones/repartidores.php"
+               class="<?= str_contains($current,'repartidores') ? 'active' : '' ?>">
+                <i class="fa-solid fa-motorcycle"></i>
+                Repartidores
+            </a>
+
             <a href="<?= $baseUrl ?>/configuraciones/auditoria.php"
                class="<?= str_contains($current,'auditoria') ? 'active' : '' ?>">
                 <i class="fa-solid fa-clipboard-list"></i>

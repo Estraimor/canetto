@@ -1,0 +1,304 @@
+/* ═══════════════════════════════════════
+   CANETTO — APP REPARTIDOR
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f0f4f8;
+  color: #1e293b;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.hidden { display: none !important; }
+
+/* ── Screen wrapper ── */
+.app-screen { min-height: 100vh; }
+
+/* ═══ LOGIN ═══ */
+.login-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px 24px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.login-logo {
+  font-size: 64px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.15));
+}
+
+.login-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.login-sub {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 32px;
+}
+
+.form-field {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.form-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  background: white;
+  transition: border-color .18s, box-shadow .18s;
+  -webkit-appearance: none;
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+}
+
+.alert {
+  width: 100%;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ═══ BOTONES GENERALES ═══ */
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+  margin-top: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59,130,246,.4);
+}
+
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ═══ DASHBOARD ═══ */
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dash-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.dash-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.btn-logout {
+  background: rgba(255,255,255,.1);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .18s;
+}
+
+.btn-logout:hover { background: rgba(255,255,255,.2); }
+
+/* ═══ LISTA DE PEDIDOS ═══ */
+.pedidos-list {
+  padding: 16px 16px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pedido-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+/* ═══ CARD DE PEDIDO ═══ */
+.pedido-card {
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  border: 1.5px solid #f1f5f9;
+}
+
+.pedido-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.pedido-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: #3b82f6;
+}
+
+.pedido-total {
+  font-size: 17px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.pedido-cliente,
+.pedido-direccion,
+.pedido-prods {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.pedido-cliente i  { color: #3b82f6; margin-top: 2px; flex-shrink: 0; }
+.pedido-direccion i { color: #f97316; margin-top: 2px; flex-shrink: 0; }
+.pedido-prods i    { color: #a16207; margin-top: 2px; flex-shrink: 0; }
+
+.pedido-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn-tel, .btn-map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.btn-tel {
+  background: #dcfce7;
+  color: #166534;
+  border: 1.5px solid #86efac;
+}
+
+.btn-tel:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,.2); }
+
+.btn-map {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1.5px solid #93c5fd;
+}
+
+.btn-map:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29,78,216,.2); }
+
+.btn-tel.disabled, .btn-map.disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-entregar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.btn-entregar:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34,197,94,.4);
+}
+
+.btn-entregar:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ═══ BOTÓN REFRESH ═══ */
+.btn-refresh {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(59,130,246,.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+  transition: transform .18s;
+}
+
+.btn-refresh:hover { transform: translateY(-2px); }

@@ -9,9 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Método no permitido']); exit;
 }
 
-$input    = json_decode(file_get_contents('php://input'), true);
-$id_venta = intval($input['id_venta'] ?? 0);
-$estado   = intval($input['estado']   ?? 0);
+$input         = json_decode(file_get_contents('php://input'), true);
+$id_venta      = intval($input['id_venta']      ?? 0);
+$estado        = intval($input['estado']        ?? 0);
+$repartidor_id = isset($input['repartidor_id']) && $input['repartidor_id'] ? intval($input['repartidor_id']) : null;
 
 if (!$id_venta || $estado < 1 || $estado > 4) {
     echo json_encode(['success' => false, 'message' => 'Datos inválidos']); exit;
@@ -38,11 +39,29 @@ try {
     $stmtEstAnterior->execute([$id_venta]);
     $estadoAnteriorId = (int)$stmtEstAnterior->fetchColumn();
 
-    $stmt = $pdo->prepare(
-        "UPDATE ventas SET estado_venta_idestado_venta = :estado, updated_at = NOW()
-         WHERE idventas = :id"
-    );
-    $stmt->execute([':estado' => $estado, ':id' => $id_venta]);
+    // Agregar columnas si no existen (idempotente)
+    foreach ([
+        "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
+        "ALTER TABLE ventas ADD COLUMN repartidor_idusuario INT NULL",
+        "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
+        "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
+    ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+
+    if ($repartidor_id && $estado === 3) {
+        $stmt = $pdo->prepare(
+            "UPDATE ventas SET estado_venta_idestado_venta = :estado,
+             repartidor_idusuario = :rep, updated_at = NOW()
+             WHERE idventas = :id"
+        );
+        $stmt->execute([':estado' => $estado, ':rep' => $repartidor_id, ':id' => $id_venta]);
+    } else {
+        $stmt = $pdo->prepare(
+            "UPDATE ventas SET estado_venta_idestado_venta = :estado, updated_at = NOW()
+             WHERE idventas = :id"
+        );
+        $stmt->execute([':estado' => $estado, ':id' => $id_venta]);
+    }
 
     // Si pasa de Pendiente (1) a En Preparación (2), descontar stock HECHO
     if ($estadoAnteriorId === 1 && $estado === 2) {

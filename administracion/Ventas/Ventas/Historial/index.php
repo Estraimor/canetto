@@ -88,9 +88,41 @@ include '../../../../panel/dashboard/layaut/nav.php';
   </div>
 </div>
 
+<!-- MODAL REPARTIDOR -->
+<div class="modal-overlay" id="modal-repartidor" style="display:none;">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-header">
+      <h3>🛵 Asignar repartidor</h3>
+      <button class="modal-close" onclick="HistorialApp.cerrarModalRep()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="rep-cliente-info"></div>
+      <div style="margin-top:14px">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:6px">¿Quién lo lleva?</label>
+        <select id="rep-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;background:#f8fafc">
+          <option value="">— Elegí un repartidor —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid #f1f5f9">
+      <button class="btn-cancelar" onclick="HistorialApp.cerrarModalRep()">Cancelar</button>
+      <button class="btn-confirmar" onclick="HistorialApp.confirmarRepartidor()">🛵 Confirmar y enviar</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast" class="toast" style="display:none;"></div>
 
 <script src="historial.js"></script>
+
+<style>
+.badge-envio  { display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;margin-top:3px }
+.badge-retiro { display:inline-block;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;margin-top:3px }
+.rep-modal-info { background:#f8fafc;border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.8;color:#334155;border:1px solid #e2e8f0 }
+.rep-modal-info strong { color:#1e293b }
+.modal-footer .btn-cancelar { padding:9px 18px;border-radius:9px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-weight:600;cursor:pointer;font-size:14px }
+.modal-footer .btn-confirmar { padding:9px 18px;border-radius:9px;border:none;background:linear-gradient(135deg,#f97316,#ea580c);color:white;font-weight:700;cursor:pointer;font-size:14px }
+</style>
 
 <?php include '../../../../panel/dashboard/layaut/footer.php'; ?>
