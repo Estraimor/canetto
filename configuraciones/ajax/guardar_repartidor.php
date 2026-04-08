@@ -21,9 +21,9 @@ if ($password && strlen($password) < 6) { echo json_encode(['ok' => false, 'msg'
 
 try {
     // Obtener id del rol Repartidor
-    $rolId = $pdo->query("SELECT idroles FROM roles WHERE nombre = 'Repartidor' LIMIT 1")->fetchColumn();
+    $rolId = $pdo->query("SELECT idroles FROM roles WHERE nombre = 'Repartidor' AND estado = 1 LIMIT 1")->fetchColumn();
     if (!$rolId) {
-        echo json_encode(['ok' => false, 'msg' => 'No existe el rol "Repartidor" en el sistema. Crealo primero en Configuraciones → Roles.']);
+        echo json_encode(['ok' => false, 'msg' => 'No existe el rol "Repartidor" activo en el sistema. Verificá Configuraciones → Roles.']);
         exit;
     }
 

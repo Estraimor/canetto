@@ -1,5 +1,6 @@
 <?php
 // Ventas/Historial/api/get_detalle_venta.php
+ob_start();
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../../../../config/conexion.php';
 header('Content-Type: application/json');
@@ -36,7 +37,7 @@ try {
             v.estado_venta_idestado_venta AS estado_id,
             COALESCE(v.tipo_entrega, 'retiro') AS tipo_entrega,
             v.direccion_entrega,
-            v.sucursal_retiro_idsucursal,
+            COALESCE(v.via_uber, 0) AS via_uber,
 
             u.nombre   AS cliente_nombre,
             u.apellido AS cliente_apellido,
@@ -110,12 +111,13 @@ try {
     // =========================
     // RESPUESTA
     // =========================
+    ob_end_clean();
     echo json_encode($venta);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
 
+    ob_end_clean();
     http_response_code(500);
-
     echo json_encode([
         'error' => $e->getMessage()
     ]);

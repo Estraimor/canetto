@@ -85,9 +85,11 @@ const HistorialApp = (() => {
       const badgeEntrega  = esEnvio
         ? `<span class="badge-envio">🛵 Envío</span>`
         : `<span class="badge-retiro">🏪 Retiro</span>`;
-      const repInfo = v.repartidor_nombre
-        ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>`
-        : '';
+      const repInfo = v.via_uber
+        ? `<small style="color:#7c3aed">🚗 Uber</small>`
+        : (v.repartidor_nombre
+          ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>`
+          : '');
 
       return `
         <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}">
@@ -154,7 +156,7 @@ const HistorialApp = (() => {
     await ejecutarCambioEstado(idVenta, nuevoEstado, null, btn);
   }
 
-  async function ejecutarCambioEstado(idVenta, nuevoEstado, repartidorId, btn) {
+  async function ejecutarCambioEstado(idVenta, nuevoEstado, repartidorId, btn, viaUber = false) {
     if (!btn) btn = document.getElementById('btn-save-' + idVenta);
     btn.disabled    = true;
     btn.textContent = '⏳';
@@ -162,6 +164,7 @@ const HistorialApp = (() => {
     try {
       const body = { id_venta: idVenta, estado: nuevoEstado };
       if (repartidorId) body.repartidor_id = repartidorId;
+      if (viaUber) body.via_uber = true;
 
       const res  = await fetch('api/actualizar_estado.php', {
         method:  'POST',
@@ -207,11 +210,13 @@ const HistorialApp = (() => {
         fetch('api/get_detalle_venta.php?id=' + idVenta).then(r => r.json()),
       ]);
 
+      const uberOpt = '<option value="uber">🚗 Uber — sin repartidor propio</option>';
       if (!reps.length) {
-        sel.innerHTML = '<option value="">— No hay repartidores activos —</option>';
+        sel.innerHTML = '<option value="">— Elegí cómo se envía —</option>' + uberOpt;
       } else {
-        sel.innerHTML = '<option value="">— Elegí un repartidor —</option>' +
-          reps.map(r => `<option value="${r.idrepartidor}">${r.nombre} ${r.apellido || ''} ${r.celular ? '('+r.celular+')' : ''}</option>`).join('');
+        sel.innerHTML = '<option value="">— Elegí cómo se envía —</option>' +
+          reps.map(r => `<option value="${r.idrepartidor}">${r.nombre} ${r.apellido || ''} ${r.celular ? '('+r.celular+')' : ''}</option>`).join('') +
+          uberOpt;
       }
 
       const dir = detalle.direccion_entrega || detalle.cliente_direccion || 'Sin dirección';
@@ -229,10 +234,12 @@ const HistorialApp = (() => {
 
   async function confirmarRepartidor() {
     const sel = document.getElementById('rep-select');
-    if (!sel.value) { alert('Seleccioná un repartidor'); return; }
+    if (!sel.value) { alert('Seleccioná un repartidor o elegí Uber'); return; }
+    const viaUber = sel.value === 'uber';
+    const repId   = viaUber ? null : parseInt(sel.value);
     cerrarModalRep();
     const btn = document.getElementById('btn-save-' + _repVentaId);
-    await ejecutarCambioEstado(_repVentaId, 3, parseInt(sel.value), btn);
+    await ejecutarCambioEstado(_repVentaId, 3, repId, btn, viaUber);
   }
 
   function cerrarModalRep() {
@@ -276,7 +283,7 @@ const HistorialApp = (() => {
           ${d.tipo_entrega === 'envio' ? `
           <div class="info-item"><label>Tipo entrega</label><span>🛵 Envío a domicilio</span></div>
           <div class="info-item"><label>Dirección entrega</label><span>${d.direccion_entrega || '—'}</span></div>
-          <div class="info-item"><label>Repartidor</label><span>${d.repartidor_nombre || '— Sin asignar —'}</span></div>
+          <div class="info-item"><label>Repartidor</label><span>${d.via_uber ? '🚗 Uber' : (d.repartidor_nombre || '— Sin asignar —')}</span></div>
           ` : `<div class="info-item"><label>Tipo entrega</label><span>🏪 Retiro en local</span></div>`}
         </div>
       </div>

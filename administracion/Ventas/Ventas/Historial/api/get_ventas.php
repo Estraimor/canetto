@@ -1,5 +1,6 @@
 <?php
 // Ventas/Historial/api/get_ventas.php
+ob_start();
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../../../../config/conexion.php';
 header('Content-Type: application/json');
@@ -25,6 +26,7 @@ try {
         "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
         "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
         "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
+        "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
     $params = [];
@@ -56,7 +58,7 @@ try {
             v.estado_venta_idestado_venta AS estado_id,
             COALESCE(v.tipo_entrega, 'retiro') AS tipo_entrega,
             v.direccion_entrega,
-            v.sucursal_retiro_idsucursal,
+            COALESCE(v.via_uber, 0) AS via_uber,
 
             u.nombre   AS cliente_nombre,
             u.apellido AS cliente_apellido,
@@ -164,15 +166,16 @@ try {
     $stmtStat->execute([':hoy' => $hoy]);
     $stats = $stmtStat->fetch();
 
+    ob_end_clean();
     echo json_encode([
         'ventas' => array_values($ventas),
         'stats'  => $stats
     ]);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
 
+    ob_end_clean();
     http_response_code(500);
-
     echo json_encode([
         'error' => $e->getMessage()
     ]);

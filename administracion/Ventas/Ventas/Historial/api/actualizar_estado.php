@@ -1,4 +1,5 @@
 <?php
+ob_start();
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../../../../config/conexion.php';
 require_once __DIR__ . '/../../../../../config/audit.php';
@@ -6,6 +7,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    ob_end_clean();
     echo json_encode(['success' => false, 'message' => 'Método no permitido']); exit;
 }
 
@@ -13,6 +15,7 @@ $input         = json_decode(file_get_contents('php://input'), true);
 $id_venta      = intval($input['id_venta']      ?? 0);
 $estado        = intval($input['estado']        ?? 0);
 $repartidor_id = isset($input['repartidor_id']) && $input['repartidor_id'] ? intval($input['repartidor_id']) : null;
+$via_uber      = !empty($input['via_uber']) ? 1 : 0;
 
 if (!$id_venta || $estado < 1 || $estado > 4) {
     echo json_encode(['success' => false, 'message' => 'Datos inválidos']); exit;
@@ -46,15 +49,25 @@ try {
         "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
         "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
         "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
+        "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
-    if ($repartidor_id && $estado === 3) {
+    if ($estado === 3 && $repartidor_id) {
+        // Repartidor propio asignado
         $stmt = $pdo->prepare(
             "UPDATE ventas SET estado_venta_idestado_venta = :estado,
-             repartidor_idusuario = :rep, updated_at = NOW()
+             repartidor_idusuario = :rep, via_uber = 0, updated_at = NOW()
              WHERE idventas = :id"
         );
         $stmt->execute([':estado' => $estado, ':rep' => $repartidor_id, ':id' => $id_venta]);
+    } elseif ($estado === 3 && $via_uber) {
+        // Envío por Uber (sin repartidor propio)
+        $stmt = $pdo->prepare(
+            "UPDATE ventas SET estado_venta_idestado_venta = :estado,
+             repartidor_idusuario = NULL, via_uber = 1, updated_at = NOW()
+             WHERE idventas = :id"
+        );
+        $stmt->execute([':estado' => $estado, ':id' => $id_venta]);
     } else {
         $stmt = $pdo->prepare(
             "UPDATE ventas SET estado_venta_idestado_venta = :estado, updated_at = NOW()
@@ -90,8 +103,10 @@ try {
         "Actualizó estado de venta #{$id_venta}: '{$estadoAnterior}' → '{$nombreEstado}'"
     );
 
+    ob_end_clean();
     echo json_encode(['success' => true]);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
+    ob_end_clean();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

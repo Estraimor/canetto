@@ -119,6 +119,7 @@ include '../../../../panel/dashboard/layaut/nav.php';
 <style>
 .badge-envio  { display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;margin-top:3px }
 .badge-retiro { display:inline-block;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;margin-top:3px }
+.badge-uber   { display:inline-block;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;margin-top:3px }
 .rep-modal-info { background:#f8fafc;border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.8;color:#334155;border:1px solid #e2e8f0 }
 .rep-modal-info strong { color:#1e293b }
 .modal-footer .btn-cancelar { padding:9px 18px;border-radius:9px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-weight:600;cursor:pointer;font-size:14px }
