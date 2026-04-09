@@ -582,7 +582,10 @@ const BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
 new Swiper('#mainSwiper',{loop:true,autoplay:{delay:4500,disableOnInteraction:false},pagination:{el:'.swiper-pagination',clickable:true}});
 
 // ── CART ────────────────────────────────
-const CK='canetto_cart';
+// Clave de carrito vinculada al usuario para que cada cuenta tenga su propio carrito
+const CK = CLIENTE_PHP ? 'canetto_cart_' + CLIENTE_PHP.id : 'canetto_cart_guest';
+// Limpiar clave genérica legada si quedó de versiones anteriores
+if (localStorage.getItem('canetto_cart') !== null) { localStorage.removeItem('canetto_cart'); }
 const getCart=()=>{try{return JSON.parse(localStorage.getItem(CK)||'[]')}catch{return[]}};
 const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart()};
 

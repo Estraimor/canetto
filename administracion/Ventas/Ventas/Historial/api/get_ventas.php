@@ -160,7 +160,7 @@ try {
             SUM(estado_venta_idestado_venta = 4) AS entregado,
             COALESCE(SUM(total),0) AS total_hoy
         FROM ventas
-        WHERE DATE(created_at) = :hoy
+        WHERE DATE(fecha) = :hoy
     ");
 
     $stmtStat->execute([':hoy' => $hoy]);

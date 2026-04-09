@@ -237,9 +237,10 @@ const HistorialApp = (() => {
     if (!sel.value) { alert('Seleccioná un repartidor o elegí Uber'); return; }
     const viaUber = sel.value === 'uber';
     const repId   = viaUber ? null : parseInt(sel.value);
+    const ventaId = _repVentaId;
     cerrarModalRep();
-    const btn = document.getElementById('btn-save-' + _repVentaId);
-    await ejecutarCambioEstado(_repVentaId, 3, repId, btn, viaUber);
+    const btn = document.getElementById('btn-save-' + ventaId);
+    await ejecutarCambioEstado(ventaId, 3, repId, btn, viaUber);
   }
 
   function cerrarModalRep() {
@@ -340,10 +341,6 @@ const HistorialApp = (() => {
 
   // ─── INIT ─────────────────────────────────
   function init() {
-    // Hoy por defecto en el filtro de fecha (ANTES de cargarVentas para que el filtro aplique desde el inicio)
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('filtro-fecha').value = hoy;
-
     cargarVentas();
 
     document.getElementById('modal-detalle').addEventListener('click', (e) => {

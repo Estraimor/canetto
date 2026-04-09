@@ -50,6 +50,7 @@ try {
         "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
         "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
         "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN updated_at DATETIME NULL",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
     if ($estado === 3 && $repartidor_id) {

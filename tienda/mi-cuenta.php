@@ -195,7 +195,7 @@ if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
   <!-- Cerrar sesión -->
   <div class="cuenta-section">
     <h3>🚪 Sesión</h3>
-    <a href="api/auth.php?action=logout_redirect" class="btn-logout">Cerrar sesión</a>
+    <a href="#" class="btn-logout" onclick="doLogout(event)">Cerrar sesión</a>
   </div>
 
 </div>
@@ -269,6 +269,13 @@ async function cambiarPass() {
     } else setAlert('alertPass', d.message || 'Error al cambiar', 'err');
   } catch { setAlert('alertPass', 'Error de conexión', 'err'); }
   btn.disabled = false; btn.textContent = 'Cambiar contraseña';
+}
+
+function doLogout(e) {
+  e.preventDefault();
+  // Limpiar el carrito de este usuario antes de cerrar sesión
+  localStorage.removeItem('canetto_cart_<?= $uid ?>');
+  window.location.href = 'api/auth.php?action=logout_redirect';
 }
 </script>
 <script src="transitions.js"></script>

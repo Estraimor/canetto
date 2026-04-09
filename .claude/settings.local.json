@@ -8,7 +8,8 @@
       "Bash(\"/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe\" -u root -e \"ALTER TABLE canetto.materia_prima ADD COLUMN peso_unitario_g DECIMAL\\(8,3\\) DEFAULT NULL COMMENT 'Peso en gramos por unidad. Completar si la unidad es contable \\(huevos, piezas, etc.\\)';\")",
       "Bash(grep -r \"CREATE TABLE IF NOT EXISTS \\\\`oferta\" /c/wamp64/www/canetto --include=\"*.php\" -A 20)",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root canetto -e ':*)",
-      "Bash(find /c/wamp64/www/canetto -type f \\\\\\( -name \"*.php\" -o -name \"*.js\" \\\\\\) -exec grep -l \"repartidor\\\\|delivery.*person\\\\|delivery.*driver\" {} \\\\;)"
+      "Bash(find /c/wamp64/www/canetto -type f \\\\\\( -name \"*.php\" -o -name \"*.js\" \\\\\\) -exec grep -l \"repartidor\\\\|delivery.*person\\\\|delivery.*driver\" {} \\\\;)",
+      "Bash(mysql -u root -e \"DESCRIBE canetto.ventas;\")"
     ]
   }
 }
