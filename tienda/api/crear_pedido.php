@@ -32,6 +32,15 @@ try {
         "ALTER TABLE detalle_ventas ADD COLUMN precio_original DECIMAL(10,2) NULL",
         "ALTER TABLE detalle_ventas ADD COLUMN descuento_pct DECIMAL(5,2) NULL",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+    // Agregar columnas si no existen (antes de la transacción para evitar implicit commit de DDL)
+    foreach ([
+        "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
+        "ALTER TABLE ventas ADD COLUMN repartidor_idusuario INT NULL",
+        "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
+        "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
+    ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+
     $pdo->beginTransaction();
 
     // --- Resolver cliente ---
@@ -62,15 +71,6 @@ try {
     } else {
         throw new Exception("Información del cliente requerida");
     }
-
-    // Agregar columnas si no existen
-    foreach ([
-        "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
-        "ALTER TABLE ventas ADD COLUMN repartidor_idusuario INT NULL",
-        "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
-        "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
-        "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
-    ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
     // --- Crear venta ---
     $pdo->prepare("

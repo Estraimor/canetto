@@ -395,7 +395,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
       <span class="cart-total-amt" id="cartTotal">$0</span>
     </div>
     <button class="btn-checkout" onclick="openCheckout()">Finalizar pedido →</button>
-    <button class="btn-clear" onclick="clearCart()">Vaciar carrito</button>
+    <button class="btn-clear" onclick="clearCartConfirm()">Vaciar carrito</button>
   </div>
 </aside>
 
@@ -612,7 +612,8 @@ function addToCart(btn){
   setTimeout(()=>{btn.innerHTML=o;btn.style.background=''},1200);
 }
 function updateQty(id,d){const c=getCart(),i=c.findIndex(x=>x.id===id);if(i<0)return;c[i].cantidad+=d;if(c[i].cantidad<=0)c.splice(i,1);saveCart(c)}
-function clearCart(){if(!confirm('¿Vaciar el carrito?'))return;saveCart([]);showToast('Carrito vaciado')}
+function clearCart(){saveCart([]);showToast('Carrito vaciado')}
+function clearCartConfirm(){if(!confirm('¿Vaciar el carrito?'))return;clearCart()}
 const total=c=>c.reduce((s,i)=>s+i.precio*i.cantidad,0);
 const count=c=>c.reduce((s,i)=>s+i.cantidad,0);
 const fmt=n=>'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:0});
