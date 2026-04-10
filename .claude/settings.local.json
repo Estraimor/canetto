@@ -9,7 +9,8 @@
       "Bash(grep -r \"CREATE TABLE IF NOT EXISTS \\\\`oferta\" /c/wamp64/www/canetto --include=\"*.php\" -A 20)",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root canetto -e ':*)",
       "Bash(find /c/wamp64/www/canetto -type f \\\\\\( -name \"*.php\" -o -name \"*.js\" \\\\\\) -exec grep -l \"repartidor\\\\|delivery.*person\\\\|delivery.*driver\" {} \\\\;)",
-      "Bash(mysql -u root -e \"DESCRIBE canetto.ventas;\")"
+      "Bash(mysql -u root -e \"DESCRIBE canetto.ventas;\")",
+      "Bash(wc -l /c/wamp64/www/canetto/repartidor/*.php /c/wamp64/www/canetto/repartidor/api/*.php)"
     ]
   }
 }

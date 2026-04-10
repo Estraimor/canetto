@@ -2,10 +2,10 @@
 
 const HistorialApp = (() => {
   const ESTADOS = {
-    1: { label: 'Pendiente',            icon: '⏳', cls: 'estado-1' },
-    2: { label: 'En Preparación',       icon: '👨‍🍳', cls: 'estado-2' },
-    3: { label: 'En manos Repartidor',  icon: '🛵', cls: 'estado-3' },
-    4: { label: 'Entregado',            icon: '✅', cls: 'estado-4' }
+    1: { label: 'Pendiente',            icon: '', cls: 'estado-1' },
+    2: { label: 'En Preparación',       icon: '', cls: 'estado-2' },
+    3: { label: 'En reparto',           icon: '', cls: 'estado-3' },
+    4: { label: 'Entregado',            icon: '', cls: 'estado-4' }
   };
 
   const fmt = (n) => '$' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -74,7 +74,6 @@ const HistorialApp = (() => {
     }
 
     tbody.innerHTML = ventas.map(v => {
-      const est   = ESTADOS[v.estado_id] || ESTADOS[1];
       const fecha = fmtFecha(v.fecha);
       const productos = (v.productos || []).map(p =>
         `<span class="prod-tag">${p.nombre} ×${p.cantidad}</span>`
