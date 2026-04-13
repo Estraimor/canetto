@@ -3,4 +3,4 @@ config/google_config.php
 config/google_config_local.php
 vendor/
 node_modules/
-*.log
+*.logconfig/google_config.php
