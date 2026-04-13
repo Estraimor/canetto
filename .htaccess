@@ -12,8 +12,7 @@ RewriteRule ^$ /administracion/index.php [L,R=302]
 
 # ─── Proteger archivos sensibles ───────────────────────────────────────────
 <FilesMatch "\.(env|log|sql|sh|bak|git|json|lock|md)$">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # ─── Bloquear acceso directo a carpetas críticas ───────────────────────────
