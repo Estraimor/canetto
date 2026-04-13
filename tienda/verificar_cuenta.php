@@ -90,12 +90,12 @@ body{display:flex;align-items:center;justify-content:center;min-height:100vh;bac
       Tu cuenta fue actualizada correctamente, <strong><?= htmlspecialchars($nombre) ?></strong>.<br>
       Ya podés hacer pedidos con tu nueva sesión.
     </div>
-    <a href="/canetto/tienda/index.php" class="vf-btn">Ir a la tienda →</a>
+    <a href="<?= URL_TIENDA ?>/index.php" class="vf-btn">Ir a la tienda →</a>
   <?php else: ?>
     <div class="vf-icon">❌</div>
     <div class="vf-title">Enlace inválido</div>
     <div class="vf-sub"><?= htmlspecialchars($error) ?></div>
-    <a href="/canetto/tienda/index.php" class="vf-btn vf-btn-err">Volver a la tienda</a>
+    <a href="<?= URL_TIENDA ?>/index.php" class="vf-btn vf-btn-err">Volver a la tienda</a>
   <?php endif; ?>
 </div>
 </body>

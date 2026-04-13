@@ -6,19 +6,6 @@ include '../panel/dashboard/layaut/nav.php';
 
 $pdo = Conexion::conectar();
 
-$pdo->exec("CREATE TABLE IF NOT EXISTS `oferta` (
-    `idoferta` INT AUTO_INCREMENT PRIMARY KEY,
-    `titulo` VARCHAR(200) NOT NULL,
-    `descripcion` TEXT,
-    `emoji` VARCHAR(10) DEFAULT '🎉',
-    `tipo` VARCHAR(20) DEFAULT 'promo',
-    `valor` DECIMAL(10,2) NULL,
-    `imagen` VARCHAR(255) NULL,
-    `activo` TINYINT DEFAULT 1,
-    `fecha_inicio` DATE NULL,
-    `fecha_fin` DATE NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 try { $pdo->exec("ALTER TABLE oferta ADD COLUMN imagen VARCHAR(255) NULL"); } catch (Throwable $e) {}
 try { $pdo->exec("ALTER TABLE oferta ADD COLUMN productos_idproductos INT NULL"); } catch (Throwable $e) {}
 
@@ -30,7 +17,7 @@ $productos_lista = $pdo->query("
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
 <style>
 .of-preview{width:100%;height:160px;object-fit:cover;border-radius:10px;margin-top:8px;display:block}
 .of-emoji-big{font-size:48px;text-align:center;padding:20px;background:#fafafa;border-radius:10px;margin-top:8px}
@@ -42,7 +29,7 @@ $productos_lista = $pdo->query("
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="/canetto/configuraciones/index.php">
+            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">
@@ -202,7 +189,7 @@ $(document).ready(function () {
         columns: [
             { data: null, orderable: false, width: '70px', render: row =>
                 row.imagen
-                    ? `<img src="/canetto/img/ofertas/${esc(row.imagen)}" style="width:56px;height:40px;object-fit:cover;border-radius:6px">`
+                    ? `<img src="<?= URL_ASSETS ?>/img/ofertas/${esc(row.imagen)}" style="width:56px;height:40px;object-fit:cover;border-radius:6px">`
                     : `<span style="font-size:26px">${esc(row.emoji||'🎉')}</span>`
             },
             { data: 'titulo', render: v => '<strong>' + esc(v) + '</strong>' },
@@ -282,7 +269,7 @@ function editarRow(row) {
     document.getElementById('oToggleLbl').textContent = activo ? 'Activa' : 'Inactiva';
     document.getElementById('oImagen').value = '';
     if (row.imagen) {
-        document.getElementById('imgPreview').src = '/canetto/img/ofertas/' + row.imagen;
+        document.getElementById('imgPreview').src = '<?= URL_ASSETS ?>/img/ofertas/' + row.imagen;
         document.getElementById('previewWrap').style.display = 'block';
     } else {
         document.getElementById('previewWrap').style.display = 'none';

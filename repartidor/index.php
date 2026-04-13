@@ -75,7 +75,7 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
       </button>
 
       <div style="text-align:right;margin-top:6px;margin-bottom:2px;">
-        <a href="<?= base() ?>/login/recuperar_password.php"
+        <a href="<?= URL_LOGIN ?>/recuperar_password.php"
            style="font-size:12px;color:#c88e99;text-decoration:none;">¿Olvidaste tu contraseña?</a>
       </div>
 
@@ -188,7 +188,7 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
             <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
           </button>
           <div style="margin-top:14px;text-align:center;">
-            <a href="<?= base() ?>/login/recuperar_password.php"
+            <a href="<?= URL_LOGIN ?>/recuperar_password.php"
                style="font-size:13px;color:#c88e99;text-decoration:none;">
               <i class="fa-solid fa-lock"></i> Cambiar contraseña por email
             </a>

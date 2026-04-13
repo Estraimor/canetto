@@ -7,20 +7,6 @@ header('Content-Type: application/json');
 try {
     $pdo = Conexion::conectar();
 
-    // Crear tabla de notificaciones si no existe
-    $pdo->exec("CREATE TABLE IF NOT EXISTS notificaciones_admin (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        tipo VARCHAR(40) NOT NULL,
-        titulo VARCHAR(200) NOT NULL,
-        descripcion TEXT,
-        link VARCHAR(300),
-        leida TINYINT(1) DEFAULT 0,
-        referencia_id INT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_leida (leida),
-        INDEX idx_created (created_at)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
     // Generar notificaciones automáticas de pedidos nuevos (últimos 5 minutos no notificados)
     // Pedidos pendientes sin notificación previa
     $stmt = $pdo->query("

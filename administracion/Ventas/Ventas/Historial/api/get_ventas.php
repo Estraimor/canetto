@@ -9,16 +9,6 @@ header('Content-Type: application/json');
 try {
     $pdo = Conexion::conectar();
 
-    // Crear tabla direccion si no existe (fix del bug de JOIN fallido)
-    $pdo->exec("CREATE TABLE IF NOT EXISTS direccion (
-        iddireccion INT AUTO_INCREMENT PRIMARY KEY,
-        usuario_idusuario INT NOT NULL,
-        direccion_formateada VARCHAR(500),
-        principal TINYINT(1) DEFAULT 0,
-        lat DECIMAL(10,8) NULL,
-        lng DECIMAL(11,8) NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // Agregar columnas de repartidor/entrega si no existen
     foreach ([

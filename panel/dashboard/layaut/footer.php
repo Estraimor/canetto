@@ -173,7 +173,7 @@ const NotifApp = (() => {
 
     async function poll() {
         try {
-            const data = await fetch('<?= base() ?>/administracion/api/notificaciones.php').then(r => r.json());
+            const data = await fetch('<?= URL_ADMIN ?>/api/notificaciones.php').then(r => r.json());
             const total = data.total || 0;
             const badge = document.getElementById('notifBadge');
             const bell  = document.getElementById('notifBell');
@@ -243,11 +243,11 @@ const NotifApp = (() => {
     }
 
     function marcar(id, e) {
-        fetch('<?= base() ?>/administracion/api/notificaciones.php?marcar=' + id).catch(() => {});
+        fetch('<?= URL_ADMIN ?>/api/notificaciones.php?marcar=' + id).catch(() => {});
     }
 
     async function marcarTodas() {
-        await fetch('<?= base() ?>/administracion/api/notificaciones.php?marcar_todas=1').catch(() => {});
+        await fetch('<?= URL_ADMIN ?>/api/notificaciones.php?marcar_todas=1').catch(() => {});
         poll();
     }
 

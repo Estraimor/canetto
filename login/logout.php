@@ -27,7 +27,7 @@ localStorage.removeItem('canetto_cart_<?= (int)$uid_logout ?>');
 // Limpiar cualquier clave de carrito que haya quedado
 Object.keys(localStorage).filter(k => k.startsWith('canetto_cart_')).forEach(k => localStorage.removeItem(k));
 <?php endif; ?>
-window.location.replace('<?= base() ?>/login/login.php');
+window.location.replace('<?= URL_LOGIN ?>/login.php');
 </script>
 </body>
 </html>

@@ -325,7 +325,7 @@ $current = $_SERVER['PHP_SELF'];
 
         <i class="fa-regular fa-user"></i>
         <span><?= htmlspecialchars(($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '')) ?></span>
-        <a href="/canetto/login/logout.php" title="Cerrar sesión" style="color:inherit;text-decoration:none;margin-left:6px;opacity:.6;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">
+        <a href="<?= URL_LOGIN ?>/logout.php" title="Cerrar sesión" style="color:inherit;text-decoration:none;margin-left:6px;opacity:.6;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">
             <i class="fa-solid fa-right-from-bracket"></i>
         </a>
     </div>

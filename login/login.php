@@ -1,12 +1,13 @@
 <?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../config/google_config.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (isset($_SESSION['usuario_id'])) {
     $dest = ($_SESSION['rol'] ?? '') === 'cliente'
-        ? '/tienda/index.php'
-        : '/administracion/index.php';
+        ? URL_TIENDA . '/index.php'
+        : URL_ADMIN  . '/index.php';
     redirect($dest);
 }
 
@@ -21,6 +22,7 @@ unset($_SESSION['error']);
 <title>Canetto | Acceder</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="login.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 /* ── panel toggle ── */
 .panel{display:none}.panel.on{display:block}
@@ -69,10 +71,11 @@ unset($_SESSION['error']);
 
     <div class="divider"><span>o continuar con</span></div>
 
-    <button class="btn-google" type="button">
+    <button class="btn-google" type="button" id="btnGoogleAdmin" onclick="iniciarGoogleAdmin()">
       <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
       Ingresar con Google
     </button>
+    <div id="googleAlertAdmin" style="display:none;margin-top:10px;padding:9px 13px;border-radius:8px;font-size:13px"></div>
 
     <div class="register-link">
       ¿No tenés cuenta?
@@ -142,7 +145,7 @@ async function doRegister() {
         const d = await (await fetch('register_process.php', { method: 'POST', body: fd })).json();
         if (d.ok) {
             setAlert(alert, '¡Bienvenido, ' + d.nombre + '! Redirigiendo...', 'ok');
-            setTimeout(() => window.location.href = '<?= base() ?>/tienda/index.php', 1000);
+            setTimeout(() => window.location.href = '<?= URL_TIENDA ?>/index.php', 1000);
         } else {
             setAlert(alert, d.msg || 'Error al registrar.', 'err');
             btn.disabled = false; btn.textContent = 'Crear cuenta';
@@ -157,6 +160,67 @@ function setAlert(el, msg, type) {
     el.textContent = msg;
     el.className = 'lc-alert ' + type;
 }
+
+// ── Google Sign-In ──────────────────────────────────────────────────────────
+const GOOGLE_CLIENT_ID_ADMIN = <?= json_encode(GOOGLE_CLIENT_ID) ?>;
+
+function iniciarGoogleAdmin() {
+    if (!window.google) {
+        showGoogleAlertAdmin('Cargando Google... intentá en un segundo.', '#888'); return;
+    }
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID_ADMIN,
+        callback:  handleGoogleAdmin,
+        ux_mode:   'popup',
+    });
+    google.accounts.id.prompt();
+}
+
+async function handleGoogleAdmin(response) {
+    const btn = document.getElementById('btnGoogleAdmin');
+    btn.disabled = true;
+    btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Verificando...';
+
+    try {
+        const data = await fetch('google_auth_admin.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential }),
+        }).then(r => r.json());
+
+        if (data.success) {
+            showGoogleAlertAdmin('¡Bienvenido, ' + data.nombre + '! Redirigiendo...', '#1d8348', '#e8f5e9');
+            setTimeout(() => window.location.href = data.redirect, 900);
+        } else {
+            showGoogleAlertAdmin(data.message || 'Acceso denegado.', '#c88e99', '#f9edf0');
+            btn.disabled = false;
+            btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+        }
+    } catch {
+        showGoogleAlertAdmin('Error de conexión.', '#c88e99', '#f9edf0');
+        btn.disabled = false;
+        btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+    }
+}
+
+function showGoogleAlertAdmin(msg, color, bg) {
+    const el = document.getElementById('googleAlertAdmin');
+    el.textContent = msg;
+    el.style.color = color || '#333';
+    el.style.background = bg || '#f5f5f5';
+    el.style.display = 'block';
+}
+
+// Inicializar GSI cuando carga la librería
+window.addEventListener('load', () => {
+    if (window.google) {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID_ADMIN,
+            callback:  handleGoogleAdmin,
+            ux_mode:   'popup',
+        });
+    }
+});
 </script>
 </body>
 </html>

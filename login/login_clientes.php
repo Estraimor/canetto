@@ -1,10 +1,11 @@
 <?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../config/google_config.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (isset($_SESSION['usuario_id']) && ($_SESSION['rol'] ?? '') === 'cliente') {
-    redirect('/tienda/index.php');
+    redirect(URL_TIENDA . '/index.php');
 }
 
 $error = $_SESSION['error_cliente'] ?? null;
@@ -18,6 +19,7 @@ unset($_SESSION['error_cliente']);
 <title>Canetto | Clientes</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="login.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 /* ── panel toggle ── */
 .panel{display:none}.panel.on{display:block}
@@ -68,10 +70,11 @@ unset($_SESSION['error_cliente']);
 
     <div class="divider"><span>o continuar con</span></div>
 
-    <button class="btn-google" type="button">
+    <button class="btn-google" type="button" id="btnGoogleTienda" onclick="iniciarGoogleTienda()">
       <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
       Ingresar con Google
     </button>
+    <div id="googleAlertTienda" style="display:none;margin-top:10px;padding:9px 13px;border-radius:8px;font-size:13px"></div>
 
     <div class="register-link">
       ¿No tenés cuenta?
@@ -141,7 +144,7 @@ async function doRegister() {
         const d = await (await fetch('register_process.php', { method: 'POST', body: fd })).json();
         if (d.ok) {
             setAlert(alert, '¡Bienvenido, ' + d.nombre + '! Redirigiendo...', 'ok');
-            setTimeout(() => window.location.href = '<?= base() ?>/tienda/index.php', 1000);
+            setTimeout(() => window.location.href = '<?= URL_TIENDA ?>/index.php', 1000);
         } else {
             setAlert(alert, d.msg || 'Error al registrar.', 'err');
             btn.disabled = false; btn.textContent = 'Crear cuenta';
@@ -156,6 +159,68 @@ function setAlert(el, msg, type) {
     el.textContent = msg;
     el.className = 'lc-alert ' + type;
 }
+
+// ── Google Sign-In ──────────────────────────────────────────────────────────
+const GOOGLE_CLIENT_ID_TIENDA = <?= json_encode(GOOGLE_CLIENT_ID) ?>;
+
+function iniciarGoogleTienda() {
+    if (!window.google) {
+        showGoogleAlertTienda('Cargando Google... intentá en un segundo.', '#888'); return;
+    }
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID_TIENDA,
+        callback:  handleGoogleTienda,
+        ux_mode:   'popup',
+    });
+    google.accounts.id.prompt();
+}
+
+async function handleGoogleTienda(response) {
+    const btn = document.getElementById('btnGoogleTienda');
+    btn.disabled = true;
+    btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Verificando...';
+
+    try {
+        const data = await fetch('google_auth_tienda.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential }),
+        }).then(r => r.json());
+
+        if (data.success) {
+            showGoogleAlertTienda('¡Bienvenido, ' + data.nombre + '! Redirigiendo...', '#1d8348', '#e8f5e9');
+            setTimeout(() => window.location.href = data.redirect, 900);
+        } else {
+            showGoogleAlertTienda(data.message || 'No se pudo ingresar.', '#c88e99', '#f9edf0');
+            btn.disabled = false;
+            btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+        }
+    } catch {
+        showGoogleAlertTienda('Error de conexión.', '#c88e99', '#f9edf0');
+        btn.disabled = false;
+        btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+    }
+}
+
+function showGoogleAlertTienda(msg, color, bg) {
+    const el = document.getElementById('googleAlertTienda');
+    el.textContent = msg;
+    el.style.color = color || '#333';
+    el.style.background = bg || '#f5f5f5';
+    el.style.display = 'block';
+}
+
+window.addEventListener('load', () => {
+    if (window.google) {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID_TIENDA,
+            callback:  handleGoogleTienda,
+            ux_mode:   'popup',
+        });
+        // Mostrar el One Tap automáticamente
+        google.accounts.id.prompt();
+    }
+});
 </script>
 </body>
 </html>

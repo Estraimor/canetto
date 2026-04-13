@@ -10,27 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $pdo = Conexion::conectar();
 
-// Migraciones seguras (idempotentes)
-$pdo->exec("CREATE TABLE IF NOT EXISTS verificacion_token (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    token VARCHAR(64) NOT NULL UNIQUE,
-    usuario_idusuario INT NOT NULL,
-    datos_nuevos TEXT NOT NULL,
-    tipo VARCHAR(30) DEFAULT 'merge_dni',
-    expira DATETIME NOT NULL,
-    usado TINYINT(1) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-$pdo->exec("CREATE TABLE IF NOT EXISTS direccion (
-    iddireccion INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_idusuario INT NOT NULL,
-    direccion_formateada VARCHAR(500),
-    principal TINYINT(1) DEFAULT 0,
-    lat DECIMAL(10,8) NULL,
-    lng DECIMAL(11,8) NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
 foreach ([
     "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",

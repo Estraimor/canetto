@@ -6,23 +6,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 try {
     $pdo = Conexion::conectar();
 
-    // Create oferta table if needed
-    $pdo->exec("CREATE TABLE IF NOT EXISTS `oferta` (
-        `idoferta` INT AUTO_INCREMENT PRIMARY KEY,
-        `titulo` VARCHAR(200) NOT NULL,
-        `descripcion` TEXT,
-        `emoji` VARCHAR(10) DEFAULT '🎉',
-        `tipo` VARCHAR(20) DEFAULT 'promo',
-        `valor` DECIMAL(10,2) NULL,
-        `imagen` VARCHAR(255) NULL,
-        `activo` TINYINT DEFAULT 1,
-        `fecha_inicio` DATE NULL,
-        `fecha_fin` DATE NULL,
-        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    try { $pdo->exec("ALTER TABLE oferta ADD COLUMN imagen VARCHAR(255) NULL"); } catch (Throwable $e) {}
 
-    try { $pdo->exec("ALTER TABLE oferta ADD COLUMN productos_idproductos INT NULL"); } catch (Throwable $e) {}
 
     $ofertas = $pdo->query("
         SELECT o.titulo, o.descripcion, o.emoji, o.tipo, o.valor, o.imagen,
@@ -156,7 +140,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
     <?php foreach ($ofertas as $i => $o): ?>
     <div class="swiper-slide">
       <?php if (!empty($o['imagen'])): ?>
-        <div class="slide-bg" style="background:url('/canetto/img/ofertas/<?= rawurlencode($o['imagen']) ?>') center/cover no-repeat;"></div>
+        <div class="slide-bg" style="background:url('<?= URL_ASSETS ?>/img/ofertas/<?= rawurlencode($o['imagen']) ?>') center/cover no-repeat;"></div>
       <?php else: ?>
         <div class="slide-bg <?= $bgClasses[$i % 4] ?>"><?= htmlspecialchars($o['emoji'] ?? '🍪') ?></div>
       <?php endif; ?>

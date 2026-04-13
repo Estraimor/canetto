@@ -5,13 +5,13 @@ $pageTitle = "Repartidores";
 include '../panel/dashboard/layaut/nav.php';
 ?>
 
-<link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
 
 <div class="cfg-module">
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="/canetto/configuraciones/index.php">
+            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">
@@ -44,7 +44,7 @@ include '../panel/dashboard/layaut/nav.php';
         <i class="fa-solid fa-circle-info" style="color:#3b82f6"></i>
         Los repartidores son usuarios del sistema con el rol <strong>Repartidor</strong>.
         Ingresan a la app con su celular y contraseña desde
-        <a href="/canetto/repartidor/" target="_blank" style="color:#3b82f6">/repartidor/</a>.
+        <a href="<?= URL_REPARTIDOR ?>/" target="_blank" style="color:#3b82f6"><?= URL_REPARTIDOR ?>/</a>.
     </p>
 
     <div class="table-wrap">

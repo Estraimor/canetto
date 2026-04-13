@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 define('APP_BOOT', true);
-session_start();
-require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../config/conexion.php'; // configura cookie_domain antes de session_start
+if (session_status() === PHP_SESSION_NONE) session_start();
 
 $usuario  = trim($_POST['usuario']  ?? '');
 $password = trim($_POST['password'] ?? '');
@@ -79,4 +79,4 @@ $_SESSION['rol_id']                  = $rol['idroles'] ?? null;
 $_SESSION['tienda_cliente_id']       = $user['idusuario'];
 $_SESSION['tienda_cliente_nombre']   = trim($user['nombre'] . ' ' . ($user['apellido'] ?? ''));
 
-redirect('/tienda/index.php');
+redirect(URL_TIENDA . '/index.php');

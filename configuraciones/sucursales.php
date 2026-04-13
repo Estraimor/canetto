@@ -6,21 +6,6 @@ include '../panel/dashboard/layaut/nav.php';
 
 $pdo = Conexion::conectar();
 
-// Crear tabla si no existe
-$pdo->exec("CREATE TABLE IF NOT EXISTS `sucursal` (
-    `idsucursal` INT(11) NOT NULL AUTO_INCREMENT,
-    `nombre` VARCHAR(100) NOT NULL,
-    `direccion` VARCHAR(200) DEFAULT NULL,
-    `ciudad` VARCHAR(100) DEFAULT NULL,
-    `provincia` VARCHAR(100) DEFAULT NULL,
-    `telefono` VARCHAR(50) DEFAULT NULL,
-    `email` VARCHAR(100) DEFAULT NULL,
-    `latitud` DECIMAL(10,8) NULL,
-    `longitud` DECIMAL(11,8) NULL,
-    `activo` TINYINT(1) NOT NULL DEFAULT 1,
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`idsucursal`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 try { $pdo->exec("ALTER TABLE sucursal ADD COLUMN latitud DECIMAL(10,8) NULL");  } catch (Throwable $e) {}
 try { $pdo->exec("ALTER TABLE sucursal ADD COLUMN longitud DECIMAL(11,8) NULL"); } catch (Throwable $e) {}
 
@@ -30,7 +15,7 @@ $total   = (int)$pdo->query("SELECT COUNT(*) FROM sucursal")->fetchColumn();
 $activas = (int)$pdo->query("SELECT COUNT(*) FROM sucursal WHERE activo=1")->fetchColumn();
 ?>
 
-<link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -38,7 +23,7 @@ $activas = (int)$pdo->query("SELECT COUNT(*) FROM sucursal WHERE activo=1")->fet
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="/canetto/configuraciones/index.php">
+            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">

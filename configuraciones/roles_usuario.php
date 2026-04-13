@@ -14,13 +14,13 @@ $conRol         = (int)$pdo->query("SELECT COUNT(DISTINCT usuario_idusuario) FRO
 $sinRol         = $totalUsuarios - $conRol;
 ?>
 
-<link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
 
 <div class="cfg-module">
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="/canetto/configuraciones/index.php">
+            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">
@@ -74,7 +74,7 @@ $sinRol         = $totalUsuarios - $conRol;
             <p style="font-size:.82rem; color:var(--ink-soft); margin-bottom:1.2rem;" id="modalSub"></p>
             <div class="role-check-list" id="roleCheckList"></div>
             <p id="sinRolesMsg" style="display:none; color:var(--ink-soft); font-size:.85rem; padding:1rem 0;">
-                No hay roles activos disponibles. <a href="/canetto/configuraciones/roles.php" style="color:var(--ink); font-weight:600;">Crear roles</a>
+                No hay roles activos disponibles. <a href="<?= base() ?>/configuraciones/roles.php" style="color:var(--ink); font-weight:600;">Crear roles</a>
             </p>
         </div>
         <div class="modal-footer">

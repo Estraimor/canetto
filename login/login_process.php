@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 define('APP_BOOT', true);
-session_start();
-require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../config/conexion.php'; // configura cookie_domain antes de session_start
+if (session_status() === PHP_SESSION_NONE) session_start();
 
 $usuario  = trim($_POST['usuario']  ?? '');
 $password = trim($_POST['password'] ?? '');
@@ -68,7 +68,7 @@ if (!$rolAdmin) {
     // No tiene rol de admin → acceso denegado en este login
     session_destroy();
     $_SESSION['error'] = 'No tenés permiso para acceder al panel de administración.';
-    redirect('/login/login.php');
+    redirect(URL_LOGIN . '/login.php');
 }
 
 session_regenerate_id(true);
@@ -79,4 +79,4 @@ $_SESSION['apellido']   = $user['apellido'];
 $_SESSION['rol']        = strtolower($rolAdmin['nombre']);
 $_SESSION['rol_id']     = $rolAdmin['idroles'];
 
-redirect('/administracion/index.php');
+redirect(URL_ADMIN . '/index.php');

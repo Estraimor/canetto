@@ -6,6 +6,10 @@ RewriteCond %{HTTP_HOST} canettocookies.com [NC]
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# ─── Redirigir raíz del subdominio admin al panel ──────────────────────────
+RewriteCond %{HTTP_HOST} ^administracion\.canettocookies\.com$ [NC]
+RewriteRule ^$ /administracion/index.php [L,R=302]
+
 # ─── Proteger archivos sensibles ───────────────────────────────────────────
 <FilesMatch "\.(env|log|sql|sh|bak|git|json|lock|md)$">
     Order allow,deny

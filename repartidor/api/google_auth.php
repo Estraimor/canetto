@@ -79,6 +79,15 @@ try {
         ]); exit;
     }
 
+    // Vincular cuenta Google si aún no está vinculada
+    $googleId = $payload['sub'] ?? '';
+    if ($googleId) {
+        $pdo->prepare("
+            INSERT IGNORE INTO usuario_auth (usuario_idusuario, provider, provider_id, created_at)
+            VALUES (?, 'google', ?, NOW())
+        ")->execute([$rep['idusuario'], $googleId]);
+    }
+
     $_SESSION['repartidor_id']     = $rep['idusuario'];
     $_SESSION['repartidor_nombre'] = trim($rep['nombre'] . ' ' . ($rep['apellido'] ?? ''));
 

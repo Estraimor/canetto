@@ -55,6 +55,7 @@ try {
     if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $nombreDisplay = htmlspecialchars(trim("$nombre $apellido"));
         $primerNombre  = htmlspecialchars($nombre);
+        $urlTienda = URL_TIENDA;
         $contenido = <<<HTML
 <h2 style="margin:0 0 8px;font-size:22px;color:#2d2d2d;font-weight:700;">
   ¡Bienvenida/o, {$primerNombre}! 🍪
@@ -68,7 +69,7 @@ try {
   <p style="margin:0;color:#555;font-size:14px;">📱 <strong>Celular:</strong> {$celular}</p>
 </div>
 <div style="text-align:center;margin:24px 0;">
-  <a href="https://canettocookies.com/tienda/index.php"
+  <a href="{$urlTienda}/index.php"
      style="display:inline-block;background:linear-gradient(135deg,#c88e99,#a46678);
             color:#fff;text-decoration:none;font-weight:700;font-size:15px;
             padding:14px 36px;border-radius:50px;letter-spacing:.5px;

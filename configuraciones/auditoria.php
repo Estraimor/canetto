@@ -6,18 +6,6 @@ include '../panel/dashboard/layaut/nav.php';
 
 $pdo = Conexion::conectar();
 
-// Crear tabla si no existe
-$pdo->exec("CREATE TABLE IF NOT EXISTS `auditoria` (
-    `idauditoria` INT(11) NOT NULL AUTO_INCREMENT,
-    `usuario_id` INT(11) DEFAULT NULL,
-    `usuario_nombre` VARCHAR(100) DEFAULT NULL,
-    `accion` VARCHAR(100) NOT NULL,
-    `modulo` VARCHAR(50) DEFAULT NULL,
-    `descripcion` TEXT DEFAULT NULL,
-    `ip` VARCHAR(50) DEFAULT NULL,
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`idauditoria`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
 // Agregar columna si no existe
 try { $pdo->exec("ALTER TABLE auditoria ADD COLUMN sucursal_nombre VARCHAR(100) NULL"); } catch (Throwable $e) {}
@@ -28,7 +16,7 @@ $modulos = $pdo->query("SELECT COUNT(DISTINCT modulo) FROM auditoria WHERE modul
 $sucursales = $pdo->query("SELECT DISTINCT COALESCE(sucursal_nombre,'Casa Central') AS nombre FROM auditoria ORDER BY nombre")->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
-<link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
 <style>
 .audit-filters {
     display: flex;
@@ -73,7 +61,7 @@ $sucursales = $pdo->query("SELECT DISTINCT COALESCE(sucursal_nombre,'Casa Centra
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="/canetto/configuraciones/index.php">
+            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">

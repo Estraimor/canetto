@@ -68,18 +68,6 @@ switch ($action) {
             $chkDni->execute([$dni]);
             $existing = $chkDni->fetch();
             if ($existing) {
-                // Crear tabla de tokens si no existe
-                $pdo->exec("CREATE TABLE IF NOT EXISTS verificacion_token (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    token VARCHAR(64) NOT NULL UNIQUE,
-                    usuario_idusuario INT NOT NULL,
-                    datos_nuevos TEXT NOT NULL,
-                    tipo VARCHAR(30) DEFAULT 'merge_dni',
-                    expira DATETIME NOT NULL,
-                    usado TINYINT(1) DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
                 $token = bin2hex(random_bytes(32));
                 $datos = json_encode([
                     'nombre'   => $nombre,
@@ -161,12 +149,6 @@ switch ($action) {
         if (!$user || !$user['email']) {
             echo json_encode(['success'=>false,'message'=>'No tenés email registrado. Agregalo en "Mis datos" primero.']); exit;
         }
-        // Crear tabla de tokens si no existe
-        $pdo->exec("CREATE TABLE IF NOT EXISTS password_reset_tokens (
-            id INT AUTO_INCREMENT PRIMARY KEY, usuario_id INT NOT NULL,
-            token VARCHAR(64) NOT NULL UNIQUE, expires_at DATETIME NOT NULL,
-            used TINYINT(1) NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         // Eliminar tokens anteriores
         $pdo->prepare("DELETE FROM password_reset_tokens WHERE usuario_id=?")->execute([$uid]);
         $token     = bin2hex(random_bytes(32));

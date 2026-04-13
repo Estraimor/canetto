@@ -112,27 +112,27 @@ include '../panel/dashboard/layaut/nav.php';
 
     <!-- ===== ACCESOS RÁPIDOS ===== -->
     <div class="db-quick-actions">
-        <a href="/canetto/administracion/produccion/congelado/index.php" class="db-qa">
+        <a href="<?= $baseUrl ?>/administracion/produccion/congelado/index.php" class="db-qa">
             <i class="fa-solid fa-snowflake"></i>
             <span>Masa congelada</span>
         </a>
-        <a href="/canetto/administracion/produccion/horneado/index.php" class="db-qa">
+        <a href="<?= $baseUrl ?>/administracion/produccion/horneado/index.php" class="db-qa">
             <i class="fa-solid fa-fire"></i>
             <span>Horneado</span>
         </a>
-        <a href="/canetto/administracion/stock/index.php" class="db-qa">
+        <a href="<?= $baseUrl ?>/administracion/stock/index.php" class="db-qa">
             <i class="fa-solid fa-boxes-stacked"></i>
             <span>Stock</span>
         </a>
-        <a href="/canetto/administracion/recetas/index.php" class="db-qa">
+        <a href="<?= $baseUrl ?>/administracion/recetas/index.php" class="db-qa">
             <i class="fa-solid fa-book-open"></i>
             <span>Recetas</span>
         </a>
-        <a href="/canetto/administracion/ventas/ventas/index.php" class="db-qa">
+        <a href="<?= $baseUrl ?>/administracion/ventas/ventas/index.php" class="db-qa">
             <i class="fa-solid fa-cart-shopping"></i>
             <span>Ventas</span>
         </a>
-        <a href="/canetto/administracion/materias_primas/index.php" class="db-qa">
+        <a href="<?= $baseUrl ?>/administracion/materias_primas/index.php" class="db-qa">
             <i class="fa-solid fa-seedling"></i>
             <span>Materias primas</span>
         </a>
@@ -395,4 +395,4 @@ new Chart(document.getElementById('chartProd'), {
 });
 </script>
 
-<?php include $_SERVER['DOCUMENT_ROOT'] . '/canetto/panel/dashboard/layaut/footer.php'; ?>
+<?php include __DIR__ . '/../panel/dashboard/layaut/footer.php'; ?>

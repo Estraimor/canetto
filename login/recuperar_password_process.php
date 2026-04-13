@@ -15,18 +15,6 @@ if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
 $pdo = Conexion::conectar();
 
-// Crear tabla de tokens si no existe
-$pdo->exec("CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id  INT NOT NULL,
-    token       VARCHAR(64) NOT NULL UNIQUE,
-    expires_at  DATETIME NOT NULL,
-    used        TINYINT(1) NOT NULL DEFAULT 0,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_token (token),
-    INDEX idx_usuario (usuario_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
 // Buscar usuario por email
 $stmt = $pdo->prepare("SELECT idusuario, nombre, apellido, email FROM usuario WHERE email = ? AND activo = 1 LIMIT 1");
 $stmt->execute([$email]);

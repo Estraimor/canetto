@@ -33,7 +33,7 @@ define('SITE_URL', $_isProd
 );
 unset($_siteHost, $_isProd);
 
-define('MAIL_LOGO_URL', 'https://canettocookies.com/canetto/img/logo.png');
+define('MAIL_LOGO_URL', 'https://canettocookies.com/img/canetto_logo.jpg');
 
 /**
  * Crea y devuelve un PHPMailer listo para usar.

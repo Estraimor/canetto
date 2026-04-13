@@ -33,7 +33,7 @@ include '../../../panel/dashboard/layaut/nav.php';
         <input type="date" id="filtro-fecha" class="filter-input">
         <button class="btn-filter" onclick="PedidosApp.cargarPedidos()">Filtrar</button>
       </div>
-      <a href="/canetto/administracion/Ventas/Ventas/index.php" class="btn-nueva-venta">+ Nueva Venta</a>
+      <a href="<?= URL_ADMIN ?>/Ventas/Ventas/index.php" class="btn-nueva-venta">+ Nueva Venta</a>
     </div>
   </div>
 
