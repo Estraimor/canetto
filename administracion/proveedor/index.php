@@ -962,9 +962,9 @@ include '../../panel/dashboard/layaut/nav.php';
       <div>
         <strong>Historial de compras</strong>
         Acá están todas las compras de materias primas registradas.
-        <strong>ACTIVA</strong> significa que el stock ya fue sumado y la compra está vigente.
+        <strong>FINALIZADA</strong> significa que el stock ya fue sumado y la compra está vigente.
         <strong>Cancelada</strong> significa que se revirtió — el stock volvió a su estado anterior.
-        Podés <em>cancelar</em> una compra activa (por error de carga o devolución) o <em>reactivar</em> una cancelada.
+        Podés <em>cancelar</em> una compra finalizada (por error de carga o devolución) o <em>reactivar</em> una cancelada.
         El campo <strong>Costo unit.</strong> es el precio por unidad pagado al proveedor; se usa para calcular la inversión en materiales.
       </div>
     </div>
@@ -1786,7 +1786,8 @@ include '../../panel/dashboard/layaut/nav.php';
           ? `$${parseFloat(c.costo).toFixed(2)}<span style="font-size:.72rem;color:var(--ink-soft)">/${unidComp||unidBase}</span>`
           : '—';
 
-        const estadoHtml = `<span class="badge-estado badge-${c.estado}">${c.estado}</span>`;
+        const estadoLabel = c.estado === 'activa' ? 'FINALIZADA' : (c.estado || '').toUpperCase();
+        const estadoHtml = `<span class="badge-estado badge-${c.estado}">${estadoLabel}</span>`;
         const accionHtml = esActiva ?
           `<button class="btn-sm warning" onclick="confirmarCancelarCompra(${c.id},'${esc(c.materia_nombre)}',${cantBase})">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>

@@ -10,7 +10,7 @@ if (!isset($_SESSION['tienda_cliente_id'])) {
 $pdo = Conexion::conectar();
 $uid = (int)$_SESSION['tienda_cliente_id'];
 
-$stmt = $pdo->prepare("SELECT nombre, apellido, celular, dni FROM usuario WHERE idusuario = ?");
+$stmt = $pdo->prepare("SELECT nombre, apellido, celular, dni, email FROM usuario WHERE idusuario = ?");
 $stmt->execute([$uid]);
 $user = $stmt->fetch();
 if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
@@ -167,29 +167,39 @@ if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
       <input type="text" id="uApellido" value="<?= htmlspecialchars($user['apellido'] ?? '') ?>" placeholder="Apellido">
     </div>
     <div class="c-field">
+      <label>DNI</label>
+      <input type="text" id="uDni" value="<?= htmlspecialchars($user['dni'] ?? '') ?>" placeholder="Número de DNI">
+    </div>
+    <div class="c-field">
+      <label>Email <span style="font-size:10px;color:#aaa">(para recuperar tu contraseña)</span></label>
+      <input type="email" id="uEmail" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="tu@email.com">
+    </div>
+    <div class="c-field">
       <label>Celular</label>
       <input type="tel" id="uCelular" value="<?= htmlspecialchars($user['celular'] ?? '') ?>" disabled title="El celular no se puede cambiar">
     </div>
     <button class="btn-save" id="btnDatos" onclick="guardarDatos()">Guardar cambios</button>
   </div>
 
-  <!-- Cambiar contraseña -->
+  <!-- Contraseña vía email -->
   <div class="cuenta-section">
-    <h3>🔒 Cambiar contraseña</h3>
+    <h3>🔒 Contraseña</h3>
+    <p style="font-size:13px;color:#888;margin:0 0 16px;line-height:1.6;">
+      Para cambiar tu contraseña te enviamos un enlace seguro a tu email registrado.
+      <?php if (!($user['email'] ?? '')): ?>
+        <strong style="color:#c88e99;">Primero guardá tu email en "Mis datos".</strong>
+      <?php endif; ?>
+    </p>
     <div id="alertPass" class="c-alert"></div>
-    <div class="c-field">
-      <label>Contraseña actual</label>
-      <input type="password" id="pActual" placeholder="••••••••">
-    </div>
-    <div class="c-field">
-      <label>Nueva contraseña</label>
-      <input type="password" id="pNueva" placeholder="••••••••">
-    </div>
-    <div class="c-field">
-      <label>Repetir nueva contraseña</label>
-      <input type="password" id="pRepetir" placeholder="••••••••">
-    </div>
-    <button class="btn-save" id="btnPass" onclick="cambiarPass()">Cambiar contraseña</button>
+    <?php if ($user['email'] ?? ''): ?>
+      <button class="btn-save" id="btnPass" onclick="solicitarReset()">
+        Enviar enlace de cambio de contraseña
+      </button>
+    <?php else: ?>
+      <button class="btn-save" disabled style="background:#ccc;cursor:not-allowed;">
+        Completá tu email primero
+      </button>
+    <?php endif; ?>
   </div>
 
   <!-- Cerrar sesión -->
@@ -229,53 +239,48 @@ function setAlert(id, msg, type) {
 }
 
 async function guardarDatos() {
-  const nombre = document.getElementById('uNombre').value.trim();
+  const nombre   = document.getElementById('uNombre').value.trim();
   const apellido = document.getElementById('uApellido').value.trim();
+  const dni      = document.getElementById('uDni').value.trim();
+  const email    = document.getElementById('uEmail').value.trim();
   if (!nombre) { setAlert('alertDatos', 'El nombre es obligatorio', 'err'); return; }
   const btn = document.getElementById('btnDatos');
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
     const fd = new FormData();
     fd.append('action', 'update_profile');
-    fd.append('nombre', nombre);
+    fd.append('nombre',   nombre);
     fd.append('apellido', apellido);
+    fd.append('dni',      dni);
+    fd.append('email',    email);
     const d = await (await fetch('api/auth.php', { method: 'POST', body: fd })).json();
-    if (d.success) setAlert('alertDatos', '✅ Datos actualizados', 'ok');
-    else setAlert('alertDatos', d.message || 'Error al guardar', 'err');
+    if (d.success) {
+      setAlert('alertDatos', '✅ Datos actualizados', 'ok');
+      // Si acaba de agregar email, habilitar el botón de reset
+      if (email && document.getElementById('btnPass')?.disabled) location.reload();
+    } else setAlert('alertDatos', d.message || 'Error al guardar', 'err');
   } catch { setAlert('alertDatos', 'Error de conexión', 'err'); }
   btn.disabled = false; btn.textContent = 'Guardar cambios';
 }
 
-async function cambiarPass() {
-  const actual  = document.getElementById('pActual').value;
-  const nueva   = document.getElementById('pNueva').value;
-  const repetir = document.getElementById('pRepetir').value;
-  if (!actual || !nueva || !repetir) { setAlert('alertPass', 'Completá todos los campos', 'err'); return; }
-  if (nueva.length < 6) { setAlert('alertPass', 'La contraseña debe tener al menos 6 caracteres', 'err'); return; }
-  if (nueva !== repetir) { setAlert('alertPass', 'Las contraseñas no coinciden', 'err'); return; }
+async function solicitarReset() {
   const btn = document.getElementById('btnPass');
-  btn.disabled = true; btn.textContent = 'Guardando...';
+  btn.disabled = true; btn.textContent = 'Enviando...';
   try {
     const fd = new FormData();
-    fd.append('action', 'change_password');
-    fd.append('password_actual', actual);
-    fd.append('password_nueva', nueva);
+    fd.append('action', 'solicitar_reset');
     const d = await (await fetch('api/auth.php', { method: 'POST', body: fd })).json();
-    if (d.success) {
-      setAlert('alertPass', '✅ Contraseña actualizada', 'ok');
-      document.getElementById('pActual').value = '';
-      document.getElementById('pNueva').value = '';
-      document.getElementById('pRepetir').value = '';
-    } else setAlert('alertPass', d.message || 'Error al cambiar', 'err');
+    if (d.success) setAlert('alertPass', '✅ Revisá tu email, te enviamos el enlace para cambiar la contraseña.', 'ok');
+    else setAlert('alertPass', d.message || 'No se pudo enviar', 'err');
   } catch { setAlert('alertPass', 'Error de conexión', 'err'); }
-  btn.disabled = false; btn.textContent = 'Cambiar contraseña';
+  btn.disabled = false; btn.textContent = 'Enviar enlace de cambio de contraseña';
 }
 
 function doLogout(e) {
   e.preventDefault();
   // Limpiar el carrito de este usuario antes de cerrar sesión
   localStorage.removeItem('canetto_cart_<?= $uid ?>');
-  window.location.href = 'api/auth.php?action=logout_redirect';
+  window.location.href = '<?= base() ?>/tienda/api/auth.php?action=logout_redirect';
 }
 </script>
 <script src="transitions.js"></script>

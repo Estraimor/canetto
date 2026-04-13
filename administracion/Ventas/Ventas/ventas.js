@@ -180,6 +180,21 @@ const VentasApp = (() => {
     const precio = parseFloat(el.dataset.precio);
     const emoji  = el.dataset.emoji;
 
+    // Validar stock hecho antes de agregar
+    const sd = stockDetalle[id] || { congelado: 0, hecho: 0 };
+    if (sd.hecho <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin stock disponible',
+        html: `<b>${emoji} ${nombre}</b> no tiene stock hecho disponible para la venta.<br><br>
+               Primero debe registrarse producción <em>"hecha"</em> para este producto.`,
+        confirmButtonColor: '#c88e99',
+        confirmButtonText: 'Entendido',
+        background: '#fff',
+      });
+      return;
+    }
+
     const idx = carrito.findIndex(i => i.id === id);
     if (idx > -1) {
       carrito[idx].cantidad++;
@@ -198,6 +213,18 @@ const VentasApp = (() => {
   // Botón "Agregar al pedido" del panel info
   function agregarDesdeInfo() {
     if (!productoActivo) return;
+    const sd = stockDetalle[productoActivo.id] || { congelado: 0, hecho: 0 };
+    if (sd.hecho <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin stock disponible',
+        html: `<b>${productoActivo.emoji} ${productoActivo.nombre}</b> no tiene stock hecho disponible.<br><br>
+               Primero debe registrarse producción <em>"hecha"</em> para este producto.`,
+        confirmButtonColor: '#c88e99',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
     agregarAlCarrito(productoActivo.el);
   }
 

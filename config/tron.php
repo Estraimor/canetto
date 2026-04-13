@@ -14,8 +14,9 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.cookie_httponly', '1');
     ini_set('session.cookie_samesite', 'Lax');
-    // Si usas https, activalo:
-    // ini_set('session.cookie_secure', '1');
+    // En producción (HTTPS) las cookies son seguras automáticamente
+    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    ini_set('session.cookie_secure', $isSecure ? '1' : '0');
     session_start();
 }
 
@@ -28,8 +29,7 @@ header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 // 3) Control de autenticación
 if (empty($_SESSION['usuario_id'])) {
     http_response_code(401);
-    header("Location: /canetto/login/login.php");
-    exit;
+    redirect('/login/login.php');
 }
 
 // 4) Anti hijacking por IP + User-Agent (básico pero útil)
@@ -42,8 +42,7 @@ if (!isset($_SESSION['lock_ua'])) $_SESSION['lock_ua'] = $ua;
 if ($_SESSION['lock_ip'] !== $ip || $_SESSION['lock_ua'] !== $ua) {
     session_destroy();
     http_response_code(401);
-    header("Location: /canetto/login/login.php");
-    exit;
+    redirect('/login/login.php');
 }
 
 // 5) Timeout por inactividad
@@ -52,8 +51,7 @@ $last = $_SESSION['last_seen'] ?? time();
 
 if ((time() - $last) > $max) {
     session_destroy();
-    header("Location: /canetto/login/login.php?timeout=1");
-    exit;
+    redirect('/login/login.php?timeout=1');
 }
 $_SESSION['last_seen'] = time();
 

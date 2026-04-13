@@ -592,7 +592,7 @@ const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart()};
 function requireLogin(){
   if(!CLIENTE_PHP){
     showToast('Iniciá sesión para continuar 👤','err');
-    setTimeout(()=>window.location.href='/canetto/login/login.php',1400);
+    setTimeout(()=>window.location.href='<?= base() ?>/login/login.php',1400);
     return true;
   }
   return false;

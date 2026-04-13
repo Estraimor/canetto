@@ -10,7 +10,9 @@
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root canetto -e ':*)",
       "Bash(find /c/wamp64/www/canetto -type f \\\\\\( -name \"*.php\" -o -name \"*.js\" \\\\\\) -exec grep -l \"repartidor\\\\|delivery.*person\\\\|delivery.*driver\" {} \\\\;)",
       "Bash(mysql -u root -e \"DESCRIBE canetto.ventas;\")",
-      "Bash(wc -l /c/wamp64/www/canetto/repartidor/*.php /c/wamp64/www/canetto/repartidor/api/*.php)"
+      "Bash(wc -l /c/wamp64/www/canetto/repartidor/*.php /c/wamp64/www/canetto/repartidor/api/*.php)",
+      "Bash(composer --version)",
+      "Bash(composer require:*)"
     ]
   }
 }

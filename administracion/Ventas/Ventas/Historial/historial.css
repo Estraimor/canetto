@@ -255,6 +255,34 @@ body {
 .estado-2 { background: #e8f0fc; color: #1565c0; border: 1px solid #90b4e8; }
 .estado-3 { background: #f3eafa; color: #7b1fa2; border: 1px solid #c4a0dc; }
 .estado-4 { background: #e8f5e9; color: var(--success); border: 1px solid #a0d5a8; }
+.estado-5 { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+.estado-6 { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; font-style: italic; }
+
+/* Row colors per state */
+.ventas-table tbody tr.estado-1 { background: #fffbea; }
+.ventas-table tbody tr.estado-2 { background: #eff6ff; }
+.ventas-table tbody tr.estado-3 { background: #faf5ff; }
+.ventas-table tbody tr.estado-4 { background: #f0fdf4; }
+.ventas-table tbody tr.estado-5 { background: #fff7ed; }
+.ventas-table tbody tr.estado-6, .ventas-table tbody tr.row-cancelado { background: #fef2f2 !important; opacity: .85; }
+
+/* Badges origen */
+.badge-origen { display:inline-block;border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px;margin-top:3px;margin-left:2px; }
+.badge-app    { background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe; }
+.badge-pos    { background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
+.badge-cancelado { display:inline-block;background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:5px;font-size:10px;font-weight:800;padding:2px 7px;margin-top:3px;letter-spacing:.04em; }
+
+/* select coloreado */
+.estado-select-color { font-weight:600; }
+.estado-bg-4 { border-color:#a0d5a8; background:#e8f5e9; color:#1a7a4a; }
+.estado-bg-5 { border-color:#fdba74; background:#fff7ed; color:#c2410c; }
+
+.stat-dot.pend-pago { background: #d97706; }
+.stat-dot.cancelado { background: #cc2222; }
+
+/* Cancel button */
+.btn-cancelar-venta { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+.btn-cancelar-venta:hover { background: #b91c1c; color: #fff; border-color: #b91c1c; }
 
 .estado-dot {
   width: 6px; height: 6px; border-radius: 50%;

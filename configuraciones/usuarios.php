@@ -39,6 +39,8 @@ include '../panel/dashboard/layaut/nav.php';
   .btn-sm { display:inline-flex; align-items:center; gap:.35rem; padding:.38rem .85rem; border-radius:var(--radius); font-size:.75rem; font-weight:600; cursor:pointer; border:1px solid var(--rule); background:var(--white); color:var(--ink); transition:all var(--transition); }
   .btn-sm:hover { background:var(--ink); color:var(--white); border-color:var(--ink); }
   .btn-sm.danger:hover { background:var(--danger); border-color:var(--danger); color:var(--white); }
+  .btn-pw { color:#1d4ed8; border-color:#bfdbfe; }
+  .btn-pw:hover { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
   .btn-sm svg { width:13px; height:13px; }
 
   /* ── Stats bar ── */
@@ -240,6 +242,40 @@ include '../panel/dashboard/layaut/nav.php';
   </div>
 </div>
 
+<!-- Modal: Cambiar contraseña -->
+<div class="modal-overlay" id="modalPw">
+  <div class="modal" role="dialog" style="max-width:420px">
+    <div class="modal-header">
+      <h2>🔒 Cambiar contraseña</h2>
+      <button class="modal-close" onclick="cerrarPw()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.87rem;color:var(--ink-mid);margin-bottom:1.2rem">
+        Cambiando contraseña de: <strong id="pwNombreUsuario"></strong>
+      </p>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Nueva contraseña *</label>
+          <input type="password" id="pwNueva" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <div class="form-group full">
+          <label>Confirmar contraseña *</label>
+          <input type="password" id="pwConfirmar" placeholder="Repetir contraseña" autocomplete="new-password">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="cerrarPw()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarPw()" id="btnGuardarPw">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Guardar contraseña
+      </button>
+    </div>
+  </div>
+</div>
+
 <?php include '../panel/dashboard/layaut/footer.php'; ?>
 <script>
 /* ══ STATE ══ */
@@ -291,6 +327,10 @@ function initDataTable() {
             '<button class="btn-sm" onclick=\'editarUsuario(' + JSON.stringify(row) + ')\'>' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
               'Editar' +
+            '</button>' +
+            '<button class="btn-sm btn-pw" onclick="abrirCambiarPw(' + row.idusuario + ',\'' + esc(row.nombre) + '\')">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+              'Contraseña' +
             '</button>' +
             '<button class="btn-sm danger" onclick="confirmarEliminar(' + row.idusuario + ',\'' + esc(row.nombre) + '\')">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>' +
@@ -467,4 +507,63 @@ function esc(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+/* ══ CAMBIAR CONTRASEÑA ══ */
+let _pwUserId = null;
+
+function abrirCambiarPw(id, nombre) {
+  _pwUserId = id;
+  document.getElementById('pwNombreUsuario').textContent = nombre;
+  document.getElementById('pwNueva').value    = '';
+  document.getElementById('pwConfirmar').value = '';
+  document.getElementById('modalPw').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('pwNueva').focus();
+}
+
+function cerrarPw() {
+  document.getElementById('modalPw').classList.remove('open');
+  document.body.style.overflow = '';
+  _pwUserId = null;
+}
+
+async function guardarPw() {
+  const pw1 = document.getElementById('pwNueva').value.trim();
+  const pw2 = document.getElementById('pwConfirmar').value.trim();
+
+  if (!pw1) {
+    Swal.fire({ icon: 'warning', title: 'Campo requerido', text: 'Ingresá la nueva contraseña.', confirmButtonColor: '#0a0a0a' }); return;
+  }
+  if (pw1.length < 6) {
+    Swal.fire({ icon: 'warning', title: 'Muy corta', text: 'La contraseña debe tener al menos 6 caracteres.', confirmButtonColor: '#0a0a0a' }); return;
+  }
+  if (pw1 !== pw2) {
+    Swal.fire({ icon: 'warning', title: 'No coinciden', text: 'Las contraseñas no son iguales.', confirmButtonColor: '#0a0a0a' }); return;
+  }
+
+  const btn = document.getElementById('btnGuardarPw');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="loader"></span>';
+  btn.disabled  = true;
+
+  try {
+    const res = await ajax('ajax/cambiar_password.php', { idusuario: _pwUserId, password: pw1 });
+    if (res.ok) {
+      cerrarPw();
+      Swal.fire({ icon: 'success', title: '¡Contraseña actualizada!', text: 'La contraseña fue cambiada correctamente.', confirmButtonColor: '#0a0a0a', timer: 3000, timerProgressBar: true });
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: res.msg || 'No se pudo cambiar la contraseña.', confirmButtonColor: '#0a0a0a' });
+    }
+  } catch (e) {
+    Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#0a0a0a' });
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled  = false;
+  }
+}
+
+// Cerrar modal contraseña con backdrop
+document.getElementById('modalPw')?.addEventListener('click', function(e) {
+  if (e.target === this) cerrarPw();
+});
 </script>

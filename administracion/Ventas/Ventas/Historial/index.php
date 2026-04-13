@@ -18,10 +18,14 @@ include '../../../../panel/dashboard/layaut/nav.php';
       <div class="filter-group">
         <select id="filtro-estado" class="filter-select">
           <option value="">Todos los estados</option>
-          <option value="1">Pendiente</option>
-          <option value="2">En Preparación</option>
-          <option value="3">En manos del Repartidor</option>
           <option value="4">Entregado</option>
+          <option value="5">Pendiente de Pago</option>
+          <option value="6">Cancelado</option>
+        </select>
+        <select id="filtro-origen" class="filter-select">
+          <option value="">Todos los orígenes</option>
+          <option value="tienda">📱 App / Tienda</option>
+          <option value="pos">🖥 Administración</option>
         </select>
         <input type="date" id="filtro-fecha" class="filter-input">
         <button class="btn-filter" onclick="HistorialApp.cargarVentas()">Filtrar</button>
@@ -32,21 +36,17 @@ include '../../../../panel/dashboard/layaut/nav.php';
 
   <!-- Stats rápidos -->
   <div class="stats-bar" id="stats-bar">
-    <div class="stat-pill" data-estado="1" onclick="HistorialApp.filtrarPorEstado(1)">
-      <span class="stat-dot pendiente"></span>
-      <span id="count-1">0</span> Pendiente
-    </div>
-    <div class="stat-pill" data-estado="2" onclick="HistorialApp.filtrarPorEstado(2)">
-      <span class="stat-dot preparacion"></span>
-      <span id="count-2">0</span> En Preparación
-    </div>
-    <div class="stat-pill" data-estado="3" onclick="HistorialApp.filtrarPorEstado(3)">
-      <span class="stat-dot repartidor"></span>
-      <span id="count-3">0</span> En reparto
-    </div>
     <div class="stat-pill" data-estado="4" onclick="HistorialApp.filtrarPorEstado(4)">
       <span class="stat-dot entregado"></span>
       <span id="count-4">0</span> Entregados
+    </div>
+    <div class="stat-pill" data-estado="5" onclick="HistorialApp.filtrarPorEstado(5)">
+      <span class="stat-dot pend-pago"></span>
+      <span id="count-5">0</span> Pend. Pago
+    </div>
+    <div class="stat-pill" data-estado="6" onclick="HistorialApp.filtrarPorEstado(6)">
+      <span class="stat-dot cancelado"></span>
+      <span id="count-6">0</span> Cancelados
     </div>
     <div class="stat-pill total-pill">
       💰 Total hoy: <strong id="total-hoy">$0.00</strong>

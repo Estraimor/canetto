@@ -108,15 +108,6 @@ include '../panel/dashboard/layaut/nav.php';
             <h1 class="db-title">Dashboard <em>general</em></h1>
             <p class="db-subtitle">Vista de operaciones · Canetto</p>
         </div>
-        <div class="db-header-right">
-            <div class="db-clock-box">
-                <span class="db-clock-time" id="dashClock">--:--:--</span>
-                <span class="db-clock-label">hora actual</span>
-            </div>
-            <a href="/canetto/administracion/produccion/congelado/index.php" class="db-btn-primary">
-                <i class="fa-solid fa-plus"></i> Nueva producción
-            </a>
-        </div>
     </div>
 
     <!-- ===== ACCESOS RÁPIDOS ===== -->

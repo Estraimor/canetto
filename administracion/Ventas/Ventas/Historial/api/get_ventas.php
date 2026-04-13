@@ -3,6 +3,7 @@
 ob_start();
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../../../../config/conexion.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 header('Content-Type: application/json');
 
 try {
@@ -29,8 +30,11 @@ try {
         "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
+    // Asegurarse de que estado 6 (Cancelado) existe
+    $pdo->exec("INSERT IGNORE INTO estado_venta (idestado_venta, nombre) VALUES (6, 'Cancelado')");
+
     $params = [];
-    $where  = ['1=1'];
+    $where  = [];
 
     // =========================
     // FILTROS
@@ -38,11 +42,19 @@ try {
     if (!empty($_GET['estado'])) {
         $where[]  = 'v.estado_venta_idestado_venta = :estado';
         $params[':estado'] = intval($_GET['estado']);
+    } else {
+        // Sin filtro de estado: mostrar todos
+        // (la barra de filtros permite acotar por estado si se necesita)
     }
 
     if (!empty($_GET['fecha'])) {
         $where[]  = 'DATE(v.fecha) = :fecha';
         $params[':fecha'] = $_GET['fecha'];
+    }
+
+    if (!empty($_GET['origen'])) {
+        $where[]  = 'v.origen = :origen';
+        $params[':origen'] = $_GET['origen'];
     }
 
     $where_sql = implode(' AND ', $where);
@@ -69,6 +81,7 @@ try {
 
             mp.nombre AS metodo_pago,
 
+            COALESCE(v.origen, 'pos') AS origen,
             CONCAT(r.nombre, ' ', COALESCE(r.apellido,'')) AS repartidor_nombre,
             r.idusuario AS repartidor_idusuario
 
@@ -154,11 +167,10 @@ try {
 
     $stmtStat = $pdo->prepare("
         SELECT
-            SUM(estado_venta_idestado_venta = 1) AS pendiente,
-            SUM(estado_venta_idestado_venta = 2) AS preparacion,
-            SUM(estado_venta_idestado_venta = 3) AS repartidor,
             SUM(estado_venta_idestado_venta = 4) AS entregado,
-            COALESCE(SUM(total),0) AS total_hoy
+            SUM(estado_venta_idestado_venta = 5) AS pend_pago,
+            SUM(estado_venta_idestado_venta = 6) AS cancelado,
+            COALESCE(SUM(CASE WHEN estado_venta_idestado_venta = 4 THEN total ELSE 0 END), 0) AS total_hoy
         FROM ventas
         WHERE DATE(fecha) = :hoy
     ");
@@ -166,17 +178,21 @@ try {
     $stmtStat->execute([':hoy' => $hoy]);
     $stats = $stmtStat->fetch();
 
+    $payload = json_encode(
+        ['ventas' => array_values($ventas), 'stats' => $stats],
+        JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+    );
+
+    if ($payload === false) {
+        throw new RuntimeException('json_encode falló: ' . json_last_error_msg());
+    }
+
     ob_end_clean();
-    echo json_encode([
-        'ventas' => array_values($ventas),
-        'stats'  => $stats
-    ]);
+    echo $payload;
 
 } catch (Throwable $e) {
 
     ob_end_clean();
     http_response_code(500);
-    echo json_encode([
-        'error' => $e->getMessage()
-    ]);
+    echo json_encode(['error' => $e->getMessage()]);
 }

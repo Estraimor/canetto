@@ -19,9 +19,13 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `auditoria` (
     PRIMARY KEY (`idauditoria`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-$total  = (int)$pdo->query("SELECT COUNT(*) FROM auditoria")->fetchColumn();
-$hoy    = (int)$pdo->query("SELECT COUNT(*) FROM auditoria WHERE DATE(created_at)=CURDATE()")->fetchColumn();
+// Agregar columna si no existe
+try { $pdo->exec("ALTER TABLE auditoria ADD COLUMN sucursal_nombre VARCHAR(100) NULL"); } catch (Throwable $e) {}
+
+$total   = (int)$pdo->query("SELECT COUNT(*) FROM auditoria")->fetchColumn();
+$hoy     = (int)$pdo->query("SELECT COUNT(*) FROM auditoria WHERE DATE(created_at)=CURDATE()")->fetchColumn();
 $modulos = $pdo->query("SELECT COUNT(DISTINCT modulo) FROM auditoria WHERE modulo IS NOT NULL")->fetchColumn();
+$sucursales = $pdo->query("SELECT DISTINCT COALESCE(sucursal_nombre,'Casa Central') AS nombre FROM auditoria ORDER BY nombre")->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
 <link rel="stylesheet" href="/canetto/configuraciones/cfg.css">
@@ -99,12 +103,22 @@ $modulos = $pdo->query("SELECT COUNT(DISTINCT modulo) FROM auditoria WHERE modul
 
     <div class="audit-filters">
         <span class="audit-label">Filtrar por:</span>
+        <select id="filtroSucursal" onchange="aplicarFiltros()">
+            <option value="">Todas las sucursales</option>
+            <?php foreach ($sucursales as $suc): ?>
+            <option value="<?= htmlspecialchars($suc) ?>"><?= htmlspecialchars($suc) ?></option>
+            <?php endforeach; ?>
+        </select>
         <select id="filtroModulo" onchange="aplicarFiltros()">
             <option value="">Todos los módulos</option>
             <option value="usuarios">Usuarios</option>
             <option value="roles">Roles</option>
             <option value="metodos_pago">Métodos de pago</option>
             <option value="sucursales">Sucursales</option>
+            <option value="pedidos">Pedidos</option>
+            <option value="ventas">Ventas</option>
+            <option value="stock">Stock</option>
+            <option value="proveedores">Proveedores</option>
         </select>
         <select id="filtroAccion" onchange="aplicarFiltros()">
             <option value="">Todas las acciones</option>
@@ -125,6 +139,7 @@ $modulos = $pdo->query("SELECT COUNT(DISTINCT modulo) FROM auditoria WHERE modul
                 <tr>
                     <th>Fecha y hora</th>
                     <th>Usuario</th>
+                    <th>Sucursal</th>
                     <th>Acción</th>
                     <th>Módulo</th>
                     <th>Descripción</th>
@@ -167,6 +182,9 @@ $(document).ready(function () {
                 const nombre = esc(row.usuario_nombre || 'Sistema');
                 return '<strong>' + nombre + '</strong>';
             }},
+            { data: 'sucursal_nombre', render: v => v
+                ? '<span style="font-size:.78rem;font-weight:600;color:#c88e99;">' + esc(v) + '</span>'
+                : '<span style="color:var(--ink-soft)">Casa Central</span>' },
             { data: 'accion', render: v => {
                 const cls = ACCION_CLASS[v] || '';
                 return '<span class="audit-action ' + cls + '">' + esc(v) + '</span>';
@@ -182,17 +200,19 @@ $(document).ready(function () {
 });
 
 function aplicarFiltros() {
-    const modulo = document.getElementById('filtroModulo').value;
-    const accion = document.getElementById('filtroAccion').value;
-    const fecha  = document.getElementById('filtroFecha').value;
+    const sucursal = document.getElementById('filtroSucursal').value;
+    const modulo   = document.getElementById('filtroModulo').value;
+    const accion   = document.getElementById('filtroAccion').value;
+    const fecha    = document.getElementById('filtroFecha').value;
 
     $.fn.dataTable.ext.search = [];
 
-    if (modulo || accion || fecha) {
+    if (sucursal || modulo || accion || fecha) {
         $.fn.dataTable.ext.search.push(function(settings, data, dataIndex, row) {
-            if (modulo && row.modulo !== modulo) return false;
-            if (accion && row.accion !== accion) return false;
-            if (fecha && row.created_at && !row.created_at.startsWith(fecha)) return false;
+            if (sucursal && (row.sucursal_nombre || 'Casa Central') !== sucursal) return false;
+            if (modulo   && row.modulo  !== modulo)  return false;
+            if (accion   && row.accion  !== accion)  return false;
+            if (fecha    && row.created_at && !row.created_at.startsWith(fecha)) return false;
             return true;
         });
     }
@@ -201,9 +221,10 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-    document.getElementById('filtroModulo').value = '';
-    document.getElementById('filtroAccion').value = '';
-    document.getElementById('filtroFecha').value  = '';
+    document.getElementById('filtroSucursal').value = '';
+    document.getElementById('filtroModulo').value   = '';
+    document.getElementById('filtroAccion').value   = '';
+    document.getElementById('filtroFecha').value    = '';
     $.fn.dataTable.ext.search = [];
     dt.draw();
 }

@@ -1,9 +1,11 @@
 <?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../config/google_config.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
-$repId     = $_SESSION['repartidor_id']     ?? null;
-$repNombre = $_SESSION['repartidor_nombre'] ?? '';
+$repId          = $_SESSION['repartidor_id']     ?? null;
+$repNombre      = $_SESSION['repartidor_nombre'] ?? '';
+$googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -18,6 +20,16 @@ $repNombre = $_SESSION['repartidor_nombre'] ?? '';
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="repartidor.css">
+<?php if ($googleClientId): ?>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<?php endif; ?>
+<style>
+.or-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:#475569;font-size:12px}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.12)}
+.btn-google-rep{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;color:#3c4043;font-size:14px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;transition:.2s;margin-top:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.btn-google-rep:hover{border-color:#c88e99;box-shadow:0 2px 8px rgba(200,142,153,.2);transform:translateY(-1px)}
+.btn-google-rep img{width:18px;height:18px}
+</style>
 </head>
 <body>
 
@@ -61,6 +73,21 @@ $repNombre = $_SESSION['repartidor_nombre'] ?? '';
       <button class="btn-primary" id="btnLogin" onclick="doLogin()">
         <i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar
       </button>
+
+      <div style="text-align:right;margin-top:6px;margin-bottom:2px;">
+        <a href="<?= base() ?>/login/recuperar_password.php"
+           style="font-size:12px;color:#c88e99;text-decoration:none;">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <div class="or-divider"><span>o</span></div>
+
+      <!-- Botón Google — se activa automáticamente cuando GOOGLE_CLIENT_ID esté configurado -->
+      <div id="googleBtnWrap" style="display:none;justify-content:center"></div>
+      <button id="btnGoogleFallback" class="btn-google-rep" type="button" onclick="initGooglePrompt()">
+        <img src="https://developers.google.com/identity/images/g-logo.png" alt="G">
+        Ingresar con Google
+      </button>
+
     </div>
     <div class="login-badge">Canetto · v3.0</div>
   </div>
@@ -95,6 +122,9 @@ $repNombre = $_SESSION['repartidor_nombre'] ?? '';
     </button>
     <button class="tab-btn" onclick="switchTab('perfil',this)">
       <i class="fa-solid fa-user-gear"></i><span>Perfil</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('soporte',this)">
+      <i class="fa-solid fa-headset"></i><span>Soporte</span>
     </button>
   </div>
 
@@ -135,36 +165,118 @@ $repNombre = $_SESSION['repartidor_nombre'] ?? '';
           </div>
 
           <div class="form-field">
-            <label>Nombre</label>
+            <label><i class="fa-solid fa-user"></i> Nombre</label>
             <input type="text" id="pNombre" placeholder="Tu nombre">
           </div>
           <div class="form-field">
-            <label>Apellido</label>
+            <label><i class="fa-solid fa-user"></i> Apellido</label>
             <input type="text" id="pApellido" placeholder="Tu apellido">
           </div>
           <div class="form-field">
-            <label>Nueva contraseña <span class="label-opt">(opcional)</span></label>
-            <div class="input-pw-wrap">
-              <input type="password" id="pPassword" placeholder="Dejar vacío para no cambiar">
-              <button type="button" class="btn-eye" onclick="togglePw('pPassword',this)">
-                <i class="fa-solid fa-eye"></i>
-              </button>
-            </div>
+            <label><i class="fa-solid fa-mobile-screen"></i> Celular</label>
+            <input type="tel" id="pCelular" placeholder="Ej: 1123456789">
           </div>
           <div class="form-field">
-            <label>Confirmar contraseña</label>
-            <div class="input-pw-wrap">
-              <input type="password" id="pPassword2" placeholder="Repetir nueva contraseña">
-              <button type="button" class="btn-eye" onclick="togglePw('pPassword2',this)">
-                <i class="fa-solid fa-eye"></i>
-              </button>
-            </div>
+            <label><i class="fa-solid fa-envelope"></i> Email <span class="label-opt">(para recuperar contraseña)</span></label>
+            <input type="email" id="pEmail" placeholder="tu@email.com">
+          </div>
+          <div class="form-field">
+            <label><i class="fa-solid fa-id-card"></i> DNI</label>
+            <input type="text" id="pDni" placeholder="Número de DNI">
           </div>
           <button class="btn-primary" id="btnGuardarPerfil" onclick="guardarPerfil()">
             <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
           </button>
+          <div style="margin-top:14px;text-align:center;">
+            <a href="<?= base() ?>/login/recuperar_password.php"
+               style="font-size:13px;color:#c88e99;text-decoration:none;">
+              <i class="fa-solid fa-lock"></i> Cambiar contraseña por email
+            </a>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Tab Soporte -->
+  <div id="tabSoporte" class="tab-content">
+    <div class="perfil-wrap">
+
+      <div class="perfil-section">
+        <div class="perfil-section-title">Contacto &amp; Soporte</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+          <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:5px;">📦</div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:3px;">Problema con pedido</div>
+            <div style="font-size:11px;opacity:.6;line-height:1.4;">Dirección incorrecta, cliente no encontrado, etc.</div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:5px;">⚙️</div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:3px;">Error en la app</div>
+            <div style="font-size:11px;opacity:.6;line-height:1.4;">Algo no carga o funciona mal.</div>
+          </div>
+        </div>
+
+        <div class="perfil-card">
+          <div id="soporteAlert" class="alert" style="display:none">
+            <i class="fa-solid fa-circle-exclamation"></i><span id="soporteAlertMsg"></span>
+          </div>
+          <div id="soporteSuccess" class="alert-success" style="display:none">
+            <i class="fa-solid fa-circle-check"></i><span>¡Mensaje enviado! Te responderemos a la brevedad.</span>
+          </div>
+
+          <div class="form-field">
+            <label><i class="fa-solid fa-tag"></i> Tipo de consulta</label>
+            <select id="soporteTipo" style="width:100%;padding:12px 14px;
+              border:1.5px solid rgba(255,255,255,.15);border-radius:10px;
+              background:rgba(255,255,255,.08);color:inherit;font-family:inherit;font-size:14px;outline:none;">
+              <option value="Problema con pedido">Problema con pedido</option>
+              <option value="Error en la app">Error en la app</option>
+              <option value="Consulta general">Consulta general</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label><i class="fa-solid fa-comment"></i> Detalle del problema</label>
+            <textarea id="soporteDetalle" rows="4"
+              placeholder="Describí el problema con el mayor detalle posible..."
+              style="width:100%;padding:12px 14px;border:1.5px solid rgba(255,255,255,.15);
+                border-radius:10px;background:rgba(255,255,255,.08);color:inherit;
+                font-family:inherit;font-size:14px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+          </div>
+
+          <button class="btn-primary" id="btnEnviarSoporte" onclick="enviarSoporte()">
+            <i class="fa-solid fa-paper-plane"></i> Enviar mensaje
+          </button>
+        </div>
+      </div>
+
+      <div class="perfil-section">
+        <div class="perfil-section-title">Contacto directo</div>
+        <div class="perfil-card" style="display:flex;flex-direction:column;gap:14px;">
+          <a href="mailto:soporte@canettocookies.com"
+             style="display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;">
+            <div style="width:42px;height:42px;border-radius:12px;background:rgba(200,142,153,.2);
+              display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📧</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;">Email de soporte</div>
+              <div style="font-size:12px;opacity:.65;">soporte@canettocookies.com</div>
+            </div>
+          </a>
+          <a href="https://wa.me/5491100000000" target="_blank"
+             style="display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;">
+            <div style="width:42px;height:42px;border-radius:12px;background:rgba(37,211,102,.2);
+              display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;">WhatsApp de soporte</div>
+              <div style="font-size:12px;opacity:.65;">Respuesta rápida para urgencias</div>
+            </div>
+          </a>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -467,7 +579,7 @@ async function cargarPedidos() {
   } catch (e) {
     list.innerHTML = `<div class="empty-state">
       <div class="empty-state-icon slate"><i class="fa-solid fa-wifi"></i></div>
-      <h3>Sin conexión</h3><p>Verificá tu internet e intentá de nuevo</p>
+      <h3>Sin conexión</h3><p>${e.message}</p>
     </div>`;
   }
 }
@@ -661,27 +773,29 @@ async function cargarPerfil() {
     document.getElementById('perfilTelDisplay').textContent    = u.celular || '';
     document.getElementById('pNombre').value   = u.nombre   || '';
     document.getElementById('pApellido').value = u.apellido || '';
+    document.getElementById('pCelular').value  = u.celular  || '';
+    document.getElementById('pEmail').value    = u.email    || '';
+    document.getElementById('pDni').value      = u.dni      || '';
   } catch(e) {}
 }
 
 async function guardarPerfil() {
-  const nombre    = document.getElementById('pNombre').value.trim();
-  const apellido  = document.getElementById('pApellido').value.trim();
-  const pw1       = document.getElementById('pPassword').value;
-  const pw2       = document.getElementById('pPassword2').value;
-  const alertEl   = document.getElementById('perfilAlert');
-  const alertMsg  = document.getElementById('perfilAlertMsg');
-  const succEl    = document.getElementById('perfilSuccess');
-  const btn       = document.getElementById('btnGuardarPerfil');
+  const nombre   = document.getElementById('pNombre').value.trim();
+  const apellido = document.getElementById('pApellido').value.trim();
+  const celular  = document.getElementById('pCelular').value.trim();
+  const email    = document.getElementById('pEmail').value.trim();
+  const dni      = document.getElementById('pDni').value.trim();
+  const alertEl  = document.getElementById('perfilAlert');
+  const alertMsg = document.getElementById('perfilAlertMsg');
+  const succEl   = document.getElementById('perfilSuccess');
+  const btn      = document.getElementById('btnGuardarPerfil');
 
   alertEl.style.display = 'none';
   succEl.style.display  = 'none';
 
   const err = msg => { alertMsg.textContent = msg; alertEl.style.display = 'flex'; };
 
-  if (!nombre)           return err('El nombre es requerido');
-  if (pw1 && pw1 !== pw2) return err('Las contraseñas no coinciden');
-  if (pw1 && pw1.length < 6) return err('Mínimo 6 caracteres');
+  if (!nombre) return err('El nombre es requerido');
 
   btn.disabled  = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
@@ -689,18 +803,17 @@ async function guardarPerfil() {
   try {
     const res  = await fetch('api/update_perfil.php', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, apellido, password: pw1 }),
+      body: JSON.stringify({ nombre, apellido, celular, email, dni }),
     });
     const data = await res.json();
     if (data.success) {
       succEl.style.display = 'flex';
-      document.getElementById('pPassword').value  = '';
-      document.getElementById('pPassword2').value = '';
       const fn = data.nombre;
       document.getElementById('dashNombre').textContent           = fn;
       document.getElementById('dashAvatar').textContent           = initials(fn);
       document.getElementById('perfilAvatar').textContent         = initials(fn);
       document.getElementById('perfilNombreDisplay').textContent  = fn;
+      document.getElementById('perfilTelDisplay').textContent     = celular;
       setTimeout(() => { succEl.style.display = 'none'; }, 3500);
     } else {
       err(data.message || 'Error al guardar');
@@ -710,6 +823,128 @@ async function guardarPerfil() {
   }
   btn.disabled  = false;
   btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';
+}
+
+/* ════════════════════════════════════════
+   SOPORTE
+════════════════════════════════════════ */
+async function enviarSoporte() {
+  const tipo    = document.getElementById('soporteTipo').value;
+  const detalle = document.getElementById('soporteDetalle').value.trim();
+  const alertEl = document.getElementById('soporteAlert');
+  const okEl    = document.getElementById('soporteSuccess');
+  const btn     = document.getElementById('btnEnviarSoporte');
+
+  alertEl.style.display = 'none';
+  okEl.style.display    = 'none';
+
+  if (!detalle) {
+    document.getElementById('soporteAlertMsg').textContent = 'Describí el problema antes de enviar.';
+    alertEl.style.display = 'flex'; return;
+  }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+
+  try {
+    const res  = await fetch('api/enviar_soporte.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ tipo, detalle }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      okEl.style.display = 'flex';
+      document.getElementById('soporteDetalle').value = '';
+    } else {
+      document.getElementById('soporteAlertMsg').textContent = data.message || 'No se pudo enviar. Intentá de nuevo.';
+      alertEl.style.display = 'flex';
+    }
+  } catch(e) {
+    document.getElementById('soporteAlertMsg').textContent = 'Error de conexión.';
+    alertEl.style.display = 'flex';
+  }
+
+  btn.disabled  = false;
+  btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar mensaje';
+}
+
+/* ════════════════════════════════════════
+   GOOGLE OAUTH
+════════════════════════════════════════ */
+const GOOGLE_CLIENT_ID = <?= json_encode($googleClientId) ?>;
+
+async function handleGoogleLogin(response) {
+  const alertEl = document.getElementById('loginAlert');
+  alertEl.style.display = 'none';
+
+  try {
+    const res  = await fetch('api/google_auth.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const nombre = data.nombre;
+      document.getElementById('dashNombre').textContent = nombre;
+      document.getElementById('dashAvatar').textContent = initials(nombre);
+      document.getElementById('appLogin').classList.add('hidden');
+      document.getElementById('appDash').classList.remove('hidden');
+      cargarPedidos();
+      startAutoRefresh();
+    } else {
+      showLoginAlert(data.message || 'No se pudo ingresar con Google');
+    }
+  } catch (e) {
+    showLoginAlert('Error de conexión con Google');
+  }
+}
+
+function initGoogle() {
+  if (!GOOGLE_CLIENT_ID || !window.google) return;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback:  handleGoogleLogin,
+    auto_select: false,
+  });
+  // Ocultar botón fallback y mostrar el nativo de Google
+  const wrap     = document.getElementById('googleBtnWrap');
+  const fallback = document.getElementById('btnGoogleFallback');
+  if (wrap && fallback) {
+    fallback.style.display = 'none';
+    wrap.style.display     = 'flex';
+    google.accounts.id.renderButton(wrap, {
+      type:  'standard',
+      theme: 'outline',
+      size:  'large',
+      text:  'signin_with',
+      shape: 'rectangular',
+      width: 320,
+    });
+  }
+}
+
+function initGooglePrompt() {
+  if (GOOGLE_CLIENT_ID && window.google) {
+    google.accounts.id.prompt();
+  }
+  // Si no hay client ID configurado, el botón queda visible pero inactivo hasta que se configure
+}
+
+// Inicializar cuando el script de Google esté listo
+if (GOOGLE_CLIENT_ID) {
+  if (window.google) {
+    initGoogle();
+  } else {
+    window.addEventListener('load', () => {
+      let tries = 0;
+      const check = setInterval(() => {
+        if (window.google || tries++ > 20) { clearInterval(check); initGoogle(); }
+      }, 200);
+    });
+  }
 }
 
 /* ════════════════════════════════════════

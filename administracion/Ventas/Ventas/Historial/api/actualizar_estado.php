@@ -17,7 +17,7 @@ $estado        = intval($input['estado']        ?? 0);
 $repartidor_id = isset($input['repartidor_id']) && $input['repartidor_id'] ? intval($input['repartidor_id']) : null;
 $via_uber      = !empty($input['via_uber']) ? 1 : 0;
 
-if (!$id_venta || $estado < 1 || $estado > 4) {
+if (!$id_venta || $estado < 1 || $estado > 6) {
     echo json_encode(['success' => false, 'message' => 'Datos inválidos']); exit;
 }
 

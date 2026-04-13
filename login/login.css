@@ -39,7 +39,7 @@ body {
     font-size: 30px;
     font-weight: 700;
     letter-spacing: 6px;
-    color: #111;
+    color: #c88e99;
     margin-bottom: 5px;
 }
 
@@ -79,7 +79,7 @@ body {
 .btn-login {
     width: 100%;
     padding: 14px;
-    background: #111;
+    background: #c88e99;
     color: #fff;
     border: none;
     border-radius: 10px;
@@ -89,7 +89,7 @@ body {
 }
 
 .btn-login:hover {
-    background: #000;
+    background: #a46678;
     transform: translateY(-2px);
 }
 

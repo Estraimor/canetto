@@ -5,9 +5,9 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (isset($_SESSION['usuario_id'])) {
     $dest = ($_SESSION['rol'] ?? '') === 'cliente'
-        ? '/canetto/tienda/index.php'
-        : '/canetto/administracion/index.php';
-    header('Location: ' . $dest); exit;
+        ? '/tienda/index.php'
+        : '/administracion/index.php';
+    redirect($dest);
 }
 
 $error = $_SESSION['error'] ?? null;
@@ -42,7 +42,7 @@ unset($_SESSION['error']);
 <div class="login-container">
 
   <div class="logo">CANETTO</div>
-  <div class="subtitle">Accedé a tu cuenta</div>
+  <div class="subtitle">Panel de Administración</div>
 
   <!-- ══ PANEL: Iniciar sesión ══ -->
   <div class="panel on" id="panelLogin">
@@ -63,9 +63,13 @@ unset($_SESSION['error']);
       <button type="submit" class="btn-login">Ingresar</button>
     </form>
 
+    <div style="text-align:right;margin-top:-6px;margin-bottom:10px;">
+      <a href="recuperar_password.php" style="font-size:12px;color:#c88e99;text-decoration:none;">¿Olvidaste tu contraseña?</a>
+    </div>
+
     <div class="divider"><span>o continuar con</span></div>
 
-    <button class="btn-google" type="button" title="Próximamente">
+    <button class="btn-google" type="button">
       <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
       Ingresar con Google
     </button>
@@ -93,6 +97,10 @@ unset($_SESSION['error']);
     <div class="input-group">
       <label>Celular * <span style="font-size:11px;color:#aaa">(será tu usuario para iniciar sesión)</span></label>
       <input type="tel" id="rCel" placeholder="Ej: 1123456789" autocomplete="tel">
+    </div>
+    <div class="input-group">
+      <label>Email <span style="font-size:11px;color:#aaa">(para recuperar tu contraseña)</span></label>
+      <input type="email" id="rEmail" placeholder="tu@email.com" autocomplete="email">
     </div>
     <div class="input-group">
       <label>Contraseña * <span style="font-size:11px;color:#aaa">(mín. 6 caracteres)</span></label>
@@ -127,13 +135,14 @@ async function doRegister() {
     btn.disabled = true; btn.textContent = 'Creando cuenta...';
 
     try {
+        const e = document.getElementById('rEmail').value.trim();
         const fd = new FormData();
         fd.append('nombre', n); fd.append('apellido', a);
-        fd.append('celular', c); fd.append('password', p);
+        fd.append('celular', c); fd.append('email', e); fd.append('password', p);
         const d = await (await fetch('register_process.php', { method: 'POST', body: fd })).json();
         if (d.ok) {
             setAlert(alert, '¡Bienvenido, ' + d.nombre + '! Redirigiendo...', 'ok');
-            setTimeout(() => window.location.href = '/canetto/tienda/index.php', 1000);
+            setTimeout(() => window.location.href = '<?= base() ?>/tienda/index.php', 1000);
         } else {
             setAlert(alert, d.msg || 'Error al registrar.', 'err');
             btn.disabled = false; btn.textContent = 'Crear cuenta';

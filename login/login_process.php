@@ -47,33 +47,36 @@ if (!$esValida) {
     header('Location: login.php'); exit;
 }
 
-// Buscar rol del usuario
+// Buscar TODOS los roles del usuario
 $rolStmt = $pdo->prepare("
     SELECT r.idroles, r.nombre
     FROM usuarios_roles ur
     JOIN roles r ON r.idroles = ur.roles_idroles
     WHERE ur.usuario_idusuario = ?
-    LIMIT 1
 ");
 $rolStmt->execute([$user['idusuario']]);
-$rol = $rolStmt->fetch();
+$roles = $rolStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Este login es para administración — buscar rol admin entre todos los roles
+$rolesAdmin = ['admin', 'administrador', 'administracion'];
+$rolAdmin   = null;
+foreach ($roles as $r) {
+    if (in_array(strtolower($r['nombre']), $rolesAdmin, true)) { $rolAdmin = $r; break; }
+}
+
+if (!$rolAdmin) {
+    // No tiene rol de admin → acceso denegado en este login
+    session_destroy();
+    $_SESSION['error'] = 'No tenés permiso para acceder al panel de administración.';
+    redirect('/login/login.php');
+}
 
 session_regenerate_id(true);
 
-// Guardar datos comunes de sesión
 $_SESSION['usuario_id'] = $user['idusuario'];
 $_SESSION['nombre']     = $user['nombre'];
 $_SESSION['apellido']   = $user['apellido'];
-$_SESSION['rol']        = strtolower($rol['nombre'] ?? 'admin');
-$_SESSION['rol_id']     = $rol['idroles'] ?? null;
+$_SESSION['rol']        = strtolower($rolAdmin['nombre']);
+$_SESSION['rol_id']     = $rolAdmin['idroles'];
 
-// Redirigir según rol
-if (strtolower($rol['nombre'] ?? '') === 'cliente') {
-    // Cliente → tienda (también seteamos la clave de sesión de tienda)
-    $_SESSION['tienda_cliente_id']     = $user['idusuario'];
-    $_SESSION['tienda_cliente_nombre'] = trim($user['nombre'] . ' ' . ($user['apellido'] ?? ''));
-    header('Location: /canetto/tienda/index.php'); exit;
-} else {
-    // Administrador u otro rol → panel admin
-    header('Location: /canetto/administracion/index.php'); exit;
-}
+redirect('/administracion/index.php');

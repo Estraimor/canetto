@@ -11,8 +11,9 @@ function audit(PDO $pdo, string $accion, string $modulo, string $descripcion): v
     try {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $uid     = $_SESSION['usuario_id'] ?? null;
-        $unombre = 'Sistema';
+        $uid       = $_SESSION['usuario_id']    ?? null;
+        $sucursal  = $_SESSION['sucursal_nombre'] ?? 'Casa Central';
+        $unombre   = 'Sistema';
 
         if ($uid) {
             $u = $pdo->prepare(
@@ -23,16 +24,20 @@ function audit(PDO $pdo, string $accion, string $modulo, string $descripcion): v
             if ($raw) $unombre = trim($raw);
         }
 
+        // Agregar columna sucursal_nombre si no existe (idempotente)
+        try { $pdo->exec("ALTER TABLE auditoria ADD COLUMN sucursal_nombre VARCHAR(100) NULL"); } catch (Throwable $e) {}
+
         $pdo->prepare(
-            "INSERT INTO auditoria (usuario_id, usuario_nombre, accion, modulo, descripcion, ip, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())"
+            "INSERT INTO auditoria (usuario_id, usuario_nombre, accion, modulo, descripcion, ip, sucursal_nombre, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())"
         )->execute([
             $uid,
             $unombre,
             $accion,
             $modulo,
             $descripcion,
-            $_SERVER['REMOTE_ADDR'] ?? '—'
+            $_SERVER['REMOTE_ADDR'] ?? '—',
+            $sucursal,
         ]);
 
     } catch (Throwable $e) {

@@ -10,8 +10,16 @@ if (session_status() === PHP_SESSION_NONE) {
 =========================== */
 
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: /canetto/login/login.php");
-    exit;
+    redirect('/login/login.php');
+}
+
+/* ===========================
+   VERIFICAR ROL ADMINISTRADOR
+=========================== */
+$rolesPermitidos = ['admin', 'administrador', 'administracion'];
+if (!in_array(strtolower($_SESSION['rol'] ?? ''), $rolesPermitidos, true)) {
+    session_destroy();
+    redirect('/login/login.php?error=acceso_denegado');
 }
 
 /* ===========================
@@ -22,7 +30,9 @@ if (!isset($pageTitle)) {
     $pageTitle = "Canetto Admin";
 }
 
-$baseUrl = "/canetto";
+$_navHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$baseUrl  = in_array($_navHost, ['localhost', '127.0.0.1'], true) ? '/canetto' : '';
+unset($_navHost);
 $current = $_SERVER['PHP_SELF'];
 ?>
 
@@ -172,28 +182,27 @@ $current = $_SERVER['PHP_SELF'];
     </a>
 
     <!-- VENTAS -->
-    <div class="menu-group <?= str_contains($current,'ventas') ? 'open' : '' ?>">
+    <div class="menu-group <?= str_contains($current,'Ventas') || str_contains($current,'ventas') ? 'open' : '' ?>">
         <span class="menu-title">
             <i class="fa-solid fa-cart-shopping"></i>
             Ventas
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/ventas/pedidos.php"
-               class="<?= str_contains($current,'pedidos') ? 'active' : '' ?>">
-                <i class="fa-solid fa-receipt"></i>
-                Pedidos
+            <a href="<?= $baseUrl ?>/administracion/Ventas/Pedidos/index.php"
+               class="<?= str_contains($current,'Pedidos') ? 'active' : '' ?>">
+                <i class="fa-solid fa-clock"></i>
+                Pedidos activos
             </a>
-            <a href="<?= $baseUrl ?>/administracion/ventas/ventas/index.php"
-               class="<?= str_contains($current,'pedidos') ? 'active' : '' ?>">
-                <i class="fa-solid fa-receipt"></i>
-                Ventas
+            <a href="<?= $baseUrl ?>/administracion/Ventas/Ventas/index.php"
+               class="<?= str_contains($current,'Ventas/Ventas/index') ? 'active' : '' ?>">
+                <i class="fa-solid fa-plus-circle"></i>
+                Nueva venta
             </a>
-<a href="<?= $baseUrl ?>/administracion/ventas/ventas/Historial/index.php"
-               class="<?= str_contains($current,'pedidos') ? 'active' : '' ?>">
-                <i class="fa-solid fa-receipt"></i>
+            <a href="<?= $baseUrl ?>/administracion/Ventas/Ventas/Historial/index.php"
+               class="<?= str_contains($current,'Historial') ? 'active' : '' ?>">
+                <i class="fa-solid fa-clock-rotate-left"></i>
                 Historial de ventas
             </a>
-            
         </div>
     </div>
 
@@ -276,6 +285,7 @@ $current = $_SERVER['PHP_SELF'];
         </div>
     </div>
 
+
 </nav>
 </aside>
 
@@ -295,6 +305,24 @@ $current = $_SERVER['PHP_SELF'];
             <i class="fa-regular fa-clock"></i>
             <span id="navClock">--:--:--</span>
         </div>
+
+        <!-- ── CAMPANA DE NOTIFICACIONES ── -->
+        <div class="notif-wrap" id="notifWrap">
+            <button class="notif-bell" id="notifBell" onclick="NotifApp.toggle()" title="Notificaciones">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+            </button>
+            <div class="notif-panel" id="notifPanel" style="display:none">
+                <div class="notif-panel-header">
+                    <span>Notificaciones</span>
+                    <button onclick="NotifApp.marcarTodas()" class="notif-mark-all">Marcar todas como leídas</button>
+                </div>
+                <div class="notif-list" id="notifList">
+                    <div class="notif-empty">Sin notificaciones nuevas</div>
+                </div>
+            </div>
+        </div>
+
         <i class="fa-regular fa-user"></i>
         <span><?= htmlspecialchars(($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '')) ?></span>
         <a href="/canetto/login/logout.php" title="Cerrar sesión" style="color:inherit;text-decoration:none;margin-left:6px;opacity:.6;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">

@@ -2,10 +2,12 @@
 
 const HistorialApp = (() => {
   const ESTADOS = {
-    1: { label: 'Pendiente',            icon: '', cls: 'estado-1' },
-    2: { label: 'En Preparación',       icon: '', cls: 'estado-2' },
-    3: { label: 'En reparto',           icon: '', cls: 'estado-3' },
-    4: { label: 'Entregado',            icon: '', cls: 'estado-4' }
+    1: { label: 'Pendiente',            cls: 'estado-1' },
+    2: { label: 'En Preparación',       cls: 'estado-2' },
+    3: { label: 'En reparto',           cls: 'estado-3' },
+    4: { label: 'Entregado',            cls: 'estado-4' },
+    5: { label: 'Pendiente de Pago',    cls: 'estado-5' },
+    6: { label: 'Cancelado',            cls: 'estado-6' }
   };
 
   const fmt = (n) => '$' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -30,10 +32,12 @@ const HistorialApp = (() => {
   async function cargarVentas() {
     const estado = document.getElementById('filtro-estado').value;
     const fecha  = document.getElementById('filtro-fecha').value;
+    const origen = document.getElementById('filtro-origen')?.value || '';
 
     const params = new URLSearchParams();
     if (estado) params.set('estado', estado);
     if (fecha)  params.set('fecha', fecha);
+    if (origen) params.set('origen', origen);
 
     document.getElementById('ventas-tbody').innerHTML =
       '<tr><td colspan="8" class="loading-row">⏳ Cargando...</td></tr>';
@@ -41,11 +45,16 @@ const HistorialApp = (() => {
     try {
       const res  = await fetch('api/get_ventas.php?' + params.toString());
       const data = await res.json();
+      if (data.error) {
+        document.getElementById('ventas-tbody').innerHTML =
+          `<tr><td colspan="8" class="loading-row" style="color:#c0392b;">Error: ${data.error}</td></tr>`;
+        return;
+      }
       renderVentas(data.ventas || []);
       renderStats(data.stats || {});
     } catch (e) {
       document.getElementById('ventas-tbody').innerHTML =
-        '<tr><td colspan="8" class="loading-row" style="color:#c0392b;">Error al cargar ventas</td></tr>';
+        `<tr><td colspan="8" class="loading-row" style="color:#c0392b;">Error al cargar ventas: ${e.message}</td></tr>`;
     }
   }
 
@@ -59,10 +68,10 @@ const HistorialApp = (() => {
   }
 
   function renderStats(stats) {
-    document.getElementById('count-1').textContent = stats.pendiente   || 0;
-    document.getElementById('count-2').textContent = stats.preparacion || 0;
-    document.getElementById('count-3').textContent = stats.repartidor  || 0;
-    document.getElementById('count-4').textContent = stats.entregado   || 0;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || 0; };
+    set('count-4', stats.entregado);
+    set('count-5', stats.pend_pago);
+    set('count-6', stats.cancelado);
     document.getElementById('total-hoy').textContent = fmt(stats.total_hoy || 0);
   }
 
@@ -74,60 +83,77 @@ const HistorialApp = (() => {
     }
 
     tbody.innerHTML = ventas.map(v => {
-      const fecha = fmtFecha(v.fecha);
+      const fecha     = fmtFecha(v.fecha);
+      const estadoId  = parseInt(v.estado_id);
+      const esCancelado = estadoId === 6;
       const productos = (v.productos || []).map(p =>
         `<span class="prod-tag">${p.nombre} ×${p.cantidad}</span>`
       ).join('');
 
-      const tipoEntrega   = v.tipo_entrega || 'retiro';
-      const esEnvio       = tipoEntrega === 'envio';
-      const badgeEntrega  = esEnvio
+      const tipoEntrega  = v.tipo_entrega || 'retiro';
+      const esEnvio      = tipoEntrega === 'envio';
+      const badgeEntrega = esEnvio
         ? `<span class="badge-envio">🛵 Envío</span>`
         : `<span class="badge-retiro">🏪 Retiro</span>`;
+      const badgeOrigen  = v.origen === 'tienda'
+        ? `<span class="badge-origen badge-app">📱 App</span>`
+        : `<span class="badge-origen badge-pos">🖥 Admin</span>`;
       const repInfo = v.via_uber
         ? `<small style="color:#7c3aed">🚗 Uber</small>`
-        : (v.repartidor_nombre
-          ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>`
-          : '');
+        : (v.repartidor_nombre ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>` : '');
+
+      const rowCls = (ESTADOS[estadoId]?.cls || '') + (esCancelado ? ' row-cancelado' : '');
+
+      // Todos los estados disponibles para cambio libre (excepto Cancelado que tiene su botón)
+      const estadosHistorial = esCancelado
+        ? { 6: ESTADOS[6] }
+        : Object.fromEntries(Object.entries(ESTADOS).filter(([id]) => parseInt(id) !== 6));
 
       return `
-        <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}">
-          <td><span class="venta-id">#${v.idventas}</span><br>${badgeEntrega}</td>
+        <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}" class="${rowCls}">
+          <td>
+            <span class="venta-id">#${v.idventas}</span><br>
+            ${badgeEntrega}${badgeOrigen}
+            ${esCancelado ? '<br><span class="badge-cancelado">✖ CANCELADO</span>' : ''}
+          </td>
           <td>
             <div class="cliente-info">
               <strong>${v.cliente_nombre || 'Sin nombre'}</strong>
-              <small>${v.cliente_telefono || v.cliente_email || '—'}</small>
+              <small>${String(v.cliente_telefono||'') || v.cliente_email || '—'}</small>
               ${repInfo}
             </div>
           </td>
           <td><div class="productos-mini">${productos || '<span class="prod-tag">—</span>'}</div></td>
           <td><span class="total-cell">${fmt(v.total)}</span></td>
           <td><span class="pago-badge">${v.metodo_pago || '—'}</span></td>
-          <td class="fecha-cell">
-            <strong>${fecha.dia}</strong>${fecha.hora}
-          </td>
+          <td class="fecha-cell"><strong>${fecha.dia}</strong>${fecha.hora}</td>
           <td>
-            <select class="estado-select" id="estado-select-${v.idventas}" onchange="HistorialApp.onEstadoChange(${v.idventas})">
-              ${Object.entries(ESTADOS).map(([id, e]) =>
-                `<option value="${id}" ${parseInt(v.estado_id) === parseInt(id) ? 'selected' : ''}>${e.icon} ${e.label}</option>`
-              ).join('')}
-            </select>
+            ${esCancelado
+              ? `<span class="estado-badge estado-6">✖ Cancelado</span>`
+              : `<select class="estado-select estado-select-color estado-bg-${estadoId}" id="estado-select-${v.idventas}" onchange="HistorialApp.onEstadoChange(${v.idventas})">
+                  ${Object.entries(estadosHistorial).map(([id, e]) =>
+                    `<option value="${id}" ${estadoId === parseInt(id) ? 'selected' : ''}>${e.label}</option>`
+                  ).join('')}
+                </select>`
+            }
           </td>
           <td>
             <div class="acciones-cell">
               <button class="btn-accion btn-ver" onclick="HistorialApp.verDetalle(${v.idventas})">👁 Ver</button>
-              <button class="btn-accion btn-guardar-estado" id="btn-save-${v.idventas}"
-                      onclick="HistorialApp.guardarEstado(${v.idventas})" disabled>
-                💾
-              </button>
-              ${parseInt(v.estado_id) === 3 ? `
-              <button class="btn-accion btn-whatsapp" title="Mandar mensaje al cliente"
-                      onclick="HistorialApp.mensajeCliente('${(v.cliente_telefono||'').replace(/\D/g,'')}', ${v.idventas})">
-                💬 Mensaje
-              </button>` : (parseInt(v.estado_id) === 4 ? `
-              <button class="btn-accion btn-whatsapp" disabled title="Pedido ya entregado" style="opacity:.4;cursor:not-allowed;">
-                💬 Mensaje
-              </button>` : '')}
+              ${!esCancelado ? `<button class="btn-accion btn-guardar-estado" id="btn-save-${v.idventas}"
+                      onclick="HistorialApp.guardarEstado(${v.idventas})" disabled>💾</button>` : ''}
+              ${estadoId === 3 ? `
+              <button class="btn-accion btn-whatsapp" title="Avisar que el pedido está en camino"
+                      onclick="HistorialApp.mensajeCliente('${String(v.cliente_telefono||'').replace(/\D/g,'')}', ${v.idventas}, 'en_camino', ${JSON.stringify(v.cliente_nombre||'')})">
+                🛵 En camino
+              </button>` : ''}
+              ${estadoId === 4 ? `
+              <button class="btn-accion btn-whatsapp" title="Consultar si llegó bien el pedido"
+                      onclick="HistorialApp.mensajeCliente('${String(v.cliente_telefono||'').replace(/\D/g,'')}', ${v.idventas}, 'entregado', ${JSON.stringify(v.cliente_nombre||'')})">
+                💬 ¿Llegó bien?
+              </button>` : ''}
+              ${!esCancelado ? `<button class="btn-accion btn-cancelar-venta" title="Cancelar venta"
+                      onclick="HistorialApp.cancelarVenta(${v.idventas})">✖ Cancelar</button>` : ''}
             </div>
           </td>
         </tr>
@@ -146,13 +172,28 @@ const HistorialApp = (() => {
     const row         = document.getElementById('row-' + idVenta);
     const tipoEntrega = row?.dataset.tipoEntrega || 'retiro';
 
-    // Si pasa a estado 3 y el pedido es de envío → pedir repartidor
     if (nuevoEstado === 3 && tipoEntrega === 'envio') {
       await abrirModalRepartidor(idVenta);
       return;
     }
 
     await ejecutarCambioEstado(idVenta, nuevoEstado, null, btn);
+  }
+
+  async function cancelarVenta(idVenta) {
+    const ok = await Swal.fire({
+      title: '¿Cancelar esta venta?',
+      text: 'Esta acción quedará registrada y no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e53e3e',
+      cancelButtonColor: '#718096',
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No'
+    });
+    if (!ok.isConfirmed) return;
+    const btn = document.getElementById('btn-save-' + idVenta) || { disabled: false, textContent: '' };
+    await ejecutarCambioEstado(idVenta, 6, null, btn);
   }
 
   async function ejecutarCambioEstado(idVenta, nuevoEstado, repartidorId, btn, viaUber = false) {
@@ -322,7 +363,7 @@ const HistorialApp = (() => {
   }
 
   // ─── WHATSAPP MENSAJE AL CLIENTE ──────────
-  function mensajeCliente(telefono, idVenta) {
+  function mensajeCliente(telefono, idVenta, tipo = 'entregado', clienteNombre = '') {
     if (!telefono) {
       showToast('Este cliente no tiene número de teléfono registrado', 'error');
       return;
@@ -332,10 +373,16 @@ const HistorialApp = (() => {
     if (num.startsWith('0')) num = num.slice(1);
     if (!num.startsWith('54')) num = '54' + num;
 
-    const mensaje = encodeURIComponent(
-      `¡Hola! 👋 Te escribimos desde Canetto. Queríamos saber si recibiste bien tu pedido #${idVenta}. ¿Todo llegó bien? ¡Gracias por elegirnos! 🍪`
-    );
-    window.open(`https://wa.me/${num}?text=${mensaje}`, '_blank');
+    const nombre = clienteNombre ? `, ${clienteNombre.split(' ')[0]}` : '';
+
+    let texto;
+    if (tipo === 'en_camino') {
+      texto = `¡Hola${nombre}! 🍪 Te escribimos desde *Canetto*. Tu pedido *#${idVenta}* ya está en camino y pronto llegará a tu puerta. 🛵✨ ¡Gracias por elegirnos!`;
+    } else {
+      texto = `¡Hola${nombre}! 🍪 Te escribimos desde *Canetto*. Queríamos saber si recibiste bien tu pedido *#${idVenta}*. ¿Todo llegó bien? ¡Gracias por elegirnos! Si tenés algún problema, contanos y lo resolvemos enseguida. 💛`;
+    }
+
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(texto)}`, '_blank');
   }
 
   // ─── INIT ─────────────────────────────────
@@ -349,5 +396,5 @@ const HistorialApp = (() => {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { cargarVentas, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, confirmarRepartidor, cerrarModalRep };
+  return { cargarVentas, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, confirmarRepartidor, cerrarModalRep, cancelarVenta };
 })();
