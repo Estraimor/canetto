@@ -42,7 +42,7 @@ try {
     }
 
     $productos = $pdo->query("
-        SELECT p.idproductos, p.nombre, p.precio, p.tipo,
+        SELECT p.idproductos, p.nombre, p.precio, p.tipo, p.imagen,
             CASE
                 WHEN p.tipo = 'box' THEN (
                     SELECT COALESCE(MIN(FLOOR(sp2.stock_actual / bp.cantidad)), 0)
@@ -57,7 +57,7 @@ try {
         FROM productos p
         LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
         WHERE p.activo = 1
-        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo
+        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen
         ORDER BY CASE p.tipo WHEN 'box' THEN 0 ELSE 1 END, p.nombre ASC
     ")->fetchAll();
 
@@ -233,7 +233,14 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 ?>
 <div class="prod-card" data-tipo="<?= $p['tipo'] ?>">
   <div class="prod-thumb">
-    <?= $emoji ?>
+    <?php if (!empty($p['imagen'])): ?>
+      <img src="<?= URL_ASSETS ?>/img/productos/<?= htmlspecialchars($p['imagen']) ?>"
+           alt="<?= $nombre ?>"
+           class="prod-thumb-img"
+           loading="lazy">
+    <?php else: ?>
+      <span class="prod-thumb-emoji"><?= $emoji ?></span>
+    <?php endif; ?>
     <span class="stock-pill <?= $pill ?>"><?= $pillTxt ?></span>
   </div>
   <div class="prod-body">
@@ -513,12 +520,42 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 
         <div class="fg">
           <label>Método de pago *</label>
-          <select id="ckMetodo">
-            <option value="">— Cómo vas a pagar —</option>
-            <?php foreach ($metodos_pago as $m): ?>
-            <option value="<?= $m['idmetodo_pago'] ?>"><?= htmlspecialchars($m['nombre']) ?></option>
+          <input type="hidden" id="ckMetodoId">
+          <div class="ck-pago-grid" id="ckPagoGrid">
+            <?php foreach ($metodos_pago as $m):
+              $nLow      = strtolower($m['nombre']);
+              $esMP      = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
+              $esTarjeta = str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito');
+            ?>
+            <button type="button"
+              class="ck-pago-card<?= $esTarjeta ? ' prox' : '' ?>"
+              <?= $esTarjeta ? 'disabled' : '' ?>
+              onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false'?>)">
+              <div class="ck-pago-ic">
+                <?php if ($esMP): ?>
+                  <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="26" width="52">
+                    <rect width="56" height="28" rx="5" fill="#009EE3"/>
+                    <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
+                  </svg>
+                <?php elseif ($esTarjeta): ?>
+                  <span style="font-size:22px">💳</span>
+                <?php elseif (str_contains($nLow,'efectivo')||str_contains($nLow,'cash')): ?>
+                  <span style="font-size:22px">💵</span>
+                <?php elseif (str_contains($nLow,'transfer')||str_contains($nLow,'deposito')||str_contains($nLow,'depósito')): ?>
+                  <span style="font-size:22px">🏦</span>
+                <?php else: ?>
+                  <span style="font-size:22px">💰</span>
+                <?php endif; ?>
+              </div>
+              <div class="ck-pago-info">
+                <div class="ck-pago-label"><?= htmlspecialchars($m['nombre']) ?></div>
+                <?php if ($esMP): ?><div class="ck-pago-sub">Pago seguro · Tarjeta, débito, efectivo</div><?php endif; ?>
+                <?php if ($esTarjeta): ?><div class="ck-pago-sub">Disponible próximamente</div><?php endif; ?>
+              </div>
+              <?php if ($esTarjeta): ?><span class="ck-pago-prox">Próximamente</span><?php endif; ?>
+            </button>
             <?php endforeach; ?>
-          </select>
+          </div>
         </div>
         <div class="fg">
           <label>Observaciones (opcional)</label>
@@ -765,6 +802,15 @@ async function doRegister(){
 }
 function backToAuth(){ckCliente=null;showCkStep('ckAuth');syncCkTab()}
 
+let _selectedMetodoId=null,_selectedMetodoEsMP=false;
+function seleccionarMetodo(id,btn,esMP){
+  _selectedMetodoId=id;_selectedMetodoEsMP=esMP;
+  document.getElementById('ckMetodoId').value=id;
+  document.querySelectorAll('.ck-pago-card').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  setAlert('dAlert','','');
+}
+
 let _tipoEntrega = 'retiro';
 function setEntrega(tipo){
   _tipoEntrega = tipo;
@@ -795,7 +841,7 @@ function usarMiUbicacion(){
 }
 
 async function confirmOrder(){
-  const met=document.getElementById('ckMetodo').value;
+  const met=_selectedMetodoId;
   if(!met){setAlert('dAlert','Seleccioná un método de pago','err');return}
   if(_tipoEntrega==='retiro'){
     const suc=document.getElementById('ckSuc').value;
@@ -818,10 +864,34 @@ async function confirmOrder(){
       lng_entrega:document.getElementById('ckLng')?.value||null,
     };
     const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
-    if(d.success){document.getElementById('ckOrderNum').textContent='#'+d.id_venta;saveCart([]);renderCart();showCkStep('ckSuccess')}
+    if(d.success){
+      if(_selectedMetodoEsMP){
+        // Redirigir a MercadoPago Checkout
+        btn.textContent='Redirigiendo a MercadoPago...';
+        const mpBody={pedido_id:d.id_venta,items:getCart(),total:total(getCart())};
+        const mp=await(await fetch('api/mp_preference.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mpBody)})).json();
+        if(mp.success&&mp.init_point){
+          saveCart([]);renderCart();
+          window.location.href=mp.init_point;
+        } else {
+          setAlert('dAlert','Pedido creado (#'+d.id_venta+') pero no se pudo iniciar el pago. Contactanos para coordinar el pago.','err');
+          btn.disabled=false;btn.textContent='Confirmar pedido ✓';
+        }
+      } else {
+        document.getElementById('ckOrderNum').textContent='#'+d.id_venta;
+        saveCart([]);renderCart();
+        // Animación al confirmar pedido
+        btn.classList.add('saving');
+        setTimeout(()=>btn.classList.remove('saving'),600);
+        showCkStep('ckSuccess');
+        // Hacer rebotar el ícono de éxito
+        const ic=document.querySelector('.ck-success-ic');
+        if(ic){ic.style.animation='none';requestAnimationFrame(()=>{ic.style.animation='successBounce .6s cubic-bezier(.36,.07,.19,.97) both';});}
+      }
+    }
     else setAlert('dAlert',d.message||'Error al procesar','err');
   }catch{setAlert('dAlert','Error de conexión. Intentá nuevamente.','err')}
-  btn.disabled=false;btn.textContent='Confirmar pedido ✓';
+  if(!_selectedMetodoEsMP){btn.disabled=false;btn.textContent='Confirmar pedido ✓';}
 }
 function setAlert(id,msg,type){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='ck-alert on '+(type==='err'?'err':'ok');setTimeout(()=>el.classList.remove('on'),5000)}
 document.getElementById('checkoutModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCheckout()});

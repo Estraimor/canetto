@@ -7,18 +7,25 @@ include '../../panel/dashboard/layaut/nav.php';
 
 $pdo = Conexion::conectar();
 
+// Agregar columna imagen si no existe
+try { $pdo->exec("ALTER TABLE productos ADD COLUMN imagen VARCHAR(255) NULL"); } catch (Throwable $e) {}
+// Crear directorio de imágenes de productos
+$imgDir = __DIR__ . '/../../img/productos';
+if (!is_dir($imgDir)) @mkdir($imgDir, 0755, true);
+
 /* =========================
 PRODUCTOS
 ========================= */
 
 $stmtProductos = $pdo->query("
-    SELECT 
+    SELECT
         p.idproductos,
         p.nombre,
         p.precio,
         p.activo,
         p.tipo,
         p.recetas_idrecetas,
+        p.imagen,
         r.nombre AS receta_nombre,
 
         COALESCE(MAX(CASE 
@@ -53,11 +60,12 @@ BOX
 ========================= */
 
 $stmtBox = $pdo->query("
-    SELECT 
+    SELECT
         b.idproductos,
         b.nombre,
         b.precio,
         b.activo,
+        b.imagen,
         p.nombre AS producto,
         bp.cantidad
     FROM productos b
@@ -144,6 +152,11 @@ foreach ($boxRows as $row) {
 
                 <div class="producto-header">
 
+                    <?php if (!empty($p['imagen'])): ?>
+                    <img src="<?= URL_ASSETS ?>/img/productos/<?= htmlspecialchars($p['imagen']) ?>"
+                         alt="" class="prod-thumb-admin">
+                    <?php endif; ?>
+
                     <h3><?= htmlspecialchars($p['nombre']) ?></h3>
 
                     <span class="estado">
@@ -172,12 +185,13 @@ foreach ($boxRows as $row) {
                         class="btn-edit"
                         onclick="editarProducto(
     <?= $p['idproductos'] ?>,
-    '<?= $p['nombre'] ?>',
+    '<?= addslashes(htmlspecialchars($p['nombre'])) ?>',
     <?= $p['precio'] ?>,
     '<?= $p['tipo'] ?>',
     <?= $p['recetas_idrecetas'] ?? 'null' ?>,
     <?= $p['min_congelado'] ?? 0 ?>,
-    <?= $p['min_hecho'] ?? 0 ?>
+    <?= $p['min_hecho'] ?? 0 ?>,
+    '<?= htmlspecialchars($p['imagen'] ?? '') ?>'
 )"
                     >
                         Editar
@@ -287,9 +301,10 @@ MODAL CREAR / EDITAR
 
         <h2 id="tituloModal">Crear Producto</h2>
 
-        <form id="formCrearProducto">
+        <form id="formCrearProducto" enctype="multipart/form-data">
 
             <input type="hidden" name="idproducto" id="idproducto">
+            <input type="hidden" name="imagen_actual" id="imagenActual">
 
             <!-- =========================
             DATOS BASICOS
@@ -313,6 +328,25 @@ MODAL CREAR / EDITAR
                     <option value="box">Box</option>
                 </select>
 
+            </div>
+
+            <!-- =========================
+            IMAGEN
+            ========================= -->
+
+            <div class="form-group">
+                <label>Imagen del producto</label>
+                <div id="imgPreviewWrap" style="display:none;margin-bottom:8px">
+                    <img id="imgPreview" src="" alt="preview"
+                         style="width:100%;max-height:160px;object-fit:contain;border-radius:10px;border:1px solid #eee;padding:4px">
+                    <button type="button" onclick="quitarImagen()"
+                            style="margin-top:6px;font-size:12px;color:#e74c3c;background:none;border:none;cursor:pointer">
+                        ✕ Quitar imagen
+                    </button>
+                </div>
+                <input type="file" name="imagen" id="inputImagen" accept="image/jpeg,image/png,image/webp"
+                       onchange="previsualizarImagen(this)">
+                <small style="color:#999;font-size:11px">JPG, PNG o WebP · Máx 2 MB</small>
             </div>
 
             <!-- =========================
@@ -413,7 +447,7 @@ MODAL CREAR / EDITAR
 EDITAR PRODUCTO / BOX
 ========================= */
 
-function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho) {
+function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho, imagen) {
 
     abrirModalProducto();
 
@@ -429,6 +463,19 @@ function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho) {
 
         document.getElementById("tituloModal").innerText = "Editar";
 
+        // Imagen actual
+        const imgActual = document.getElementById("imagenActual");
+        const imgWrap   = document.getElementById("imgPreviewWrap");
+        const imgEl     = document.getElementById("imgPreview");
+        imgActual.value = imagen || '';
+        if (imagen) {
+            imgEl.src = '../img/productos/' + imagen;
+            imgWrap.style.display = 'block';
+        } else {
+            imgWrap.style.display = 'none';
+            imgEl.src = '';
+        }
+
         if (receta) {
             document.getElementById("selectRecetas").value = receta;
         }
@@ -441,6 +488,23 @@ function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho) {
         }
 
     }, 200);
+}
+
+function previsualizarImagen(input) {
+    const wrap = document.getElementById("imgPreviewWrap");
+    const img  = document.getElementById("imgPreview");
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { img.src = e.target.result; wrap.style.display = 'block'; };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function quitarImagen() {
+    document.getElementById("inputImagen").value = '';
+    document.getElementById("imagenActual").value = '';
+    document.getElementById("imgPreviewWrap").style.display = 'none';
+    document.getElementById("imgPreview").src = '';
 }
 
 
@@ -544,6 +608,9 @@ function resetModalProducto(){
 
     document.getElementById("formCrearProducto").reset();
     document.getElementById("idproducto").value = "";
+    document.getElementById("imagenActual").value = "";
+    document.getElementById("imgPreviewWrap").style.display = 'none';
+    document.getElementById("imgPreview").src = '';
 
     document.getElementById("tituloModal").innerText = "Crear Producto";
 
@@ -755,6 +822,14 @@ document
     const data = await res.json();
 
     if(data.status === "ok"){
+
+        // Animación de guardado
+        const btn = document.querySelector('#formCrearProducto .btn-primary');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Guardado';
+        btn.style.background = '#2d8a4e';
+        btn.style.transform = 'scale(1.04)';
+        setTimeout(() => { btn.style.transform = ''; btn.style.background = ''; btn.textContent = orig; }, 800);
 
         Swal.fire({
             icon:"success",

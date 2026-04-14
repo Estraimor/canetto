@@ -27,6 +27,23 @@ $tokenValido = $row && !$row['used'] && strtotime($row['expires_at']) > time();
 $msg  = $_SESSION['reset_msg']  ?? null;
 $tipo = $_SESSION['reset_tipo'] ?? 'err';
 unset($_SESSION['reset_msg'], $_SESSION['reset_tipo']);
+
+// Detectar URL de login según roles del usuario
+$loginUrl = URL_LOGIN . '/login.php'; // default: admin
+if ($row) {
+    $rolesStmt = $pdo->prepare("
+        SELECT r.nombre FROM roles r
+        JOIN usuarios_roles ur ON ur.roles_idroles = r.idroles
+        WHERE ur.usuario_idusuario = ?
+    ");
+    $rolesStmt->execute([$row['usuario_id']]);
+    $rolesUsuario = $rolesStmt->fetchAll(PDO::FETCH_COLUMN);
+    if (in_array('repartidor', $rolesUsuario, true)) {
+        $loginUrl = URL_REPARTIDOR . '/index.php';
+    } elseif (!in_array('administrador', $rolesUsuario, true) && !in_array('admin', $rolesUsuario, true)) {
+        $loginUrl = URL_LOGIN . '/login_clientes.php';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -94,7 +111,7 @@ unset($_SESSION['reset_msg'], $_SESSION['reset_tipo']);
       <button type="submit" class="btn-login">Guardar nueva contraseña</button>
     </form>
 
-    <a class="back-link" href="login.php">← Volver al inicio de sesión</a>
+    <a class="back-link" href="<?= htmlspecialchars($loginUrl) ?>">← Volver al inicio de sesión</a>
 
   <?php endif; ?>
 

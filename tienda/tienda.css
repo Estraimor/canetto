@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap");
 
 html, body {
   height: 100%;
@@ -94,9 +94,11 @@ body.page-exit #page-wrap {
   display: block;
 }
 .t-brand-name {
-  font-family: "Playfair Display", serif;
-  font-size: 19px;
+  font-family: "Josefin Sans", sans-serif;
+  font-size: 20px;
   font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
   color: var(--dk);
 }
 .t-actions {
@@ -341,10 +343,28 @@ body.page-exit #page-wrap {
   justify-content: center;
   font-size: 40px;
   position: relative;
+  overflow: hidden;
+}
+.prod-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .3s ease;
+}
+.prod-card:hover .prod-thumb-img {
+  transform: scale(1.05);
+}
+.prod-thumb-emoji {
+  font-size: 40px;
+  line-height: 1;
 }
 @media (min-width: 640px) {
   .prod-thumb {
     height: 130px;
+    font-size: 48px;
+  }
+  .prod-thumb-emoji {
     font-size: 48px;
   }
 }
@@ -1752,4 +1772,95 @@ body.has-bottom-nav {
   body.has-bottom-nav .t-footer {
     display: none;
   }
+}
+
+/* ── MÉTODOS DE PAGO CARDS ───────────────────────── */
+.ck-pago-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.ck-pago-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 15px;
+  border: 2px solid #e8e8e8;
+  border-radius: 13px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .18s, background .18s, box-shadow .18s;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  position: relative;
+}
+.ck-pago-card:hover:not(:disabled) {
+  border-color: #009EE3;
+  background: #f0faff;
+  box-shadow: 0 2px 12px rgba(0,158,227,.12);
+}
+.ck-pago-card.on {
+  border-color: #009EE3;
+  background: #f0faff;
+  box-shadow: 0 2px 12px rgba(0,158,227,.15);
+}
+.ck-pago-card.prox {
+  opacity: .5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.ck-pago-ic {
+  width: 44px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ck-pago-info {
+  flex: 1;
+  min-width: 0;
+}
+.ck-pago-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.3;
+}
+.ck-pago-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.ck-pago-prox {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── SAVE / SUCCESS ANIMATIONS ──────────────────── */
+@keyframes saveFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(200,142,153,.7); }
+  50%  { box-shadow: 0 0 0 10px rgba(200,142,153,0); }
+  100% { box-shadow: 0 0 0 0 rgba(200,142,153,0); }
+}
+.btn-pk.saving {
+  animation: saveFlash .5s ease;
+  background: #2d8a4e;
+}
+@keyframes successBounce {
+  0%, 100% { transform: scale(1); }
+  20%       { transform: scale(1.3) rotate(-8deg); }
+  40%       { transform: scale(1.1) rotate(6deg); }
+  60%       { transform: scale(1.2) rotate(-4deg); }
+  80%       { transform: scale(1.05) rotate(2deg); }
+}
+.ck-success-ic {
+  animation: successBounce .6s cubic-bezier(.36,.07,.19,.97) both;
 }
