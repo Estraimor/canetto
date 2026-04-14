@@ -72,7 +72,7 @@ $tl = [
 <header class="t-nav">
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
-      <img src="../img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo">
+      <img src="<?= URL_ASSETS ?>/img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo">
     </div>
     <span class="t-brand-name">Canetto</span>
   </a>

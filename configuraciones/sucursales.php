@@ -15,7 +15,7 @@ $total   = (int)$pdo->query("SELECT COUNT(*) FROM sucursal")->fetchColumn();
 $activas = (int)$pdo->query("SELECT COUNT(*) FROM sucursal WHERE activo=1")->fetchColumn();
 ?>
 
-<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= URL_ASSETS ?>/configuraciones/cfg.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -23,7 +23,7 @@ $activas = (int)$pdo->query("SELECT COUNT(*) FROM sucursal WHERE activo=1")->fet
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
+            <a class="cfg-back" href="<?= URL_ASSETS ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">

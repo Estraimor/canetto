@@ -76,6 +76,8 @@ unset($_SESSION['error']);
       Ingresar con Google
     </button>
     <div id="googleAlertAdmin" style="display:none;margin-top:10px;padding:9px 13px;border-radius:8px;font-size:13px"></div>
+    <!-- Contenedor oculto para el botón renderizado por Google (necesario para el popup completo) -->
+    <div id="googleHiddenBtnAdmin" style="position:fixed;bottom:-200px;left:-200px;opacity:0;width:1px;height:1px;overflow:hidden;"></div>
 
     <div class="register-link">
       ¿No tenés cuenta?
@@ -164,16 +166,56 @@ function setAlert(el, msg, type) {
 // ── Google Sign-In ──────────────────────────────────────────────────────────
 const GOOGLE_CLIENT_ID_ADMIN = <?= json_encode(GOOGLE_CLIENT_ID) ?>;
 
+// Ocultar botón de Google si no hay Client ID configurado
+if (!GOOGLE_CLIENT_ID_ADMIN) {
+    const btn = document.getElementById('btnGoogleAdmin');
+    if (btn) btn.style.display = 'none';
+}
+
 function iniciarGoogleAdmin() {
+    if (!GOOGLE_CLIENT_ID_ADMIN) {
+        showGoogleAlertAdmin('Google Sign-In no está configurado en este servidor.', '#888'); return;
+    }
     if (!window.google) {
         showGoogleAlertAdmin('Cargando Google... intentá en un segundo.', '#888'); return;
     }
+
+    const btnEl = document.getElementById('btnGoogleAdmin');
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Abriendo Google...';
+
     google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID_ADMIN,
-        callback:  handleGoogleAdmin,
-        ux_mode:   'popup',
+        client_id:            GOOGLE_CLIENT_ID_ADMIN,
+        callback:             handleGoogleAdmin,
+        ux_mode:              'popup',
+        cancel_on_tap_outside: true,
     });
-    google.accounts.id.prompt();
+
+    // Renderizar el botón oficial de Google en el contenedor oculto y hacer click
+    // Esto abre el popup completo con selector de cuentas de Google
+    const container = document.getElementById('googleHiddenBtnAdmin');
+    container.innerHTML = '';
+    google.accounts.id.renderButton(container, {
+        type:  'standard',
+        size:  'large',
+        theme: 'outline',
+        text:  'signin_with',
+    });
+
+    requestAnimationFrame(() => {
+        const gBtn = container.querySelector('div[role=button], [jsname], iframe');
+        if (gBtn) {
+            gBtn.click();
+        } else {
+            // Fallback: si renderButton no está disponible, usar prompt
+            google.accounts.id.prompt(notification => {
+                if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+                }
+            });
+        }
+    });
 }
 
 async function handleGoogleAdmin(response) {
@@ -203,6 +245,14 @@ async function handleGoogleAdmin(response) {
     }
 }
 
+function resetBtnGoogleAdmin() {
+    const btn = document.getElementById('btnGoogleAdmin');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+    }
+}
+
 function showGoogleAlertAdmin(msg, color, bg) {
     const el = document.getElementById('googleAlertAdmin');
     el.textContent = msg;
@@ -211,13 +261,14 @@ function showGoogleAlertAdmin(msg, color, bg) {
     el.style.display = 'block';
 }
 
-// Inicializar GSI cuando carga la librería
+// Pre-inicializar GSI cuando carga la librería (sin mostrar One Tap automático)
 window.addEventListener('load', () => {
-    if (window.google) {
+    if (window.google && GOOGLE_CLIENT_ID_ADMIN) {
         google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID_ADMIN,
-            callback:  handleGoogleAdmin,
-            ux_mode:   'popup',
+            client_id:            GOOGLE_CLIENT_ID_ADMIN,
+            callback:             handleGoogleAdmin,
+            ux_mode:              'popup',
+            cancel_on_tap_outside: true,
         });
     }
 });

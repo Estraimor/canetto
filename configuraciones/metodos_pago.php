@@ -8,13 +8,13 @@ $pdo = Conexion::conectar();
 $total = (int)$pdo->query("SELECT COUNT(*) FROM metodo_pago")->fetchColumn();
 ?>
 
-<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= URL_ASSETS ?>/configuraciones/cfg.css">
 
 <div class="cfg-module">
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
+            <a class="cfg-back" href="<?= URL_ASSETS ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">

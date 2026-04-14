@@ -30,9 +30,6 @@ if (!isset($pageTitle)) {
     $pageTitle = "Canetto Admin";
 }
 
-$_navHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$baseUrl  = in_array($_navHost, ['localhost', '127.0.0.1'], true) ? '/canetto' : '';
-unset($_navHost);
 $current = $_SERVER['PHP_SELF'];
 ?>
 
@@ -42,7 +39,7 @@ $current = $_SERVER['PHP_SELF'];
 <meta charset="UTF-8">
 <title><?= $pageTitle ?></title>
 
-<link rel="stylesheet" href="<?= $baseUrl ?>/assets/dashboard.css">
+<link rel="stylesheet" href="<?= URL_ASSETS ?>/assets/dashboard.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <!-- DataTables -->
@@ -71,7 +68,7 @@ $current = $_SERVER['PHP_SELF'];
     <nav class="nav-menu">
 
     <!-- DASHBOARD -->
-    <a href="<?= $baseUrl ?>/administracion/index.php"
+    <a href="<?= URL_ADMIN ?>/index.php"
        class="<?= str_contains($current,'administracion/index.php') ? 'active' : '' ?>">
         <i class="fa-solid fa-chart-line"></i>
         <span>Dashboard</span>
@@ -84,19 +81,19 @@ $current = $_SERVER['PHP_SELF'];
             Producción
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/produccion/plan_produccion.php"
+            <a href="<?= URL_ADMIN ?>/produccion/plan_produccion.php"
                class="<?= str_contains($current,'plan_produccion') ? 'active' : '' ?>">
                 <i class="fa-solid fa-calendar-check"></i>
                 Planificación
             </a>
 
-            <a href="<?= $baseUrl ?>/administracion/produccion/congelado/index.php"
+            <a href="<?= URL_ADMIN ?>/produccion/congelado/index.php"
                class="<?= str_contains($current,'administracion/produccion/congelado/index') ? 'active' : '' ?>">
                 <i class="fa-solid fa-snowflake"></i>
                 Masa congelada
             </a>
 
-            <a href="<?= $baseUrl ?>/administracion/produccion/horneado/index.php"
+            <a href="<?= URL_ADMIN ?>/produccion/horneado/index.php"
                class="<?= str_contains($current,'administracion/produccion/horneado') ? 'active' : '' ?>">
                 <i class="fa-solid fa-fire"></i>
                 Horneado
@@ -112,7 +109,7 @@ $current = $_SERVER['PHP_SELF'];
             Recetas
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/administracion/recetas/index.php"
+            <a href="<?= URL_ADMIN ?>/recetas/index.php"
                class="<?= str_contains($current,'administracion/recetas/index') ? 'active' : '' ?>">
                 <i class="fa-solid fa-list"></i>
                 Listado
@@ -131,13 +128,13 @@ $current = $_SERVER['PHP_SELF'];
     </span>
     <div class="submenu">
 
-        <a href="<?= $baseUrl ?>/administracion/productos/index.php"
+        <a href="<?= URL_ADMIN ?>/productos/index.php"
            class="<?= str_contains($current,'administracion/productos/index') ? 'active' : '' ?>">
             <i class="fa-solid fa-list"></i>
             Listado
         </a>
 
-        <a href="<?= $baseUrl ?>/administracion/productos/crear_producto.php"
+        <a href="<?= URL_ADMIN ?>/productos/crear_producto.php"
            class="<?= str_contains($current,'administracion/productos/crear_producto') ? 'active' : '' ?>">
             <i class="fa-solid fa-plus"></i>
             Crear producto
@@ -154,19 +151,19 @@ $current = $_SERVER['PHP_SELF'];
             Stock
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/administracion/stock/index.php"
+            <a href="<?= URL_ADMIN ?>/stock/index.php"
                class="<?= str_contains($current,'administracion/stock') ? 'active' : '' ?>">
                 <i class="fa-solid fa-cookie-bite"></i>
                 Productos
             </a>
 
-            <a href="<?= $baseUrl ?>/administracion/materias_primas/index.php"
+            <a href="<?= URL_ADMIN ?>/materias_primas/index.php"
                class="<?= str_contains($current,'materias_primas') ? 'active' : '' ?>">
                 <i class="fa-solid fa-seedling"></i>
                 Materias primas
             </a>
 
-            <a href="<?= $baseUrl ?>/administracion/packaging/index.php"
+            <a href="<?= URL_ADMIN ?>/packaging/index.php"
                class="<?= str_contains($current,'packaging') ? 'active' : '' ?>">
                 <i class="fa-solid fa-box-open"></i>
                 Packaging
@@ -175,7 +172,7 @@ $current = $_SERVER['PHP_SELF'];
     </div>
 
     <!-- ANALÍTICA -->
-    <a href="<?= $baseUrl ?>/administracion/analitica/index.php"
+    <a href="<?= URL_ADMIN ?>/analitica/index.php"
        class="<?= str_contains($current,'analitica') ? 'active' : '' ?>">
         <i class="fa-solid fa-chart-bar"></i>
         <span>Analítica</span>
@@ -188,17 +185,17 @@ $current = $_SERVER['PHP_SELF'];
             Ventas
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/administracion/Ventas/Pedidos/index.php"
+            <a href="<?= URL_ADMIN ?>/Ventas/Pedidos/index.php"
                class="<?= str_contains($current,'Pedidos') ? 'active' : '' ?>">
                 <i class="fa-solid fa-clock"></i>
                 Pedidos activos
             </a>
-            <a href="<?= $baseUrl ?>/administracion/Ventas/Ventas/index.php"
+            <a href="<?= URL_ADMIN ?>/Ventas/Ventas/index.php"
                class="<?= str_contains($current,'Ventas/Ventas/index') ? 'active' : '' ?>">
                 <i class="fa-solid fa-plus-circle"></i>
                 Nueva venta
             </a>
-            <a href="<?= $baseUrl ?>/administracion/Ventas/Ventas/Historial/index.php"
+            <a href="<?= URL_ADMIN ?>/Ventas/Ventas/Historial/index.php"
                class="<?= str_contains($current,'Historial') ? 'active' : '' ?>">
                 <i class="fa-solid fa-clock-rotate-left"></i>
                 Historial de ventas
@@ -213,7 +210,7 @@ $current = $_SERVER['PHP_SELF'];
             Compras
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/administracion/proveedor/index.php"
+            <a href="<?= URL_ADMIN ?>/proveedor/index.php"
                class="<?= str_contains($current,'proveedores') ? 'active' : '' ?>">
                 <i class="fa-solid fa-handshake"></i>
                 Proveedores
@@ -229,55 +226,55 @@ $current = $_SERVER['PHP_SELF'];
             Configuraciones
         </span>
         <div class="submenu">
-            <a href="<?= $baseUrl ?>/configuraciones/index.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/index.php"
                class="<?= str_ends_with($current,'configuraciones/index.php') ? 'active' : '' ?>">
                 <i class="fa-solid fa-grip"></i>
                 Panel general
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/usuarios.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/usuarios.php"
                class="<?= str_contains($current,'configuraciones/usuarios') ? 'active' : '' ?>">
                 <i class="fa-solid fa-users"></i>
                 Usuarios
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/roles.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/roles.php"
                class="<?= str_contains($current,'configuraciones/roles.php') ? 'active' : '' ?>">
                 <i class="fa-solid fa-shield-halved"></i>
                 Roles
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/roles_usuario.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/roles_usuario.php"
                class="<?= str_contains($current,'roles_usuario') ? 'active' : '' ?>">
                 <i class="fa-solid fa-user-tag"></i>
                 Roles por usuario
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/metodos_pago.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/metodos_pago.php"
                class="<?= str_contains($current,'metodos_pago') ? 'active' : '' ?>">
                 <i class="fa-solid fa-credit-card"></i>
                 Métodos de pago
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/sucursales.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/sucursales.php"
                class="<?= str_contains($current,'sucursales') ? 'active' : '' ?>">
                 <i class="fa-solid fa-building"></i>
                 Sucursales
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/ofertas.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/ofertas.php"
                class="<?= str_contains($current,'ofertas') ? 'active' : '' ?>">
                 <i class="fa-solid fa-tag"></i>
                 Ofertas Tienda
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/repartidores.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/repartidores.php"
                class="<?= str_contains($current,'repartidores') ? 'active' : '' ?>">
                 <i class="fa-solid fa-motorcycle"></i>
                 Repartidores
             </a>
 
-            <a href="<?= $baseUrl ?>/configuraciones/auditoria.php"
+            <a href="<?= URL_ASSETS ?>/configuraciones/auditoria.php"
                class="<?= str_contains($current,'auditoria') ? 'active' : '' ?>">
                 <i class="fa-solid fa-clipboard-list"></i>
                 Auditoría

@@ -12,7 +12,8 @@
       "Bash(mysql -u root -e \"DESCRIBE canetto.ventas;\")",
       "Bash(wc -l /c/wamp64/www/canetto/repartidor/*.php /c/wamp64/www/canetto/repartidor/api/*.php)",
       "Bash(composer --version)",
-      "Bash(composer require:*)"
+      "Bash(composer require:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost/canetto/img/canetto_logo.jpg)"
     ]
   }
 }
