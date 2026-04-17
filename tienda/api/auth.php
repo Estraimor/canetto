@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 if ($action === 'logout_redirect') {
-    redirect('/login/logout.php');
+    redirect('/login/logout.php?from=tienda');
 }
 
 header('Content-Type: application/json');
