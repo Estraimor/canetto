@@ -11,18 +11,9 @@ const PedidosApp = (() => {
     7: { label: 'Listo para retiro',   cls: 'est-7' }
   };
 
-  // Transiciones según tipo de entrega
-  // envío:  1→2→3→4,  retiro: 1→2→7→4
+  // Todos los estados disponibles (sin Cancelado, que tiene su propio botón)
   function getTransiciones(estadoId, tipoEntrega) {
-    const esEnvio = tipoEntrega === 'envio';
-    const map = {
-      1: [1, 2, 5],
-      2: esEnvio ? [2, 3] : [2, 7],
-      3: [3, 4],
-      5: [5, 2],
-      7: [7, 4],
-    };
-    return map[estadoId] || [estadoId];
+    return [1, 2, 5, 7, 3, 4];
   }
 
   const fmt = n => '$' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -192,9 +183,25 @@ const PedidosApp = (() => {
     const row         = document.getElementById('row-' + idVenta);
     const tipoEntrega = row?.dataset.tipoEntrega || 'retiro';
 
-    // Solo pedir repartidor si es envío y va a estado 3
-    if (nuevoEstado === 3 && tipoEntrega === 'envio') {
+    // Para pedidos de envío que van a "En reparto": pedir repartidor
+    if (tipoEntrega === 'envio' && nuevoEstado === 3) {
       await abrirModalRepartidor(idVenta);
+      return;
+    }
+    // Para pedidos de envío en CUALQUIER otro estado: ofrecer también cambiar repartidor
+    if (tipoEntrega === 'envio' && nuevoEstado !== 3) {
+      await ejecutarCambio(idVenta, nuevoEstado, null, btn);
+      // Mostrar opción de actualizar repartidor sin bloquear
+      const row2 = document.getElementById('row-' + idVenta);
+      if (row2) {
+        const repBtn = document.createElement('button');
+        repBtn.className = 'btn-accion btn-reasignar';
+        repBtn.style.cssText = 'margin-top:6px;font-size:11px';
+        repBtn.textContent = '🔄 Actualizar reparto';
+        repBtn.onclick = () => { repBtn.remove(); PedidosApp.reasignarRepartidor(idVenta); };
+        const acciones = row2.querySelector('.acciones-cell');
+        if (acciones && !acciones.querySelector('.btn-reasignar')) acciones.appendChild(repBtn);
+      }
       return;
     }
     await ejecutarCambio(idVenta, nuevoEstado, null, btn);
@@ -220,13 +227,14 @@ const PedidosApp = (() => {
     await ejecutarCambio(idVenta, 6, null, btn);
   }
 
-  async function ejecutarCambio(idVenta, nuevoEstado, repartidorId, btn, viaUber = false) {
+  async function ejecutarCambio(idVenta, nuevoEstado, repartidorId, btn, viaUber = false, tipoEntrega = null) {
     if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
 
     try {
       const body = { id_venta: idVenta, estado: nuevoEstado };
-      if (repartidorId) body.repartidor_id = repartidorId;
-      if (viaUber)      body.via_uber = true;
+      if (repartidorId)  body.repartidor_id = repartidorId;
+      if (viaUber)       body.via_uber = true;
+      if (tipoEntrega)   body.tipo_entrega = tipoEntrega;
 
       const res  = await fetch('api/actualizar_pedido.php', {
         method: 'POST',
@@ -258,6 +266,8 @@ const PedidosApp = (() => {
     const info  = document.getElementById('rep-cliente-info');
     sel.innerHTML  = '<option value="">Cargando...</option>';
     info.innerHTML = '';
+    // Reset siempre a "envio" al abrir
+    if (typeof setTipoEntregaModal === 'function') setTipoEntregaModal('envio');
     modal.style.display = 'flex';
 
     try {
@@ -282,14 +292,25 @@ const PedidosApp = (() => {
   }
 
   async function confirmarRepartidor() {
-    const sel     = document.getElementById('rep-select');
+    const ventaId  = _repVentaId;
+    const tipoModal = (typeof _modalTipoEntrega !== 'undefined') ? _modalTipoEntrega : 'envio';
+
+    if (tipoModal === 'retiro') {
+      // Cambiar a retiro en local → estado 7 "Listo para retiro"
+      cerrarModalRep();
+      const btn = document.getElementById('btn-save-' + ventaId) || { disabled: false, textContent: '' };
+      await ejecutarCambio(ventaId, 7, null, btn, false, 'retiro');
+      return;
+    }
+
+    // Envío a domicilio → requiere repartidor
+    const sel = document.getElementById('rep-select');
     if (!sel.value) { alert('Seleccioná un repartidor o elegí Uber'); return; }
     const viaUber = sel.value === 'uber';
     const repId   = viaUber ? null : parseInt(sel.value);
-    const ventaId = _repVentaId;
     cerrarModalRep();
     const btn = document.getElementById('btn-save-' + ventaId) || { disabled: false, textContent: '' };
-    await ejecutarCambio(ventaId, 3, repId, btn, viaUber);
+    await ejecutarCambio(ventaId, 3, repId, btn, viaUber, 'envio');
   }
 
   function cerrarModalRep() {

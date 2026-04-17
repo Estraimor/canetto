@@ -104,6 +104,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <title>Canetto — Galletitas Artesanales</title>
 <meta name="description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <link rel="stylesheet" href="tienda.css">
 <style>
@@ -113,6 +114,10 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 .ck-toggle-btn.on{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
 .btn-geo{width:100%;margin-top:8px;padding:10px;background:#f0f9ff;border:1.5px solid #bfdbfe;border-radius:10px;color:#1d4ed8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .18s}
 .btn-geo:hover{background:#dbeafe}
+/* Mapa de ubicación en checkout */
+#ckMapaWrap{margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #bfdbfe;display:none}
+#ckMapa{height:180px;width:100%}
+#geoStatus{font-size:12px;color:#64748b;margin-top:5px;min-height:16px}
 </style>
 </head>
 <body class="has-bottom-nav">
@@ -515,7 +520,10 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
           </button>
           <input type="hidden" id="ckLat">
           <input type="hidden" id="ckLng">
-          <div id="geoStatus" style="font-size:12px;color:#64748b;margin-top:4px"></div>
+          <div id="geoStatus"></div>
+          <div id="ckMapaWrap">
+            <div id="ckMapa"></div>
+          </div>
         </div>
 
         <div class="fg">
@@ -525,7 +533,8 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
             <?php foreach ($metodos_pago as $m):
               $nLow      = strtolower($m['nombre']);
               $esMP      = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
-              $esTarjeta = str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito');
+              $esTarjeta = str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito')
+                        || str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
             ?>
             <button type="button"
               class="ck-pago-card<?= $esTarjeta ? ' prox' : '' ?>"
@@ -591,6 +600,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 // ── PHP DATA ────────────────────────────
@@ -740,7 +750,14 @@ function openCheckout(){
   document.getElementById('checkoutModal').classList.add('on');
   document.body.style.overflow='hidden';
 }
-function closeCheckout(){document.getElementById('checkoutModal').classList.remove('on');document.body.style.overflow=''}
+function closeCheckout(){
+  document.getElementById('checkoutModal').classList.remove('on');
+  document.body.style.overflow='';
+  // Resetear estado de ubicación
+  document.getElementById('ckMapaWrap').style.display='none';
+  document.getElementById('geoStatus').textContent='';
+  if(_ckMap){_ckMap.remove();_ckMap=null;_ckMarker=null;}
+}
 function showCkStep(id){document.querySelectorAll('.ck-step').forEach(s=>s.classList.remove('on'));document.getElementById(id)?.classList.add('on')}
 let _currentTab='guest';
 function switchCkTab(tab,btn){
@@ -808,7 +825,8 @@ function seleccionarMetodo(id,btn,esMP){
   document.getElementById('ckMetodoId').value=id;
   document.querySelectorAll('.ck-pago-card').forEach(c=>c.classList.remove('on'));
   btn.classList.add('on');
-  setAlert('dAlert','','');
+  // Solo ocultar el alerta, sin mostrar nada nuevo
+  const al=document.getElementById('dAlert');if(al)al.classList.remove('on');
 }
 
 let _tipoEntrega = 'retiro';
@@ -825,18 +843,84 @@ function setEntrega(tipo){
     : 'Tu pedido fue registrado. Te esperamos en la sucursal.';
 }
 
-function usarMiUbicacion(){
+// ── MAPA LEAFLET (instancia única) ──────────────────────────────────────────
+let _ckMap=null, _ckMarker=null;
+
+function _initMapa(lat,lng){
+  const wrap=document.getElementById('ckMapaWrap');
+  wrap.style.display='block';
+  if(!_ckMap){
+    _ckMap=L.map('ckMapa',{zoomControl:true,attributionControl:false}).setView([lat,lng],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(_ckMap);
+    // Pin personalizado rosado
+    const icon=L.divIcon({
+      html:'<div style="background:#c88e99;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>',
+      iconSize:[16,16],iconAnchor:[8,8],className:''
+    });
+    _ckMarker=L.marker([lat,lng],{icon,draggable:true}).addTo(_ckMap);
+    // Al mover el pin a mano → actualizar coords y dirección
+    _ckMarker.on('dragend',async function(){
+      const p=this.getLatLng();
+      document.getElementById('ckLat').value=p.lat;
+      document.getElementById('ckLng').value=p.lng;
+      const dir=await _geocodeInverso(p.lat,p.lng);
+      if(dir) document.getElementById('ckDireccion').value=dir;
+    });
+  } else {
+    _ckMap.setView([lat,lng],16);
+    _ckMarker.setLatLng([lat,lng]);
+  }
+  // Forzar redibujado (el modal puede ocultar el mapa al inicio)
+  setTimeout(()=>_ckMap.invalidateSize(),150);
+}
+
+async function _geocodeInverso(lat,lng){
+  try{
+    const r=await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=es`,
+      {headers:{'User-Agent':'CanettoApp/1.0'}}
+    );
+    const d=await r.json();
+    if(!d||!d.address) return null;
+    const a=d.address;
+    // Armar dirección estilo Argentina: Calle Altura, Localidad
+    const calle=(a.road||a.pedestrian||a.footway||'');
+    const altura=(a.house_number||'');
+    const local=(a.city||a.town||a.village||a.suburb||a.municipality||'');
+    const prov=(a.state||'');
+    let dir=[calle+(altura?' '+altura:''),local,prov].filter(Boolean).join(', ');
+    return dir||d.display_name||null;
+  }catch{return null;}
+}
+
+async function usarMiUbicacion(){
   if(!navigator.geolocation){setAlert('dAlert','Tu navegador no soporta geolocalización','err');return}
   const btn=document.getElementById('btnGeo'),st=document.getElementById('geoStatus');
-  btn.disabled=true;btn.textContent='📍 Obteniendo...';st.textContent='';
+  btn.disabled=true;btn.textContent='📍 Obteniendo ubicación...';st.textContent='';
   navigator.geolocation.getCurrentPosition(
-    pos=>{
-      document.getElementById('ckLat').value=pos.coords.latitude;
-      document.getElementById('ckLng').value=pos.coords.longitude;
-      st.textContent='✅ Ubicación obtenida. Podés completar la dirección arriba para más detalle.';
+    async pos=>{
+      const lat=pos.coords.latitude,lng=pos.coords.longitude;
+      document.getElementById('ckLat').value=lat;
+      document.getElementById('ckLng').value=lng;
+      // Mostrar mapa
+      _initMapa(lat,lng);
+      // Reverse geocoding
+      st.textContent='Buscando dirección...';
+      const dir=await _geocodeInverso(lat,lng);
+      if(dir){
+        document.getElementById('ckDireccion').value=dir;
+        st.textContent='✅ Dirección autocompletada. Podés editarla si hace falta.';
+      } else {
+        st.textContent='✅ Ubicación obtenida. Completá la dirección arriba.';
+      }
+      btn.disabled=false;btn.textContent='📍 Actualizar ubicación';
+    },
+    err=>{
+      const msgs={1:'Permiso denegado. Activá la ubicación en tu navegador.',2:'No se pudo detectar la ubicación.',3:'Tiempo de espera agotado.'};
+      st.textContent=msgs[err.code]||'No se pudo obtener la ubicación.';
       btn.disabled=false;btn.textContent='📍 Usar mi ubicación actual';
     },
-    ()=>{st.textContent='No se pudo obtener la ubicación. Escribí tu dirección manualmente.';btn.disabled=false;btn.textContent='📍 Usar mi ubicación actual'}
+    {enableHighAccuracy:true,timeout:10000,maximumAge:0}
   );
 }
 
@@ -862,6 +946,7 @@ async function confirmOrder(){
       direccion_entrega:_tipoEntrega==='envio'?document.getElementById('ckDireccion').value.trim():'',
       lat_entrega:document.getElementById('ckLat')?.value||null,
       lng_entrega:document.getElementById('ckLng')?.value||null,
+      es_mp:_selectedMetodoEsMP,
     };
     const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
     if(d.success){

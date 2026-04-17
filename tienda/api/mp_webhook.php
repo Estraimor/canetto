@@ -38,27 +38,23 @@ if ($type === 'payment') {
     $pedidoId = (int)substr($extRef, 8);
     if (!$pedidoId) exit;
 
-    // Mapear status MP → estado de la venta (ajustar IDs según la tabla estado_venta)
+    // Mapear status MP → ID de estado_venta
+    // 1=Pendiente, 5=Pendiente de Pago, 6=Cancelado
     $estadoMap = [
-        'approved'    => 'pagado',
-        'pending'     => 'pendiente_pago',
-        'in_process'  => 'pendiente_pago',
-        'rejected'    => 'cancelado',
-        'cancelled'   => 'cancelado',
+        'approved'   => 1, // Pago confirmado → pasa a Pendiente (listo para preparar)
+        'pending'    => 5, // Aún procesando → Pendiente de Pago
+        'in_process' => 5, // Aún procesando → Pendiente de Pago
+        'rejected'   => 6, // Pago rechazado → Cancelado (por falta de pago)
+        'cancelled'  => 6, // Pago cancelado → Cancelado (por falta de pago)
     ];
-    $nuevoEstado = $estadoMap[$status] ?? null;
-    if (!$nuevoEstado) exit;
+    $nuevoEstadoId = $estadoMap[$status] ?? null;
+    if (!$nuevoEstadoId) exit;
 
     try {
         $pdo = Conexion::conectar();
-        // Buscar el idestado por nombre
-        $stmt = $pdo->prepare("SELECT idestado_venta FROM estado_venta WHERE nombre = ? LIMIT 1");
-        $stmt->execute([$nuevoEstado]);
-        $row = $stmt->fetch();
-        if (!$row) exit;
 
         $pdo->prepare("UPDATE ventas SET estado_venta_idestado_venta = ?, updated_at = NOW() WHERE idventas = ?")
-            ->execute([$row['idestado_venta'], $pedidoId]);
+            ->execute([$nuevoEstadoId, $pedidoId]);
 
         // Guardar el payment_id de MP en la venta (columna opcional)
         try {
