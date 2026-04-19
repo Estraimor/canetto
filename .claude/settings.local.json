@@ -14,6 +14,7 @@
       "Bash(composer --version)",
       "Bash(composer require:*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost/canetto/img/canetto_logo.jpg)",
+<<<<<<< HEAD
       "Bash(mysql -u root -e \"DROP DATABASE IF EXISTS u966473590_canetto; CREATE DATABASE u966473590_canetto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\")",
       "Read(//c/wamp64/bin/mysql/**)",
       "Read(//c/wamp64/**)",
@@ -25,6 +26,12 @@
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT * FROM unidad_medida;')",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e ' *)",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT idunidad_medida FROM unidad_medida WHERE abreviatura='\\\\''cm'\\\\'';')"
+=======
+      "Bash(\\\\.js)",
+      "Bash(\\\\.css\")",
+      "Bash(grep -E \"\\\\\\\\.php|\\\\\\\\.js|\\\\\\\\.css\")",
+      "Bash(grep -v \"^\\\\\\\\.\")"
+>>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
     ]
   }
 }

@@ -43,8 +43,11 @@ try {
 
     $productos = $pdo->query("
         SELECT p.idproductos, p.nombre, p.precio, p.tipo, p.imagen,
+<<<<<<< HEAD
                COALESCE(p.descripcion, '') AS descripcion,
                COALESCE(p.especificaciones, '') AS especificaciones,
+=======
+>>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
             CASE
                 WHEN p.tipo = 'box' THEN (
                     SELECT COALESCE(MIN(FLOOR(sp2.stock_actual / bp.cantidad)), 0)
@@ -59,7 +62,11 @@ try {
         FROM productos p
         LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
         WHERE p.activo = 1
+<<<<<<< HEAD
         GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen, p.descripcion, p.especificaciones
+=======
+        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen
+>>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
         ORDER BY CASE p.tipo WHEN 'box' THEN 0 ELSE 1 END, p.nombre ASC
     ")->fetchAll();
 

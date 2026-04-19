@@ -56,6 +56,7 @@ try {
         ]);
     }
 
+<<<<<<< HEAD
     // ── Sin Stock (stock=0 para HECHO o CONGELADO) — una vez por día ────────────
     $sinStock = $pdo->query("
         SELECT p.nombre, sp.stock_actual, sp.tipo_stock
@@ -92,6 +93,14 @@ try {
         JOIN productos p ON p.idproductos = sp.productos_idproductos
         WHERE sp.stock_actual > 0 AND sp.stock_actual <= sp.stock_minimo
           AND sp.tipo_stock IN ('HECHO','CONGELADO')
+=======
+    // ── Stock bajo (una vez por día por producto) ─────────────────────────────
+    $stockBajo = $pdo->query("
+        SELECT p.nombre, sp.stock_actual, sp.stock_minimo
+        FROM stock_productos sp
+        JOIN productos p ON p.idproductos = sp.productos_idproductos
+        WHERE sp.stock_actual <= sp.stock_minimo AND sp.tipo_stock = 'HECHO'
+>>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
           AND NOT EXISTS (
               SELECT 1 FROM notificaciones_admin n
               WHERE n.tipo = 'stock_bajo'
@@ -107,8 +116,13 @@ try {
             INSERT INTO notificaciones_admin (tipo, titulo, descripcion, link)
             VALUES ('stock_bajo', :titulo, :desc, :link)
         ")->execute([
+<<<<<<< HEAD
             ':titulo' => "⚠ Stock bajo: {$s['nombre']} ({$s['tipo_stock']})",
             ':desc'   => "Stock {$tipo}: {$s['stock_actual']} u. / Mínimo: {$s['stock_minimo']} u.",
+=======
+            ':titulo' => "Stock bajo: {$s['nombre']}",
+            ':desc'   => "Stock actual: {$s['stock_actual']} / Mínimo: {$s['stock_minimo']}",
+>>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
             ':link'   => URL_ADMIN . '/stock/index.php',
         ]);
     }

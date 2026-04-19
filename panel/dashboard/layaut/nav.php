@@ -269,10 +269,17 @@ $current = $_SERVER['PHP_SELF'];
                 Sucursales
             </a>
 
+<<<<<<< HEAD
             <a href="<?= URL_ASSETS ?>/configuraciones/paneles.php"
                class="<?= str_contains($current,'paneles') || str_contains($current,'ofertas') ? 'active' : '' ?>">
                 <i class="fa-solid fa-table-columns"></i>
                 Paneles
+=======
+            <a href="<?= URL_ASSETS ?>/configuraciones/ofertas.php"
+               class="<?= str_contains($current,'ofertas') ? 'active' : '' ?>">
+                <i class="fa-solid fa-tag"></i>
+                Ofertas Tienda
+>>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
             </a>
 
             <a href="<?= URL_ASSETS ?>/configuraciones/repartidores.php"
