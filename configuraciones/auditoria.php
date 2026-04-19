@@ -16,7 +16,7 @@ $modulos = $pdo->query("SELECT COUNT(DISTINCT modulo) FROM auditoria WHERE modul
 $sucursales = $pdo->query("SELECT DISTINCT COALESCE(sucursal_nombre,'Casa Central') AS nombre FROM auditoria ORDER BY nombre")->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
-<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= URL_ASSETS ?>/configuraciones/cfg.css">
 <style>
 .audit-filters {
     display: flex;
@@ -61,7 +61,7 @@ $sucursales = $pdo->query("SELECT DISTINCT COALESCE(sucursal_nombre,'Casa Centra
 
     <div class="cfg-page-header">
         <div class="cfg-page-header__left">
-            <a class="cfg-back" href="<?= base() ?>/configuraciones/index.php">
+            <a class="cfg-back" href="<?= URL_ASSETS ?>/configuraciones/index.php">
                 <i class="fa-solid fa-chevron-left" style="font-size:.6rem"></i> Configuraciones
             </a>
             <div class="cfg-page-title">

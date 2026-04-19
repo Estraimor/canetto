@@ -96,28 +96,65 @@ include '../../../panel/dashboard/layaut/nav.php';
 <div class="modal-overlay" id="modal-repartidor" style="display:none;">
   <div class="modal-box" style="max-width:460px">
     <div class="modal-header">
-      <h3>🛵 Asignar repartidor</h3>
+      <h3>🛵 Forma de envío</h3>
       <button class="modal-close" onclick="PedidosApp.cerrarModalRep()">✕</button>
     </div>
     <div class="modal-body">
       <div id="rep-cliente-info"></div>
+
       <div style="margin-top:14px">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:6px">¿Cómo se entrega?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <button type="button" id="btn-entrega-envio" onclick="setTipoEntregaModal('envio')"
+            style="padding:10px;border:2px solid #3b82f6;background:#eff6ff;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;color:#1d4ed8">
+            🛵 Envío a domicilio
+          </button>
+          <button type="button" id="btn-entrega-retiro" onclick="setTipoEntregaModal('retiro')"
+            style="padding:10px;border:2px solid #e2e8f0;background:white;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;color:#64748b">
+            🏪 Retiro en local
+          </button>
+        </div>
+      </div>
+
+      <div id="rep-envio-fields">
         <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:6px">¿Quién lo lleva?</label>
         <select id="rep-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;background:#f8fafc">
-          <option value="">— Elegí un repartidor —</option>
+          <option value="">— Elegí cómo se envía —</option>
         </select>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-cancelar" onclick="PedidosApp.cerrarModalRep()">Cancelar</button>
-      <button class="btn-confirmar" onclick="PedidosApp.confirmarRepartidor()">🛵 Confirmar y enviar</button>
+      <button class="btn-confirmar" id="btn-confirmar-rep" onclick="PedidosApp.confirmarRepartidor()">✓ Confirmar</button>
     </div>
   </div>
 </div>
 
+<script>
+let _modalTipoEntrega = 'envio';
+function setTipoEntregaModal(tipo) {
+  _modalTipoEntrega = tipo;
+  const envioBtn  = document.getElementById('btn-entrega-envio');
+  const retiroBtn = document.getElementById('btn-entrega-retiro');
+  const repFields = document.getElementById('rep-envio-fields');
+  const confBtn   = document.getElementById('btn-confirmar-rep');
+  if (tipo === 'envio') {
+    envioBtn.style.borderColor  = '#3b82f6'; envioBtn.style.background  = '#eff6ff'; envioBtn.style.color = '#1d4ed8';
+    retiroBtn.style.borderColor = '#e2e8f0'; retiroBtn.style.background = 'white';   retiroBtn.style.color = '#64748b';
+    repFields.style.display = 'block';
+    confBtn.textContent = '🛵 Confirmar envío';
+  } else {
+    retiroBtn.style.borderColor = '#3b82f6'; retiroBtn.style.background  = '#eff6ff'; retiroBtn.style.color = '#1d4ed8';
+    envioBtn.style.borderColor  = '#e2e8f0'; envioBtn.style.background = 'white';    envioBtn.style.color = '#64748b';
+    repFields.style.display = 'none';
+    confBtn.textContent = '🏪 Confirmar retiro';
+  }
+}
+</script>
+
 <!-- TOAST -->
 <div id="toast" class="toast" style="display:none;"></div>
 
-<script src="pedidos.js"></script>
+<script src="pedidos.js?v=<?= filemtime(__DIR__.'/pedidos.js') ?>"></script>
 
 <?php include '../../../panel/dashboard/layaut/footer.php'; ?>

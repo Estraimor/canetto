@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,7 +19,7 @@
   --transition: .22s cubic-bezier(.4,0,.2,1);
 }
 
-body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
 
 .pedidos-wrapper { padding: 2.5rem 2rem 5rem; max-width: 1400px; margin: 0 auto; }
 
@@ -35,7 +35,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   letter-spacing: -.03em; line-height: 1;
 }
 .pedidos-header .subtitle {
-  font-size: .75rem; font-weight: 500; letter-spacing: .12em;
+  font-size: .88rem; font-weight: 500; letter-spacing: .12em;
   text-transform: uppercase; color: var(--ink-soft); margin-top: .5rem;
 }
 .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -44,14 +44,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 .filter-select, .filter-input {
   padding: .55rem .9rem; border: 1px solid var(--rule-dark);
   border-radius: var(--radius); background: var(--white);
-  font-family: 'DM Sans', sans-serif; font-size: .84rem; color: var(--ink);
+  font-family: 'DM Sans', sans-serif; font-size: .95rem; color: var(--ink);
   outline: none; transition: border-color var(--transition); cursor: pointer;
 }
 .filter-select:focus, .filter-input:focus { border-color: var(--ink); }
 .btn-filter {
   padding: .55rem 1.1rem; background: var(--white); color: var(--ink);
   border: 1px solid var(--rule-dark); border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .82rem;
+  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .93rem;
   cursor: pointer; transition: all var(--transition);
 }
 .btn-filter:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }
@@ -60,7 +60,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   display: inline-flex; align-items: center; gap: 6px;
   padding: .6rem 1.2rem; background: var(--ink); color: var(--white);
   text-decoration: none; border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .84rem;
+  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .95rem;
   transition: all var(--transition); white-space: nowrap; box-shadow: var(--shadow-sm);
 }
 .btn-nueva-venta:hover { background: var(--ink-mid); transform: translateY(-1px); box-shadow: var(--shadow-md); }
@@ -74,7 +74,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   display: flex; align-items: center; gap: 8px;
   background: var(--white); border: 1px solid var(--rule);
   border-radius: var(--radius); padding: .9rem 1.1rem;
-  font-size: .82rem; font-weight: 500; color: var(--ink-mid);
+  font-size: .93rem; font-weight: 500; color: var(--ink-mid);
   cursor: pointer; transition: all var(--transition); user-select: none;
 }
 .stat-pill:hover { border-color: var(--ink); color: var(--ink); box-shadow: var(--shadow-sm); }
@@ -97,12 +97,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   background: var(--white); border: 1px solid var(--rule);
   border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm);
 }
-.ventas-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.ventas-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
 .ventas-table thead { background: var(--ink); }
 .ventas-table thead th {
   padding: 13px 16px; text-align: left; color: var(--white);
   font-family: 'DM Sans', sans-serif; font-weight: 600;
-  font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+  font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
 }
 .ventas-table tbody tr { border-bottom: 1px solid var(--rule); transition: background var(--transition); }
 .ventas-table tbody tr:last-child { border-bottom: none; }
@@ -129,30 +129,30 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 
 .venta-id { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--ink); font-size: .95rem; }
 
-.cliente-info strong { display: block; color: var(--ink); font-weight: 600; font-size: .86rem; }
-.cliente-info small  { color: var(--ink-soft); font-size: .74rem; }
+.cliente-info strong { display: block; color: var(--ink); font-weight: 600; font-size: .97rem; }
+.cliente-info small  { color: var(--ink-soft); font-size: .97rem; }
 
 .productos-mini { display: flex; flex-wrap: wrap; gap: 3px; max-width: 200px; }
 .prod-tag {
   background: var(--paper); border: 1px solid var(--rule);
   border-radius: 4px; padding: 2px 7px;
-  font-size: .72rem; color: var(--ink-mid); white-space: nowrap; font-weight: 500;
+  font-size: .85rem; color: var(--ink-mid); white-space: nowrap; font-weight: 500;
 }
 
 .total-cell { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--ink); font-size: 1rem; }
 .pago-badge {
   background: var(--paper); border: 1px solid var(--rule);
   border-radius: var(--radius); padding: 3px 9px;
-  font-size: .74rem; font-weight: 600; color: var(--ink-mid); white-space: nowrap;
+  font-size: .97rem; font-weight: 600; color: var(--ink-mid); white-space: nowrap;
 }
-.fecha-cell { color: var(--ink-soft); font-size: .78rem; line-height: 1.5; }
-.fecha-cell strong { display: block; color: var(--ink-mid); font-size: .84rem; font-weight: 600; }
+.fecha-cell { color: var(--ink-soft); font-size: .9rem; line-height: 1.5; }
+.fecha-cell strong { display: block; color: var(--ink-mid); font-size: .95rem; font-weight: 600; }
 
 /* ── ESTADO PILL COLORS ── */
 .estado-pill {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 10px; border-radius: 20px;
-  font-size: .72rem; font-weight: 700; white-space: nowrap; letter-spacing: .03em;
+  font-size: .85rem; font-weight: 700; white-space: nowrap; letter-spacing: .03em;
 }
 .est-1 { background: #fef9e7; color: #8a6200; border: 1px solid #e8d080; }
 .est-2 { background: #e8f0fc; color: #1565c0; border: 1px solid #90b4e8; }
@@ -175,7 +175,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 .estado-select {
   padding: 5px 10px; border: 1px solid var(--rule);
   border-radius: var(--radius); background: var(--white);
-  font-family: 'DM Sans', sans-serif; font-size: .8rem; color: var(--ink);
+  font-family: 'DM Sans', sans-serif; font-size: .92rem; color: var(--ink);
   outline: none; cursor: pointer;
 }
 .estado-select:focus { border-color: var(--ink); }
@@ -198,7 +198,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 .btn-accion {
   display: inline-flex; align-items: center; gap: .35rem;
   padding: .38rem .85rem; border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-size: .74rem; font-weight: 600;
+  font-family: 'DM Sans', sans-serif; font-size: .97rem; font-weight: 600;
   cursor: pointer; border: 1px solid var(--rule);
   transition: all var(--transition); white-space: nowrap;
   background: var(--white); color: var(--ink);
@@ -246,17 +246,17 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 .rep-modal-info strong { color:#1e293b; }
 
 .detalle-section { margin-bottom:1.4rem; }
-.detalle-section h4 { font-size:.7rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--rule); }
+.detalle-section h4 { font-size:.85rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--rule); }
 .detalle-info-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
-.info-item label { font-size:.7rem;color:var(--ink-soft);font-weight:600;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em; }
+.info-item label { font-size:.85rem;color:var(--ink-soft);font-weight:600;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em; }
 .info-item span { font-size:.88rem;color:var(--ink);font-weight:600; }
 .detalle-items-list { display:flex;flex-direction:column;gap:6px; }
 .detalle-item { display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);font-size:.85rem; }
 .detalle-item .di-nombre { color:var(--ink);font-weight:600; }
-.detalle-item .di-qty    { color:var(--ink-soft);font-size:.78rem; }
+.detalle-item .di-qty    { color:var(--ink-soft);font-size:.9rem; }
 .detalle-item .di-precio { font-family:'Playfair Display',serif;font-weight:700;color:var(--ink); }
 .detalle-total { background:var(--ink);color:#fff;border-radius:var(--radius);padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px; }
-.detalle-total span:first-child { font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.7; }
+.detalle-total span:first-child { font-size:.9rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.7; }
 .detalle-total span:last-child  { font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700; }
 
 /* ── TOAST ── */
@@ -280,3 +280,4 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   .pedidos-header { flex-direction:column;align-items:flex-start; }
   .stats-bar { grid-template-columns:1fr 1fr; }
 }
+

@@ -79,14 +79,18 @@ function plantillaEmail(string $titulo, string $contenido): string
         <table width="560" cellpadding="0" cellspacing="0"
                style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
 
-          <!-- Header rosado -->
+          <!-- Header rosado con logo -->
           <tr>
             <td align="center"
-                style="background:linear-gradient(135deg,#c88e99 0%,#a46678 100%);padding:36px 40px 28px;">
-              <div style="font-size:32px;font-weight:900;letter-spacing:3px;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
-                🍪 CANETTO
+                style="background:linear-gradient(135deg,#c88e99 0%,#a46678 100%);padding:32px 40px 24px;">
+              <img src="https://canettocookies.com/img/canetto_logo.jpg"
+                   alt="Canetto Cookies"
+                   width="90" height="90"
+                   style="border-radius:50%;display:block;margin:0 auto 14px;border:3px solid rgba(255,255,255,.4);">
+              <div style="font-size:22px;font-weight:900;letter-spacing:4px;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;text-transform:uppercase;">
+                CANETTO
               </div>
-              <div style="color:rgba(255,255,255,.85);font-size:13px;margin-top:4px;letter-spacing:1px;">
+              <div style="color:rgba(255,255,255,.85);font-size:12px;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">
                 Cookies &amp; más
               </div>
             </td>

@@ -12,7 +12,19 @@
       "Bash(mysql -u root -e \"DESCRIBE canetto.ventas;\")",
       "Bash(wc -l /c/wamp64/www/canetto/repartidor/*.php /c/wamp64/www/canetto/repartidor/api/*.php)",
       "Bash(composer --version)",
-      "Bash(composer require:*)"
+      "Bash(composer require:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost/canetto/img/canetto_logo.jpg)",
+      "Bash(mysql -u root -e \"DROP DATABASE IF EXISTS u966473590_canetto; CREATE DATABASE u966473590_canetto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\")",
+      "Read(//c/wamp64/bin/mysql/**)",
+      "Read(//c/wamp64/**)",
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root -e 'DROP DATABASE IF EXISTS u966473590_canetto; CREATE DATABASE u966473590_canetto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;')",
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SHOW TABLES;')",
+      "Bash(python3 -c ' *)",
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT * FROM unidad_medida;')",
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e ' *)",
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT idunidad_medida FROM unidad_medida WHERE abreviatura='\\\\''cm'\\\\'';')"
     ]
   }
 }

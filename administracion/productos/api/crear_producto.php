@@ -16,18 +16,49 @@ try {
     $receta       = $_POST['recetas_idrecetas'] ?? null;
     $minCongelado = $_POST['min_congelado'] ?? 0;
     $minHecho     = $_POST['min_hecho'] ?? 0;
+    $imagenActual = $_POST['imagen_actual'] ?? null; // imagen existente
 
     if (!$nombre) throw new Exception("Nombre obligatorio");
+
+    // ── Procesar imagen ────────────────────────────────────────────────────
+    $imgDir    = __DIR__ . '/../../../img/productos';
+    if (!is_dir($imgDir)) mkdir($imgDir, 0755, true);
+    $imagenFinal = $imagenActual ?: null;
+
+    if (!empty($_FILES['imagen']['name'])) {
+        $file    = $_FILES['imagen'];
+        $ext     = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg','jpeg','png','webp'];
+        if (!in_array($ext, $allowed)) throw new Exception("Tipo de imagen no permitido");
+        if ($file['size'] > 2 * 1024 * 1024) throw new Exception("La imagen supera 2 MB");
+        if ($file['error'] !== UPLOAD_ERR_OK) throw new Exception("Error al subir imagen");
+
+        $newName = uniqid('prod_') . '.' . $ext;
+        if (!move_uploaded_file($file['tmp_name'], $imgDir . '/' . $newName)) {
+            throw new Exception("No se pudo guardar la imagen");
+        }
+        // Borrar imagen anterior si existe
+        if ($imagenActual && file_exists($imgDir . '/' . $imagenActual)) {
+            @unlink($imgDir . '/' . $imagenActual);
+        }
+        $imagenFinal = $newName;
+    } elseif ($imagenActual === '') {
+        // Quitar imagen explícitamente
+        if ($imagenActual && file_exists($imgDir . '/' . $imagenActual)) {
+            @unlink($imgDir . '/' . $imagenActual);
+        }
+        $imagenFinal = null;
+    }
 
     $pdo->beginTransaction();
 
     if (!$idProducto) {
         // Crear producto nuevo
         $stmt = $pdo->prepare("
-            INSERT INTO productos (nombre, precio, recetas_idrecetas, tipo, activo)
-            VALUES (?,?,?,?,1)
+            INSERT INTO productos (nombre, precio, recetas_idrecetas, tipo, activo, imagen)
+            VALUES (?,?,?,?,1,?)
         ");
-        $stmt->execute([$nombre, $precio, $tipo === 'producto' ? $receta : null, $tipo]);
+        $stmt->execute([$nombre, $precio, $tipo === 'producto' ? $receta : null, $tipo, $imagenFinal]);
         $idProducto = $pdo->lastInsertId();
 
         if ($tipo === 'producto') {
@@ -48,10 +79,10 @@ try {
         // Actualizar producto existente
         $stmt = $pdo->prepare("
             UPDATE productos
-            SET nombre = ?, precio = ?, recetas_idrecetas = ?, tipo = ?
+            SET nombre = ?, precio = ?, recetas_idrecetas = ?, tipo = ?, imagen = ?
             WHERE idproductos = ?
         ");
-        $stmt->execute([$nombre, $precio, $tipo === 'producto' ? $receta : null, $tipo, $idProducto]);
+        $stmt->execute([$nombre, $precio, $tipo === 'producto' ? $receta : null, $tipo, $imagenFinal, $idProducto]);
 
         $pdo->prepare("DELETE FROM box_productos WHERE producto_box = ?")->execute([$idProducto]);
 

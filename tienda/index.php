@@ -42,7 +42,9 @@ try {
     }
 
     $productos = $pdo->query("
-        SELECT p.idproductos, p.nombre, p.precio, p.tipo,
+        SELECT p.idproductos, p.nombre, p.precio, p.tipo, p.imagen,
+               COALESCE(p.descripcion, '') AS descripcion,
+               COALESCE(p.especificaciones, '') AS especificaciones,
             CASE
                 WHEN p.tipo = 'box' THEN (
                     SELECT COALESCE(MIN(FLOOR(sp2.stock_actual / bp.cantidad)), 0)
@@ -57,7 +59,7 @@ try {
         FROM productos p
         LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
         WHERE p.activo = 1
-        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo
+        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen, p.descripcion, p.especificaciones
         ORDER BY CASE p.tipo WHEN 'box' THEN 0 ELSE 1 END, p.nombre ASC
     ")->fetchAll();
 
@@ -72,6 +74,9 @@ try {
     foreach ($boxContenidoRaw as $row) {
         $boxContenido[$row['producto_box']][] = ['nombre' => $row['nombre'], 'cantidad' => $row['cantidad']];
     }
+
+    try { $pdo->exec("ALTER TABLE productos ADD COLUMN descripcion TEXT NULL"); } catch (Throwable $e) {}
+    try { $pdo->exec("ALTER TABLE productos ADD COLUMN especificaciones TEXT NULL"); } catch (Throwable $e) {}
 
     try {
         $pdo->exec("ALTER TABLE sucursal ADD COLUMN latitud DECIMAL(10,8) NULL");
@@ -104,6 +109,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <title>Canetto — Galletitas Artesanales</title>
 <meta name="description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <link rel="stylesheet" href="tienda.css">
 <style>
@@ -113,6 +119,10 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 .ck-toggle-btn.on{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
 .btn-geo{width:100%;margin-top:8px;padding:10px;background:#f0f9ff;border:1.5px solid #bfdbfe;border-radius:10px;color:#1d4ed8;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .18s}
 .btn-geo:hover{background:#dbeafe}
+/* Mapa de ubicación en checkout */
+#ckMapaWrap{margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #bfdbfe;display:none}
+#ckMapa{height:180px;width:100%}
+#geoStatus{font-size:12px;color:#64748b;margin-top:5px;min-height:16px}
 </style>
 </head>
 <body class="has-bottom-nav">
@@ -122,7 +132,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <header class="t-nav">
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
-      <img src="../img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
+      <img src="<?= URL_ASSETS ?>/img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
     </div>
     <span class="t-brand-name">Canetto</span>
   </a>
@@ -231,9 +241,17 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   $nombre = htmlspecialchars($p['nombre']);
   $precio = number_format((float)$p['precio'], 0, ',', '.');
 ?>
-<div class="prod-card" data-tipo="<?= $p['tipo'] ?>">
+<div class="prod-card" data-tipo="<?= $p['tipo'] ?>"
+  onclick="abrirDetalle(<?= (int)$p['idproductos'] ?>)">
   <div class="prod-thumb">
-    <?= $emoji ?>
+    <?php if (!empty($p['imagen'])): ?>
+      <img src="<?= URL_ASSETS ?>/img/productos/<?= htmlspecialchars($p['imagen']) ?>"
+           alt="<?= $nombre ?>"
+           class="prod-thumb-img"
+           loading="lazy">
+    <?php else: ?>
+      <span class="prod-thumb-emoji"><?= $emoji ?></span>
+    <?php endif; ?>
     <span class="stock-pill <?= $pill ?>"><?= $pillTxt ?></span>
   </div>
   <div class="prod-body">
@@ -242,15 +260,9 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
     <div class="prod-stock-txt"><?= $stockTxt ?></div>
     <?php if ($p['tipo'] === 'box'): ?><span class="prod-type-tag">Box</span><?php endif; ?>
   </div>
-  <button class="btn-add-cart" <?= $disabled ?>
-    data-id="<?= (int)$p['idproductos'] ?>"
-    data-nombre="<?= $nombre ?>"
-    data-precio="<?= (float)$p['precio'] ?>"
-    data-tipo="<?= $p['tipo'] ?>"
-    data-stock="<?= (int)$stock ?>"
-    onclick="addToCart(this)">
-    + Agregar
-  </button>
+  <div class="btn-ver-detalle<?= $stock <= 0 ? ' disabled' : '' ?>">
+    <?= $stock <= 0 ? 'Sin stock' : 'Ver detalle →' ?>
+  </div>
 </div>
 <?php endforeach; endif; ?>
 </div>
@@ -359,6 +371,36 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
     <div style="font-size:20px;font-weight:800;margin-bottom:16px" id="boxModalPrecio"></div>
     <button class="btn-add-cart" id="boxModalBtn" style="width:100%;justify-content:center;font-size:15px;padding:14px"
       onclick="addBoxDesdeModal()">
+      + Agregar al carrito
+    </button>
+  </div>
+</div>
+
+<!-- ── PRODUCT DETAIL SHEET ──────── -->
+<div class="prod-detail-overlay" id="pdOverlay" onclick="cerrarDetalle()"></div>
+<div class="prod-detail-sheet" id="pdSheet" style="position:fixed;">
+  <div class="pd-img-wrap" id="pdImgWrap">
+    <span id="pdEmoji">🍪</span>
+  </div>
+  <button class="pd-close" onclick="cerrarDetalle()" style="position:absolute;top:14px;right:16px;z-index:2">×</button>
+  <div class="pd-body">
+    <div class="pd-name" id="pdNombre"></div>
+    <div class="pd-price" id="pdPrecio"></div>
+    <div class="pd-stock-row">
+      <span class="stock-pill" id="pdStockPill"></span>
+      <span style="font-size:13px;color:#888" id="pdStockTxt"></span>
+    </div>
+    <div class="pd-desc" id="pdDesc" style="display:none"></div>
+    <div class="pd-specs" id="pdSpecs" style="display:none"></div>
+    <div class="pd-qty-row">
+      <span class="pd-qty-label">Cantidad:</span>
+      <div class="pd-qty-ctrl">
+        <button class="pd-qty-btn" onclick="pdCambiarQty(-1)">−</button>
+        <span class="pd-qty-num" id="pdQty">1</span>
+        <button class="pd-qty-btn" onclick="pdCambiarQty(1)">+</button>
+      </div>
+    </div>
+    <button class="pd-add-btn" id="pdAddBtn" onclick="pdAgregarAlCarrito()">
       + Agregar al carrito
     </button>
   </div>
@@ -508,17 +550,51 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
           </button>
           <input type="hidden" id="ckLat">
           <input type="hidden" id="ckLng">
-          <div id="geoStatus" style="font-size:12px;color:#64748b;margin-top:4px"></div>
+          <div id="geoStatus"></div>
+          <div id="ckMapaWrap">
+            <div id="ckMapa"></div>
+          </div>
         </div>
 
         <div class="fg">
           <label>Método de pago *</label>
-          <select id="ckMetodo">
-            <option value="">— Cómo vas a pagar —</option>
-            <?php foreach ($metodos_pago as $m): ?>
-            <option value="<?= $m['idmetodo_pago'] ?>"><?= htmlspecialchars($m['nombre']) ?></option>
+          <input type="hidden" id="ckMetodoId">
+          <div class="ck-pago-grid" id="ckPagoGrid">
+            <?php foreach ($metodos_pago as $m):
+              $nLow      = strtolower($m['nombre']);
+              $esMP      = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
+              $esTarjeta = str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito')
+                        || str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
+            ?>
+            <button type="button"
+              class="ck-pago-card<?= $esTarjeta ? ' prox' : '' ?>"
+              <?= $esTarjeta ? 'disabled' : '' ?>
+              onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false'?>)">
+              <div class="ck-pago-ic">
+                <?php if ($esMP): ?>
+                  <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="26" width="52">
+                    <rect width="56" height="28" rx="5" fill="#009EE3"/>
+                    <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
+                  </svg>
+                <?php elseif ($esTarjeta): ?>
+                  <span style="font-size:22px">💳</span>
+                <?php elseif (str_contains($nLow,'efectivo')||str_contains($nLow,'cash')): ?>
+                  <span style="font-size:22px">💵</span>
+                <?php elseif (str_contains($nLow,'transfer')||str_contains($nLow,'deposito')||str_contains($nLow,'depósito')): ?>
+                  <span style="font-size:22px">🏦</span>
+                <?php else: ?>
+                  <span style="font-size:22px">💰</span>
+                <?php endif; ?>
+              </div>
+              <div class="ck-pago-info">
+                <div class="ck-pago-label"><?= htmlspecialchars($m['nombre']) ?></div>
+                <?php if ($esMP): ?><div class="ck-pago-sub">Pago seguro · Tarjeta, débito, efectivo</div><?php endif; ?>
+                <?php if ($esTarjeta): ?><div class="ck-pago-sub">Disponible próximamente</div><?php endif; ?>
+              </div>
+              <?php if ($esTarjeta): ?><span class="ck-pago-prox">Próximamente</span><?php endif; ?>
+            </button>
             <?php endforeach; ?>
-          </select>
+          </div>
         </div>
         <div class="fg">
           <label>Observaciones (opcional)</label>
@@ -554,10 +630,12 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 // ── PHP DATA ────────────────────────────
 const PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
+const URL_ASSETS_JS = '<?= URL_ASSETS ?>';
 const SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
 const CLIENTE_PHP = <?= json_encode($cliente_id ? ['id'=>$cliente_id,'nombre'=>$cliente_nombre] : null) ?>;
 const BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
@@ -603,6 +681,12 @@ const count=c=>c.reduce((s,i)=>s+i.cantidad,0);
 const fmt=n=>'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:0});
 function emoji(n,t){if(t==='box')return'📦';const l=(n||'').toLowerCase();if(l.includes('alfajor'))return'🍫';if(l.includes('torta'))return'🎂';if(l.includes('brownie'))return'🟫';if(l.includes('muffin')||l.includes('cupcake'))return'🧁';return'🍪'}
 
+function thumbHtml(it){
+  if(it.imagen){
+    return `<div class="cart-item-thumb"><img src="${URL_ASSETS_JS}/img/productos/${encodeURIComponent(it.imagen)}" alt="${it.nombre}" onerror="this.parentElement.innerHTML='${emoji(it.nombre,it.tipo)}'"></div>`;
+  }
+  return `<div class="cart-item-thumb">${emoji(it.nombre,it.tipo)}</div>`;
+}
 function renderCart(){
   const c=getCart(),n=count(c),t=total(c);
   ['cartBadge','fabBadge'].forEach(id=>{const el=document.getElementById(id);el.textContent=n>99?'99+':n;el.classList.toggle('on',n>0)});
@@ -610,7 +694,94 @@ function renderCart(){
   document.getElementById('cartTotal').textContent=fmt(t);
   const w=document.getElementById('cartItemsWrap');
   if(!c.length){w.innerHTML='<div class="cart-empty"><div class="cart-empty-ic">🛒</div><div class="cart-empty-txt">Tu carrito está vacío</div></div>';return}
-  w.innerHTML=c.map(it=>`<div class="cart-item"><div class="cart-item-ic">${emoji(it.nombre,it.tipo)}</div><div class="cart-item-inf"><div class="cart-item-name">${it.nombre}</div><div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="updateQty(${it.id},-1)">−</button><span class="qty-num">${it.cantidad}</span><button class="qty-btn" onclick="updateQty(${it.id},1)">+</button></div></div>`).join('');
+  w.innerHTML=c.map(it=>`<div class="cart-item">${thumbHtml(it)}<div class="cart-item-inf"><div class="cart-item-name">${it.nombre}</div><div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="updateQty(${it.id},-1)">−</button><span class="qty-num">${it.cantidad}</span><button class="qty-btn" onclick="updateQty(${it.id},1)">+</button></div></div>`).join('');
+}
+
+// ── PRODUCT DETAIL ──────────────────────
+let pdActual = null, pdQty = 1;
+function abrirDetalle(id){
+  const p = PRODUCTOS.find(x=>x.idproductos==id);
+  if(!p) return;
+  if(p.tipo==='box'){abrirModalBox(null,p);return;}
+  pdActual = p; pdQty = 1;
+  const stock = parseInt(p.stock_hecho)||0;
+  const sinStock = stock<=0;
+
+  // Imagen o emoji
+  const imgWrap = document.getElementById('pdImgWrap');
+  if(p.imagen){
+    imgWrap.innerHTML=`<img src="${URL_ASSETS_JS}/img/productos/${encodeURIComponent(p.imagen)}" alt="${p.nombre}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='🍪'">`;
+  } else {
+    imgWrap.innerHTML=`<span style="font-size:72px">${p.tipo==='box'?'📦':'🍪'}</span>`;
+  }
+
+  document.getElementById('pdNombre').textContent = p.nombre;
+  document.getElementById('pdPrecio').textContent = '$'+Number(p.precio).toLocaleString('es-AR');
+  document.getElementById('pdQty').textContent = '1';
+
+  // Stock pill
+  const pill = document.getElementById('pdStockPill');
+  const txt  = document.getElementById('pdStockTxt');
+  if(sinStock){
+    pill.className='stock-pill sp-out'; pill.textContent='Sin stock';
+    txt.textContent='No disponible';
+  } else if(stock<=10){
+    pill.className='stock-pill sp-low'; pill.textContent='Pocas unidades';
+    txt.textContent='Quedan '+stock+' u.';
+  } else {
+    pill.className='stock-pill sp-ok'; pill.textContent='Disponible';
+    txt.textContent=stock+' disponibles';
+  }
+
+  // Descripción
+  const descEl = document.getElementById('pdDesc');
+  if(p.descripcion){descEl.textContent=p.descripcion;descEl.style.display='block';}
+  else descEl.style.display='none';
+
+  // Especificaciones
+  const specEl = document.getElementById('pdSpecs');
+  if(p.especificaciones){
+    specEl.innerHTML=`<div class="pd-spec-row"><span class="pd-spec-label">Especificaciones</span><span class="pd-spec-val">${p.especificaciones}</span></div>`;
+    specEl.style.display='flex';
+  } else {
+    specEl.innerHTML=`<div class="pd-spec-row"><span class="pd-spec-label">Tipo</span><span class="pd-spec-val">${p.tipo==='box'?'Box':'Galletita artesanal'}</span></div>`;
+    specEl.style.display='flex';
+  }
+
+  const btn = document.getElementById('pdAddBtn');
+  btn.disabled = sinStock;
+  btn.textContent = sinStock ? 'Sin stock' : '+ Agregar al carrito';
+
+  document.getElementById('pdOverlay').classList.add('on');
+  document.getElementById('pdSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function cerrarDetalle(){
+  document.getElementById('pdOverlay').classList.remove('on');
+  document.getElementById('pdSheet').classList.remove('on');
+  document.body.style.overflow='';
+  pdActual=null;
+}
+function pdCambiarQty(d){
+  if(!pdActual) return;
+  const stock=parseInt(pdActual.stock_hecho)||0;
+  pdQty=Math.max(1,Math.min(pdQty+d,stock));
+  document.getElementById('pdQty').textContent=pdQty;
+}
+function pdAgregarAlCarrito(){
+  if(!pdActual||requireLogin()) return;
+  const p=pdActual, stock=parseInt(p.stock_hecho)||0;
+  const cart=getCart();
+  const ex=cart.find(i=>i.id===p.idproductos);
+  const sumado=(ex?ex.cantidad:0)+pdQty;
+  if(sumado>stock){showToast('No hay suficiente stock','err');return;}
+  if(ex) ex.cantidad+=pdQty;
+  else cart.push({id:p.idproductos,nombre:p.nombre,precio:+p.precio,tipo:p.tipo,imagen:p.imagen||'',cantidad:pdQty});
+  saveCart(cart);
+  showToast(p.nombre+' agregado ✓','ok');
+  const btn=document.getElementById('pdAddBtn');
+  const orig=btn.textContent; btn.textContent='✓ Listo!'; btn.style.background='#2d8a4e';
+  setTimeout(()=>{btn.textContent=orig;btn.style.background='';cerrarDetalle();},900);
 }
 
 // ── CART DRAWER ─────────────────────────
@@ -703,7 +874,14 @@ function openCheckout(){
   document.getElementById('checkoutModal').classList.add('on');
   document.body.style.overflow='hidden';
 }
-function closeCheckout(){document.getElementById('checkoutModal').classList.remove('on');document.body.style.overflow=''}
+function closeCheckout(){
+  document.getElementById('checkoutModal').classList.remove('on');
+  document.body.style.overflow='';
+  // Resetear estado de ubicación
+  document.getElementById('ckMapaWrap').style.display='none';
+  document.getElementById('geoStatus').textContent='';
+  if(_ckMap){_ckMap.remove();_ckMap=null;_ckMarker=null;}
+}
 function showCkStep(id){document.querySelectorAll('.ck-step').forEach(s=>s.classList.remove('on'));document.getElementById(id)?.classList.add('on')}
 let _currentTab='guest';
 function switchCkTab(tab,btn){
@@ -765,6 +943,16 @@ async function doRegister(){
 }
 function backToAuth(){ckCliente=null;showCkStep('ckAuth');syncCkTab()}
 
+let _selectedMetodoId=null,_selectedMetodoEsMP=false;
+function seleccionarMetodo(id,btn,esMP){
+  _selectedMetodoId=id;_selectedMetodoEsMP=esMP;
+  document.getElementById('ckMetodoId').value=id;
+  document.querySelectorAll('.ck-pago-card').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  // Solo ocultar el alerta, sin mostrar nada nuevo
+  const al=document.getElementById('dAlert');if(al)al.classList.remove('on');
+}
+
 let _tipoEntrega = 'retiro';
 function setEntrega(tipo){
   _tipoEntrega = tipo;
@@ -779,23 +967,89 @@ function setEntrega(tipo){
     : 'Tu pedido fue registrado. Te esperamos en la sucursal.';
 }
 
-function usarMiUbicacion(){
+// ── MAPA LEAFLET (instancia única) ──────────────────────────────────────────
+let _ckMap=null, _ckMarker=null;
+
+function _initMapa(lat,lng){
+  const wrap=document.getElementById('ckMapaWrap');
+  wrap.style.display='block';
+  if(!_ckMap){
+    _ckMap=L.map('ckMapa',{zoomControl:true,attributionControl:false}).setView([lat,lng],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(_ckMap);
+    // Pin personalizado rosado
+    const icon=L.divIcon({
+      html:'<div style="background:#c88e99;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>',
+      iconSize:[16,16],iconAnchor:[8,8],className:''
+    });
+    _ckMarker=L.marker([lat,lng],{icon,draggable:true}).addTo(_ckMap);
+    // Al mover el pin a mano → actualizar coords y dirección
+    _ckMarker.on('dragend',async function(){
+      const p=this.getLatLng();
+      document.getElementById('ckLat').value=p.lat;
+      document.getElementById('ckLng').value=p.lng;
+      const dir=await _geocodeInverso(p.lat,p.lng);
+      if(dir) document.getElementById('ckDireccion').value=dir;
+    });
+  } else {
+    _ckMap.setView([lat,lng],16);
+    _ckMarker.setLatLng([lat,lng]);
+  }
+  // Forzar redibujado (el modal puede ocultar el mapa al inicio)
+  setTimeout(()=>_ckMap.invalidateSize(),150);
+}
+
+async function _geocodeInverso(lat,lng){
+  try{
+    const r=await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=es`,
+      {headers:{'User-Agent':'CanettoApp/1.0'}}
+    );
+    const d=await r.json();
+    if(!d||!d.address) return null;
+    const a=d.address;
+    // Armar dirección estilo Argentina: Calle Altura, Localidad
+    const calle=(a.road||a.pedestrian||a.footway||'');
+    const altura=(a.house_number||'');
+    const local=(a.city||a.town||a.village||a.suburb||a.municipality||'');
+    const prov=(a.state||'');
+    let dir=[calle+(altura?' '+altura:''),local,prov].filter(Boolean).join(', ');
+    return dir||d.display_name||null;
+  }catch{return null;}
+}
+
+async function usarMiUbicacion(){
   if(!navigator.geolocation){setAlert('dAlert','Tu navegador no soporta geolocalización','err');return}
   const btn=document.getElementById('btnGeo'),st=document.getElementById('geoStatus');
-  btn.disabled=true;btn.textContent='📍 Obteniendo...';st.textContent='';
+  btn.disabled=true;btn.textContent='📍 Obteniendo ubicación...';st.textContent='';
   navigator.geolocation.getCurrentPosition(
-    pos=>{
-      document.getElementById('ckLat').value=pos.coords.latitude;
-      document.getElementById('ckLng').value=pos.coords.longitude;
-      st.textContent='✅ Ubicación obtenida. Podés completar la dirección arriba para más detalle.';
+    async pos=>{
+      const lat=pos.coords.latitude,lng=pos.coords.longitude;
+      document.getElementById('ckLat').value=lat;
+      document.getElementById('ckLng').value=lng;
+      // Mostrar mapa
+      _initMapa(lat,lng);
+      // Reverse geocoding
+      st.textContent='Buscando dirección...';
+      const dir=await _geocodeInverso(lat,lng);
+      if(dir){
+        document.getElementById('ckDireccion').value=dir;
+        st.textContent='✅ Dirección autocompletada. Podés editarla si hace falta.';
+      } else {
+        st.textContent='✅ Ubicación obtenida. Completá la dirección arriba.';
+      }
+      btn.disabled=false;btn.textContent='📍 Actualizar ubicación';
+    },
+    err=>{
+      const msgs={1:'Permiso denegado. Activá la ubicación en tu navegador.',2:'No se pudo detectar la ubicación.',3:'Tiempo de espera agotado.'};
+      st.textContent=msgs[err.code]||'No se pudo obtener la ubicación.';
       btn.disabled=false;btn.textContent='📍 Usar mi ubicación actual';
     },
-    ()=>{st.textContent='No se pudo obtener la ubicación. Escribí tu dirección manualmente.';btn.disabled=false;btn.textContent='📍 Usar mi ubicación actual'}
+    {enableHighAccuracy:true,timeout:10000,maximumAge:0}
   );
 }
 
 async function confirmOrder(){
-  const met=document.getElementById('ckMetodo').value;
+  const met=_selectedMetodoId;
   if(!met){setAlert('dAlert','Seleccioná un método de pago','err');return}
   if(_tipoEntrega==='retiro'){
     const suc=document.getElementById('ckSuc').value;
@@ -816,12 +1070,37 @@ async function confirmOrder(){
       direccion_entrega:_tipoEntrega==='envio'?document.getElementById('ckDireccion').value.trim():'',
       lat_entrega:document.getElementById('ckLat')?.value||null,
       lng_entrega:document.getElementById('ckLng')?.value||null,
+      es_mp:_selectedMetodoEsMP,
     };
     const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
-    if(d.success){document.getElementById('ckOrderNum').textContent='#'+d.id_venta;saveCart([]);renderCart();showCkStep('ckSuccess')}
+    if(d.success){
+      if(_selectedMetodoEsMP){
+        // Redirigir a MercadoPago Checkout
+        btn.textContent='Redirigiendo a MercadoPago...';
+        const mpBody={pedido_id:d.id_venta,items:getCart(),total:total(getCart())};
+        const mp=await(await fetch('api/mp_preference.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mpBody)})).json();
+        if(mp.success&&mp.init_point){
+          saveCart([]);renderCart();
+          window.location.href=mp.init_point;
+        } else {
+          setAlert('dAlert','Pedido creado (#'+d.id_venta+') pero no se pudo iniciar el pago. Contactanos para coordinar el pago.','err');
+          btn.disabled=false;btn.textContent='Confirmar pedido ✓';
+        }
+      } else {
+        document.getElementById('ckOrderNum').textContent='#'+d.id_venta;
+        saveCart([]);renderCart();
+        // Animación al confirmar pedido
+        btn.classList.add('saving');
+        setTimeout(()=>btn.classList.remove('saving'),600);
+        showCkStep('ckSuccess');
+        // Hacer rebotar el ícono de éxito
+        const ic=document.querySelector('.ck-success-ic');
+        if(ic){ic.style.animation='none';requestAnimationFrame(()=>{ic.style.animation='successBounce .6s cubic-bezier(.36,.07,.19,.97) both';});}
+      }
+    }
     else setAlert('dAlert',d.message||'Error al procesar','err');
   }catch{setAlert('dAlert','Error de conexión. Intentá nuevamente.','err')}
-  btn.disabled=false;btn.textContent='Confirmar pedido ✓';
+  if(!_selectedMetodoEsMP){btn.disabled=false;btn.textContent='Confirmar pedido ✓';}
 }
 function setAlert(id,msg,type){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='ck-alert on '+(type==='err'?'err':'ok');setTimeout(()=>el.classList.remove('on'),5000)}
 document.getElementById('checkoutModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCheckout()});

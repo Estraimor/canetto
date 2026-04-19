@@ -20,7 +20,7 @@ if ($isProduccion) {
 } else {
     // ── LOCAL (WAMP) ────────────────────────────
     define('DB_HOST', 'localhost');
-    define('DB_NAME', 'canetto');
+    define('DB_NAME', 'u966473590_canetto');
     define('DB_USER', 'root');
     define('DB_PASS', '');
     define('APP_BASE', '/canetto');             // subfolder local

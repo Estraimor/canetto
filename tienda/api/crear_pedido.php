@@ -13,6 +13,7 @@ $sucursal_id      = isset($input['sucursal_id']) && $input['sucursal_id'] ? (int
 $observacion      = trim($input['observacion'] ?? '');
 $total            = (float)($input['total'] ?? 0);
 $tipo_entrega     = in_array($input['tipo_entrega'] ?? '', ['retiro','envio']) ? $input['tipo_entrega'] : 'retiro';
+$es_mp            = !empty($input['es_mp']);
 $direccion_entrega= trim($input['direccion_entrega'] ?? '');
 $lat_entrega      = isset($input['lat_entrega'])  && is_numeric($input['lat_entrega'])  ? (float)$input['lat_entrega']  : null;
 $lng_entrega      = isset($input['lng_entrega'])  && is_numeric($input['lng_entrega'])  ? (float)$input['lng_entrega']  : null;
@@ -79,9 +80,9 @@ try {
          metodo_pago_idmetodo_pago, sucursal_retiro_idsucursal,
          observacion_cliente, tipo_entrega, direccion_entrega,
          lat_entrega, lng_entrega, origen, fecha, created_at, updated_at)
-        VALUES (?,?,1,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
+        VALUES (?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
     ")->execute([
-        $idusuario, $total, $metodo_pago,
+        $idusuario, $total, $es_mp ? 5 : 1, $metodo_pago,
         $tipo_entrega === 'retiro' ? $sucursal_id : null,
         $observacion ?: null,
         $tipo_entrega,

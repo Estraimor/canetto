@@ -48,4 +48,21 @@ $pdo->prepare("UPDATE password_reset_tokens SET used = 1 WHERE id = ?")
 
 $_SESSION['reset_msg']  = '✅ ¡Contraseña actualizada! Ya podés iniciar sesión con tu nueva contraseña.';
 $_SESSION['reset_tipo'] = 'ok';
-header('Location: login.php'); exit;
+
+// Detectar a qué login redirigir según los roles del usuario
+$rolesStmt = $pdo->prepare("
+    SELECT r.nombre FROM roles r
+    JOIN usuarios_roles ur ON ur.roles_idroles = r.idroles
+    WHERE ur.usuario_idusuario = ?
+");
+$rolesStmt->execute([$row['usuario_id']]);
+$rolesUsuario = $rolesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+if (in_array('administrador', $rolesUsuario, true) || in_array('admin', $rolesUsuario, true)) {
+    header('Location: login.php'); exit;
+} elseif (in_array('repartidor', $rolesUsuario, true)) {
+    header('Location: ' . URL_REPARTIDOR . '/index.php'); exit;
+} else {
+    // Cliente de tienda
+    header('Location: ' . URL_LOGIN . '/login_clientes.php'); exit;
+}

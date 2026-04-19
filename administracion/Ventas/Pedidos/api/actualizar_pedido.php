@@ -16,6 +16,7 @@ $id_venta      = intval($input['id_venta']      ?? 0);
 $estado        = intval($input['estado']        ?? 0);
 $repartidor_id = isset($input['repartidor_id']) && $input['repartidor_id'] ? intval($input['repartidor_id']) : null;
 $via_uber      = !empty($input['via_uber']) ? 1 : 0;
+$tipo_entrega  = in_array($input['tipo_entrega'] ?? '', ['envio', 'retiro']) ? $input['tipo_entrega'] : null;
 
 if (!$id_venta || $estado < 1 || ($estado > 6 && $estado !== 7)) {
     ob_end_clean();
@@ -48,26 +49,34 @@ try {
         "ALTER TABLE ventas ADD COLUMN updated_at DATETIME NULL",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
+    $teSet = $tipo_entrega ? ", tipo_entrega=:te" : "";
+
     if ($estado === 3 && $repartidor_id) {
         $stmt = $pdo->prepare(
             "UPDATE ventas SET estado_venta_idestado_venta=3,
-             repartidor_idusuario=:rep, via_uber=0, updated_at=NOW()
+             repartidor_idusuario=:rep, via_uber=0{$teSet}, updated_at=NOW()
              WHERE idventas=:id"
         );
-        $stmt->execute([':rep' => $repartidor_id, ':id' => $id_venta]);
+        $params = [':rep' => $repartidor_id, ':id' => $id_venta];
+        if ($tipo_entrega) $params[':te'] = $tipo_entrega;
+        $stmt->execute($params);
     } elseif ($estado === 3 && $via_uber) {
         $stmt = $pdo->prepare(
             "UPDATE ventas SET estado_venta_idestado_venta=:estado,
-             repartidor_idusuario=NULL, via_uber=1, updated_at=NOW()
+             repartidor_idusuario=NULL, via_uber=1{$teSet}, updated_at=NOW()
              WHERE idventas=:id"
         );
-        $stmt->execute([':estado' => $estado, ':id' => $id_venta]);
+        $params = [':estado' => $estado, ':id' => $id_venta];
+        if ($tipo_entrega) $params[':te'] = $tipo_entrega;
+        $stmt->execute($params);
     } else {
         $stmt = $pdo->prepare(
-            "UPDATE ventas SET estado_venta_idestado_venta=:estado, updated_at=NOW()
+            "UPDATE ventas SET estado_venta_idestado_venta=:estado{$teSet}, updated_at=NOW()
              WHERE idventas=:id"
         );
-        $stmt->execute([':estado' => $estado, ':id' => $id_venta]);
+        $params = [':estado' => $estado, ':id' => $id_venta];
+        if ($tipo_entrega) $params[':te'] = $tipo_entrega;
+        $stmt->execute($params);
     }
 
     // Pendiente(1) → En Preparación(2): descontar stock HECHO
@@ -75,6 +84,16 @@ try {
         $stmtItems = $pdo->prepare("SELECT productos_idproductos, cantidad FROM detalle_ventas WHERE ventas_idventas = ?");
         $stmtItems->execute([$id_venta]);
         $stmtStock = $pdo->prepare("UPDATE stock_productos SET stock_actual = GREATEST(0, stock_actual - :c) WHERE productos_idproductos = :p AND tipo_stock = 'HECHO'");
+        foreach ($stmtItems->fetchAll(PDO::FETCH_ASSOC) as $item) {
+            $stmtStock->execute([':c' => $item['cantidad'], ':p' => $item['productos_idproductos']]);
+        }
+    }
+
+    // En Preparación(2) → Pendiente(1): reponer stock HECHO
+    if ($estadoAnteriorId === 2 && $estado === 1) {
+        $stmtItems = $pdo->prepare("SELECT productos_idproductos, cantidad FROM detalle_ventas WHERE ventas_idventas = ?");
+        $stmtItems->execute([$id_venta]);
+        $stmtStock = $pdo->prepare("UPDATE stock_productos SET stock_actual = stock_actual + :c WHERE productos_idproductos = :p AND tipo_stock = 'HECHO'");
         foreach ($stmtItems->fetchAll(PDO::FETCH_ASSOC) as $item) {
             $stmtStock->execute([':c' => $item['cantidad'], ':p' => $item['productos_idproductos']]);
         }

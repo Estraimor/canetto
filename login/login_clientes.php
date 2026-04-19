@@ -75,6 +75,8 @@ unset($_SESSION['error_cliente']);
       Ingresar con Google
     </button>
     <div id="googleAlertTienda" style="display:none;margin-top:10px;padding:9px 13px;border-radius:8px;font-size:13px"></div>
+    <!-- Contenedor oculto para el botón renderizado por Google -->
+    <div id="googleHiddenBtnTienda" style="position:fixed;bottom:-200px;left:-200px;opacity:0;width:1px;height:1px;overflow:hidden;"></div>
 
     <div class="register-link">
       ¿No tenés cuenta?
@@ -163,16 +165,56 @@ function setAlert(el, msg, type) {
 // ── Google Sign-In ──────────────────────────────────────────────────────────
 const GOOGLE_CLIENT_ID_TIENDA = <?= json_encode(GOOGLE_CLIENT_ID) ?>;
 
+// Ocultar botón de Google si no hay Client ID configurado
+if (!GOOGLE_CLIENT_ID_TIENDA) {
+    const btn = document.getElementById('btnGoogleTienda');
+    if (btn) btn.style.display = 'none';
+}
+
 function iniciarGoogleTienda() {
+    if (!GOOGLE_CLIENT_ID_TIENDA) {
+        showGoogleAlertTienda('Google Sign-In no está configurado en este servidor.', '#888'); return;
+    }
     if (!window.google) {
         showGoogleAlertTienda('Cargando Google... intentá en un segundo.', '#888'); return;
     }
+
+    const btnEl = document.getElementById('btnGoogleTienda');
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Abriendo Google...';
+
     google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID_TIENDA,
-        callback:  handleGoogleTienda,
-        ux_mode:   'popup',
+        client_id:            GOOGLE_CLIENT_ID_TIENDA,
+        callback:             handleGoogleTienda,
+        ux_mode:              'popup',
+        cancel_on_tap_outside: true,
     });
-    google.accounts.id.prompt();
+
+    // Renderizar el botón oficial de Google en el contenedor oculto y hacer click
+    // Esto abre el popup completo con selector de cuentas de Google
+    const container = document.getElementById('googleHiddenBtnTienda');
+    container.innerHTML = '';
+    google.accounts.id.renderButton(container, {
+        type:  'standard',
+        size:  'large',
+        theme: 'outline',
+        text:  'signin_with',
+    });
+
+    requestAnimationFrame(() => {
+        const gBtn = container.querySelector('div[role=button], [jsname], iframe');
+        if (gBtn) {
+            gBtn.click();
+        } else {
+            // Fallback: si renderButton no está disponible, usar prompt
+            google.accounts.id.prompt(notification => {
+                if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+                }
+            });
+        }
+    });
 }
 
 async function handleGoogleTienda(response) {
@@ -202,6 +244,14 @@ async function handleGoogleTienda(response) {
     }
 }
 
+function resetBtnGoogleTienda() {
+    const btn = document.getElementById('btnGoogleTienda');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+    }
+}
+
 function showGoogleAlertTienda(msg, color, bg) {
     const el = document.getElementById('googleAlertTienda');
     el.textContent = msg;
@@ -210,15 +260,15 @@ function showGoogleAlertTienda(msg, color, bg) {
     el.style.display = 'block';
 }
 
+// Pre-inicializar GSI cuando carga la librería (sin One Tap automático)
 window.addEventListener('load', () => {
-    if (window.google) {
+    if (window.google && GOOGLE_CLIENT_ID_TIENDA) {
         google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID_TIENDA,
-            callback:  handleGoogleTienda,
-            ux_mode:   'popup',
+            client_id:            GOOGLE_CLIENT_ID_TIENDA,
+            callback:             handleGoogleTienda,
+            ux_mode:              'popup',
+            cancel_on_tap_outside: true,
         });
-        // Mostrar el One Tap automáticamente
-        google.accounts.id.prompt();
     }
 });
 </script>

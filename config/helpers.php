@@ -26,12 +26,12 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // ── Constantes de URL por app ───────────────────────────────────────────────
 // Local: todo vive bajo /canetto  |  Producción: cada app en su subdominio
-define('URL_LOGIN',      $_isLocal ? 'http://localhost/canetto/login'               : 'https://canettocookies.com/login');
-define('URL_TIENDA',     $_isLocal ? 'http://localhost/canetto/tienda'              : 'https://app.canettocookies.com');
-define('URL_ADMIN',      $_isLocal ? 'http://localhost/canetto/administracion'      : 'https://administracion.canettocookies.com/administracion');
-define('URL_REPARTIDOR', $_isLocal ? 'http://localhost/canetto/repartidor'          : 'https://repartidor.canettocookies.com');
+define('URL_LOGIN',      $_isLocal ? 'http://localhost/canetto/login'          : 'https://canettocookies.com/login');
+define('URL_TIENDA',     $_isLocal ? 'http://localhost/canetto/tienda'         : 'https://tienda.canettocookies.com');
+define('URL_ADMIN',      $_isLocal ? 'http://localhost/canetto/administracion' : 'https://administracion.canettocookies.com');
+define('URL_REPARTIDOR', $_isLocal ? 'http://localhost/canetto/repartidor'     : 'https://repartidor.canettocookies.com');
 // URL base para assets estáticos compartidos (img/, configuraciones/cfg.css, etc.)
-define('URL_ASSETS',     $_isLocal ? 'http://localhost/canetto'                     : 'https://canettocookies.com');
+define('URL_ASSETS',     $_isLocal ? 'http://localhost/canetto'                : 'https://canettocookies.com');
 
 // ── base(): prefijo de ruta para links/assets dentro del mismo app ──────────
 // Local → '/canetto'  |  Producción → ''

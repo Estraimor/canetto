@@ -15,6 +15,7 @@ body {
     font-family: 'Segoe UI', sans-serif;
     background: #ffffff;
     color: #111;
+    font-size: 16px;
 }
 
 /* =========================
@@ -56,7 +57,7 @@ NAV
     color: #444;
     padding: 10px 12px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 15px;
     position: relative;
     overflow: hidden;
     transition: all .2s ease;
@@ -101,7 +102,7 @@ SUBMENUS
 }
 
 .menu-title {
-    font-size: 14px;
+    font-size: 15px;
     color: #444;
     padding: 10px 12px;
     cursor: pointer;
@@ -162,7 +163,7 @@ SUBMENUS
 }
 
 .submenu a {
-    font-size: 13px;
+    font-size: 14px;
     color: #777;
     text-decoration: none;
     padding: 6px 12px;
@@ -209,14 +210,14 @@ TOPBAR
     display: flex;
     align-items: center;
     gap: 0;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .topbar .right {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .topbar-stat {
@@ -233,7 +234,7 @@ TOPBAR
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 13px;
+    font-size: 14px;
     font-family: 'DM Mono', 'Courier New', monospace;
     font-weight: 500;
     color: #333;
@@ -300,7 +301,7 @@ CARDS
 }
 
 .card span {
-    font-size: 13px;
+    font-size: 14px;
     color: #888;
 }
 

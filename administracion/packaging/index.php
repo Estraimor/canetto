@@ -182,6 +182,36 @@ $allPkg   = $pdo->query("
 
   </div><!-- /tab-productos -->
 
+  <!-- ================================================================
+       CALCULADORA CANETTO — Caja de 6
+  ================================================================ -->
+  <div class="pkg-calc-card" id="pkgCalcCard">
+    <div class="pkg-calc-header">
+      <div>
+        <div class="pkg-calc-title"><i class="fa-solid fa-calculator"></i> Calculadora de Cajas — Estándar Canetto</div>
+        <div class="pkg-calc-sub">Lógica: pedidos de 4–6 cookies = 1 caja de 6 · más de 6 = se suman cajas de 6</div>
+      </div>
+    </div>
+    <div class="pkg-calc-body">
+      <div class="pkg-calc-input-wrap">
+        <label>Cantidad de cookies en el pedido</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="number" id="calcCantidad" min="1" max="500" placeholder="Ej: 12"
+            style="width:120px;height:44px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:18px;font-weight:700;text-align:center;font-family:inherit;outline:none;padding:0 10px"
+            oninput="calcCajas()">
+          <button onclick="calcCajas()" style="height:44px;padding:0 20px;background:#c88e99;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+            Calcular
+          </button>
+        </div>
+      </div>
+      <div id="calcResultado" class="pkg-calc-resultado" style="display:none">
+        <div class="pkg-calc-res-num" id="calcCajasNum">—</div>
+        <div class="pkg-calc-res-label" id="calcCajasLabel">caja(s) de 6 necesarias</div>
+        <div class="pkg-calc-res-detail" id="calcDetail"></div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /content-body -->
 
 
@@ -212,8 +242,8 @@ $allPkg   = $pdo->query("
           </div>
 
           <div class="pkg-field full">
-            <label>Descripción</label>
-            <textarea id="pkg_descripcion" placeholder="Tamaño, color, proveedor u observación..."></textarea>
+            <label>Descripción <span style="color:#c88e99;font-size:11px">(medidas en CM recomendadas)</span></label>
+            <textarea id="pkg_descripcion" placeholder="Ej: 20cm x 15cm x 8cm — Caja kraft natural, cierre autoadhesivo..."></textarea>
           </div>
 
           <div class="pkg-field">
@@ -267,7 +297,55 @@ $allPkg   = $pdo->query("
 
 <?php include '../../panel/dashboard/layaut/footer.php'; ?>
 
+<style>
+/* ── Calculadora Canetto ── */
+.pkg-calc-card {
+  margin-top: 28px; background: linear-gradient(135deg,#fff5f7,#fff);
+  border: 1.5px solid #f0d0d8; border-radius: 16px;
+  overflow: hidden; box-shadow: 0 2px 14px rgba(200,142,153,.08);
+}
+.pkg-calc-header {
+  padding: 16px 20px; border-bottom: 1px solid #f0d0d8;
+  background: rgba(200,142,153,.06);
+}
+.pkg-calc-title {
+  font-size: 15px; font-weight: 700; color: #c88e99;
+  display: flex; align-items: center; gap: 8px;
+}
+.pkg-calc-sub { font-size: 13px; color: #888; margin-top: 4px; }
+.pkg-calc-body {
+  padding: 20px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+}
+.pkg-calc-input-wrap label {
+  display: block; font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em; color: #666; margin-bottom: 8px;
+}
+.pkg-calc-resultado {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: #fff; border: 2px solid #c88e99; border-radius: 14px;
+  padding: 16px 28px; min-width: 160px; text-align: center; gap: 4px;
+}
+.pkg-calc-res-num   { font-size: 44px; font-weight: 900; color: #c88e99; line-height: 1; }
+.pkg-calc-res-label { font-size: 13px; font-weight: 600; color: #555; }
+.pkg-calc-res-detail{ font-size: 12px; color: #999; margin-top: 4px; }
+</style>
+
 <script>
+function calcCajas(){
+  const qty = parseInt(document.getElementById('calcCantidad').value)||0;
+  const res = document.getElementById('calcResultado');
+  if(qty < 1){ res.style.display='none'; return; }
+  const cajas = Math.ceil(qty / 6);
+  const sobrante = cajas * 6 - qty;
+  document.getElementById('calcCajasNum').textContent   = cajas;
+  document.getElementById('calcCajasLabel').textContent = 'caja' + (cajas===1?'':'s') + ' de 6 necesaria' + (cajas===1?'':'s');
+  document.getElementById('calcDetail').textContent     = sobrante > 0
+    ? `Capacidad: ${cajas*6} u. · Espacio libre: ${sobrante} u.`
+    : `Caja(s) completa(s)`;
+  res.style.display = 'flex';
+}
+document.getElementById('calcCantidad')?.addEventListener('keydown', e => { if(e.key==='Enter') calcCajas(); });
+
 /* ============================================================
    CANETTO — PACKAGING
 ============================================================ */
@@ -406,7 +484,10 @@ $('#btnNuevoPkg').addEventListener('click', () => {
   $('#pkg_id').value = '';
   $('#pkg_activo').checked = true;
   $('#modalPkgTitle').textContent = 'Nuevo packaging';
-  $('#modalPkgSub').textContent   = 'Completá los datos del material';
+  $('#modalPkgSub').textContent   = 'Completá los datos del material (medidas en CM)';
+  // Pre-seleccionar CM (id=6) como unidad por defecto para cajas
+  const cmOpt = $('#pkg_unidad option[value="6"]') || $('#pkg_unidad option[value="<?= array_values(array_filter($unidades, fn($u)=>$u['abreviatura']==='cm'))[0]['idunidad_medida'] ?? 6 ?>"]');
+  if(cmOpt) $('#pkg_unidad').value = cmOpt.value;
   openModal(modalPkg);
 });
 

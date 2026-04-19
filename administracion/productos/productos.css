@@ -423,3 +423,24 @@ background:#333;
     font-size:13px;
     color:#999;
 }
+
+/* ── IMAGEN PRODUCTO (admin card) ──────────── */
+.prod-thumb-admin {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* ── SAVE ANIMATION ─────────────────────────── */
+@keyframes savePulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+.btn-primary.saved {
+    animation: savePulse .4s ease;
+    transition: background .3s, transform .3s;
+}

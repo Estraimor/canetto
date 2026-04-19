@@ -16,16 +16,20 @@ $produccionHoy     = $pdo->query("SELECT COUNT(*) FROM produccion WHERE DATE(fec
    ALERTAS
 ========================= */
 $productosBajos = $pdo->query("
-    SELECT p.nombre, sp.stock_actual, sp.stock_minimo
+    SELECT p.nombre, sp.stock_actual, sp.stock_minimo, sp.tipo_stock
     FROM stock_productos sp
     INNER JOIN productos p ON p.idproductos = sp.productos_idproductos
-    WHERE sp.stock_actual <= sp.stock_minimo AND sp.tipo_stock='CONGELADO'
+    WHERE sp.stock_actual > 0
+      AND sp.stock_actual <= sp.stock_minimo
+      AND sp.tipo_stock IN ('CONGELADO','HECHO')
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 $productosSinStock = $pdo->query("
-    SELECT p.nombre FROM stock_productos sp
+    SELECT DISTINCT p.nombre, sp.tipo_stock
+    FROM stock_productos sp
     INNER JOIN productos p ON p.idproductos = sp.productos_idproductos
     WHERE sp.stock_actual = 0
+      AND sp.tipo_stock IN ('HECHO','CONGELADO')
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 /* =========================
@@ -275,23 +279,23 @@ include '../panel/dashboard/layaut/nav.php';
                     </div>
                     <?php foreach ($productosBajos as $pb): ?>
                         <div class="db-alert-detail">
-                            <?= htmlspecialchars($pb['nombre']) ?> — actual: <?= number_format($pb['stock_actual'],0) ?> / mín: <?= number_format($pb['stock_minimo'],0) ?>
+                            <?= htmlspecialchars($pb['nombre']) ?> (<?= strtolower($pb['tipo_stock']) ?>) — actual: <?= number_format($pb['stock_actual'],0) ?> / mín: <?= number_format($pb['stock_minimo'],0) ?>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
                 <?php if ($productosSinStock): ?>
                     <div class="db-alert db-alert--danger">
                         <span class="db-dot db-dot--danger"></span>
-                        <?= count($productosSinStock) ?> producto<?= count($productosSinStock) > 1 ? 's' : '' ?> sin stock
+                        <?= count($productosSinStock) ?> producto<?= count($productosSinStock) > 1 ? 's' : '' ?> <strong>Sin Stock</strong>
                     </div>
                     <?php foreach ($productosSinStock as $ps): ?>
-                        <div class="db-alert-detail"><?= htmlspecialchars($ps['nombre']) ?></div>
+                        <div class="db-alert-detail">⛔ Sin Stock — <?= htmlspecialchars($ps['nombre']) ?> (<?= strtolower($ps['tipo_stock']) ?>)</div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             <?php endif; ?>
 
             <div class="db-alert-note">
-                Se alerta cuando el stock congelado cae por debajo del mínimo configurado por producto.
+                Se alerta cuando el stock (Hecho o Congelado) llega a 0 (Sin Stock) o cae por debajo del mínimo configurado.
             </div>
         </div>
 

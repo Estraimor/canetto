@@ -18,7 +18,7 @@ try { $counts['auditoria']     = (int)$pdo->query("SELECT COUNT(*) FROM auditori
 try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta WHERE activo=1")->fetchColumn(); } catch(Exception $e) {}
 ?>
 
-<link rel="stylesheet" href="<?= base() ?>/configuraciones/cfg.css">
+<link rel="stylesheet" href="<?= URL_ASSETS ?>/configuraciones/cfg.css">
 <style>
 .hub-module * { box-sizing: border-box; }
 .hub-module {
@@ -204,7 +204,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
     <div class="hub-grid">
 
         <!-- Usuarios -->
-        <a class="hub-card" href="<?= base() ?>/configuraciones/usuarios.php">
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/usuarios.php">
             <div class="hub-card__icon"><i class="fa-solid fa-users"></i></div>
             <div>
                 <div class="hub-card__title">Usuarios</div>
@@ -220,7 +220,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
         </a>
 
         <!-- Roles -->
-        <a class="hub-card" href="<?= base() ?>/configuraciones/roles.php">
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/roles.php">
             <div class="hub-card__icon"><i class="fa-solid fa-shield-halved"></i></div>
             <div>
                 <div class="hub-card__title">Roles</div>
@@ -236,7 +236,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
         </a>
 
         <!-- Roles por usuario -->
-        <a class="hub-card" href="<?= base() ?>/configuraciones/roles_usuario.php">
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/roles_usuario.php">
             <div class="hub-card__icon"><i class="fa-solid fa-user-tag"></i></div>
             <div>
                 <div class="hub-card__title">Roles por usuario</div>
@@ -252,7 +252,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
         </a>
 
         <!-- Métodos de pago -->
-        <a class="hub-card" href="<?= base() ?>/configuraciones/metodos_pago.php">
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/metodos_pago.php">
             <div class="hub-card__icon"><i class="fa-solid fa-credit-card"></i></div>
             <div>
                 <div class="hub-card__title">Métodos de pago</div>
@@ -268,7 +268,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
         </a>
 
         <!-- Sucursales -->
-        <a class="hub-card" href="<?= base() ?>/configuraciones/sucursales.php">
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/sucursales.php">
             <div class="hub-card__icon"><i class="fa-solid fa-building"></i></div>
             <div>
                 <div class="hub-card__title">Sucursales</div>
@@ -284,7 +284,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
         </a>
 
         <!-- Ofertas Tienda -->
-        <a class="hub-card" href="<?= base() ?>/configuraciones/ofertas.php">
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/ofertas.php">
             <div class="hub-card__icon"><i class="fa-solid fa-tag"></i></div>
             <div>
                 <div class="hub-card__title">Ofertas Tienda</div>
@@ -300,7 +300,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
         </a>
 
         <!-- Auditoría -->
-        <a class="hub-card" href="<?= base() ?>/configuraciones/auditoria.php">
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/auditoria.php">
             <div class="hub-card__icon"><i class="fa-solid fa-clipboard-list"></i></div>
             <div>
                 <div class="hub-card__title">Auditoría</div>

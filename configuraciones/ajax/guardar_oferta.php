@@ -19,6 +19,7 @@ $fecha_inicio          = ($_POST['fecha_inicio'] ?? '') !== '' ? $_POST['fecha_i
 $fecha_fin             = ($_POST['fecha_fin']    ?? '') !== '' ? $_POST['fecha_fin']    : null;
 $imagenActual          = trim($_POST['imagen_actual']            ?? '');
 $productos_idproductos = ($_POST['productos_idproductos'] ?? '') !== '' ? (int)$_POST['productos_idproductos'] : null;
+$tipo_panel            = trim($_POST['tipo_panel'] ?? 'promo');
 
 if (!$titulo) { echo json_encode(['ok'=>false,'msg'=>'El título es obligatorio.']); exit; }
 
@@ -55,13 +56,13 @@ if (empty($_POST['imagen_actual']) && empty($_FILES['imagen']['name'])) {
 }
 
 if ($id) {
-    $stmt = $pdo->prepare("UPDATE oferta SET titulo=?,descripcion=?,emoji=?,tipo=?,valor=?,imagen=?,activo=?,fecha_inicio=?,fecha_fin=?,productos_idproductos=? WHERE idoferta=?");
-    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $id]);
-    audit($pdo, 'editar', 'ofertas', 'Editó oferta: ' . $titulo);
+    $stmt = $pdo->prepare("UPDATE oferta SET titulo=?,descripcion=?,emoji=?,tipo=?,tipo_panel=?,valor=?,imagen=?,activo=?,fecha_inicio=?,fecha_fin=?,productos_idproductos=? WHERE idoferta=?");
+    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $id]);
+    audit($pdo, 'editar', 'ofertas', 'Editó panel: ' . $titulo);
 } else {
-    $stmt = $pdo->prepare("INSERT INTO oferta (titulo,descripcion,emoji,tipo,valor,imagen,activo,fecha_inicio,fecha_fin,productos_idproductos) VALUES (?,?,?,?,?,?,?,?,?,?)");
-    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos]);
-    audit($pdo, 'crear', 'ofertas', 'Creó oferta: ' . $titulo);
+    $stmt = $pdo->prepare("INSERT INTO oferta (titulo,descripcion,emoji,tipo,tipo_panel,valor,imagen,activo,fecha_inicio,fecha_fin,productos_idproductos) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos]);
+    audit($pdo, 'crear', 'ofertas', 'Creó panel: ' . $titulo);
 }
 
 echo json_encode(['ok'=>true]);
