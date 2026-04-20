@@ -29,6 +29,15 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 .btn-google-rep{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;color:#3c4043;font-size:14px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;transition:.2s;margin-top:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .btn-google-rep:hover{border-color:#c88e99;box-shadow:0 2px 8px rgba(200,142,153,.2);transform:translateY(-1px)}
 .btn-google-rep img{width:18px;height:18px}
+
+/* ── Banner Pendiente de Cobro ── */
+.pedido-cobro-banner{display:flex;align-items:flex-start;gap:10px;background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.35);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.pedido-cobro-banner>i{color:#f59e0b;font-size:16px;margin-top:2px;flex-shrink:0}
+.pedido-cobro-body{flex:1}
+.pedido-cobro-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f59e0b;margin-bottom:6px}
+.pedido-cobro-rows{display:flex;flex-direction:column;gap:3px}
+.pedido-cobro-row{display:flex;justify-content:space-between;font-size:13px;color:rgba(255,255,255,.8)}
+.cobro-total-row{font-weight:700;color:#fff;border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:4px;font-size:14px}
 </style>
 </head>
 <body>
@@ -296,6 +305,24 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
         </div>
         <span class="pedido-total"></span>
       </div>
+      <!-- Badge pago al cobrar (visible solo para efectivo+envío) -->
+      <div class="pedido-cobro-banner" style="display:none">
+        <i class="fa-solid fa-coins"></i>
+        <div class="pedido-cobro-body">
+          <div class="pedido-cobro-title">Pendiente de Cobro</div>
+          <div class="pedido-cobro-rows">
+            <div class="pedido-cobro-row">
+              <span>Productos</span><span class="cobro-sub"></span>
+            </div>
+            <div class="pedido-cobro-row row-envio" style="display:none">
+              <span><i class="fa-solid fa-motorcycle"></i> Envío</span><span class="cobro-envio"></span>
+            </div>
+            <div class="pedido-cobro-row cobro-total-row">
+              <span>Total a cobrar</span><span class="cobro-total"></span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="pedido-row">
         <div class="pedido-row-icon icon-indigo"><i class="fa-solid fa-user"></i></div>
         <span class="pedido-nombre"></span>
@@ -543,6 +570,23 @@ async function cargarPedidos() {
       clone.querySelector('.pedido-nombre').textContent    = p.cliente_nombre || 'Cliente';
       clone.querySelector('.pedido-dir-txt').textContent   = p.direccion_entrega || 'Sin dirección';
       clone.querySelector('.pedido-prods-txt').textContent = p.productos || '—';
+
+      // Banner "Pendiente de Cobro" para pedidos efectivo + envío
+      const metodoNombre = (p.metodo_pago || '').toLowerCase();
+      const esEfectivo   = metodoNombre.includes('efectivo') || metodoNombre.includes('cash');
+      const costoEnvio   = parseFloat(p.costo_envio || 0);
+      const cobroBanner  = clone.querySelector('.pedido-cobro-banner');
+      if (esEfectivo && p.tipo_entrega === 'envio') {
+        cobroBanner.style.display = 'flex';
+        const subtotal = costoEnvio > 0 ? p.total - costoEnvio : p.total;
+        clone.querySelector('.cobro-sub').textContent   = fmt(subtotal);
+        clone.querySelector('.cobro-total').textContent = fmt(p.total);
+        if (costoEnvio > 0) {
+          const rowEnvio = clone.querySelector('.row-envio');
+          rowEnvio.style.display = 'flex';
+          clone.querySelector('.cobro-envio').textContent = fmt(costoEnvio);
+        }
+      }
 
       const btnTel = clone.querySelector('.btn-tel');
       if (p.cliente_celular) {

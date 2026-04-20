@@ -1306,6 +1306,42 @@ body.page-exit #page-wrap {
   padding-top: 8px;
   margin-top: 6px;
 }
+.ck-sum-row.subtot { color: #888; }
+.ck-sum-row.envio-row { color: #1d4ed8; font-size: 13px; }
+
+/* ── Transferencia panel ── */
+.transfer-row {
+  display: flex; align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 8px;
+}
+.transfer-row:last-child { border-bottom: none; }
+.transfer-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; width: 60px; flex-shrink: 0; }
+.transfer-value { flex: 1; font-size: 14px; font-weight: 600; color: #111; font-family: 'Courier New', monospace; word-break: break-all; }
+.transfer-row.copiable .transfer-value { font-family: 'Courier New', monospace; }
+.btn-copy {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #64748b;
+  transition: all .15s;
+  font-size: 13px;
+}
+.btn-copy:hover { background: #f8fafc; border-color: #c88e99; color: #c88e99; }
+.transfer-instrucciones {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
 .btn-pk {
   width: 100%;
   padding: 14px;

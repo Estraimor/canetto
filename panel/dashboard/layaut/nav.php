@@ -304,6 +304,18 @@ $current = $_SERVER['PHP_SELF'];
                 <i class="fa-solid fa-clipboard-list"></i>
                 Auditoría
             </a>
+
+            <a href="<?= URL_ASSETS ?>/configuraciones/tarifas_envio.php"
+               class="<?= str_contains($current,'tarifas_envio') ? 'active' : '' ?>">
+                <i class="fa-solid fa-motorcycle"></i>
+                Tarifas de Envío
+            </a>
+
+            <a href="<?= URL_ASSETS ?>/configuraciones/datos_bancarios.php"
+               class="<?= str_contains($current,'datos_bancarios') ? 'active' : '' ?>">
+                <i class="fa-solid fa-building-columns"></i>
+                Datos Bancarios
+            </a>
         </div>
     </div>
 

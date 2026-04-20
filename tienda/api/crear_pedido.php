@@ -17,6 +17,14 @@ $es_mp            = !empty($input['es_mp']);
 $direccion_entrega= trim($input['direccion_entrega'] ?? '');
 $lat_entrega      = isset($input['lat_entrega'])  && is_numeric($input['lat_entrega'])  ? (float)$input['lat_entrega']  : null;
 $lng_entrega      = isset($input['lng_entrega'])  && is_numeric($input['lng_entrega'])  ? (float)$input['lng_entrega']  : null;
+$costo_envio_cli  = isset($input['costo_envio'])  && is_numeric($input['costo_envio'])  ? (float)$input['costo_envio']  : 0.0;
+
+/* ── Haversine ── */
+function haversineKm(float $la1, float $lo1, float $la2, float $lo2): float {
+    $R = 6371; $d = M_PI / 180;
+    $a = sin(($la2-$la1)*$d/2)**2 + cos($la1*$d)*cos($la2*$d)*sin(($lo2-$lo1)*$d/2)**2;
+    return 2 * $R * atan2(sqrt($a), sqrt(1-$a));
+}
 
 if (empty($carrito) || !$metodo_pago) {
     echo json_encode(['success'=>false,'message'=>'Faltan datos obligatorios']); exit;
@@ -40,7 +48,28 @@ try {
         "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
         "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
         "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
+        "ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+
+    /* ── Calcular costo de envío server-side ── */
+    $costo_envio = 0.0;
+    if ($tipo_entrega === 'envio' && $lat_entrega !== null && $lng_entrega !== null) {
+        $sucRow = $pdo->query("SELECT latitud, longitud FROM sucursal WHERE activo=1 AND latitud IS NOT NULL AND longitud IS NOT NULL ORDER BY idsucursal ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+        if ($sucRow) {
+            $distKm  = haversineKm((float)$sucRow['latitud'], (float)$sucRow['longitud'], $lat_entrega, $lng_entrega);
+            $tarRow  = $pdo->prepare("SELECT precio FROM tarifas_envio WHERE activo=1 AND km_desde<=? AND km_hasta>? ORDER BY km_desde ASC LIMIT 1");
+            $tarRow->execute([$distKm, $distKm]);
+            $tarifa  = $tarRow->fetchColumn();
+            if ($tarifa === false) {
+                // fallback: tramo más alto disponible
+                $tarifa = $pdo->query("SELECT precio FROM tarifas_envio WHERE activo=1 ORDER BY km_hasta DESC LIMIT 1")->fetchColumn();
+            }
+            $costo_envio = $tarifa !== false ? (float)$tarifa : ($costo_envio_cli > 0 ? $costo_envio_cli : 22000.0);
+        } else {
+            $costo_envio = $costo_envio_cli > 0 ? $costo_envio_cli : 22000.0;
+        }
+        $total += $costo_envio;
+    }
 
     $pdo->beginTransaction();
 
@@ -79,8 +108,8 @@ try {
         (usuario_idusuario, total, estado_venta_idestado_venta,
          metodo_pago_idmetodo_pago, sucursal_retiro_idsucursal,
          observacion_cliente, tipo_entrega, direccion_entrega,
-         lat_entrega, lng_entrega, origen, fecha, created_at, updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
+         lat_entrega, lng_entrega, costo_envio, origen, fecha, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
     ")->execute([
         $idusuario, $total, $es_mp ? 5 : 1, $metodo_pago,
         $tipo_entrega === 'retiro' ? $sucursal_id : null,
@@ -89,6 +118,7 @@ try {
         $direccion_entrega ?: null,
         $lat_entrega,
         $lng_entrega,
+        $costo_envio,
     ]);
     $id_venta = (int)$pdo->lastInsertId();
 
@@ -145,7 +175,7 @@ try {
         $sucNombre
     );
 
-    echo json_encode(['success'=>true, 'id_venta'=>$id_venta]);
+    echo json_encode(['success'=>true, 'id_venta'=>$id_venta, 'costo_envio'=>$costo_envio, 'total'=>$total]);
 
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();

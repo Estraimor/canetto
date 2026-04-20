@@ -16,10 +16,14 @@ foreach ([
     "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
     "ALTER TABLE ventas ADD COLUMN sucursal_retiro_idsucursal INT NULL",
     "ALTER TABLE ventas ADD COLUMN observacion_cliente TEXT NULL",
+    "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
+    "ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0",
 ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
 $stmtP = $pdo->prepare("
     SELECT v.idventas, v.total, v.fecha, v.created_at,
+           COALESCE(v.tipo_entrega, 'retiro')  AS tipo_entrega,
+           COALESCE(v.costo_envio, 0)          AS costo_envio,
            ev.nombre AS estado_nombre, ev.idestado_venta AS estado_id,
            mp.nombre AS metodo_pago,
            s.nombre  AS sucursal_nombre
@@ -46,16 +50,16 @@ foreach ($pedidos as &$p) {
 }
 
 $eMap = [
-    1 => ['lbl'=>'Pendiente',       'cls'=>'ped-e1','ic'=>'⏳'],
-    2 => ['lbl'=>'En preparación',  'cls'=>'ped-e2','ic'=>'👨‍🍳'],
-    3 => ['lbl'=>'En camino',       'cls'=>'ped-e3','ic'=>'🚀'],
-    4 => ['lbl'=>'Entregado',       'cls'=>'ped-e4','ic'=>'✅'],
+    1 => ['lbl'=>'Recibido',        'cls'=>'ped-e1','ic'=>'clock'],
+    2 => ['lbl'=>'En preparación',  'cls'=>'ped-e2','ic'=>'fire'],
+    3 => ['lbl'=>'En camino',       'cls'=>'ped-e3','ic'=>'motorcycle'],
+    4 => ['lbl'=>'Entregado',       'cls'=>'ped-e4','ic'=>'circle-check'],
 ];
 $tl = [
-    ['ic'=>'⏳','lbl'=>'Pendiente'],
-    ['ic'=>'👨‍🍳','lbl'=>'Preparando'],
-    ['ic'=>'🚀','lbl'=>'En camino'],
-    ['ic'=>'✅','lbl'=>'Entregado'],
+    ['ic'=>'clock',       'lbl'=>'Recibido'],
+    ['ic'=>'fire',        'lbl'=>'Preparando'],
+    ['ic'=>'motorcycle',  'lbl'=>'En camino'],
+    ['ic'=>'circle-check','lbl'=>'Entregado'],
 ];
 ?>
 <!DOCTYPE html>
@@ -86,17 +90,35 @@ $tl = [
   </div>
 </div>
 
+<style>
+.ped-pago-recibir{display:flex;align-items:flex-start;gap:10px;margin:0 16px 12px;padding:12px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;font-size:13px;color:#166534}
+.ped-pago-recibir i{color:#22c55e;margin-top:1px;flex-shrink:0}
+.ped-breakdown{padding:10px 16px;border-top:1px solid #f5f5f5;font-size:13px;color:#666}
+.ped-breakdown-row{display:flex;justify-content:space-between;padding:3px 0}
+.ped-breakdown-row.total{font-weight:700;color:#111;font-size:14px;border-top:1px solid #eee;margin-top:4px;padding-top:6px}
+.tl-dot i{font-size:11px}
+.ped-empty-ic{width:52px;height:52px;background:#f5f4f1;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:#bbb;font-size:22px}
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 <div style="padding:16px 20px 40px">
 <?php if (empty($pedidos)): ?>
   <div style="text-align:center;padding:60px 20px;color:#888">
-    <div style="font-size:52px;margin-bottom:14px">📦</div>
-    <div style="font-size:15px;font-weight:700;margin-bottom:8px">No tenés pedidos todavía</div>
+    <div class="ped-empty-ic"><i class="fa-solid fa-box-open"></i></div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#333">No tenés pedidos todavía</div>
     <div style="font-size:13px;margin-bottom:24px">¡Hacé tu primer pedido y lo seguís desde acá!</div>
-    <a href="index.php" style="display:inline-block;background:#111;color:#fff;padding:13px 28px;border-radius:30px;text-decoration:none;font-size:14px;font-weight:700">Ver productos 🍪</a>
+    <a href="index.php" style="display:inline-block;background:#c88e99;color:#fff;padding:13px 28px;border-radius:30px;text-decoration:none;font-size:14px;font-weight:600">Ver productos</a>
   </div>
 <?php else: foreach ($pedidos as $p):
-  $eid = (int)($p['estado_id'] ?? 1);
-  $e   = $eMap[$eid] ?? $eMap[1];
+  $eid       = (int)($p['estado_id'] ?? 1);
+  $e         = $eMap[$eid] ?? $eMap[1];
+  $mpNombre  = strtolower($p['metodo_pago'] ?? '');
+  $esEfectivo= str_contains($mpNombre, 'efectivo') || str_contains($mpNombre, 'cash');
+  $esEnvio   = ($p['tipo_entrega'] ?? 'retiro') === 'envio';
+  $costoEnvio= (float)($p['costo_envio'] ?? 0);
+  $subtotal  = $p['total'] - $costoEnvio;
+  $pagoAlRecibir = $eid === 1 && $esEfectivo && $esEnvio;
 ?>
 <div class="ped-card">
   <div class="ped-hd">
@@ -104,8 +126,23 @@ $tl = [
       <div class="ped-id">Pedido #<?= $p['idventas'] ?></div>
       <div class="ped-date"><?= date('d/m/Y H:i', strtotime($p['created_at'] ?? $p['fecha'])) ?></div>
     </div>
-    <span class="ped-estado <?= $e['cls'] ?>"><?= $e['ic'] ?> <?= htmlspecialchars($p['estado_nombre'] ?? $e['lbl']) ?></span>
+    <?php if ($pagoAlRecibir): ?>
+      <span class="ped-estado" style="background:#dcfce7;color:#166534;border:1.5px solid #bbf7d0">
+        <i class="fa-solid fa-handshake"></i> Pago al recibir
+      </span>
+    <?php else: ?>
+      <span class="ped-estado <?= $e['cls'] ?>">
+        <i class="fa-solid fa-<?= $e['ic'] ?>"></i> <?= htmlspecialchars($p['estado_nombre'] ?? $e['lbl']) ?>
+      </span>
+    <?php endif; ?>
   </div>
+
+  <?php if ($pagoAlRecibir): ?>
+  <div class="ped-pago-recibir">
+    <i class="fa-solid fa-circle-info"></i>
+    <div>Abonás <strong>$<?= number_format($p['total'], 0, ',', '.') ?></strong> en efectivo al momento de recibir tu pedido. No necesitás pagar nada ahora.</div>
+  </div>
+  <?php endif; ?>
 
   <div class="timeline">
     <?php foreach ($tl as $si => $step):
@@ -114,7 +151,7 @@ $tl = [
       $active = $eid === $sn;
     ?>
     <div class="tl-step <?= $done ? 'done' : ($active ? 'active' : '') ?>">
-      <div class="tl-dot"><?= $done ? '✓' : $step['ic'] ?></div>
+      <div class="tl-dot"><?= $done ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-'.$step['ic'].'"></i>' ?></div>
       <div class="tl-lbl"><?= $step['lbl'] ?></div>
     </div>
     <?php endforeach; ?>
@@ -131,14 +168,32 @@ $tl = [
   </div>
   <?php endif; ?>
 
+  <?php if ($costoEnvio > 0): ?>
+  <div class="ped-breakdown">
+    <div class="ped-breakdown-row">
+      <span><i class="fa-solid fa-cookie-bite" style="color:#c88e99;margin-right:5px"></i>Productos</span>
+      <span>$<?= number_format($subtotal, 0, ',', '.') ?></span>
+    </div>
+    <div class="ped-breakdown-row">
+      <span><i class="fa-solid fa-motorcycle" style="color:#6b7280;margin-right:5px"></i>Envío</span>
+      <span>$<?= number_format($costoEnvio, 0, ',', '.') ?></span>
+    </div>
+    <div class="ped-breakdown-row total">
+      <span>Total</span>
+      <span>$<?= number_format($p['total'], 0, ',', '.') ?></span>
+    </div>
+  </div>
+  <?php else: ?>
   <div class="ped-total">
     <span><?= htmlspecialchars($p['metodo_pago'] ?? 'Efectivo') ?></span>
     <span>$<?= number_format($p['total'], 0, ',', '.') ?></span>
   </div>
+  <?php endif; ?>
 
   <?php if (!empty($p['sucursal_nombre'])): ?>
   <div style="padding:8px 16px;font-size:12px;color:#888;border-top:1px solid #f5f5f5">
-    📍 Retiro en: <strong><?= htmlspecialchars($p['sucursal_nombre']) ?></strong>
+    <i class="fa-solid fa-location-dot" style="color:#c88e99;margin-right:4px"></i>
+    Retiro en: <strong><?= htmlspecialchars($p['sucursal_nombre']) ?></strong>
   </div>
   <?php endif; ?>
 
@@ -146,8 +201,8 @@ $tl = [
   <div style="padding:12px 16px;border-top:1px solid #f5f5f5">
     <button class="btn-confirmar-entrega" data-id="<?= $p['idventas'] ?>"
       onclick="confirmarEntrega(<?= $p['idventas'] ?>, this)"
-      style="width:100%;padding:13px;background:#111;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
-      ✅ Confirmar que lo recibí
+      style="width:100%;padding:13px;background:#c88e99;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+      <i class="fa-solid fa-circle-check"></i> Confirmar que lo recibí
     </button>
   </div>
   <?php endif; ?>
@@ -196,21 +251,21 @@ async function confirmarEntrega(idVenta, btn) {
     const res  = await fetch('api/marcar_entregado.php', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.success) {
-      btn.closest('.ped-card').querySelector('.ped-estado').textContent = '✅ Entregado';
-      btn.closest('.ped-card').querySelector('.ped-estado').className = 'ped-estado ped-e4';
+      const estado = btn.closest('.ped-card').querySelector('.ped-estado');
+      estado.innerHTML = '<i class="fa-solid fa-circle-check"></i> Entregado';
+      estado.className = 'ped-estado ped-e4';
       btn.parentElement.remove();
-      // update timeline
       const steps = btn.closest('.ped-card')?.querySelectorAll('.tl-step');
-      if (steps) steps.forEach(s => { s.classList.add('done'); s.querySelector('.tl-dot').textContent = '✓'; });
+      if (steps) steps.forEach(s => { s.classList.add('done'); s.querySelector('.tl-dot').innerHTML = '<i class="fa-solid fa-check"></i>'; });
     } else {
       alert(data.message || 'No se pudo confirmar');
       btn.disabled = false;
-      btn.textContent = '✅ Confirmar que lo recibí';
+      btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar que lo recibí';
     }
   } catch {
     alert('Error de conexión');
     btn.disabled = false;
-    btn.textContent = '✅ Confirmar que lo recibí';
+    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar que lo recibí';
   }
 }
 </script>

@@ -561,6 +561,9 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
           <div id="ckMapaWrap">
             <div id="ckMapa"></div>
           </div>
+          <div id="envioEstimate" style="display:none;margin-top:8px;padding:10px 12px;background:#f0f9ff;border:1.5px solid #bfdbfe;border-radius:10px;font-size:13px;color:#1d4ed8">
+            <i class="fa-solid fa-motorcycle"></i> <span id="envioEstimateTxt"></span>
+          </div>
         </div>
 
         <div class="fg">
@@ -569,33 +572,34 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
           <div class="ck-pago-grid" id="ckPagoGrid">
             <?php foreach ($metodos_pago as $m):
               $nLow      = strtolower($m['nombre']);
-              $esMP      = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
-              $esTarjeta = str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito')
-                        || str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
+              $esMP    = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
+              $esTrans = str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
+              $esTarjeta = !$esMP && !$esTrans && (str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito'));
             ?>
             <button type="button"
               class="ck-pago-card<?= $esTarjeta ? ' prox' : '' ?>"
               <?= $esTarjeta ? 'disabled' : '' ?>
-              onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false'?>)">
+              onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false' ?>,<?= $esTrans?'true':'false' ?>)">
               <div class="ck-pago-ic">
                 <?php if ($esMP): ?>
                   <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="26" width="52">
                     <rect width="56" height="28" rx="5" fill="#009EE3"/>
                     <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
                   </svg>
+                <?php elseif ($esTrans): ?>
+                  <i class="fa-solid fa-building-columns" style="font-size:22px;color:#5b6470"></i>
                 <?php elseif ($esTarjeta): ?>
-                  <span style="font-size:22px">💳</span>
+                  <i class="fa-solid fa-credit-card" style="font-size:20px;color:#94a3b8"></i>
                 <?php elseif (str_contains($nLow,'efectivo')||str_contains($nLow,'cash')): ?>
-                  <span style="font-size:22px">💵</span>
-                <?php elseif (str_contains($nLow,'transfer')||str_contains($nLow,'deposito')||str_contains($nLow,'depósito')): ?>
-                  <span style="font-size:22px">🏦</span>
+                  <i class="fa-solid fa-money-bill-wave" style="font-size:20px;color:#22c55e"></i>
                 <?php else: ?>
-                  <span style="font-size:22px">💰</span>
+                  <i class="fa-solid fa-coins" style="font-size:20px;color:#f59e0b"></i>
                 <?php endif; ?>
               </div>
               <div class="ck-pago-info">
                 <div class="ck-pago-label"><?= htmlspecialchars($m['nombre']) ?></div>
                 <?php if ($esMP): ?><div class="ck-pago-sub">Pago seguro · Tarjeta, débito, efectivo</div><?php endif; ?>
+                <?php if ($esTrans): ?><div class="ck-pago-sub">CBU / Alias · Acreditación 24-72 hs</div><?php endif; ?>
                 <?php if ($esTarjeta): ?><div class="ck-pago-sub">Disponible próximamente</div><?php endif; ?>
               </div>
               <?php if ($esTarjeta): ?><span class="ck-pago-prox">Próximamente</span><?php endif; ?>
@@ -603,6 +607,22 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
             <?php endforeach; ?>
           </div>
         </div>
+        <!-- Panel datos bancarios (transferencia) -->
+        <div id="transferPanel" style="display:none;margin-top:4px">
+          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:12px">
+              <i class="fa-solid fa-building-columns"></i> Datos para transferencia
+            </div>
+            <div id="transferBody" style="font-size:13px;color:#374151">
+              <div style="text-align:center;padding:10px;color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
+            </div>
+            <div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e;display:flex;gap:8px;align-items:flex-start">
+              <i class="fa-solid fa-clock" style="margin-top:1px;flex-shrink:0"></i>
+              <span>Las transferencias se acreditan en 24–72 hs hábiles. Tu pedido se confirma luego de verificar el pago.</span>
+            </div>
+          </div>
+        </div>
+
         <div class="fg">
           <label>Observaciones (opcional)</label>
           <textarea id="ckObs" rows="2" placeholder="Ej: Sin gluten, para regalo..."></textarea>
@@ -900,7 +920,15 @@ function switchCkTab(tab,btn){
 function syncCkTab(){document.querySelectorAll('.ck-form').forEach(f=>f.classList.remove('on'));document.getElementById('ckGuest')?.classList.add('on');document.querySelectorAll('.ck-tab').forEach((b,i)=>{b.classList.toggle('on',i===0)})}
 function buildSummary(){
   const c=getCart();
-  document.getElementById('ckSummary').innerHTML=c.map(i=>`<div class="ck-sum-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('')+`<div class="ck-sum-row tot"><span>Total</span><span>${fmt(total(c))}</span></div>`;
+  const subtotal=total(c);
+  const totalFinal=subtotal+_costoEnvio;
+  let html=c.map(i=>`<div class="ck-sum-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('');
+  if(_costoEnvio>0||_tipoEntrega==='envio'){
+    html+=`<div class="ck-sum-row subtot"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>`;
+    html+=`<div class="ck-sum-row envio-row"><span><i class="fa-solid fa-motorcycle"></i> Envío</span><span>${_costoEnvio>0?fmt(_costoEnvio):'A calcular'}</span></div>`;
+  }
+  html+=`<div class="ck-sum-row tot"><span>Total</span><span>${fmt(totalFinal)}</span></div>`;
+  document.getElementById('ckSummary').innerHTML=html;
 }
 function guestContinue(){
   const n=document.getElementById('gNom').value.trim();
@@ -950,28 +978,64 @@ async function doRegister(){
 }
 function backToAuth(){ckCliente=null;showCkStep('ckAuth');syncCkTab()}
 
-let _selectedMetodoId=null,_selectedMetodoEsMP=false;
-function seleccionarMetodo(id,btn,esMP){
-  _selectedMetodoId=id;_selectedMetodoEsMP=esMP;
+let _selectedMetodoId=null,_selectedMetodoEsMP=false,_selectedMetodoEsTrans=false;
+function seleccionarMetodo(id,btn,esMP,esTrans=false){
+  _selectedMetodoId=id;_selectedMetodoEsMP=esMP;_selectedMetodoEsTrans=esTrans;
   document.getElementById('ckMetodoId').value=id;
   document.querySelectorAll('.ck-pago-card').forEach(c=>c.classList.remove('on'));
   btn.classList.add('on');
-  // Solo ocultar el alerta, sin mostrar nada nuevo
   const al=document.getElementById('dAlert');if(al)al.classList.remove('on');
+  const tp=document.getElementById('transferPanel');
+  if(tp){ tp.style.display=esTrans?'':'none'; if(esTrans) cargarDatosBancarios(); }
 }
 
-let _tipoEntrega = 'retiro';
+let _tipoEntrega='retiro', _costoEnvio=0;
+
+function calcularCostoEnvioJs(km){
+  if(km<=3)  return 800;
+  if(km<=7)  return 1200;
+  if(km<=12) return 1800;
+  if(km<=20) return 2500;
+  return 3500;
+}
+
+async function actualizarCostoEnvio(lat,lng){
+  const el=document.getElementById('envioEstimate');
+  const tx=document.getElementById('envioEstimateTxt');
+  if(el){el.style.display='';} if(tx) tx.textContent='Calculando costo de envío...';
+  try{
+    const res=await fetch(`<?= base() ?>/tienda/api/calcular_envio.php?lat=${lat}&lng=${lng}`);
+    const d=await res.json();
+    if(d.ok){
+      _costoEnvio=d.costo;
+      if(tx) tx.textContent=`~${d.distancia_km} km · ${d.tramo} · ${fmt(d.costo)}`;
+    } else {
+      _costoEnvio=0;
+      if(tx) tx.textContent='No se pudo calcular el envío. Se calculará al confirmar.';
+    }
+  }catch{
+    _costoEnvio=0;
+    if(tx) tx.textContent='No se pudo calcular el envío.';
+  }
+  buildSummary();
+}
+
 function setEntrega(tipo){
-  _tipoEntrega = tipo;
-  document.getElementById('btnRetiro').classList.toggle('on', tipo==='retiro');
-  document.getElementById('btnEnvio').classList.toggle('on', tipo==='envio');
-  document.getElementById('wrapSucursal').style.display = tipo==='retiro' ? '' : 'none';
-  document.getElementById('wrapEnvio').style.display    = tipo==='envio'  ? '' : 'none';
-  // Actualizar mensaje de éxito
-  const sub = document.querySelector('.ck-success-sub');
-  if(sub) sub.textContent = tipo==='envio'
-    ? 'Tu pedido fue registrado. Un repartidor lo llevará a tu domicilio.'
-    : 'Tu pedido fue registrado. Te esperamos en la sucursal.';
+  _tipoEntrega=tipo;
+  document.getElementById('btnRetiro').classList.toggle('on',tipo==='retiro');
+  document.getElementById('btnEnvio').classList.toggle('on',tipo==='envio');
+  document.getElementById('wrapSucursal').style.display=tipo==='retiro'?'':'none';
+  document.getElementById('wrapEnvio').style.display   =tipo==='envio'?'':'none';
+  if(tipo==='retiro'){
+    _costoEnvio=0;
+    buildSummary();
+    const el=document.getElementById('envioEstimate');
+    if(el) el.style.display='none';
+  }
+  const sub=document.querySelector('.ck-success-sub');
+  if(sub) sub.textContent=tipo==='envio'
+    ?'Tu pedido fue registrado. Un repartidor lo llevará a tu domicilio.'
+    :'Tu pedido fue registrado. Te esperamos en la sucursal.';
 }
 
 // ── MAPA LEAFLET (instancia única) ──────────────────────────────────────────
@@ -996,6 +1060,7 @@ function _initMapa(lat,lng){
       document.getElementById('ckLng').value=p.lng;
       const dir=await _geocodeInverso(p.lat,p.lng);
       if(dir) document.getElementById('ckDireccion').value=dir;
+      actualizarCostoEnvio(p.lat,p.lng);
     });
   } else {
     _ckMap.setView([lat,lng],16);
@@ -1033,16 +1098,15 @@ async function usarMiUbicacion(){
       const lat=pos.coords.latitude,lng=pos.coords.longitude;
       document.getElementById('ckLat').value=lat;
       document.getElementById('ckLng').value=lng;
-      // Mostrar mapa
       _initMapa(lat,lng);
-      // Reverse geocoding
+      actualizarCostoEnvio(lat,lng);
       st.textContent='Buscando dirección...';
       const dir=await _geocodeInverso(lat,lng);
       if(dir){
         document.getElementById('ckDireccion').value=dir;
-        st.textContent='✅ Dirección autocompletada. Podés editarla si hace falta.';
+        st.textContent='Dirección autocompletada. Podés editarla si hace falta.';
       } else {
-        st.textContent='✅ Ubicación obtenida. Completá la dirección arriba.';
+        st.textContent='Ubicación obtenida. Completá la dirección arriba.';
       }
       btn.disabled=false;btn.textContent='📍 Actualizar ubicación';
     },
@@ -1073,6 +1137,7 @@ async function confirmOrder(){
       sucursal_id:_tipoEntrega==='retiro'?document.getElementById('ckSuc').value||null:null,
       observacion:document.getElementById('ckObs').value.trim(),
       total:total(getCart()),
+      costo_envio:_costoEnvio,
       tipo_entrega:_tipoEntrega,
       direccion_entrega:_tipoEntrega==='envio'?document.getElementById('ckDireccion').value.trim():'',
       lat_entrega:document.getElementById('ckLat')?.value||null,
@@ -1095,8 +1160,12 @@ async function confirmOrder(){
         }
       } else {
         document.getElementById('ckOrderNum').textContent='#'+d.id_venta;
+        const sub=document.querySelector('.ck-success-sub');
+        if(sub&&_selectedMetodoEsTrans){
+          sub.textContent='Tu pedido fue registrado. Realizá la transferencia al CBU/alias indicado y lo confirmaremos a la brevedad.';
+        }
         saveCart([]);renderCart();
-        // Animación al confirmar pedido
+        _costoEnvio=0;
         btn.classList.add('saving');
         setTimeout(()=>btn.classList.remove('saving'),600);
         showCkStep('ckSuccess');
@@ -1115,6 +1184,48 @@ document.getElementById('checkoutModal').addEventListener('click',e=>{if(e.targe
 // ── TOAST ────────────────────────────────
 let _tt;
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast on'+(type==='ok'?' ok-t':type==='err'?' err-t':'');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('on'),2500)}
+
+// ── DATOS BANCARIOS (TRANSFERENCIA) ─────────────────────────────────────────
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+let _bancariosCached=null;
+async function cargarDatosBancarios(){
+  if(_bancariosCached){renderBancarios(_bancariosCached);return;}
+  const el=document.getElementById('transferBody');
+  try{
+    const d=await(await fetch('<?= base() ?>/configuraciones/ajax/get_datos_bancarios.php')).json();
+    if(d.ok&&d.datos){_bancariosCached=d.datos;renderBancarios(d.datos);}
+    else el.innerHTML='<div style="color:#94a3b8;font-size:13px;text-align:center;padding:8px">No hay datos bancarios configurados aún.</div>';
+  }catch{
+    el.innerHTML='<div style="color:#ef4444;font-size:13px;text-align:center;padding:8px">No se pudieron cargar los datos.</div>';
+  }
+}
+
+function renderBancarios(d){
+  const el=document.getElementById('transferBody');
+  if(!el) return;
+  let html='';
+  if(d.titular) html+=`<div class="transfer-row"><span class="transfer-label">Titular</span><span class="transfer-value">${escHtml(d.titular)}</span></div>`;
+  if(d.banco)   html+=`<div class="transfer-row"><span class="transfer-label">Banco</span><span class="transfer-value">${escHtml(d.banco)}</span></div>`;
+  if(d.cbu)     html+=`<div class="transfer-row copiable"><span class="transfer-label">CBU</span><span class="transfer-value" id="valCbu">${escHtml(d.cbu)}</span><button class="btn-copy" onclick="copiarDato('valCbu','icoCbu')" title="Copiar CBU"><i class="fa-solid fa-copy" id="icoCbu"></i></button></div>`;
+  if(d.alias)   html+=`<div class="transfer-row copiable"><span class="transfer-label">Alias</span><span class="transfer-value" id="valAlias">${escHtml(d.alias)}</span><button class="btn-copy" onclick="copiarDato('valAlias','icoAlias')" title="Copiar Alias"><i class="fa-solid fa-copy" id="icoAlias"></i></button></div>`;
+  if(d.instrucciones) html+=`<div class="transfer-instrucciones">${escHtml(d.instrucciones)}</div>`;
+  el.innerHTML=html||'<div style="color:#94a3b8;font-size:13px">Sin datos configurados.</div>';
+}
+
+function copiarDato(valId,icoId){
+  const txt=document.getElementById(valId)?.textContent||'';
+  navigator.clipboard.writeText(txt).then(()=>{
+    const ico=document.getElementById(icoId);
+    if(ico){
+      const btn=ico.closest('.btn-copy');
+      ico.className='fa-solid fa-check';
+      if(btn){btn.style.background='#dcfce7';btn.style.borderColor='#22c55e';btn.style.color='#16a34a';}
+      setTimeout(()=>{ico.className='fa-solid fa-copy';if(btn){btn.style.background='';btn.style.borderColor='';btn.style.color='';}},2000);
+    }
+    showToast('¡Copiado!','ok');
+  }).catch(()=>showToast('No se pudo copiar','err'));
+}
 
 // ── INIT ──────────────────────────────────
 renderCart();

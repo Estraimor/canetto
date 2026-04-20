@@ -299,6 +299,38 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
             </div>
         </a>
 
+        <!-- Tarifas de envío -->
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/tarifas_envio.php">
+            <div class="hub-card__icon"><i class="fa-solid fa-motorcycle"></i></div>
+            <div>
+                <div class="hub-card__title">Tarifas de Envío</div>
+                <div class="hub-card__desc">Configurá el costo de delivery por rangos de kilómetros. Se aplica automáticamente al calcular el envío.</div>
+            </div>
+            <div class="hub-card__footer">
+                <div>
+                    <div class="hub-card__count" id="cntTarifas">—</div>
+                    <div class="hub-card__count-label">tramos</div>
+                </div>
+                <div class="hub-card__btn">Configurar <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i></div>
+            </div>
+        </a>
+
+        <!-- Datos bancarios -->
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/datos_bancarios.php">
+            <div class="hub-card__icon"><i class="fa-solid fa-building-columns"></i></div>
+            <div>
+                <div class="hub-card__title">Datos Bancarios</div>
+                <div class="hub-card__desc">CBU, alias y cuenta para pagos por transferencia. Protegido con PIN de seguridad.</div>
+            </div>
+            <div class="hub-card__footer">
+                <div>
+                    <div class="hub-card__count"><i class="fa-solid fa-shield-halved" style="font-size:1.2rem"></i></div>
+                    <div class="hub-card__count-label">protegido</div>
+                </div>
+                <div class="hub-card__btn">Configurar <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i></div>
+            </div>
+        </a>
+
         <!-- Auditoría -->
         <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/auditoria.php">
             <div class="hub-card__icon"><i class="fa-solid fa-clipboard-list"></i></div>

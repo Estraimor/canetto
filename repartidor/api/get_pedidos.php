@@ -14,21 +14,27 @@ if (!$repId) {
 try {
     $pdo = Conexion::conectar();
 
+    // Agregar columna costo_envio si no existe (idempotente)
+    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0"); } catch (Throwable $e) {}
+
     $stmt = $pdo->prepare("
         SELECT
             v.idventas,
             v.total,
             v.fecha,
             v.estado_venta_idestado_venta AS estado_id,
-            COALESCE(v.tipo_entrega, 'retiro') AS tipo_entrega,
+            COALESCE(v.tipo_entrega, 'retiro')  AS tipo_entrega,
+            COALESCE(v.costo_envio, 0)          AS costo_envio,
             v.direccion_entrega,
             v.lat_entrega,
             v.lng_entrega,
+            mp.nombre  AS metodo_pago,
             u.nombre   AS cliente_nombre,
             u.apellido AS cliente_apellido,
             u.celular  AS cliente_celular
         FROM ventas v
-        LEFT JOIN usuario u ON u.idusuario = v.usuario_idusuario
+        LEFT JOIN usuario     u  ON u.idusuario     = v.usuario_idusuario
+        LEFT JOIN metodo_pago mp ON mp.idmetodo_pago = v.metodo_pago_idmetodo_pago
         WHERE v.repartidor_idusuario = :rep
           AND v.estado_venta_idestado_venta = 3
         ORDER BY v.idventas DESC
