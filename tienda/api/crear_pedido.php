@@ -64,9 +64,9 @@ try {
                 // fallback: tramo más alto disponible
                 $tarifa = $pdo->query("SELECT precio FROM tarifas_envio WHERE activo=1 ORDER BY km_hasta DESC LIMIT 1")->fetchColumn();
             }
-            $costo_envio = $tarifa !== false ? (float)$tarifa : ($costo_envio_cli > 0 ? $costo_envio_cli : 22000.0);
+            $costo_envio = $tarifa !== false ? (float)$tarifa : ($costo_envio_cli > 0 ? $costo_envio_cli : 29000.0);
         } else {
-            $costo_envio = $costo_envio_cli > 0 ? $costo_envio_cli : 22000.0;
+            $costo_envio = $costo_envio_cli > 0 ? $costo_envio_cli : 29000.0;
         }
         $total += $costo_envio;
     }

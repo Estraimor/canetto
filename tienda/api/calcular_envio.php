@@ -33,12 +33,12 @@ try {
     $count = (int)$pdo->query("SELECT COUNT(*) FROM tarifas_envio")->fetchColumn();
     if ($count === 0) {
         $pdo->exec("INSERT INTO tarifas_envio (km_desde, km_hasta, precio, descripcion) VALUES
-            (0,    3,   3500,  'Zona cercana (0–3 km)'),
-            (3,    6,   5500,  'Zona media (3–6 km)'),
-            (6,    10,  8000,  'Zona media-lejana (6–10 km)'),
-            (10,   15,  11500, 'Zona lejana (10–15 km)'),
-            (15,   25,  16000, 'Zona muy lejana (15–25 km)'),
-            (25,   999, 22000, 'Zona extrema (+25 km)')
+            (0,    3,   4500,  'Zona cercana (0–3 km)'),
+            (3,    6,   7000,  'Zona media (3–6 km)'),
+            (6,    10,  10500, 'Zona media-lejana (6–10 km)'),
+            (10,   15,  15000, 'Zona lejana (10–15 km)'),
+            (15,   25,  21000, 'Zona muy lejana (15–25 km)'),
+            (25,   999, 29000, 'Zona extrema (+25 km)')
         ");
     }
 

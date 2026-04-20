@@ -59,6 +59,9 @@ $tienePin = !empty($datos['pin_hash']);
         Datos bancarios para transferencia
       </div>
     </div>
+    <button class="btn-primary" onclick="guardar()">
+      <i class="fa-solid fa-floppy-disk"></i> Guardar datos bancarios
+    </button>
   </div>
 
   <div class="bank-wrap">

@@ -18,12 +18,12 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS tarifas_envio (
 $count = (int)$pdo->query("SELECT COUNT(*) FROM tarifas_envio")->fetchColumn();
 if ($count === 0) {
     $pdo->exec("INSERT INTO tarifas_envio (km_desde, km_hasta, precio, descripcion) VALUES
-        (0,    3,   3500,  'Zona cercana (0–3 km)'),
-        (3,    6,   5500,  'Zona media (3–6 km)'),
-        (6,    10,  8000,  'Zona media-lejana (6–10 km)'),
-        (10,   15,  11500, 'Zona lejana (10–15 km)'),
-        (15,   25,  16000, 'Zona muy lejana (15–25 km)'),
-        (25,   999, 22000, 'Zona extrema (+25 km)')
+        (0,    3,   4500,  'Zona cercana (0–3 km)'),
+        (3,    6,   7000,  'Zona media (3–6 km)'),
+        (6,    10,  10500, 'Zona media-lejana (6–10 km)'),
+        (10,   15,  15000, 'Zona lejana (10–15 km)'),
+        (15,   25,  21000, 'Zona muy lejana (15–25 km)'),
+        (25,   999, 29000, 'Zona extrema (+25 km)')
     ");
 }
 
@@ -74,11 +74,18 @@ $tarifas = $pdo->query("SELECT * FROM tarifas_envio ORDER BY km_desde ASC")->fet
       <i class="fa-solid fa-circle-info"></i>
       <div>
         <strong>Tarifas en pesos argentinos.</strong> El sistema calcula la distancia entre la sucursal y el domicilio del cliente (Haversine) y aplica el tramo correspondiente. Tené en cuenta nafta, desgaste del vehículo y tiempo del repartidor al configurar los precios.
-        <div class="fuel-note">Referencia: nafta ~$1.600/L · consumo ~10L/100km · ida+vuelta = ~$320/km solo en combustible.</div>
+        <div class="fuel-note">Referencia: nafta ~$2.200/L · consumo ~10L/100km · ida+vuelta = ~$440/km solo en combustible. Las tarifas deben cubrir combustible + tiempo del repartidor + desgaste.</div>
       </div>
     </div>
 
     <table class="tarifa-table" id="tblTarifas">
+      <colgroup>
+        <col style="width:110px">
+        <col style="width:110px">
+        <col style="width:130px">
+        <col>
+        <col style="width:44px">
+      </colgroup>
       <thead>
         <tr>
           <th>Desde (km)</th>
@@ -92,7 +99,7 @@ $tarifas = $pdo->query("SELECT * FROM tarifas_envio ORDER BY km_desde ASC")->fet
         <?php foreach ($tarifas as $t): ?>
         <tr data-id="<?= $t['id'] ?>">
           <td><input type="number" class="t-desde" value="<?= $t['km_desde'] ?>" min="0" step="0.5"></td>
-          <td><input type="number" class="t-hasta" value="<?= $t['km_hasta'] === '999.0' ? '∞' : $t['km_hasta'] ?>" min="0" step="0.5" placeholder="999 = sin límite"></td>
+          <td><input type="number" class="t-hasta" value="<?= (float)$t['km_hasta'] >= 999 ? 999 : $t['km_hasta'] ?>" min="0" step="0.5" placeholder="999 = sin límite"></td>
           <td><input type="number" class="t-precio" value="<?= (int)$t['precio'] ?>" min="0" step="100"></td>
           <td><input type="text" class="t-desc" value="<?= htmlspecialchars($t['descripcion'] ?? '') ?>" placeholder="Ej: Zona centro"></td>
           <td><button class="btn-del" onclick="eliminarFila(this)" title="Eliminar"><i class="fa-solid fa-trash"></i></button></td>
@@ -105,9 +112,11 @@ $tarifas = $pdo->query("SELECT * FROM tarifas_envio ORDER BY km_desde ASC")->fet
       <button class="btn-add" onclick="agregarFila()">
         <i class="fa-solid fa-plus"></i> Agregar tramo
       </button>
+      <button class="btn-primary" onclick="guardar()" style="margin-left:auto">
+        <i class="fa-solid fa-floppy-disk"></i> Guardar tarifas
+      </button>
     </div>
 
-    <div id="alertMsg" style="display:none;margin-top:16px"></div>
 
   </div>
 </div>
@@ -145,8 +154,14 @@ async function guardar() {
     }));
 
     for (const t of tarifas) {
-        if (t.precio <= 0) { showAlert('Todos los precios deben ser mayores a 0', 'err'); return; }
-        if (t.km_hasta <= t.km_desde) { showAlert('El "Hasta" debe ser mayor que el "Desde"', 'err'); return; }
+        if (t.precio <= 0) {
+            Swal.fire({ icon: 'warning', title: 'Precio inválido', text: 'Todos los precios deben ser mayores a 0.', confirmButtonColor: '#0a0a0a' });
+            return;
+        }
+        if (t.km_hasta <= t.km_desde) {
+            Swal.fire({ icon: 'warning', title: 'Rango inválido', text: 'El "Hasta" debe ser mayor que el "Desde".', confirmButtonColor: '#0a0a0a' });
+            return;
+        }
     }
 
     const btn = document.querySelector('.cfg-page-header .btn-primary');
@@ -162,23 +177,21 @@ async function guardar() {
         });
         const data = await res.json();
         if (data.ok) {
-            showAlert('Tarifas guardadas correctamente', 'ok');
-            if (data.reload) setTimeout(() => location.reload(), 1200);
+            Swal.fire({
+                icon: 'success',
+                title: 'Guardado',
+                text: 'Tarifas actualizadas correctamente.',
+                confirmButtonColor: '#0a0a0a',
+                timer: 2500,
+                timerProgressBar: true
+            }).then(() => { if (data.reload) location.reload(); });
         } else {
-            showAlert(data.msg || 'No se pudo guardar', 'err');
+            Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo guardar.', confirmButtonColor: '#0a0a0a' });
         }
     } catch(e) {
-        showAlert('Error de conexión', 'err');
+        Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#0a0a0a' });
     }
     btn.innerHTML = orig;
     btn.disabled = false;
-}
-
-function showAlert(msg, type) {
-    const el = document.getElementById('alertMsg');
-    el.style.display = 'block';
-    el.className = type === 'ok' ? 'alert-success' : 'alert';
-    el.innerHTML = (type === 'ok' ? '<i class="fa-solid fa-circle-check"></i> ' : '<i class="fa-solid fa-circle-exclamation"></i> ') + msg;
-    setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
 </script>
