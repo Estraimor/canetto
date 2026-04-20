@@ -1349,32 +1349,32 @@ function addBoxDesdeModal() {
 
 <nav class="bottom-nav">
   <a href="index.php" class="bn-item active">
-    <span class="bn-ic">🏠</span>
+    <i class="fa-solid fa-house"></i>
     <span>Inicio</span>
   </a>
   <?php if ($cliente_id): ?>
   <a href="mis-pedidos.php" class="bn-item">
-    <span class="bn-ic">📦</span>
+    <i class="fa-solid fa-bag-shopping"></i>
     <span>Mis pedidos</span>
   </a>
   <?php else: ?>
   <a href="login.php" class="bn-item">
-    <span class="bn-ic">📦</span>
+    <i class="fa-solid fa-bag-shopping"></i>
     <span>Mis pedidos</span>
   </a>
   <?php endif; ?>
   <a href="#sucursales" class="bn-item">
-    <span class="bn-ic">📍</span>
+    <i class="fa-solid fa-location-dot"></i>
     <span>Sucursales</span>
   </a>
   <?php if ($cliente_id): ?>
   <a href="mi-cuenta.php" class="bn-item">
-    <span class="bn-ic">👤</span>
+    <i class="fa-solid fa-user"></i>
     <span>Mi cuenta</span>
   </a>
   <?php else: ?>
   <a href="login.php" class="bn-item">
-    <span class="bn-ic">👤</span>
+    <i class="fa-solid fa-user"></i>
     <span>Ingresar</span>
   </a>
   <?php endif; ?>

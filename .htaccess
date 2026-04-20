@@ -2,12 +2,11 @@ Options -Indexes
 
 RewriteEngine On
 
-# HTTPS
-RewriteCond %{HTTPS} off
-<<<<<<< HEAD
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-=======
-RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# HTTPS — solo en producción (no en localhost)
+# RewriteCond %{HTTPS} off
+# RewriteCond %{HTTP_HOST} !^localhost [NC]
+# RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # ─── Proteger archivos sensibles ───────────────────────────────────────────
 <FilesMatch "\.(env|log|sql|sh|bak|git|json|lock|md)$">
@@ -41,4 +40,3 @@ RedirectMatch 403 ^/vendor/
     ExpiresByType text/css "access plus 1 week"
     ExpiresByType application/javascript "access plus 1 week"
 </IfModule>
->>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77

@@ -4,23 +4,23 @@ require_once __DIR__ . '/../config/conexion.php';
 
 $pdo = Conexion::conectar();
 
-/* =========================
-   KPIs
-========================= */
+/* KPIs */
 $totalProductos    = $pdo->query("SELECT COUNT(*) FROM productos WHERE tipo='producto'")->fetchColumn();
 $totalMP           = $pdo->query("SELECT COUNT(*) FROM materia_prima")->fetchColumn();
 $totalProducciones = $pdo->query("SELECT COUNT(*) FROM produccion")->fetchColumn();
 $produccionHoy     = $pdo->query("SELECT COUNT(*) FROM produccion WHERE DATE(fecha)=CURDATE()")->fetchColumn();
 
-/* =========================
-   ALERTAS
-========================= */
+/* Pedidos pendientes */
+try {
+    $pedidosPendientes = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE estado IN ('pendiente','en_proceso')")->fetchColumn();
+} catch (Throwable $e) { $pedidosPendientes = 0; }
+
+/* Alertas */
 $productosBajos = $pdo->query("
     SELECT p.nombre, sp.stock_actual, sp.stock_minimo, sp.tipo_stock
     FROM stock_productos sp
     INNER JOIN productos p ON p.idproductos = sp.productos_idproductos
-    WHERE sp.stock_actual > 0
-      AND sp.stock_actual <= sp.stock_minimo
+    WHERE sp.stock_actual > 0 AND sp.stock_actual <= sp.stock_minimo
       AND sp.tipo_stock IN ('CONGELADO','HECHO')
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -28,13 +28,10 @@ $productosSinStock = $pdo->query("
     SELECT DISTINCT p.nombre, sp.tipo_stock
     FROM stock_productos sp
     INNER JOIN productos p ON p.idproductos = sp.productos_idproductos
-    WHERE sp.stock_actual = 0
-      AND sp.tipo_stock IN ('HECHO','CONGELADO')
+    WHERE sp.stock_actual = 0 AND sp.tipo_stock IN ('HECHO','CONGELADO')
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-/* =========================
-   STOCK POR PRODUCTO
-========================= */
+/* Stock */
 $stockPorProducto = $pdo->query("
     SELECT p.nombre, sp.tipo_stock, sp.stock_actual, sp.stock_minimo
     FROM stock_productos sp
@@ -50,9 +47,7 @@ foreach ($stockPorProducto as $row) {
     $stockAgrupado[$nombre][$tipo] = $row;
 }
 
-/* =========================
-   ÚLTIMAS PRODUCCIONES
-========================= */
+/* Últimas producciones */
 $ultimasProducciones = $pdo->query("
     SELECT p.nombre, pr.cantidad, pr.fecha
     FROM produccion pr
@@ -60,34 +55,39 @@ $ultimasProducciones = $pdo->query("
     ORDER BY pr.fecha DESC LIMIT 5
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-/* =========================
-   GRÁFICO 7 DÍAS
-========================= */
+/* Gráfico 7 días */
 $prod7dias = $pdo->query("
     SELECT DATE(fecha) AS dia, COUNT(*) AS total
     FROM produccion
     WHERE fecha >= CURDATE() - INTERVAL 6 DAY
-    GROUP BY DATE(fecha)
-    ORDER BY dia ASC
+    GROUP BY DATE(fecha) ORDER BY dia ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-$chartLabels = [];
-$chartData   = [];
-$prod7map    = array_column($prod7dias, 'total', 'dia');
-$diaCorto    = ['Sun'=>'Dom','Mon'=>'Lun','Tue'=>'Mar','Wed'=>'Mié','Thu'=>'Jue','Fri'=>'Vie','Sat'=>'Sáb'];
+$chartLabels = []; $chartData = [];
+$prod7map = array_column($prod7dias, 'total', 'dia');
+$diaCorto = ['Sun'=>'Dom','Mon'=>'Lun','Tue'=>'Mar','Wed'=>'Mié','Thu'=>'Jue','Fri'=>'Vie','Sat'=>'Sáb'];
 for ($i = 6; $i >= 0; $i--) {
     $d             = date('Y-m-d', strtotime("-{$i} days"));
-    $key           = date('D', strtotime($d));
-    $chartLabels[] = ($diaCorto[$key] ?? $key) . ' ' . date('d', strtotime($d));
+    $chartLabels[] = ($diaCorto[date('D', strtotime($d))] ?? '') . ' ' . date('d', strtotime($d));
     $chartData[]   = (int)($prod7map[$d] ?? 0);
 }
 
-/* =========================
-   FECHA Y TOPBAR
-========================= */
+/* Auditorías recientes */
+try {
+    $auditoriasRecientes = $pdo->query("
+        SELECT usuario_nombre, accion, modulo, descripcion, created_at
+        FROM auditoria ORDER BY created_at DESC LIMIT 8
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { $auditoriasRecientes = []; }
+
+/* Incidencias abiertas */
+try {
+    $incidenciasAbiertas = $pdo->query("SELECT COUNT(*) FROM incidencias WHERE estado='abierta'")->fetchColumn();
+} catch (Throwable $e) { $incidenciasAbiertas = 0; }
+
+/* Header */
 $diasSemana = ['Sunday'=>'Domingo','Monday'=>'Lunes','Tuesday'=>'Martes',
-               'Wednesday'=>'Miércoles','Thursday'=>'Jueves',
-               'Friday'=>'Viernes','Saturday'=>'Sábado'];
+               'Wednesday'=>'Miércoles','Thursday'=>'Jueves','Friday'=>'Viernes','Saturday'=>'Sábado'];
 $diaNombre  = $diasSemana[(new DateTime())->format('l')] ?? '';
 $fechaHoy   = (new DateTime())->format('d/m/Y');
 
@@ -102,239 +102,156 @@ include '../panel/dashboard/layaut/nav.php';
 <div class="db">
 <div class="db-main">
 
-    <!-- ===== PAGE HEADER ===== -->
+    <!-- ===== HEADER ===== -->
     <div class="db-page-header">
         <div class="db-header-left">
             <div class="db-header-eyebrow">
                 <i class="fa-regular fa-calendar"></i>
-                <?= $diaNombre ?>, <?= $fechaHoy ?>
+                <?= strtoupper($diaNombre) ?>, <?= $fechaHoy ?>
             </div>
             <h1 class="db-title">Dashboard <em>general</em></h1>
             <p class="db-subtitle">Vista de operaciones · Canetto</p>
+        </div>
+        <div class="db-header-right">
+            <?php if ($incidenciasAbiertas > 0): ?>
+            <a href="<?= URL_ADMIN ?>/incidencias/index.php" class="db-incidencia-badge">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <?= (int)$incidenciasAbiertas ?> incidencia<?= $incidenciasAbiertas > 1 ? 's' : '' ?> abierta<?= $incidenciasAbiertas > 1 ? 's' : '' ?>
+            </a>
+            <?php endif; ?>
+            <div class="db-live-dot"><span></span> En vivo</div>
         </div>
     </div>
 
     <!-- ===== ACCESOS RÁPIDOS ===== -->
     <div class="db-quick-actions">
-        <a href="<?= $baseUrl ?>/administracion/produccion/congelado/index.php" class="db-qa">
-            <i class="fa-solid fa-snowflake"></i>
-            <span>Masa congelada</span>
+        <a href="<?= URL_ADMIN ?>/produccion/congelado/index.php" class="db-qa">
+            <i class="fa-solid fa-snowflake"></i><span>Masa congelada</span>
         </a>
-        <a href="<?= $baseUrl ?>/administracion/produccion/horneado/index.php" class="db-qa">
-            <i class="fa-solid fa-fire"></i>
-            <span>Horneado</span>
+        <a href="<?= URL_ADMIN ?>/produccion/horneado/index.php" class="db-qa">
+            <i class="fa-solid fa-fire"></i><span>Horneado</span>
         </a>
-        <a href="<?= $baseUrl ?>/administracion/stock/index.php" class="db-qa">
-            <i class="fa-solid fa-boxes-stacked"></i>
-            <span>Stock</span>
+        <a href="<?= URL_ADMIN ?>/stock/index.php" class="db-qa">
+            <i class="fa-solid fa-boxes-stacked"></i><span>Stock</span>
         </a>
-        <a href="<?= $baseUrl ?>/administracion/recetas/index.php" class="db-qa">
-            <i class="fa-solid fa-book-open"></i>
-            <span>Recetas</span>
+        <a href="<?= URL_ADMIN ?>/recetas/index.php" class="db-qa">
+            <i class="fa-solid fa-book-open"></i><span>Recetas</span>
         </a>
-        <a href="<?= $baseUrl ?>/administracion/ventas/ventas/index.php" class="db-qa">
-            <i class="fa-solid fa-cart-shopping"></i>
-            <span>Ventas</span>
+        <a href="<?= URL_ADMIN ?>/Ventas/Ventas/index.php" class="db-qa">
+            <i class="fa-solid fa-cart-shopping"></i><span>Nueva venta</span>
         </a>
-        <a href="<?= $baseUrl ?>/administracion/materias_primas/index.php" class="db-qa">
-            <i class="fa-solid fa-seedling"></i>
-            <span>Materias primas</span>
+        <a href="<?= URL_ADMIN ?>/materias_primas/index.php" class="db-qa">
+            <i class="fa-solid fa-seedling"></i><span>Materias primas</span>
         </a>
     </div>
 
     <!-- ===== KPIs ===== -->
     <div class="db-kpi-row">
-
         <div class="db-kpi">
-            <div class="db-kpi-icon db-kpi-icon--blue">
-                <i class="fa-solid fa-cookie-bite"></i>
-            </div>
-            <div class="db-kpi-body">
-                <div class="db-kpi-label">Productos</div>
-                <div class="db-kpi-val"><?= (int)$totalProductos ?></div>
-                <div class="db-kpi-sub">activos en sistema</div>
-            </div>
+            <div class="db-kpi-icon"><i class="fa-solid fa-cookie-bite"></i></div>
+            <div class="db-kpi-label">Productos activos</div>
+            <div class="db-kpi-val"><?= (int)$totalProductos ?></div>
+            <div class="db-kpi-sub">en sistema</div>
         </div>
-
         <div class="db-kpi">
-            <div class="db-kpi-icon db-kpi-icon--green">
-                <i class="fa-solid fa-seedling"></i>
-            </div>
-            <div class="db-kpi-body">
-                <div class="db-kpi-label">Materias primas</div>
-                <div class="db-kpi-val"><?= (int)$totalMP ?></div>
-                <div class="db-kpi-sub">registradas</div>
-            </div>
+            <div class="db-kpi-icon"><i class="fa-solid fa-calendar-day"></i></div>
+            <div class="db-kpi-label">Producidas hoy</div>
+            <div class="db-kpi-val"><?= (int)$produccionHoy ?></div>
+            <div class="db-kpi-sub"><?= $produccionHoy > 0 ? 'lotes registrados' : 'sin actividad aún' ?></div>
         </div>
-
         <div class="db-kpi">
-            <div class="db-kpi-icon db-kpi-icon--teal">
-                <i class="fa-solid fa-industry"></i>
-            </div>
-            <div class="db-kpi-body">
-                <div class="db-kpi-label">Producciones totales</div>
-                <div class="db-kpi-val"><?= (int)$totalProducciones ?></div>
-                <div class="db-kpi-sub">históricas</div>
-            </div>
+            <div class="db-kpi-icon"><i class="fa-solid fa-clock"></i></div>
+            <div class="db-kpi-label">Pedidos activos</div>
+            <div class="db-kpi-val"><?= (int)$pedidosPendientes ?></div>
+            <div class="db-kpi-sub">pendientes / en proceso</div>
         </div>
-
         <div class="db-kpi">
-            <div class="db-kpi-icon db-kpi-icon--amber">
-                <i class="fa-solid fa-calendar-day"></i>
-            </div>
-            <div class="db-kpi-body">
-                <div class="db-kpi-label">Producidas hoy</div>
-                <div class="db-kpi-val"><?= (int)$produccionHoy ?></div>
-                <div class="db-kpi-sub"><?= $produccionHoy > 0 ? 'lotes registrados' : 'sin actividad aún' ?></div>
-            </div>
+            <div class="db-kpi-icon"><i class="fa-solid fa-seedling"></i></div>
+            <div class="db-kpi-label">Materias primas</div>
+            <div class="db-kpi-val"><?= (int)$totalMP ?></div>
+            <div class="db-kpi-sub">registradas</div>
         </div>
-
     </div>
 
-    <!-- ===== STOCK + ALERTAS ===== -->
-    <div class="db-grid2">
+    <!-- ===== GRID PRINCIPAL ===== -->
+    <div class="db-layout">
 
-        <div class="db-card">
-            <div class="db-card-title">
-                <i class="fa-solid fa-chart-simple"></i>
-                Niveles de stock
-            </div>
+        <!-- columna izquierda -->
+        <div class="db-col-main">
 
-            <?php if (empty($stockAgrupado)): ?>
-                <p class="db-empty">Sin datos de stock.</p>
-            <?php else: ?>
-                <?php foreach ($stockAgrupado as $nombre => $tipos): ?>
-
-                    <?php if (isset($tipos['congelado'])):
-                        $r   = $tipos['congelado'];
-                        $ref = max((float)$r['stock_minimo'] * 2, (float)$r['stock_actual'], 1);
-                        $pct = min(round(((float)$r['stock_actual'] / $ref) * 100), 100);
-                        $low = ((float)$r['stock_actual'] <= (float)$r['stock_minimo']);
-                    ?>
-                    <div class="db-stock-item">
-                        <div class="db-stock-row">
-                            <span class="db-stock-name">
-                                <?= htmlspecialchars($nombre) ?>
-                                <span class="db-stock-tipo">congelado</span>
-                            </span>
-                            <span class="db-stock-nums"><?= number_format($r['stock_actual'],0) ?> uds · mín <?= number_format($r['stock_minimo'],0) ?></span>
-                        </div>
-                        <div class="db-bar-track">
-                            <div class="db-bar-fill db-bar--blue <?= $low ? 'db-bar--low' : '' ?>" style="width:<?= $pct ?>%"></div>
-                        </div>
-                        <?php if ($low): ?><div class="db-stock-alert">Stock bajo mínimo (mín: <?= number_format($r['stock_minimo'],0) ?>)</div><?php endif; ?>
-                    </div>
-                    <?php endif; ?>
-
-                    <?php if (isset($tipos['hecho'])):
-                        $r   = $tipos['hecho'];
-                        $ref = max((float)$r['stock_minimo'] * 2, (float)$r['stock_actual'], 1);
-                        $pct = min(round(((float)$r['stock_actual'] / $ref) * 100), 100);
-                        $low = ((float)$r['stock_actual'] <= (float)$r['stock_minimo']);
-                    ?>
-                    <div class="db-stock-item">
-                        <div class="db-stock-row">
-                            <span class="db-stock-name">
-                                <?= htmlspecialchars($nombre) ?>
-                                <span class="db-stock-tipo">hecho</span>
-                            </span>
-                            <span class="db-stock-nums"><?= number_format($r['stock_actual'],0) ?> uds · mín <?= number_format($r['stock_minimo'],0) ?></span>
-                        </div>
-                        <div class="db-bar-track">
-                            <div class="db-bar-fill db-bar--teal <?= $low ? 'db-bar--low' : '' ?>" style="width:<?= $pct ?>%"></div>
-                        </div>
-                        <?php if ($low): ?><div class="db-stock-alert">Stock bajo mínimo (mín: <?= number_format($r['stock_minimo'],0) ?>)</div><?php endif; ?>
-                    </div>
-                    <?php endif; ?>
-
-                <?php endforeach; ?>
-
-                <div class="db-legend">
-                    <span class="db-legend-item"><span class="db-legend-dot db-legend-dot--blue"></span>Congelado</span>
-                    <span class="db-legend-item"><span class="db-legend-dot db-legend-dot--teal"></span>Hecho</span>
+            <!-- Stock -->
+            <div class="db-card">
+                <div class="db-card-title">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    Niveles de stock
+                    <span class="db-card-badge"><?= count($stockAgrupado) ?> productos</span>
                 </div>
-            <?php endif; ?>
-        </div>
-
-        <div class="db-card">
-            <div class="db-card-title">
-                <i class="fa-solid fa-bell"></i>
-                Alertas del sistema
-            </div>
-
-            <?php if (empty($productosBajos) && empty($productosSinStock)): ?>
-                <div class="db-alert db-alert--ok">
-                    <span class="db-dot db-dot--ok"></span>
-                    Stock saludable — todo dentro de los rangos
-                </div>
-                <div class="db-alert db-alert--ok">
-                    <span class="db-dot db-dot--ok"></span>
-                    Todos los productos con stock disponible
-                </div>
-            <?php else: ?>
-                <?php if ($productosBajos): ?>
-                    <div class="db-alert db-alert--warn">
-                        <span class="db-dot db-dot--warn"></span>
-                        <?= count($productosBajos) ?> producto<?= count($productosBajos) > 1 ? 's' : '' ?> con stock bajo mínimo
-                    </div>
-                    <?php foreach ($productosBajos as $pb): ?>
-                        <div class="db-alert-detail">
-                            <?= htmlspecialchars($pb['nombre']) ?> (<?= strtolower($pb['tipo_stock']) ?>) — actual: <?= number_format($pb['stock_actual'],0) ?> / mín: <?= number_format($pb['stock_minimo'],0) ?>
+                <?php if (empty($stockAgrupado)): ?>
+                    <p class="db-empty">Sin datos de stock.</p>
+                <?php else: ?>
+                    <?php foreach ($stockAgrupado as $nombre => $tipos): ?>
+                    <div class="db-producto-grupo">
+                        <div class="db-producto-nombre"><?= htmlspecialchars($nombre) ?></div>
+                        <div class="db-producto-tipos">
+                        <?php foreach (['congelado'=>'Congelado','hecho'=>'Hecho'] as $tipoKey=>$tipoLabel):
+                            if (!isset($tipos[$tipoKey])) continue;
+                            $r = $tipos[$tipoKey];
+                            $actual = (float)$r['stock_actual'];
+                            $minimo = (float)$r['stock_minimo'];
+                            $sinStock = $actual <= 0;
+                            $bajMin   = !$sinStock && $actual <= $minimo;
+                        ?>
+                            <div class="db-stock-row">
+                                <span class="db-stock-tipo"><?= $tipoLabel ?></span>
+                                <span class="db-stock-nums"><?= number_format($actual,0) ?> uds · mín <?= number_format($minimo,0) ?></span>
+                                <?php if ($sinStock): ?>
+                                    <span class="db-stock-badge db-stock-badge--sinstock">Sin Stock</span>
+                                <?php elseif ($bajMin): ?>
+                                    <span class="db-stock-badge db-stock-badge--bajo">Bajo mínimo</span>
+                                <?php else: ?>
+                                    <span class="db-stock-badge db-stock-badge--ok">OK</span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
                         </div>
+                    </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
-                <?php if ($productosSinStock): ?>
-                    <div class="db-alert db-alert--danger">
-                        <span class="db-dot db-dot--danger"></span>
-                        <?= count($productosSinStock) ?> producto<?= count($productosSinStock) > 1 ? 's' : '' ?> <strong>Sin Stock</strong>
+            </div>
+
+            <!-- Gráfico -->
+            <div class="db-chart-card">
+                <div class="db-chart-head">
+                    <div class="db-card-title" style="margin:0">
+                        <i class="fa-solid fa-chart-bar"></i>
+                        Producción — últimos 7 días
                     </div>
-                    <?php foreach ($productosSinStock as $ps): ?>
-                        <div class="db-alert-detail">⛔ Sin Stock — <?= htmlspecialchars($ps['nombre']) ?> (<?= strtolower($ps['tipo_stock']) ?>)</div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            <?php endif; ?>
-
-            <div class="db-alert-note">
-                Se alerta cuando el stock (Hecho o Congelado) llega a 0 (Sin Stock) o cae por debajo del mínimo configurado.
+                    <span class="db-count">lotes por día</span>
+                </div>
+                <div class="db-chart-wrap">
+                    <canvas id="chartProd" height="90"></canvas>
+                </div>
             </div>
-        </div>
 
-    </div>
-
-    <!-- ===== GRÁFICO 7 DÍAS ===== -->
-    <div class="db-chart-card">
-        <div class="db-chart-head">
-            <div class="db-card-title" style="margin:0">
-                <i class="fa-solid fa-chart-bar"></i>
-                Producción — últimos 7 días
-            </div>
-            <span class="db-count">lotes por día</span>
-        </div>
-        <div class="db-chart-wrap">
-            <canvas id="chartProd" height="75"></canvas>
-        </div>
-    </div>
-
-    <!-- ===== TABLA ÚLTIMAS PRODUCCIONES ===== -->
-    <div class="db-table-card">
-        <div class="db-table-head">
-            <span>Últimas producciones</span>
-            <span class="db-count"><?= count($ultimasProducciones) ?> registros</span>
-        </div>
-
-        <?php if (empty($ultimasProducciones)): ?>
-            <p class="db-empty db-empty--padded">Sin producciones registradas.</p>
-        <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Fecha</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <!-- Últimas producciones -->
+            <div class="db-table-card">
+                <div class="db-table-head">
+                    <span>Últimas producciones</span>
+                    <span class="db-count"><?= count($ultimasProducciones) ?> registros</span>
+                </div>
+                <?php if (empty($ultimasProducciones)): ?>
+                    <p class="db-empty db-empty--padded">Sin producciones registradas.</p>
+                <?php else: ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     <?php foreach ($ultimasProducciones as $i => $p): ?>
                         <tr>
                             <td><?= htmlspecialchars($p['nombre']) ?></td>
@@ -344,22 +261,115 @@ include '../panel/dashboard/layaut/nav.php';
                                 <?php if ($i === 0): ?>
                                     <span class="db-pill db-pill--green">reciente</span>
                                 <?php else: ?>
-                                    <span class="db-pill db-pill--blue">registrado</span>
+                                    <span class="db-pill db-pill--gray">registrado</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
-    </div>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+            </div>
+
+        </div><!-- /col-main -->
+
+        <!-- columna derecha -->
+        <div class="db-col-side">
+
+            <!-- Alertas -->
+            <div class="db-card">
+                <div class="db-card-title">
+                    <i class="fa-solid fa-bell"></i>
+                    Alertas del sistema
+                </div>
+                <?php if (empty($productosBajos) && empty($productosSinStock)): ?>
+                    <div class="db-alert db-alert--ok">
+                        <span class="db-dot db-dot--ok"></span>
+                        Stock saludable — todo en rango
+                    </div>
+                <?php else: ?>
+                    <?php if ($productosSinStock): ?>
+                    <div class="db-alert db-alert--danger">
+                        <span class="db-dot db-dot--danger"></span>
+                        <?= count($productosSinStock) ?> producto<?= count($productosSinStock) > 1 ? 's' : '' ?> <strong>Sin Stock</strong>
+                    </div>
+                    <?php foreach ($productosSinStock as $ps): ?>
+                        <div class="db-alert-detail">⛔ <?= htmlspecialchars($ps['nombre']) ?> (<?= strtolower($ps['tipo_stock']) ?>)</div>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                    <?php if ($productosBajos): ?>
+                    <div class="db-alert db-alert--warn">
+                        <span class="db-dot db-dot--warn"></span>
+                        <?= count($productosBajos) ?> bajo mínimo
+                    </div>
+                    <?php foreach ($productosBajos as $pb): ?>
+                        <div class="db-alert-detail">⚠ <?= htmlspecialchars($pb['nombre']) ?> — <?= number_format($pb['stock_actual'],0) ?>/<?= number_format($pb['stock_minimo'],0) ?> uds</div>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+
+            <!-- Auditorías recientes -->
+            <div class="db-card db-audit-card">
+                <div class="db-card-title">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    Actividad reciente
+                    <a href="<?= URL_ASSETS ?>/configuraciones/auditoria.php" class="db-card-link">Ver todo →</a>
+                </div>
+                <?php if (empty($auditoriasRecientes)): ?>
+                    <p class="db-empty">Sin actividad registrada.</p>
+                <?php else: ?>
+                <div class="db-audit-list">
+                <?php foreach ($auditoriasRecientes as $a):
+                    $accionIconos = [
+                        'crear'    => ['fa-plus-circle','audit-create'],
+                        'editar'   => ['fa-pen','audit-edit'],
+                        'eliminar' => ['fa-trash','audit-delete'],
+                        'login'    => ['fa-right-to-bracket','audit-login'],
+                        'logout'   => ['fa-right-from-bracket','audit-logout'],
+                        'guardar'  => ['fa-floppy-disk','audit-edit'],
+                        'producir' => ['fa-industry','audit-create'],
+                    ];
+                    $accionLower = strtolower($a['accion'] ?? '');
+                    [$icono,$clase] = $accionIconos[$accionLower] ?? ['fa-circle-dot','audit-default'];
+                    $hace = '';
+                    if ($a['created_at']) {
+                        $diff = time() - strtotime($a['created_at']);
+                        if ($diff < 60)       $hace = 'hace ' . $diff . 's';
+                        elseif ($diff < 3600) $hace = 'hace ' . floor($diff/60) . 'min';
+                        elseif ($diff < 86400)$hace = 'hace ' . floor($diff/3600) . 'h';
+                        else                  $hace = date('d/m', strtotime($a['created_at']));
+                    }
+                ?>
+                    <div class="db-audit-item">
+                        <div class="db-audit-icon <?= $clase ?>">
+                            <i class="fa-solid <?= $icono ?>"></i>
+                        </div>
+                        <div class="db-audit-body">
+                            <div class="db-audit-title">
+                                <?= htmlspecialchars($a['usuario_nombre'] ?? 'Sistema') ?>
+                                <span class="db-audit-accion"><?= htmlspecialchars($a['accion'] ?? '') ?></span>
+                            </div>
+                            <div class="db-audit-desc">
+                                <?= htmlspecialchars(mb_strimwidth($a['descripcion'] ?? $a['modulo'] ?? '', 0, 55, '…')) ?>
+                            </div>
+                        </div>
+                        <div class="db-audit-time"><?= $hace ?></div>
+                    </div>
+                <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+        </div><!-- /col-side -->
+
+    </div><!-- /layout -->
 
 </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-/* ---- Gráfico producción ---- */
 new Chart(document.getElementById('chartProd'), {
     type: 'bar',
     data: {
@@ -367,10 +377,10 @@ new Chart(document.getElementById('chartProd'), {
         datasets: [{
             label: 'Lotes',
             data: <?= json_encode($chartData) ?>,
-            backgroundColor: 'rgba(55,138,221,0.10)',
-            borderColor: '#378ADD',
-            borderWidth: 1.5,
-            borderRadius: 6,
+            backgroundColor: 'rgba(200,142,153,0.12)',
+            borderColor: '#c88e99',
+            borderWidth: 2,
+            borderRadius: 8,
             borderSkipped: false,
         }]
     },
@@ -379,21 +389,17 @@ new Chart(document.getElementById('chartProd'), {
         plugins: {
             legend: { display: false },
             tooltip: {
-                callbacks: { label: c => `${c.raw} lote${c.raw !== 1 ? 's' : ''}` }
+                backgroundColor: '#1e1e1e',
+                titleFont: { family: 'Inter', size: 12 },
+                bodyFont:  { family: 'Inter', size: 13 },
+                callbacks: { label: c => ` ${c.raw} lote${c.raw !== 1 ? 's' : ''}` }
             }
         },
         scales: {
-            x: {
-                grid: { display: false },
-                border: { display: false },
-                ticks: { font: { size: 11, family: 'DM Sans, sans-serif' }, color: '#9e9e9a' }
-            },
-            y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1, font: { size: 11, family: 'DM Sans, sans-serif' }, color: '#9e9e9a' },
-                grid: { color: 'rgba(0,0,0,.05)' },
-                border: { display: false }
-            }
+            x: { grid: { display: false }, border: { display: false },
+                 ticks: { font: { size: 11, family: 'Inter' }, color: '#9e9e9a' } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 }, color: '#9e9e9a' },
+                 grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false } }
         }
     }
 });

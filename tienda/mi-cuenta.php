@@ -14,119 +14,27 @@ $stmt = $pdo->prepare("SELECT nombre, apellido, celular, dni, email FROM usuario
 $stmt->execute([$uid]);
 $user = $stmt->fetch();
 if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
+
+try {
+    $pedidosCount = $pdo->prepare("SELECT COUNT(*) FROM ventas WHERE idusuario = ?");
+    $pedidosCount->execute([$uid]);
+    $totalPedidos = (int)$pedidosCount->fetchColumn();
+} catch (Throwable $e) { $totalPedidos = 0; }
+
+$nombreCompleto = trim(($user['nombre'] ?? '') . ' ' . ($user['apellido'] ?? ''));
+$iniciales = strtoupper(
+    substr($user['nombre'] ?? '', 0, 1) . substr($user['apellido'] ?? '', 0, 1)
+) ?: '?';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mi Cuenta — Canetto</title>
 <link rel="stylesheet" href="tienda.css">
-<style>
-.cuenta-wrap { padding: 16px 20px 40px; max-width: 500px; margin: 0 auto; }
-.cuenta-section {
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
-.cuenta-section h3 {
-  font-size: 15px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: #111;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.c-field { margin-bottom: 14px; }
-.c-field label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 5px;
-}
-.c-field input {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid #ebebeb;
-  border-radius: 10px;
-  font-size: 14px;
-  font-family: inherit;
-  color: #111;
-  background: #fafafa;
-  transition: border-color 0.2s;
-  outline: none;
-}
-.c-field input:focus { border-color: var(--pk); background: #fff; }
-.c-field input:disabled { color: #aaa; background: #f5f5f5; cursor: not-allowed; }
-.btn-save {
-  width: 100%;
-  padding: 14px;
-  background: #111;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s;
-  margin-top: 4px;
-}
-.btn-save:hover { background: var(--pk); }
-.btn-save:disabled { background: #ccc; cursor: not-allowed; }
-.btn-logout {
-  width: 100%;
-  padding: 14px;
-  background: #f9edf0;
-  color: #c88e99;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s;
-  text-decoration: none;
-  display: block;
-  text-align: center;
-}
-.btn-logout:hover { background: #f5c6c6; }
-.c-alert {
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 14px;
-  display: none;
-}
-.c-alert.on { display: block; }
-.c-alert.ok { background: #e8f5e9; color: #1d8348; }
-.c-alert.err { background: #f9edf0; color: #c88e99; }
-.avatar-circle {
-  width: 72px;
-  height: 72px;
-  background: linear-gradient(135deg, #c88e99, #9c27b0);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  margin: 0 auto 12px;
-}
-.user-greeting {
-  text-align: center;
-  margin-bottom: 20px;
-}
-.user-greeting strong { font-size: 18px; }
-.user-greeting small { display: block; color: #888; font-size: 12px; }
-</style>
 </head>
-<body class="has-bottom-nav">
+<body class="has-bottom-nav" style="background:#f5f5f5">
 <div id="page-wrap">
 
 <header class="t-nav">
@@ -138,149 +46,190 @@ if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
   </a>
 </header>
 
-<div class="page-hd">
-  <a href="index.php" class="back-btn">←</a>
-  <div>
-    <div class="page-title">Mi cuenta</div>
-    <div style="font-size:12px;color:#888">Gestioná tu perfil</div>
-  </div>
-</div>
-
 <div class="cuenta-wrap">
 
-  <div class="user-greeting">
-    <div class="avatar-circle">👤</div>
-    <strong><?= htmlspecialchars(trim($user['nombre'].' '.($user['apellido'] ?? ''))) ?></strong>
-    <small><?= htmlspecialchars($user['celular'] ?? '') ?></small>
+  <!-- Hero del perfil -->
+  <div class="perfil-hero">
+    <div class="perfil-avatar"><?= htmlspecialchars($iniciales) ?></div>
+    <div class="perfil-info">
+      <div class="perfil-name"><?= htmlspecialchars($nombreCompleto) ?></div>
+      <div class="perfil-phone"><?= htmlspecialchars($user['celular'] ?? '') ?></div>
+      <div class="perfil-badge">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <?= $totalPedidos ?> pedido<?= $totalPedidos !== 1 ? 's' : '' ?> realizados
+      </div>
+    </div>
   </div>
+
+  <div id="alertGlobal" class="c-alert" style="margin:16px 16px 0"></div>
 
   <!-- Datos personales -->
-  <div class="cuenta-section">
-    <h3>✏️ Mis datos</h3>
-    <div id="alertDatos" class="c-alert"></div>
-    <div class="c-field">
-      <label>Nombre</label>
-      <input type="text" id="uNombre" value="<?= htmlspecialchars($user['nombre']) ?>" placeholder="Nombre">
+  <div class="settings-group-label" style="padding-left:20px">Datos de la cuenta</div>
+  <div class="settings-group">
+
+    <div class="settings-row" onclick="toggleEdit('nombre')">
+      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-user"></i></div>
+      <div class="settings-row-body">
+        <div class="settings-row-title">Nombre y apellido</div>
+        <div class="settings-row-sub"><?= htmlspecialchars($nombreCompleto) ?></div>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </div>
-    <div class="c-field">
-      <label>Apellido</label>
+    <div class="settings-input-wrap" id="edit-nombre">
+      <input type="text" id="uNombre" value="<?= htmlspecialchars($user['nombre'] ?? '') ?>" placeholder="Nombre">
       <input type="text" id="uApellido" value="<?= htmlspecialchars($user['apellido'] ?? '') ?>" placeholder="Apellido">
+      <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
     </div>
-    <div class="c-field">
-      <label>DNI</label>
-      <input type="text" id="uDni" value="<?= htmlspecialchars($user['dni'] ?? '') ?>" placeholder="Número de DNI">
+
+    <div class="settings-row" onclick="toggleEdit('email')">
+      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-envelope"></i></div>
+      <div class="settings-row-body">
+        <div class="settings-row-title">Email</div>
+        <div class="settings-row-sub"><?= $user['email'] ? htmlspecialchars($user['email']) : 'Sin email configurado' ?></div>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </div>
-    <div class="c-field">
-      <label>Email <span style="font-size:10px;color:#aaa">(para recuperar tu contraseña)</span></label>
+    <div class="settings-input-wrap" id="edit-email">
       <input type="email" id="uEmail" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="tu@email.com">
+      <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
     </div>
-    <div class="c-field">
-      <label>Celular</label>
-      <input type="tel" id="uCelular" value="<?= htmlspecialchars($user['celular'] ?? '') ?>" disabled title="El celular no se puede cambiar">
+
+    <div class="settings-row" onclick="toggleEdit('dni')">
+      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-id-card"></i></div>
+      <div class="settings-row-body">
+        <div class="settings-row-title">DNI</div>
+        <div class="settings-row-sub"><?= $user['dni'] ? htmlspecialchars($user['dni']) : 'Sin DNI cargado' ?></div>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
     </div>
-    <button class="btn-save" id="btnDatos" onclick="guardarDatos()">Guardar cambios</button>
+    <div class="settings-input-wrap" id="edit-dni">
+      <input type="text" id="uDni" value="<?= htmlspecialchars($user['dni'] ?? '') ?>" placeholder="Número de DNI">
+      <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
+    </div>
+
+    <div class="settings-row">
+      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-phone"></i></div>
+      <div class="settings-row-body">
+        <div class="settings-row-title">Celular</div>
+        <div class="settings-row-sub"><?= htmlspecialchars($user['celular'] ?? '') ?></div>
+      </div>
+      <span class="settings-row-val">No editable</span>
+    </div>
+
   </div>
 
-  <!-- Contraseña vía email -->
-  <div class="cuenta-section">
-    <h3>🔒 Contraseña</h3>
-    <p style="font-size:13px;color:#888;margin:0 0 16px;line-height:1.6;">
-      Para cambiar tu contraseña te enviamos un enlace seguro a tu email registrado.
-      <?php if (!($user['email'] ?? '')): ?>
-        <strong style="color:#c88e99;">Primero guardá tu email en "Mis datos".</strong>
-      <?php endif; ?>
-    </p>
-    <div id="alertPass" class="c-alert"></div>
-    <?php if ($user['email'] ?? ''): ?>
-      <button class="btn-save" id="btnPass" onclick="solicitarReset()">
-        Enviar enlace de cambio de contraseña
-      </button>
-    <?php else: ?>
-      <button class="btn-save" disabled style="background:#ccc;cursor:not-allowed;">
-        Completá tu email primero
-      </button>
-    <?php endif; ?>
+  <!-- Seguridad -->
+  <div class="settings-group-label" style="padding-left:20px">Seguridad</div>
+  <div class="settings-group">
+    <div class="settings-row" onclick="solicitarReset()">
+      <div class="settings-row-icon sri-pink"><i class="fa-solid fa-lock"></i></div>
+      <div class="settings-row-body">
+        <div class="settings-row-title">Cambiar contraseña</div>
+        <div class="settings-row-sub">Te enviamos un enlace seguro al email</div>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
+    </div>
   </div>
 
-  <!-- Cerrar sesión -->
-  <div class="cuenta-section">
-    <h3>🚪 Sesión</h3>
-    <a href="#" class="btn-logout" onclick="doLogout(event)">Cerrar sesión</a>
+  <!-- Mis pedidos -->
+  <div class="settings-group-label" style="padding-left:20px">Actividad</div>
+  <div class="settings-group">
+    <a href="mis-pedidos.php" class="settings-row" style="text-decoration:none">
+      <div class="settings-row-icon sri-green"><i class="fa-solid fa-bag-shopping"></i></div>
+      <div class="settings-row-body">
+        <div class="settings-row-title">Mis pedidos</div>
+        <div class="settings-row-sub"><?= $totalPedidos ?> pedido<?= $totalPedidos !== 1 ? 's' : '' ?> en total</div>
+      </div>
+      <i class="fa-solid fa-chevron-right"></i>
+    </a>
   </div>
+
+  <!-- Sesión -->
+  <div class="settings-group-label" style="padding-left:20px">Sesión</div>
+  <div class="settings-group">
+    <div class="settings-row settings-row--danger" onclick="doLogout()">
+      <div class="settings-row-icon sri-red"><i class="fa-solid fa-right-from-bracket"></i></div>
+      <div class="settings-row-body">
+        <div class="settings-row-title">Cerrar sesión</div>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-size:11px;color:#ccc;padding:24px 0 8px">
+    Canetto · v2.0 · <?= date('Y') ?>
+  </p>
 
 </div>
 </div><!-- /page-wrap -->
 
 <nav class="bottom-nav">
   <a href="index.php" class="bn-item">
-    <span class="bn-ic">🏠</span>
+    <i class="fa-solid fa-house"></i>
     <span>Inicio</span>
   </a>
   <a href="mis-pedidos.php" class="bn-item">
-    <span class="bn-ic">📦</span>
+    <i class="fa-solid fa-bag-shopping"></i>
     <span>Mis pedidos</span>
   </a>
   <a href="index.php#sucursales" class="bn-item">
-    <span class="bn-ic">📍</span>
+    <i class="fa-solid fa-location-dot"></i>
     <span>Sucursales</span>
   </a>
   <a href="mi-cuenta.php" class="bn-item active">
-    <span class="bn-ic">👤</span>
+    <i class="fa-solid fa-user"></i>
     <span>Mi cuenta</span>
   </a>
 </nav>
 
 <script>
-function setAlert(id, msg, type) {
-  const el = document.getElementById(id);
+function setAlert(msg, type) {
+  const el = document.getElementById('alertGlobal');
   el.textContent = msg;
   el.className = 'c-alert on ' + type;
-  setTimeout(() => el.classList.remove('on'), 4000);
+  el.style.display = 'block';
+  setTimeout(() => { el.classList.remove('on'); el.style.display = ''; }, 4000);
+}
+
+function toggleEdit(key) {
+  const all = document.querySelectorAll('.settings-input-wrap');
+  all.forEach(el => { if (el.id !== 'edit-'+key) el.classList.remove('on'); });
+  document.getElementById('edit-'+key)?.classList.toggle('on');
 }
 
 async function guardarDatos() {
-  const nombre   = document.getElementById('uNombre').value.trim();
-  const apellido = document.getElementById('uApellido').value.trim();
-  const dni      = document.getElementById('uDni').value.trim();
-  const email    = document.getElementById('uEmail').value.trim();
-  if (!nombre) { setAlert('alertDatos', 'El nombre es obligatorio', 'err'); return; }
-  const btn = document.getElementById('btnDatos');
-  btn.disabled = true; btn.textContent = 'Guardando...';
+  const nombre   = document.getElementById('uNombre')?.value.trim() || '';
+  const apellido = document.getElementById('uApellido')?.value.trim() || '';
+  const dni      = document.getElementById('uDni')?.value.trim() || '';
+  const email    = document.getElementById('uEmail')?.value.trim() || '';
+  if (!nombre) { setAlert('El nombre es obligatorio', 'err'); return; }
+  const fd = new FormData();
+  fd.append('action', 'update_profile');
+  fd.append('nombre',   nombre);
+  fd.append('apellido', apellido);
+  fd.append('dni',      dni);
+  fd.append('email',    email);
   try {
-    const fd = new FormData();
-    fd.append('action', 'update_profile');
-    fd.append('nombre',   nombre);
-    fd.append('apellido', apellido);
-    fd.append('dni',      dni);
-    fd.append('email',    email);
     const d = await (await fetch('api/auth.php', { method: 'POST', body: fd })).json();
-    if (d.success) {
-      setAlert('alertDatos', '✅ Datos actualizados', 'ok');
-      // Si acaba de agregar email, habilitar el botón de reset
-      if (email && document.getElementById('btnPass')?.disabled) location.reload();
-    } else setAlert('alertDatos', d.message || 'Error al guardar', 'err');
-  } catch { setAlert('alertDatos', 'Error de conexión', 'err'); }
-  btn.disabled = false; btn.textContent = 'Guardar cambios';
+    if (d.success) { setAlert('✓ Datos actualizados', 'ok'); setTimeout(() => location.reload(), 1200); }
+    else setAlert(d.message || 'Error al guardar', 'err');
+  } catch { setAlert('Error de conexión', 'err'); }
 }
 
 async function solicitarReset() {
-  const btn = document.getElementById('btnPass');
-  btn.disabled = true; btn.textContent = 'Enviando...';
+  <?php if (!($user['email'] ?? '')): ?>
+  setAlert('Primero guardá tu email', 'err'); return;
+  <?php endif; ?>
+  const fd = new FormData(); fd.append('action', 'solicitar_reset');
   try {
-    const fd = new FormData();
-    fd.append('action', 'solicitar_reset');
     const d = await (await fetch('api/auth.php', { method: 'POST', body: fd })).json();
-    if (d.success) setAlert('alertPass', '✅ Revisá tu email, te enviamos el enlace para cambiar la contraseña.', 'ok');
-    else setAlert('alertPass', d.message || 'No se pudo enviar', 'err');
-  } catch { setAlert('alertPass', 'Error de conexión', 'err'); }
-  btn.disabled = false; btn.textContent = 'Enviar enlace de cambio de contraseña';
+    if (d.success) setAlert('✓ Revisá tu email para cambiar la contraseña', 'ok');
+    else setAlert(d.message || 'No se pudo enviar', 'err');
+  } catch { setAlert('Error de conexión', 'err'); }
 }
 
-function doLogout(e) {
-  e.preventDefault();
-  // Limpiar el carrito de este usuario antes de cerrar sesión
+function doLogout() {
   localStorage.removeItem('canetto_cart_<?= $uid ?>');
-  window.location.href = '<?= base() ?>/tienda/api/auth.php?action=logout_redirect';
+  window.location.href = 'api/auth.php?action=logout_redirect';
 }
 </script>
 <script src="transitions.js"></script>

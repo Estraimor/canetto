@@ -240,6 +240,7 @@ $todosProductos = $stmtTodos->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 
+<?php $panicoArea = 'Horneado'; include '../_boton_panico.php'; ?>
 <?php include '../../../panel/dashboard/layaut/footer.php'; ?>
 
 <script>

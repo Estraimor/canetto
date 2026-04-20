@@ -130,7 +130,7 @@ include '../../panel/dashboard/layaut/nav.php';
     </div>
   </div>
 </div>
-
+<?php include '../../panel/dashboard/layaut/footer.php'; ?>
 <script>
 const INC_API = '<?= URL_ADMIN ?>/incidencias/api/';
 

@@ -640,4 +640,5 @@ function ejecutarProduccion(items, esBulk = false){
 }
 </script>
 
+<?php $panicoArea = 'Masa Congelada'; include '../_boton_panico.php'; ?>
 <?php include '../../../panel/dashboard/layaut/footer.php'; ?>

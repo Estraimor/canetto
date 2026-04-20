@@ -18,14 +18,35 @@ $productos_lista = $pdo->query("
     SELECT idproductos, nombre, precio, tipo FROM productos WHERE activo=1 ORDER BY nombre ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-$TIPOS_PANEL = [
-    'promo'      => ['label' => '📢 Promo',      'color' => '#c88e99'],
-    'bienvenida' => ['label' => '👋 Bienvenida', 'color' => '#1d9e75'],
-    'regalo'     => ['label' => '🎁 Regalo',     'color' => '#7c3aed'],
-    'soporte'    => ['label' => '🛟 Soporte',    'color' => '#0891b2'],
-    'temporada'  => ['label' => '🌸 Temporada',  'color' => '#f59e0b'],
-    'descuento'  => ['label' => '💸 Descuento',  'color' => '#dc2626'],
-];
+// Crear tabla tipos_panel si no existe
+$pdo->exec("CREATE TABLE IF NOT EXISTS tipos_panel (
+    id     INT AUTO_INCREMENT PRIMARY KEY,
+    clave  VARCHAR(40) NOT NULL UNIQUE,
+    label  VARCHAR(60) NOT NULL,
+    emoji  VARCHAR(8)  NOT NULL DEFAULT '📌',
+    color  VARCHAR(20) NOT NULL DEFAULT '#888888',
+    activo TINYINT(1)  NOT NULL DEFAULT 1,
+    orden  INT         NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+if ((int)$pdo->query("SELECT COUNT(*) FROM tipos_panel")->fetchColumn() === 0) {
+    $ins = $pdo->prepare("INSERT INTO tipos_panel (clave,label,emoji,color,orden) VALUES (?,?,?,?,?)");
+    foreach ([
+        ['promo','Promo','📢','#c88e99',0],
+        ['bienvenida','Bienvenida','👋','#1d9e75',1],
+        ['regalo','Regalo','🎁','#7c3aed',2],
+        ['soporte','Soporte','🛟','#0891b2',3],
+        ['temporada','Temporada','🌸','#f59e0b',4],
+        ['descuento','Descuento','💸','#dc2626',5],
+    ] as $d) $ins->execute($d);
+}
+
+// Cargar tipos desde DB
+$tiposRows   = $pdo->query("SELECT * FROM tipos_panel WHERE activo=1 ORDER BY orden ASC")->fetchAll(PDO::FETCH_ASSOC);
+$TIPOS_PANEL = [];
+foreach ($tiposRows as $t) {
+    $TIPOS_PANEL[$t['clave']] = ['id' => $t['id'], 'label' => $t['emoji'] . ' ' . $t['label'], 'color' => $t['color'], 'emoji' => $t['emoji']];
+}
 ?>
 
 <link rel="stylesheet" href="<?= URL_ASSETS ?>/configuraciones/cfg.css">
@@ -58,10 +79,15 @@ $TIPOS_PANEL = [
                 Paneles del Carrusel
             </div>
         </div>
-        <button class="btn-primary" onclick="openModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo panel
-        </button>
+        <div style="display:flex;gap:8px">
+            <button class="btn-sm" onclick="openTiposModal()" title="Gestionar tipos de panel">
+                <i class="fa-solid fa-tags"></i> Gestionar tipos
+            </button>
+            <button class="btn-primary" onclick="openModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nuevo panel
+            </button>
+        </div>
     </div>
 
     <div class="stats-bar">
@@ -208,6 +234,35 @@ $TIPOS_PANEL = [
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Guardar
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Gestionar tipos de panel -->
+<div class="modal-overlay" id="modalTipos">
+    <div class="modal" style="max-width:480px" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <h2>Tipos de panel</h2>
+            <button class="modal-close" onclick="closeTiposModal()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Lista de tipos existentes -->
+            <div id="tiposLista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+
+            <!-- Formulario agregar nuevo tipo -->
+            <div style="border-top:1px solid #eee;padding-top:16px">
+                <p style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">Agregar nuevo tipo</p>
+                <div style="display:grid;grid-template-columns:48px 1fr 100px;gap:8px;align-items:center">
+                    <input type="text" id="nuevoEmoji" maxlength="4" placeholder="📌" style="font-size:22px;text-align:center;padding:8px 4px;border:1.5px solid #e0e0e0;border-radius:8px">
+                    <input type="text" id="nuevoLabel" placeholder="Nombre del tipo" style="padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px">
+                    <input type="color" id="nuevoColor" value="#c88e99" style="height:42px;width:100%;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;padding:2px">
+                </div>
+                <button class="btn-primary" onclick="agregarTipo()" style="margin-top:10px;width:100%">
+                    <i class="fa-solid fa-plus"></i> Agregar tipo
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -368,7 +423,7 @@ async function editar(id){
 
 async function guardar(){
     const titulo = document.getElementById('oTitulo').value.trim();
-    if(!titulo){ alert('El título es obligatorio'); return; }
+    if(!titulo){ Swal.fire({icon:'warning',title:'Falta el título',text:'El título es obligatorio',confirmButtonColor:'#c88e99'}); return; }
     const btn = document.getElementById('btnGuardar');
     btn.disabled = true; btn.textContent = 'Guardando...';
 
@@ -392,15 +447,165 @@ async function guardar(){
     btn.disabled = false;
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar`;
 
-    if(res?.success){ closeModal(); dt.ajax.reload(); }
-    else alert(res?.message || 'Error al guardar');
+    if(res?.success){
+        closeModal(); dt.ajax.reload();
+        Swal.fire({icon:'success',title:'Guardado',timer:1200,showConfirmButton:false});
+    } else {
+        Swal.fire({icon:'error',title:'Error',text:res?.message||'Error al guardar',confirmButtonColor:'#c88e99'});
+    }
 }
 
 async function eliminar(id){
-    if(!confirm('¿Eliminar este panel?')) return;
+    const { isConfirmed } = await Swal.fire({
+        icon:'warning', title:'¿Eliminar panel?',
+        text:'Esta acción no se puede deshacer.',
+        showCancelButton:true, confirmButtonText:'Sí, eliminar',
+        cancelButtonText:'Cancelar', confirmButtonColor:'#dc2626', cancelButtonColor:'#aaa'
+    });
+    if(!isConfirmed) return;
     const fd = new FormData(); fd.append('id', id);
     const res = await fetch('ajax/eliminar_oferta.php',{method:'POST',body:fd}).then(r=>r.json());
-    if(res?.success) dt.ajax.reload();
-    else alert(res?.message||'Error');
+    if(res?.success){
+        dt.ajax.reload();
+        Swal.fire({icon:'success',title:'Eliminado',timer:1000,showConfirmButton:false});
+    } else {
+        Swal.fire({icon:'error',title:'Error',text:res?.message||'No se pudo eliminar',confirmButtonColor:'#c88e99'});
+    }
+}
+
+// ── Gestión de tipos de panel ─────────────────────────────
+function openTiposModal() {
+    cargarTiposLista();
+    document.getElementById('modalTipos').classList.add('open');
+}
+function closeTiposModal() {
+    document.getElementById('modalTipos').classList.remove('open');
+}
+
+async function cargarTiposLista() {
+    const tipos = await fetch('ajax/tipos_panel.php?accion=listar').then(r=>r.json());
+    const lista = document.getElementById('tiposLista');
+    if (!tipos.length) { lista.innerHTML = '<p style="color:#999;font-size:13px">Sin tipos cargados.</p>'; return; }
+
+    const activos   = tipos.filter(t => t.activo == 1);
+    const inactivos = tipos.filter(t => t.activo == 0);
+
+    const renderFila = (t) => {
+        const esActivo = t.activo == 1;
+        return `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${esActivo?'#eee':'#f5d0d0'};border-radius:10px;background:${esActivo?'#fafafa':'#fff5f5'};opacity:${esActivo?1:.75}">
+            <span style="font-size:20px">${t.emoji}</span>
+            <span style="font-weight:600;font-size:14px;flex:1;color:${esActivo?t.color:'#aaa'}">${t.label}</span>
+            <span style="font-size:11px;color:#bbb;font-family:monospace;margin-right:4px">${t.clave}</span>
+            ${esActivo ? `
+                <button onclick="inactivarTipo(${t.id},'${t.label}')"
+                    style="background:#fef3c7;border:1.5px solid #fcd34d;color:#92400e;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">Inactivar</button>
+                <button onclick="eliminarTipo(${t.id},'${t.label}')"
+                    style="background:#fee2e2;border:1.5px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">Eliminar</button>
+            ` : `
+                <span style="font-size:11px;color:#dc2626;font-weight:600">Inactivo</span>
+                <button onclick="activarTipo(${t.id},'${t.label}')"
+                    style="background:#dcfce7;border:1.5px solid #86efac;color:#16a34a;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">Activar</button>
+                <button onclick="eliminarTipo(${t.id},'${t.label}')"
+                    style="background:#fee2e2;border:1.5px solid #fca5a5;color:#dc2626;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">Eliminar</button>
+            `}
+        </div>`;
+    };
+
+    let html = activos.map(renderFila).join('');
+    if (inactivos.length) {
+        html += `<div style="font-size:12px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px">Inactivos</div>`;
+        html += inactivos.map(renderFila).join('');
+    }
+    lista.innerHTML = html;
+}
+
+async function activarTipo(id, nombre) {
+    const fd = new FormData();
+    fd.append('accion', 'activar');
+    fd.append('id', id);
+    const res = await fetch('ajax/tipos_panel.php', {method:'POST', body:fd}).then(r=>r.json());
+    if (res.success) {
+        Swal.fire({icon:'success', title:'Tipo activado', text:`"${nombre}" vuelve a estar disponible.`, timer:1400, showConfirmButton:false});
+        cargarTiposLista();
+        setTimeout(() => location.reload(), 1500);
+    } else {
+        Swal.fire({icon:'error', title:'Error', text: res.message || 'No se pudo activar', confirmButtonColor:'#c88e99'});
+    }
+}
+
+async function agregarTipo() {
+    const label = document.getElementById('nuevoLabel').value.trim();
+    const emoji = document.getElementById('nuevoEmoji').value.trim() || '📌';
+    const color = document.getElementById('nuevoColor').value;
+    if (!label) {
+        Swal.fire({ icon:'warning', title:'Falta el nombre', text:'Escribí un nombre para el tipo', confirmButtonColor:'#c88e99' });
+        return;
+    }
+    const fd = new FormData();
+    fd.append('accion', 'guardar');
+    fd.append('label', label);
+    fd.append('emoji', emoji);
+    fd.append('color', color);
+    const res = await fetch('ajax/tipos_panel.php', {method:'POST', body:fd}).then(r=>r.json());
+    if (res.success) {
+        document.getElementById('nuevoLabel').value = '';
+        document.getElementById('nuevoEmoji').value = '';
+        Swal.fire({ icon:'success', title:'Tipo agregado', timer:1200, showConfirmButton:false });
+        cargarTiposLista();
+        setTimeout(() => location.reload(), 1400);
+    } else {
+        Swal.fire({ icon:'error', title:'Error', text: res.message || 'No se pudo guardar', confirmButtonColor:'#c88e99' });
+    }
+}
+
+async function inactivarTipo(id, nombre) {
+    const { isConfirmed } = await Swal.fire({
+        icon: 'warning',
+        title: '¿Inactivar tipo?',
+        html: `El tipo <strong>${nombre}</strong> no aparecerá en el selector pero sus paneles se mantienen.`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, inactivar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d97706',
+        cancelButtonColor: '#aaa',
+    });
+    if (!isConfirmed) return;
+    const fd = new FormData();
+    fd.append('accion', 'eliminar'); // soft-delete = inactivar
+    fd.append('id', id);
+    const res = await fetch('ajax/tipos_panel.php', {method:'POST', body:fd}).then(r=>r.json());
+    if (res.success) {
+        Swal.fire({ icon:'success', title:'Tipo inactivado', timer:1200, showConfirmButton:false });
+        cargarTiposLista();
+        setTimeout(() => location.reload(), 1400);
+    } else {
+        Swal.fire({ icon:'error', title:'No se puede inactivar', text: res.message, confirmButtonColor:'#c88e99' });
+    }
+}
+
+async function eliminarTipo(id, nombre) {
+    const { isConfirmed } = await Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar tipo?',
+        html: `Se eliminará permanentemente <strong>${nombre}</strong>.<br>Solo se puede eliminar si no tiene paneles asociados.`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#aaa',
+    });
+    if (!isConfirmed) return;
+    const fd = new FormData();
+    fd.append('accion', 'eliminar_hard');
+    fd.append('id', id);
+    const res = await fetch('ajax/tipos_panel.php', {method:'POST', body:fd}).then(r=>r.json());
+    if (res.success) {
+        Swal.fire({ icon:'success', title:'Eliminado', timer:1200, showConfirmButton:false });
+        cargarTiposLista();
+        setTimeout(() => location.reload(), 1400);
+    } else {
+        Swal.fire({ icon:'error', title:'No se puede eliminar', text: res.message, confirmButtonColor:'#c88e99' });
+    }
 }
 </script>

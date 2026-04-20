@@ -169,19 +169,19 @@ $tl = [
 
 <nav class="bottom-nav">
   <a href="index.php" class="bn-item">
-    <span class="bn-ic">🏠</span>
+    <i class="fa-solid fa-house"></i>
     <span>Inicio</span>
   </a>
   <a href="mis-pedidos.php" class="bn-item active">
-    <span class="bn-ic">📦</span>
+    <i class="fa-solid fa-bag-shopping"></i>
     <span>Mis pedidos</span>
   </a>
   <a href="index.php#sucursales" class="bn-item">
-    <span class="bn-ic">📍</span>
+    <i class="fa-solid fa-location-dot"></i>
     <span>Sucursales</span>
   </a>
   <a href="mi-cuenta.php" class="bn-item">
-    <span class="bn-ic">👤</span>
+    <i class="fa-solid fa-user"></i>
     <span>Mi cuenta</span>
   </a>
 </nav>

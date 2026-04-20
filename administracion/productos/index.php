@@ -150,60 +150,42 @@ foreach ($boxRows as $row) {
 
             <div class="producto-card <?= $p['activo'] ? '' : 'inactivo' ?>">
 
-                <div class="producto-header">
-
+                <div class="prod-thumb-wrap">
                     <?php if (!empty($p['imagen'])): ?>
-                    <img src="<?= URL_ASSETS ?>/img/productos/<?= htmlspecialchars($p['imagen']) ?>"
-                         alt="" class="prod-thumb-admin">
+                        <img src="<?= URL_ASSETS ?>/img/productos/<?= htmlspecialchars($p['imagen']) ?>"
+                             alt="" class="prod-thumb-admin">
+                    <?php else: ?>
+                        <div class="prod-thumb-placeholder"><i class="fa-solid fa-cookie-bite"></i></div>
                     <?php endif; ?>
-
-                    <h3><?= htmlspecialchars($p['nombre']) ?></h3>
-
-                    <span class="estado">
+                    <span class="estado-badge <?= $p['activo'] ? 'badge-activo' : 'badge-inactivo' ?>">
                         <?= $p['activo'] ? 'Activo' : 'Inactivo' ?>
                     </span>
-
                 </div>
 
-                <div class="producto-body">
+                <div class="prod-card-body">
+                    <div class="producto-header">
+                        <h3><?= htmlspecialchars($p['nombre']) ?></h3>
+                    </div>
 
-                    <p>
-                        <strong>Receta:</strong>
-                        <?= $p['receta_nombre'] ?? 'Sin receta' ?>
-                    </p>
+                    <div class="producto-body">
+                        <div class="prod-meta-row">
+                            <span class="prod-meta-label">Receta</span>
+                            <span><?= htmlspecialchars($p['receta_nombre'] ?? 'Sin receta') ?></span>
+                        </div>
+                        <div class="prod-meta-row">
+                            <span class="prod-meta-label">Precio</span>
+                            <span class="prod-price-val">$<?= number_format($p['precio'], 2) ?></span>
+                        </div>
+                    </div>
 
-                    <p>
-                        <strong>Precio:</strong>
-                        $<?= number_format($p['precio'], 2) ?>
-                    </p>
-
-                </div>
-
-                <div class="card-actions">
-
-                    <button
-                        class="btn-edit"
-                        onclick="editarProducto(
-    <?= $p['idproductos'] ?>,
-    '<?= addslashes(htmlspecialchars($p['nombre'])) ?>',
-    <?= $p['precio'] ?>,
-    '<?= $p['tipo'] ?>',
-    <?= $p['recetas_idrecetas'] ?? 'null' ?>,
-    <?= $p['min_congelado'] ?? 0 ?>,
-    <?= $p['min_hecho'] ?? 0 ?>,
-    '<?= htmlspecialchars($p['imagen'] ?? '') ?>'
-)"
-                    >
-                        Editar
-                    </button>
-
-                    <button
-                        class="btn-delete"
-                        onclick="toggleActivo(<?= $p['idproductos'] ?>, <?= $p['activo'] ?>)"
-                    >
-                        <?= $p['activo'] ? 'Dar de baja' : 'Activar' ?>
-                    </button>
-
+                    <div class="card-actions">
+                        <button class="btn-edit" onclick="editarProducto(<?= $p['idproductos'] ?>,'<?= addslashes(htmlspecialchars($p['nombre'])) ?>',<?= $p['precio'] ?>,'<?= $p['tipo'] ?>',<?= $p['recetas_idrecetas'] ?? 'null' ?>,<?= $p['min_congelado'] ?? 0 ?>,<?= $p['min_hecho'] ?? 0 ?>,'<?= htmlspecialchars($p['imagen'] ?? '') ?>')">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                        <button class="btn-delete" onclick="toggleActivo(<?= $p['idproductos'] ?>, <?= $p['activo'] ?>)">
+                            <?= $p['activo'] ? '<i class="fa-solid fa-ban"></i> Dar de baja' : '<i class="fa-solid fa-check"></i> Activar' ?>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -225,60 +207,43 @@ foreach ($boxRows as $row) {
 
             <div class="producto-card box-card <?= $b['activo'] ? '' : 'inactivo' ?>">
 
-                <div class="producto-header">
-
-                    <h3><?= htmlspecialchars($b['nombre']) ?></h3>
-
-                    <span class="estado">
+                <div class="prod-thumb-wrap prod-thumb-wrap--box">
+                    <div class="prod-thumb-placeholder prod-thumb-placeholder--box">
+                        <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <span class="estado-badge <?= $b['activo'] ? 'badge-activo' : 'badge-inactivo' ?>">
                         <?= $b['activo'] ? 'Activo' : 'Inactivo' ?>
                     </span>
-
                 </div>
 
-                <div class="producto-body">
-
-                    <p>
-                        <strong>Precio:</strong>
-                        $<?= number_format($b['precio'], 2) ?>
-                    </p>
-
-                    <div class="box-contenido">
-
-                        <?php foreach ($b['items'] as $item): ?>
-
-                            <div class="box-item">
-                                <?= htmlspecialchars($item['producto']) ?>
-                                <span>x<?= $item['cantidad'] ?></span>
-                            </div>
-
-                        <?php endforeach; ?>
-
+                <div class="prod-card-body">
+                    <div class="producto-header">
+                        <h3><?= htmlspecialchars($b['nombre']) ?></h3>
                     </div>
 
-                </div>
+                    <div class="producto-body">
+                        <div class="prod-meta-row">
+                            <span class="prod-meta-label">Precio</span>
+                            <span class="prod-price-val">$<?= number_format($b['precio'], 2) ?></span>
+                        </div>
+                        <div class="box-contenido">
+                            <?php foreach ($b['items'] as $item): ?>
+                                <div class="box-item">
+                                    <span><?= htmlspecialchars($item['producto']) ?></span>
+                                    <span class="box-qty">×<?= $item['cantidad'] ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
 
-                <div class="card-actions">
-
-                    <button
-                        class="btn-edit"
-                        onclick="editarProducto(
-                            <?= $b['idproductos'] ?>,
-                            '<?= htmlspecialchars($b['nombre']) ?>',
-                            <?= $b['precio'] ?>,
-                            'box',
-                            null
-                        )"
-                    >
-                        Editar
-                    </button>
-
-                    <button
-                        class="btn-delete"
-                        onclick="toggleActivo(<?= $b['idproductos'] ?>, <?= $b['activo'] ?>)"
-                    >
-                        <?= $b['activo'] ? 'Dar de baja' : 'Activar' ?>
-                    </button>
-
+                    <div class="card-actions">
+                        <button class="btn-edit" onclick="editarProducto(<?= $b['idproductos'] ?>,'<?= htmlspecialchars($b['nombre']) ?>',<?= $b['precio'] ?>,'box',null)">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                        <button class="btn-delete" onclick="toggleActivo(<?= $b['idproductos'] ?>, <?= $b['activo'] ?>)">
+                            <?= $b['activo'] ? '<i class="fa-solid fa-ban"></i> Dar de baja' : '<i class="fa-solid fa-check"></i> Activar' ?>
+                        </button>
+                    </div>
                 </div>
 
             </div>

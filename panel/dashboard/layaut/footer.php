@@ -162,7 +162,15 @@ window.addEventListener("load", function() {
 const NotifApp = (() => {
     let _open     = false;
     let _interval = null;
-    const ICONS = { pedido_nuevo:'🛍️', stock_bajo:'⚠️' };
+    const ICONS = {
+        pedido_nuevo:  '🛍️',
+        sin_stock:     '⛔',
+        stock_bajo:    '⚠️',
+        mp_sin_stock:  '⛔',
+        mp_stock_bajo: '⚠️',
+        receta_sin_mp: '📋',
+        incidencia:    '🚨',
+    };
 
     function fmtAgo(dateStr) {
         const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
@@ -269,6 +277,32 @@ const NotifApp = (() => {
 
     return { toggle, marcar, marcarTodas };
 })();
+
+// ── Sidebar toggle ────────────────────────────────────────
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const isMini  = sidebar.classList.toggle('mini');
+    localStorage.setItem('sidebarMini', isMini ? '1' : '0');
+    document.documentElement.style.setProperty(
+        '--sidebar-w', isMini ? 'var(--sidebar-w-mini)' : '240px'
+    );
+    // Actualizar footer
+    const footer = document.querySelector('.footer');
+    if (footer) footer.style.left = isMini ? 'var(--sidebar-w-mini)' : '240px';
+}
+
+// Restaurar estado al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('sidebarMini') === '1') {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.classList.add('mini');
+            document.documentElement.style.setProperty('--sidebar-w', 'var(--sidebar-w-mini)');
+            const footer = document.querySelector('.footer');
+            if (footer) footer.style.left = 'var(--sidebar-w-mini)';
+        }
+    }
+});
 </script>
 
 </body>

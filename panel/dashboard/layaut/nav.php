@@ -62,23 +62,38 @@ $current = $_SERVER['PHP_SELF'];
 <div class="app">
 
 <!-- ================= SIDEBAR ================= -->
-<aside class="sidebar">
-    <div class="brand">Canetto</div>
+<aside class="sidebar" id="sidebar">
 
+    <div class="brand">
+        <a class="brand-logo" href="<?= URL_ADMIN ?>/index.php">
+            <div class="brand-icon">C</div>
+            <div class="brand-text">
+                <span class="brand-name">Canetto</span>
+                <span class="brand-sub">Administración</span>
+            </div>
+        </a>
+        <button class="sidebar-toggle" id="sidebarToggle" title="Contraer menú" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+
+    <div class="nav-wrapper">
     <nav class="nav-menu">
 
     <!-- DASHBOARD -->
-    <a href="<?= URL_ADMIN ?>/index.php"
+    <a href="<?= URL_ADMIN ?>/index.php" data-tip="Dashboard"
        class="<?= str_contains($current,'administracion/index.php') ? 'active' : '' ?>">
         <i class="fa-solid fa-chart-line"></i>
-        <span>Dashboard</span>
+        <span class="nav-label">Dashboard</span>
     </a>
+
+    <div class="nav-section">Operaciones</div>
 
     <!-- PRODUCCIÓN -->
     <div class="menu-group <?= str_contains($current,'produccion') ? 'open' : '' ?>">
-        <span class="menu-title">
+        <span class="menu-title" data-tip="Producción">
             <i class="fa-solid fa-industry"></i>
-            Producción
+            <span class="menu-label">Producción</span>
         </span>
         <div class="submenu">
             <a href="<?= URL_ADMIN ?>/produccion/plan_produccion.php"
@@ -100,10 +115,9 @@ $current = $_SERVER['PHP_SELF'];
             </a>
 
             <a href="<?= URL_ADMIN ?>/incidencias/index.php"
-               class="<?= str_contains($current,'incidencias') ? 'active' : '' ?>"
-               style="color:#dc2626;font-weight:600">
+               class="nav-panico <?= str_contains($current,'incidencias') ? 'nav-panico--active' : '' ?>">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                🚨 Incidencias
+                Reportar incidencia
             </a>
 
         </div>
@@ -111,9 +125,9 @@ $current = $_SERVER['PHP_SELF'];
 
     <!-- RECETAS -->
     <div class="menu-group <?= str_contains($current,'recetas') ? 'open' : '' ?>">
-        <span class="menu-title">
+        <span class="menu-title" data-tip="Recetas">
             <i class="fa-solid fa-book-open"></i>
-            Recetas
+            <span class="menu-label">Recetas</span>
         </span>
         <div class="submenu">
             <a href="<?= URL_ADMIN ?>/recetas/index.php"
@@ -128,10 +142,10 @@ $current = $_SERVER['PHP_SELF'];
 
 
     <!-- PRODUCTOS -->
-<div class="menu-group <?= str_contains($current,'productos') ? 'open' : '' ?>">
-    <span class="menu-title">
+    <div class="menu-group <?= str_contains($current,'productos') ? 'open' : '' ?>">
+    <span class="menu-title" data-tip="Productos">
         <i class="fa-solid fa-cookie-bite"></i>
-        Productos
+        <span class="menu-label">Productos</span>
     </span>
     <div class="submenu">
 
@@ -153,9 +167,9 @@ $current = $_SERVER['PHP_SELF'];
 
     <!-- STOCK -->
     <div class="menu-group <?= str_contains($current,'stock') || str_contains($current,'materias_primas') || str_contains($current,'packaging') ? 'open' : '' ?>">
-        <span class="menu-title">
+        <span class="menu-title" data-tip="Stock">
             <i class="fa-solid fa-boxes-stacked"></i>
-            Stock
+            <span class="menu-label">Stock</span>
         </span>
         <div class="submenu">
             <a href="<?= URL_ADMIN ?>/stock/index.php"
@@ -179,17 +193,19 @@ $current = $_SERVER['PHP_SELF'];
     </div>
 
     <!-- ANALÍTICA -->
-    <a href="<?= URL_ADMIN ?>/analitica/index.php"
+    <a href="<?= URL_ADMIN ?>/analitica/index.php" data-tip="Analítica"
        class="<?= str_contains($current,'analitica') ? 'active' : '' ?>">
         <i class="fa-solid fa-chart-bar"></i>
-        <span>Analítica</span>
+        <span class="nav-label">Analítica</span>
     </a>
+
+    <div class="nav-section">Comercial</div>
 
     <!-- VENTAS -->
     <div class="menu-group <?= str_contains($current,'Ventas') || str_contains($current,'ventas') ? 'open' : '' ?>">
-        <span class="menu-title">
+        <span class="menu-title" data-tip="Ventas">
             <i class="fa-solid fa-cart-shopping"></i>
-            Ventas
+            <span class="menu-label">Ventas</span>
         </span>
         <div class="submenu">
             <a href="<?= URL_ADMIN ?>/Ventas/Pedidos/index.php"
@@ -212,9 +228,9 @@ $current = $_SERVER['PHP_SELF'];
 
     <!-- COMPRAS -->
     <div class="menu-group <?= str_contains($current,'compras') ? 'open' : '' ?>">
-        <span class="menu-title">
+        <span class="menu-title" data-tip="Compras">
             <i class="fa-solid fa-truck"></i>
-            Compras
+            <span class="menu-label">Compras</span>
         </span>
         <div class="submenu">
             <a href="<?= URL_ADMIN ?>/proveedor/index.php"
@@ -226,11 +242,13 @@ $current = $_SERVER['PHP_SELF'];
         </div>
     </div>
 
-    <!-- configuraciones -->
+    <div class="nav-section">Sistema</div>
+
+    <!-- CONFIGURACIONES -->
     <div class="menu-group <?= str_contains($current,'configuraciones') ? 'open' : '' ?>">
-        <span class="menu-title">
+        <span class="menu-title" data-tip="Configuraciones">
             <i class="fa-solid fa-gears"></i>
-            Configuraciones
+            <span class="menu-label">Configuraciones</span>
         </span>
         <div class="submenu">
             <a href="<?= URL_ASSETS ?>/configuraciones/index.php"
@@ -269,17 +287,10 @@ $current = $_SERVER['PHP_SELF'];
                 Sucursales
             </a>
 
-<<<<<<< HEAD
             <a href="<?= URL_ASSETS ?>/configuraciones/paneles.php"
                class="<?= str_contains($current,'paneles') || str_contains($current,'ofertas') ? 'active' : '' ?>">
                 <i class="fa-solid fa-table-columns"></i>
                 Paneles
-=======
-            <a href="<?= URL_ASSETS ?>/configuraciones/ofertas.php"
-               class="<?= str_contains($current,'ofertas') ? 'active' : '' ?>">
-                <i class="fa-solid fa-tag"></i>
-                Ofertas Tienda
->>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
             </a>
 
             <a href="<?= URL_ASSETS ?>/configuraciones/repartidores.php"
@@ -298,6 +309,7 @@ $current = $_SERVER['PHP_SELF'];
 
 
 </nav>
+    </div><!-- /nav-wrapper -->
 </aside>
 
 <!-- ================= MAIN ================= -->
