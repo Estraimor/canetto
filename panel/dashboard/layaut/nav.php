@@ -365,3 +365,4 @@ $current = $_SERVER['PHP_SELF'];
         </a>
     </div>
 </header>
+<div class="main-content">

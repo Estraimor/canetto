@@ -1,3 +1,5 @@
+</div><!-- /main-content -->
+
 <footer class="footer">
     © <?= date('Y') ?> Canetto Software
 </footer>
@@ -286,9 +288,6 @@ function toggleSidebar() {
     document.documentElement.style.setProperty(
         '--sidebar-w', isMini ? 'var(--sidebar-w-mini)' : '240px'
     );
-    // Actualizar footer
-    const footer = document.querySelector('.footer');
-    if (footer) footer.style.left = isMini ? 'var(--sidebar-w-mini)' : '240px';
 }
 
 // Restaurar estado al cargar
@@ -298,8 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sidebar) {
             sidebar.classList.add('mini');
             document.documentElement.style.setProperty('--sidebar-w', 'var(--sidebar-w-mini)');
-            const footer = document.querySelector('.footer');
-            if (footer) footer.style.left = 'var(--sidebar-w-mini)';
         }
     }
 });

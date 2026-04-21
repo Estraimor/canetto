@@ -51,409 +51,421 @@ $mapLng = $sucSelected ? ($sucSelected['longitud'] ?: -55.9007) : -55.9007;
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-/* ── Layout ── */
-.tarifa-layout {
-    display: grid;
-    grid-template-columns: 1fr 420px;
-    gap: 20px;
-    align-items: start;
-    height: calc(100vh - 80px);
-    padding: 24px 28px;
-    max-width: 1400px;
-    margin: 0 auto;
-    box-sizing: border-box;
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Page ── */
+.tf-page { max-width: 1440px; margin: 0 auto; padding: 20px 28px 48px; }
+
+/* ── Header ── */
+.tf-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
 }
-@media (max-width: 1100px) {
-    .tarifa-layout { grid-template-columns: 1fr; height: auto; }
+.tf-breadcrumb {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: #c0bdb9; margin-bottom: 6px;
+}
+.tf-breadcrumb a { color: #c0bdb9; text-decoration: none; transition: color .15s; }
+.tf-breadcrumb a:hover { color: #888; }
+.tf-title { font-size: 24px; font-weight: 800; color: #111; letter-spacing: -.4px; line-height: 1.2; }
+.tf-subtitle { font-size: 13px; color: #aaa; margin-top: 3px; }
+
+/* ── Layout ── */
+.tf-layout {
+    display: grid;
+    grid-template-columns: 1fr 410px;
+    gap: 18px;
+    align-items: start;
+}
+@media (max-width: 1100px) { .tf-layout { grid-template-columns: 1fr; } }
+
+/* ── Card base ── */
+.tf-card {
+    background: #fff;
+    border: 1px solid #e9e8e5;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 20px rgba(0,0,0,.05);
 }
 
-/* ── Mapa ── */
-.map-panel {
-    background: #fff;
-    border: 1px solid #e8e7e4;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,0,0,.06);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 540px;
-}
-.map-toolbar {
+/* ── Map card: no clip para que Leaflet SVG no se corte ── */
+.tf-map-card { overflow: visible; border-radius: 16px; }
+.tf-map-clip { overflow: hidden; border-radius: 0; }
+
+/* ── Map ── */
+.tf-map-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 18px;
-    border-bottom: 1px solid #f0f0f0;
-    gap: 12px;
-    flex-shrink: 0;
+    padding: 12px 18px;
+    border-bottom: 1px solid #f2f1ee;
+    background: #fff;
 }
-.map-toolbar-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #111;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.tf-map-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700; color: #222;
 }
-.map-toolbar-title i { color: #c88e99; }
+.tf-map-title i { color: #c88e99; }
 
-.suc-selector {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #555;
+.tf-suc-select {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: #888;
 }
-.suc-selector select {
+.tf-suc-select i { color: #c88e99; }
+.tf-suc-select select {
     padding: 6px 10px;
     border: 1.5px solid #e5e5e2;
     border-radius: 8px;
-    font-size: 13px;
-    font-family: inherit;
-    outline: none;
-    cursor: pointer;
-    transition: border .15s;
+    font-size: 12.5px; font-family: inherit; font-weight: 600;
+    outline: none; cursor: pointer; color: #333;
+    transition: border .15s; background: #fff;
 }
-.suc-selector select:focus { border-color: #c88e99; }
+.tf-suc-select select:focus { border-color: #c88e99; }
 
-#mapa-zonas { flex: 1; min-height: 440px; }
+#mapa-zonas { width: 100%; height: 420px; display: block; }
 
-.map-legend {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
+.tf-map-legend {
+    display: flex; gap: 4px 16px; flex-wrap: wrap;
     padding: 10px 18px;
-    border-top: 1px solid #f0f0f0;
-    flex-shrink: 0;
-    background: #fafafa;
+    border-top: 1px solid #f2f1ee;
+    background: #fafaf8;
 }
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    color: #555;
-    font-weight: 500;
+.tf-legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: #555; font-weight: 500; white-space: nowrap;
 }
-.legend-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    border: 1.5px solid rgba(0,0,0,.15);
+.tf-legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0; border: 1.5px solid rgba(0,0,0,.12);
 }
 
-.map-coords-info {
-    font-size: 11px;
-    color: #aaa;
-    padding: 6px 18px;
-    background: #fafafa;
-    border-top: 1px solid #f0f0f0;
+/* ── Sidebar ── */
+.tf-sidebar { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Location card ── */
+.tf-loc-body {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px 10px;
+}
+.tf-loc-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: #fdf2f5; border: 1px solid #f5d8e0;
+    display: flex; align-items: center; justify-content: center;
+    color: #c88e99; font-size: 15px; flex-shrink: 0;
+}
+.tf-loc-meta { flex: 1; min-width: 0; }
+.tf-loc-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: #c0bdb9; margin-bottom: 4px;
+}
+.tf-loc-coords { display: flex; align-items: center; gap: 5px; }
+.tf-loc-val {
+    flex: 1; font-size: 11.5px; font-family: 'DM Mono','Courier New',monospace;
+    color: #444; background: #f5f5f3; border: 1px solid #ebebea;
+    padding: 4px 8px; border-radius: 6px; text-align: center;
+}
+.tf-loc-sep { font-size: 10px; color: #d0cdc9; }
+
+.tf-loc-actions { display: flex; gap: 6px; padding: 0 16px 12px; }
+.tf-loc-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 7px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: .15s; border: 1.5px solid;
+}
+.tf-loc-btn-green { background: #f0fdf4; border-color: #86efac; color: #15803d; }
+.tf-loc-btn-green:hover { background: #dcfce7; }
+.tf-loc-btn-blue  { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+.tf-loc-btn-blue:hover  { background: #dbeafe; }
+
+/* ── Pricing card ── */
+.tf-pricing-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 15px 18px; border-bottom: 1px solid #f2f1ee;
+}
+.tf-pricing-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 700; color: #111;
+}
+.tf-pricing-title i { color: #c88e99; }
+.tf-zone-count {
+    font-size: 10.5px; font-weight: 700; background: #f3f4f6;
+    color: #666; padding: 3px 9px; border-radius: 20px;
 }
 
-/* ── Panel derecho ── */
-.tarifa-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    height: 100%;
-    overflow-y: auto;
+.tf-info-strip {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 9px 16px; background: #f8fafc;
+    border-bottom: 1px solid #eef0f2;
+    font-size: 11.5px; color: #64748b; line-height: 1.5;
 }
+.tf-info-strip i { color: #94a3b8; margin-top: 1px; flex-shrink: 0; }
 
-.tarifa-card {
-    background: #fff;
-    border: 1px solid #e8e7e4;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+/* ── Stats strip ── */
+.tf-stats {
+    display: flex; gap: 6px; padding: 8px 16px;
+    border-bottom: 1px solid #f2f1ee; flex-wrap: wrap; background: #fefefe;
 }
+.tf-stat {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: #777; background: #f4f4f2;
+    padding: 3px 9px; border-radius: 20px; font-weight: 500;
+}
+.tf-stat b { color: #333; }
 
-.tarifa-card-header {
-    padding: 14px 18px;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+/* ── Table ── */
+.tf-thead {
+    display: grid;
+    grid-template-columns: 10px 118px 108px 1fr 30px;
+    gap: 6px; padding: 7px 16px 6px;
+    background: #f9f9f7; border-bottom: 1px solid #efeeec;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: #c0bdb9;
 }
-.tarifa-card-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #111;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-.tarifa-card-title i { color: #c88e99; opacity: .8; }
-
-.tarifa-info-box {
-    padding: 12px 16px;
-    background: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 10px;
-    margin: 14px 18px 0;
-    font-size: 12px;
-    color: #0c4a6e;
-    line-height: 1.55;
-    display: flex;
-    gap: 10px;
-}
-.tarifa-info-box i { color: #0ea5e9; flex-shrink: 0; margin-top: 1px; }
-
-/* ── Tabla ── */
-.tarifa-rows { padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 6px; }
+.tf-tbody { padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
 
 .tarifa-row {
     display: grid;
-    grid-template-columns: 70px 70px 100px 1fr 32px;
-    gap: 6px;
-    align-items: center;
-    padding: 8px 10px;
-    border-radius: 9px;
-    background: #fafafa;
-    border: 1px solid transparent;
-    transition: border .15s, background .15s;
+    grid-template-columns: 10px 118px 108px 1fr 30px;
+    gap: 6px; align-items: center;
+    padding: 5px 6px 5px 8px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    transition: all .12s;
 }
-.tarifa-row:hover { background: #f5f4f1; border-color: #ebebeb; }
+.tarifa-row:hover { background: #fafaf7; border-color: #edece9; }
 
-.tarifa-row input {
-    width: 100%;
-    padding: 7px 9px;
-    border: 1.5px solid #e5e5e2;
-    border-radius: 7px;
-    font-size: 13px;
-    font-family: inherit;
-    outline: none;
-    transition: border .15s;
-    background: #fff;
+.tf-row-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0; border: 1.5px solid rgba(0,0,0,.15);
+}
+
+/* km range inputs */
+.tf-km-wrap { display: flex; align-items: center; gap: 3px; }
+.tf-km-wrap input {
+    width: 50px; padding: 6px 6px; text-align: center;
+    border: 1.5px solid #e5e5e2; border-radius: 7px;
+    font-size: 12px; font-family: inherit; outline: none;
+    transition: border .15s; background: #fff;
+}
+.tf-km-wrap input:focus { border-color: #c88e99; }
+.tf-km-sep { font-size: 10px; color: #d0cdc9; font-weight: 600; flex-shrink: 0; }
+
+/* price input */
+.tf-price-wrap { position: relative; }
+.tf-price-sym {
+    position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; color: #bbb; font-weight: 700; pointer-events: none;
+}
+.tf-price-wrap input {
+    width: 100%; padding: 6px 8px 6px 20px;
+    border: 1.5px solid #e5e5e2; border-radius: 7px;
+    font-size: 13px; font-weight: 700; font-family: inherit;
+    outline: none; transition: all .15s; background: #fff; color: #111;
     box-sizing: border-box;
 }
-.tarifa-row input:focus { border-color: #c88e99; }
+.tf-price-wrap input:focus { border-color: #16a34a; background: #f0fdf4; }
 
-.zone-color-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    border: 1.5px solid rgba(0,0,0,.15);
-    display: inline-block;
-    margin-right: 4px;
+/* desc input */
+.t-desc {
+    width: 100%; padding: 6px 8px;
+    border: 1.5px solid #e5e5e2; border-radius: 7px;
+    font-size: 11.5px; font-family: inherit; outline: none;
+    transition: border .15s; background: #fff; color: #666;
+    box-sizing: border-box;
 }
-
-.tarifa-row-header {
-    display: grid;
-    grid-template-columns: 70px 70px 100px 1fr 32px;
-    gap: 6px;
-    padding: 0 10px 4px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: #aaa;
-}
+.t-desc:focus { border-color: #c88e99; }
 
 .btn-del {
-    background: none; border: none; color: #dc2626;
+    background: none; border: none; color: #d1d5db;
     cursor: pointer; padding: 5px; border-radius: 6px;
-    font-size: 12px; transition: background .15s;
+    font-size: 11px; transition: all .15s;
     display: flex; align-items: center; justify-content: center;
 }
-.btn-del:hover { background: #fee2e2; }
+.btn-del:hover { color: #dc2626; background: #fee2e2; }
 
-.tarifa-actions {
-    display: flex;
-    gap: 10px;
-    padding: 12px 14px;
-    border-top: 1px solid #f0f0f0;
+/* ── Footer ── */
+.tf-tfoot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 16px; border-top: 1px solid #f2f1ee;
+    background: #fafaf8;
 }
+.tf-btn-add {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; background: #fff;
+    border: 1.5px solid #e0dedd; border-radius: 9px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    color: #555; transition: .15s; font-family: inherit;
+}
+.tf-btn-add:hover { border-color: #c88e99; color: #c88e99; background: #fdf2f5; }
 
-.btn-add {
+.tf-btn-save-main {
     display: flex; align-items: center; gap: 7px;
-    padding: 9px 16px;
-    background: #f5f4f1; border: 1.5px solid #e5e5e2;
-    border-radius: 9px; font-size: 13px; font-weight: 600;
-    cursor: pointer; color: #333; transition: .15s; font-family: inherit;
+    padding: 9px 20px; background: #111; border: none;
+    border-radius: 9px; font-size: 13px; font-weight: 700;
+    cursor: pointer; color: #fff; transition: .15s;
+    font-family: inherit; letter-spacing: -.1px;
 }
-.btn-add:hover { background: #ebebeb; }
+.tf-btn-save-main:hover { background: #2d2d2d; }
+.tf-btn-save-main:disabled { opacity: .5; cursor: not-allowed; }
 
-/* ── Coords card ── */
-.suc-coords-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 14px 18px;
-}
-.suc-coord-field label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: #aaa;
-    margin-bottom: 5px;
-}
-.suc-coord-field input {
-    width: 100%;
-    padding: 9px 11px;
-    border: 1.5px solid #e5e5e2;
-    border-radius: 8px;
-    font-size: 13px;
-    font-family: 'DM Mono', monospace;
-    outline: none;
-    transition: border .15s;
-}
-.suc-coord-field input:focus { border-color: #c88e99; }
-
-.btn-geolocate {
+/* ── Page save button ── */
+.tf-page-save {
     display: flex; align-items: center; gap: 7px;
-    margin: 0 18px 14px;
-    padding: 9px 16px;
-    background: #f0fdf4; border: 1.5px solid #bbf7d0;
-    border-radius: 9px; font-size: 13px; font-weight: 600;
-    cursor: pointer; color: #166534; transition: .15s; font-family: inherit;
-    width: calc(100% - 36px);
+    padding: 10px 22px; background: #111; border: none;
+    border-radius: 10px; font-size: 13px; font-weight: 700;
+    cursor: pointer; color: #fff; transition: .15s;
+    font-family: inherit; letter-spacing: -.1px; white-space: nowrap;
 }
-.btn-geolocate:hover { background: #dcfce7; }
-
-/* ── Page header simplificado ── */
-.tarifa-page-hd {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 28px 0;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-.tarifa-page-hd h1 { font-size: 22px; font-weight: 700; color: #111; }
-.tarifa-page-hd p  { font-size: 13px; color: #888; margin-top: 2px; }
+.tf-page-save:hover { background: #2d2d2d; }
+.tf-page-save:disabled { opacity: .5; cursor: not-allowed; }
 </style>
 
-<!-- Header -->
-<div class="tarifa-page-hd">
-  <div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#aaa;margin-bottom:4px">
-      <a href="<?= URL_ASSETS ?>/configuraciones/index.php" style="color:#aaa;text-decoration:none">Configuraciones</a> /
-    </div>
-    <h1>Tarifas de envío a domicilio</h1>
-    <p>Zonas de cobertura y precios por distancia desde cada sucursal</p>
-  </div>
-  <button class="btn-primary" onclick="guardar()">
-    <i class="fa-solid fa-floppy-disk"></i> Guardar tarifas
-  </button>
-</div>
+<div class="tf-page">
 
-<!-- Layout principal -->
-<div class="tarifa-layout">
-
-  <!-- ══ MAPA ══ -->
-  <div class="map-panel">
-    <div class="map-toolbar">
-      <div class="map-toolbar-title">
-        <i class="fa-solid fa-map-location-dot"></i>
-        Zonas de cobertura visual
+  <!-- ══ HEADER ══ -->
+  <div class="tf-header">
+    <div>
+      <div class="tf-breadcrumb">
+        <a href="<?= URL_ASSETS ?>/configuraciones/index.php">Configuraciones</a>
+        <span style="margin:0 5px;opacity:.5">/</span> Tarifas de envío
       </div>
-      <div class="suc-selector">
-        <i class="fa-solid fa-store" style="color:#c88e99;font-size:12px"></i>
-        <select id="selSucursal" onchange="cambiarSucursal()">
-          <?php foreach ($sucursales as $s): ?>
-          <option value="<?= $s['idsucursal'] ?>"
-                  data-lat="<?= (float)($s['latitud'] ?: 0) ?>"
-                  data-lng="<?= (float)($s['longitud'] ?: 0) ?>"
-                  data-nombre="<?= htmlspecialchars($s['nombre']) ?>"
-                  <?= ($sucSelected && $sucSelected['idsucursal'] == $s['idsucursal']) ? 'selected' : '' ?>>
-            <?= htmlspecialchars($s['nombre']) ?>
-          </option>
-          <?php endforeach; ?>
-        </select>
-      </div>
+      <h1 class="tf-title">Tarifas de envío a domicilio</h1>
+      <p class="tf-subtitle">Definí los precios por zona de cobertura desde cada sucursal</p>
     </div>
-
-    <div id="mapa-zonas"></div>
-
-    <div class="map-legend" id="mapLegend"></div>
-    <div class="map-coords-info" id="mapCoordsInfo">
-      Clic en el mapa para reposicionar la sucursal seleccionada
-    </div>
+    <button class="tf-page-save" id="btnGuardarMain" onclick="guardar()">
+      <i class="fa-solid fa-floppy-disk"></i> Guardar tarifas
+    </button>
   </div>
 
-  <!-- ══ PANEL DERECHO ══ -->
-  <div class="tarifa-panel">
+  <!-- ══ LAYOUT ══ -->
+  <div class="tf-layout">
 
-    <!-- Coordenadas de la sucursal -->
-    <div class="tarifa-card">
-      <div class="tarifa-card-header">
-        <div class="tarifa-card-title">
-          <i class="fa-solid fa-location-crosshairs"></i>
-          Ubicación de la sucursal
+    <!-- ── MAPA ── -->
+    <div class="tf-card tf-map-card">
+      <div class="tf-map-bar">
+        <div class="tf-map-title">
+          <i class="fa-solid fa-map-location-dot"></i>
+          Zonas de cobertura visual
+        </div>
+        <div class="tf-suc-select">
+          <i class="fa-solid fa-store" style="font-size:11px"></i>
+          <select id="selSucursal" onchange="cambiarSucursal()">
+            <?php foreach ($sucursales as $s): ?>
+            <option value="<?= $s['idsucursal'] ?>"
+                    data-lat="<?= (float)($s['latitud'] ?: 0) ?>"
+                    data-lng="<?= (float)($s['longitud'] ?: 0) ?>"
+                    data-nombre="<?= htmlspecialchars($s['nombre']) ?>"
+                    <?= ($sucSelected && $sucSelected['idsucursal'] == $s['idsucursal']) ? 'selected' : '' ?>>
+              <?= htmlspecialchars($s['nombre']) ?>
+            </option>
+            <?php endforeach; ?>
+          </select>
         </div>
       </div>
-      <div class="suc-coords-grid">
-        <div class="suc-coord-field">
-          <label>Latitud</label>
-          <input type="text" id="inpLat" placeholder="-27.3621" value="<?= $mapLat !== -27.3621 ? $mapLat : '' ?>">
-        </div>
-        <div class="suc-coord-field">
-          <label>Longitud</label>
-          <input type="text" id="inpLng" placeholder="-55.9007" value="<?= $mapLng !== -55.9007 ? $mapLng : '' ?>">
-        </div>
+
+      <div class="tf-map-clip">
+        <div id="mapa-zonas"></div>
       </div>
-      <button class="btn-geolocate" onclick="centrarMapa()">
-        <i class="fa-solid fa-crosshairs"></i> Centrar mapa con estas coordenadas
-      </button>
-      <button class="btn-geolocate" style="background:#f0f4ff;border-color:#bfdbfe;color:#1d4ed8;margin-top:-4px" onclick="guardarCoordenadas()">
-        <i class="fa-solid fa-floppy-disk"></i> Guardar ubicación de la sucursal
-      </button>
+
+      <div class="tf-map-legend" id="mapLegend"></div>
     </div>
 
-    <!-- Tabla de tarifas -->
-    <div class="tarifa-card">
-      <div class="tarifa-card-header">
-        <div class="tarifa-card-title">
-          <i class="fa-solid fa-circle-dollar-to-slot"></i>
-          Tramos de precio
+    <!-- ── SIDEBAR ── -->
+    <div class="tf-sidebar">
+
+      <!-- Ubicación sucursal -->
+      <div class="tf-card">
+        <div class="tf-loc-body">
+          <div class="tf-loc-icon"><i class="fa-solid fa-location-dot"></i></div>
+          <div class="tf-loc-meta">
+            <div class="tf-loc-label">Ubicación de la sucursal</div>
+            <div class="tf-loc-coords">
+              <span class="tf-loc-val" id="dispLat"><?= $mapLat !== -27.3621 ? $mapLat : '—' ?></span>
+              <span class="tf-loc-sep">·</span>
+              <span class="tf-loc-val" id="dispLng"><?= $mapLng !== -55.9007 ? $mapLng : '—' ?></span>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="inpLat" value="<?= $mapLat !== -27.3621 ? $mapLat : '' ?>">
+        <input type="hidden" id="inpLng" value="<?= $mapLng !== -55.9007 ? $mapLng : '' ?>">
+        <div class="tf-loc-actions">
+          <button class="tf-loc-btn tf-loc-btn-green" onclick="centrarMapa()">
+            <i class="fa-solid fa-crosshairs"></i> Centrar mapa
+          </button>
+          <button class="tf-loc-btn tf-loc-btn-blue" onclick="guardarCoordenadas()">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar coords
+          </button>
         </div>
       </div>
 
-      <div class="tarifa-info-box">
-        <i class="fa-solid fa-circle-info"></i>
-        <div>El sistema usa la fórmula Haversine para calcular la distancia real y aplica el tramo correspondiente. Cada círculo en el mapa representa una zona.</div>
-      </div>
+      <!-- Tabla de tarifas -->
+      <div class="tf-card">
+        <div class="tf-pricing-header">
+          <div class="tf-pricing-title">
+            <i class="fa-solid fa-tags"></i>
+            Tramos de precio
+          </div>
+          <span class="tf-zone-count" id="badgeZonas">— zonas</span>
+        </div>
 
-      <div class="tarifa-rows">
-        <div class="tarifa-row-header">
-          <span>Desde km</span>
-          <span>Hasta km</span>
+        <div class="tf-info-strip">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Distancia calculada con Haversine. Cada círculo en el mapa corresponde a una zona de tarifa.</span>
+        </div>
+
+        <div class="tf-stats" id="statsPanel">
+          <span class="tf-stat"><b id="statZonas">0</b>&nbsp;zonas activas</span>
+          <span class="tf-stat">Cobertura hasta&nbsp;<b id="statKm">0</b>&nbsp;km</span>
+          <span class="tf-stat">Desde&nbsp;<b id="statMin">$0</b></span>
+        </div>
+
+        <div class="tf-thead">
+          <span></span>
+          <span>Rango km</span>
           <span>Precio $</span>
           <span>Descripción</span>
           <span></span>
         </div>
-        <div id="bodyTarifas">
+
+        <div class="tf-tbody" id="bodyTarifas">
         <?php foreach ($tarifas as $i => $t): ?>
           <div class="tarifa-row" data-id="<?= $t['id'] ?>">
-            <input type="number" class="t-desde" value="<?= $t['km_desde'] ?>" min="0" step="0.5" onchange="actualizarMapa()">
-            <input type="number" class="t-hasta" value="<?= (float)$t['km_hasta'] >= 999 ? 999 : $t['km_hasta'] ?>" min="0" step="0.5" placeholder="999" onchange="actualizarMapa()">
-            <input type="number" class="t-precio" value="<?= (int)$t['precio'] ?>" min="0" step="100">
+            <span class="tf-row-dot" style="background:<?= ['#22c55e','#84cc16','#eab308','#f97316','#ef4444','#dc2626','#991b1b','#7f1d1d'][$i % 8] ?>"></span>
+            <div class="tf-km-wrap">
+              <input type="number" class="t-desde" value="<?= $t['km_desde'] ?>" min="0" step="0.5" onchange="actualizarMapa()">
+              <span class="tf-km-sep">→</span>
+              <input type="number" class="t-hasta" value="<?= (float)$t['km_hasta'] >= 999 ? 999 : $t['km_hasta'] ?>" min="0" step="0.5" placeholder="∞" onchange="actualizarMapa()">
+            </div>
+            <div class="tf-price-wrap">
+              <span class="tf-price-sym">$</span>
+              <input type="number" class="t-precio" value="<?= (int)$t['precio'] ?>" min="0" step="100">
+            </div>
             <input type="text" class="t-desc" value="<?= htmlspecialchars($t['descripcion'] ?? '') ?>" placeholder="Descripción">
-            <button class="btn-del" onclick="eliminarFila(this)" title="Eliminar">
+            <button class="btn-del" onclick="eliminarFila(this)" title="Eliminar zona">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         <?php endforeach; ?>
         </div>
+
+        <div class="tf-tfoot">
+          <button class="tf-btn-add" onclick="agregarFila()">
+            <i class="fa-solid fa-plus"></i> Nueva zona
+          </button>
+          <button class="tf-btn-save-main" id="btnGuardarCard" onclick="guardar()">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar
+          </button>
+        </div>
       </div>
 
-      <div class="tarifa-actions">
-        <button class="btn-add" onclick="agregarFila()">
-          <i class="fa-solid fa-plus"></i> Agregar tramo
-        </button>
-        <button class="btn-primary" onclick="guardar()" style="margin-left:auto">
-          <i class="fa-solid fa-floppy-disk"></i> Guardar tarifas
-        </button>
-      </div>
-    </div>
-
-  </div>
-</div>
+    </div><!-- /sidebar -->
+  </div><!-- /layout -->
+</div><!-- /page -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -502,31 +514,8 @@ const branchIcon = L.divIcon({
     iconAnchor: [18, 18],
 });
 
-let branchMarker = L.marker([mapLat, mapLng], { icon: branchIcon, draggable: true }).addTo(mapa);
+let branchMarker = L.marker([mapLat, mapLng], { icon: branchIcon, draggable: false }).addTo(mapa);
 branchMarker.bindPopup('<strong>Sucursal</strong>').openPopup();
-
-branchMarker.on('dragend', function(e) {
-    const pos = e.target.getLatLng();
-    mapLat = pos.lat;
-    mapLng = pos.lng;
-    document.getElementById('inpLat').value = pos.lat.toFixed(7);
-    document.getElementById('inpLng').value = pos.lng.toFixed(7);
-    actualizarMapa();
-    document.getElementById('mapCoordsInfo').textContent =
-        `📍 ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)} — Guardá la ubicación para persistir el cambio`;
-});
-
-/* Clic en mapa mueve el marcador */
-mapa.on('click', function(e) {
-    mapLat = e.latlng.lat;
-    mapLng = e.latlng.lng;
-    branchMarker.setLatLng([mapLat, mapLng]);
-    document.getElementById('inpLat').value = mapLat.toFixed(7);
-    document.getElementById('inpLng').value = mapLng.toFixed(7);
-    actualizarMapa();
-    document.getElementById('mapCoordsInfo').textContent =
-        `📍 ${mapLat.toFixed(5)}, ${mapLng.toFixed(5)} — Guardá la ubicación para persistir el cambio`;
-});
 
 /* ── Círculos ── */
 let circulos = [];
@@ -549,64 +538,89 @@ function actualizarMapa() {
 
     filas.forEach((t, i) => {
         const color = ZONE_COLORS[i % ZONE_COLORS.length];
-        const radio = t.hasta * 1000; // km → metros
+        const radio = t.hasta * 1000;
 
         const circle = L.circle([mapLat, mapLng], {
             radius: radio,
             color:  color,
             weight: 2,
             fillColor: color,
-            fillOpacity: 0.12,
-            opacity: 0.7,
+            fillOpacity: 0.13,
+            opacity: 0.75,
         }).addTo(mapa);
 
         circle.bindPopup(`
-            <div style="font-family:sans-serif;min-width:160px">
-                <div style="font-weight:700;margin-bottom:4px">${t.desc || 'Zona ' + (i+1)}</div>
-                <div style="font-size:12px;color:#555">Hasta ${t.hasta} km</div>
-                <div style="font-size:15px;font-weight:700;color:${color};margin-top:4px">
-                    $${t.precio.toLocaleString('es-AR')}
-                </div>
+            <div style="font-family:inherit;min-width:160px;padding:2px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:4px">${t.desc || 'Zona ' + (i+1)}</div>
+                <div style="font-size:11px;color:#888;margin-bottom:2px">${t.desde} – ${t.hasta} km</div>
+                <div style="font-size:18px;font-weight:800;color:${color}">$${t.precio.toLocaleString('es-AR')}</div>
             </div>
         `);
         circulos.push(circle);
 
-        // Leyenda
+        /* Actualiza dot en la fila de la tabla */
+        const rows = document.querySelectorAll('#bodyTarifas .tarifa-row');
+        if (rows[i]) {
+            const dot = rows[i].querySelector('.tf-row-dot');
+            if (dot) dot.style.background = color;
+        }
+
         const li = document.createElement('div');
-        li.className = 'legend-item';
-        li.innerHTML = `
-            <span class="legend-dot" style="background:${color}"></span>
-            <span>${t.desc || 'Zona ' + (i+1)} — $${t.precio.toLocaleString('es-AR')}</span>
-        `;
+        li.className = 'tf-legend-item';
+        li.innerHTML = `<span class="tf-legend-dot" style="background:${color}"></span><span>${t.desc || 'Zona '+(i+1)} — $${t.precio.toLocaleString('es-AR')}</span>`;
         legend.appendChild(li);
     });
 
+    /* Stats */
+    const n = filas.length;
+    const maxKm = n ? Math.max(...filas.map(t => t.hasta)) : 0;
+    const minP  = n ? Math.min(...filas.map(t => t.precio)) : 0;
+    document.getElementById('badgeZonas').textContent = n + (n === 1 ? ' zona' : ' zonas');
+    document.getElementById('statZonas').textContent  = n;
+    document.getElementById('statKm').textContent     = maxKm < 999 ? maxKm : '+' + (maxKm - 1);
+    document.getElementById('statMin').textContent    = '$' + minP.toLocaleString('es-AR');
+}
+
+/* Centrar vista solo en la carga inicial */
+function fitMapToZones() {
+    const filas = getTarifas();
     if (filas.length > 0) {
         const maxKm = Math.max(...filas.map(t => t.hasta));
         try { mapa.fitBounds(L.circle([mapLat, mapLng], { radius: maxKm * 1000 }).getBounds(), { padding: [30, 30] }); } catch(e) {}
     }
 }
 
+/* Leaflet necesita que el contenedor esté renderizado para calcular el ancho real */
 actualizarMapa();
+setTimeout(() => {
+    mapa.invalidateSize();
+    fitMapToZones();
+}, 120);
+
+window.addEventListener('resize', () => mapa.invalidateSize());
 
 /* ── Cambiar sucursal en el selector ── */
+function setCoordDisplay(lat, lng) {
+    document.getElementById('inpLat').value  = lat || '';
+    document.getElementById('inpLng').value  = lng || '';
+    document.getElementById('dispLat').textContent = lat ? parseFloat(lat).toFixed(6) : '—';
+    document.getElementById('dispLng').textContent = lng ? parseFloat(lng).toFixed(6) : '—';
+}
+
 function cambiarSucursal() {
     const opt = document.getElementById('selSucursal').selectedOptions[0];
     const lat = parseFloat(opt.dataset.lat) || 0;
     const lng = parseFloat(opt.dataset.lng) || 0;
     if (lat && lng) {
         mapLat = lat; mapLng = lng;
-        mapa.setView([lat, lng], 12);
         branchMarker.setLatLng([lat, lng]);
         branchMarker.setPopupContent('<strong>' + opt.dataset.nombre + '</strong>').openPopup();
-        document.getElementById('inpLat').value = lat.toFixed(7);
-        document.getElementById('inpLng').value = lng.toFixed(7);
+        setCoordDisplay(lat.toFixed(7), lng.toFixed(7));
         actualizarMapa();
-        document.getElementById('mapCoordsInfo').textContent =
-            `Sucursal: ${opt.dataset.nombre} · ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        fitMapToZones();
     } else {
-        document.getElementById('mapCoordsInfo').textContent =
-            `⚠ Sin coordenadas cargadas — hacé clic en el mapa para posicionarla`;
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning',
+            title: 'Sin coordenadas para esta sucursal', showConfirmButton: false, timer: 2000 });
     }
 }
 
@@ -619,9 +633,9 @@ function centrarMapa() {
         return;
     }
     mapLat = lat; mapLng = lng;
-    mapa.setView([lat, lng], 12);
     branchMarker.setLatLng([lat, lng]);
     actualizarMapa();
+    fitMapToZones();
 }
 
 /* ── Guardar coordenadas ── */
@@ -652,19 +666,32 @@ async function guardarCoordenadas() {
 /* ── Filas ── */
 function agregarFila() {
     const body = document.getElementById('bodyTarifas');
+    const idx  = body.querySelectorAll('.tarifa-row').length;
+    const color = ZONE_COLORS[idx % ZONE_COLORS.length];
     const div = document.createElement('div');
     div.className = 'tarifa-row';
     div.dataset.id = 'new';
     div.innerHTML = `
-        <input type="number" class="t-desde" value="0" min="0" step="0.5" onchange="actualizarMapa()">
-        <input type="number" class="t-hasta" value="5" min="0" step="0.5" placeholder="999" onchange="actualizarMapa()">
-        <input type="number" class="t-precio" value="0" min="0" step="100">
+        <span class="tf-row-dot" style="background:${color}"></span>
+        <div class="tf-km-wrap">
+            <input type="number" class="t-desde" value="0" min="0" step="0.5" onchange="actualizarMapa()">
+            <span class="tf-km-sep">→</span>
+            <input type="number" class="t-hasta" value="5" min="0" step="0.5" placeholder="∞" onchange="actualizarMapa()">
+        </div>
+        <div class="tf-price-wrap">
+            <span class="tf-price-sym">$</span>
+            <input type="number" class="t-precio" value="0" min="0" step="100">
+        </div>
         <input type="text" class="t-desc" placeholder="Descripción">
-        <button class="btn-del" onclick="eliminarFila(this)"><i class="fa-solid fa-trash"></i></button>
+        <button class="btn-del" onclick="eliminarFila(this)" title="Eliminar">
+            <i class="fa-solid fa-trash"></i>
+        </button>
     `;
     body.appendChild(div);
     div.querySelector('.t-precio').focus();
     actualizarMapa();
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success',
+        title: 'Nueva zona agregada', showConfirmButton: false, timer: 1400 });
 }
 
 function eliminarFila(btn) {
@@ -700,10 +727,9 @@ async function guardar() {
         }
     }
 
-    const btn = document.querySelector('.tarifa-page-hd .btn-primary');
-    const orig = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+    const btns = [document.getElementById('btnGuardarMain'), document.getElementById('btnGuardarCard')];
+    const orig = btns[0].innerHTML;
+    btns.forEach(b => { b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; });
 
     try {
         const res = await fetch('ajax/guardar_tarifas_envio.php', {
@@ -720,8 +746,7 @@ async function guardar() {
     } catch(e) {
         Swal.fire({ icon: 'error', title: 'Error de conexión', confirmButtonColor: '#0a0a0a' });
     }
-    btn.innerHTML = orig;
-    btn.disabled = false;
+    btns.forEach(b => { b.innerHTML = orig; b.disabled = false; });
 }
 </script>
 
