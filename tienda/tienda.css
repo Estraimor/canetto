@@ -2125,3 +2125,64 @@ body.has-bottom-nav {
 }
 .page-hd .back-btn:hover { background: var(--pk-lt); }
 .page-title { font-size: 18px; font-weight: 700; color: #111; }
+
+/* ── PRODUCT SECTIONS ───────────────────────────────── */
+.prods-section-label {
+  padding: 6px 20px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #c88e99;
+}
+.prods-divisor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 14px;
+}
+.prods-divisor::before,
+.prods-divisor::after {
+  content: '';
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #e8d0d5, transparent);
+}
+.prods-divisor span {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #c88e99;
+  white-space: nowrap;
+}
+
+/* ── DIRECCIONES GUARDADAS ──────────────────────────── */
+.dir-chip {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 10px 12px;
+  background: #fdf8f9; border: 2px solid #e8d0d5;
+  border-radius: 12px; cursor: pointer;
+  transition: border-color .18s, background .18s;
+  text-align: left; font-family: inherit;
+}
+.dir-chip:hover, .dir-chip.on {
+  border-color: #c88e99; background: #fdf0f3;
+}
+.dir-chip-ic { font-size: 18px; flex-shrink: 0; }
+.dir-chip-txt {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  overflow: hidden;
+}
+.dir-chip-txt strong { font-size: 14px; color: #1e293b; white-space: nowrap; }
+.dir-chip-txt small {
+  font-size: 12px; color: #64748b;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dir-chip-del {
+  background: none; border: none; color: #cbd5e1;
+  font-size: 14px; cursor: pointer; padding: 2px 4px;
+  border-radius: 6px; flex-shrink: 0; line-height: 1;
+  transition: color .15s, background .15s;
+}
+.dir-chip-del:hover { color: #e74c3c; background: #fee2e2; }

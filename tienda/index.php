@@ -41,13 +41,14 @@ try {
         ];
     }
 
+    // Agregar columnas opcionales antes de usarlas en el SELECT
+    try { $pdo->exec("ALTER TABLE productos ADD COLUMN descripcion TEXT NULL"); } catch (Throwable $e) {}
+    try { $pdo->exec("ALTER TABLE productos ADD COLUMN especificaciones TEXT NULL"); } catch (Throwable $e) {}
+
     $productos = $pdo->query("
         SELECT p.idproductos, p.nombre, p.precio, p.tipo, p.imagen,
-<<<<<<< HEAD
                COALESCE(p.descripcion, '') AS descripcion,
                COALESCE(p.especificaciones, '') AS especificaciones,
-=======
->>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
             CASE
                 WHEN p.tipo = 'box' THEN (
                     SELECT COALESCE(MIN(FLOOR(sp2.stock_actual / bp.cantidad)), 0)
@@ -62,13 +63,12 @@ try {
         FROM productos p
         LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
         WHERE p.activo = 1
-<<<<<<< HEAD
         GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen, p.descripcion, p.especificaciones
-=======
-        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen
->>>>>>> 5d0130e810b8f329a6cc2c742d3c9f4d0b4d2b77
-        ORDER BY CASE p.tipo WHEN 'box' THEN 0 ELSE 1 END, p.nombre ASC
+        ORDER BY CASE p.tipo WHEN 'box' THEN 1 ELSE 0 END, p.nombre ASC
     ")->fetchAll();
+
+    $galletitas = array_filter($productos, fn($p) => $p['tipo'] !== 'box');
+    $boxes      = array_filter($productos, fn($p) => $p['tipo'] === 'box');
 
     // Contenido de cada box (para mostrar en modal)
     $boxContenidoRaw = $pdo->query("
@@ -81,9 +81,6 @@ try {
     foreach ($boxContenidoRaw as $row) {
         $boxContenido[$row['producto_box']][] = ['nombre' => $row['nombre'], 'cantidad' => $row['cantidad']];
     }
-
-    try { $pdo->exec("ALTER TABLE productos ADD COLUMN descripcion TEXT NULL"); } catch (Throwable $e) {}
-    try { $pdo->exec("ALTER TABLE productos ADD COLUMN especificaciones TEXT NULL"); } catch (Throwable $e) {}
 
     try {
         $pdo->exec("ALTER TABLE sucursal ADD COLUMN latitud DECIMAL(10,8) NULL");
@@ -98,9 +95,31 @@ try {
 
     $metodos_pago = $pdo->query("SELECT idmetodo_pago, nombre FROM metodo_pago ORDER BY nombre")->fetchAll();
 
+    // Tabla de direcciones guardadas
+    try { $pdo->exec("CREATE TABLE IF NOT EXISTS direcciones_guardadas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_idusuario INT NOT NULL,
+        apodo VARCHAR(60) NOT NULL,
+        direccion TEXT NOT NULL,
+        lat DECIMAL(10,8) NULL,
+        lng DECIMAL(11,8) NULL,
+        created_at DATETIME DEFAULT NOW(),
+        INDEX idx_usuario (usuario_idusuario)
+    )"); } catch (Throwable $e) {}
+
+    $direcciones_guardadas = [];
+    if ($cliente_id ?? $_SESSION['tienda_cliente_id'] ?? null) {
+        $uid_dir = (int)($_SESSION['tienda_cliente_id'] ?? 0);
+        if ($uid_dir) {
+            $stmtDir = $pdo->prepare("SELECT id, apodo, direccion, lat, lng FROM direcciones_guardadas WHERE usuario_idusuario = ? ORDER BY id DESC");
+            $stmtDir->execute([$uid_dir]);
+            $direcciones_guardadas = $stmtDir->fetchAll();
+        }
+    }
+
 } catch (Throwable $e) {
     $ofertas = [['titulo' => '¡Bienvenidos a Canetto!', 'descripcion' => 'Galletitas artesanales', 'emoji' => '🍪', 'tipo' => 'promo', 'valor' => null]];
-    $productos = []; $sucursales = []; $metodos_pago = [];
+    $productos = []; $galletitas = []; $boxes = []; $sucursales = []; $metodos_pago = []; $direcciones_guardadas = [];
 }
 
 $cliente_id     = $_SESSION['tienda_cliente_id']     ?? null;
@@ -130,6 +149,24 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 #ckMapaWrap{margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #bfdbfe;display:none}
 #ckMapa{height:180px;width:100%}
 #geoStatus{font-size:12px;color:#64748b;margin-top:5px;min-height:16px}
+
+/* Sobre nosotros */
+.sn-row{
+  display:flex;align-items:center;gap:14px;padding:16px 18px;
+  cursor:pointer;transition:background .15s;
+}
+.sn-row:hover{ background:#fdf8f9; }
+.sn-ic{
+  width:40px;height:40px;border-radius:12px;
+  background:#fdf0f3;color:#c88e99;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.sn-txt{ flex:1;min-width:0; }
+.sn-title{ font-size:15px;font-weight:600;color:#1e293b; }
+.sn-sub{ font-size:12px;color:#94a3b8;margin-top:1px; }
+.sn-chev{ color:#94a3b8;font-size:13px;transition:transform .2s; }
+.sn-chev.open{ transform:rotate(90deg); }
 </style>
 </head>
 <body class="has-bottom-nav">
@@ -226,61 +263,67 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   </div>
 </div>
 
-<div class="filters">
-  <button class="filter-btn on" data-filter="all">Todos</button>
-  <button class="filter-btn" data-filter="producto">Galletitas</button>
-  <button class="filter-btn" data-filter="box">Boxes</button>
-</div>
-
-<div class="prods-grid" id="prodsGrid">
-<?php if (empty($productos)): ?>
-  <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#888">
-    <div style="font-size:52px;margin-bottom:14px">🍪</div>
-    <div style="font-size:14px">Próximamente más productos</div>
-  </div>
-<?php else: foreach ($productos as $p):
-  $stock   = (float)$p['stock_hecho'];
-  $disabled = $stock <= 0 ? 'disabled' : '';
-  if ($stock <= 0)  { $pill = 'sp-out'; $pillTxt = 'Sin stock';       $stockTxt = 'No disponible'; }
-  elseif ($stock <= 10) { $pill = 'sp-low'; $pillTxt = 'Pocas unidades'; $stockTxt = 'Quedan '.(int)$stock.' u.'; }
-  else              { $pill = 'sp-ok';  $pillTxt = 'Disponible';      $stockTxt = (int)$stock.' disponibles'; }
+<?php
+function renderProductCard($p) {
+  $stock    = (float)$p['stock_hecho'];
+  if ($stock <= 0)       { $pill = 'sp-out'; $pillTxt = 'Sin stock';       $stockTxt = 'No disponible'; }
+  elseif ($stock <= 10)  { $pill = 'sp-low'; $pillTxt = 'Pocas unidades';  $stockTxt = 'Quedan '.(int)$stock.' u.'; }
+  else                   { $pill = 'sp-ok';  $pillTxt = 'Disponible';      $stockTxt = (int)$stock.' disponibles'; }
   $emoji  = $p['tipo'] === 'box' ? '📦' : '🍪';
   $nombre = htmlspecialchars($p['nombre']);
   $precio = number_format((float)$p['precio'], 0, ',', '.');
-?>
-<div class="prod-card" data-tipo="<?= $p['tipo'] ?>"
-  onclick="abrirDetalle(<?= (int)$p['idproductos'] ?>)">
+  echo <<<HTML
+<div class="prod-card" data-tipo="{$p['tipo']}" onclick="window.location.href='producto.php?id={$p['idproductos']}'">
   <div class="prod-thumb">
-    <?php if (!empty($p['imagen'])): ?>
-      <img src="<?= URL_ASSETS ?>/img/productos/<?= htmlspecialchars($p['imagen']) ?>"
-           alt="<?= $nombre ?>"
-           class="prod-thumb-img"
-           loading="lazy">
-    <?php else: ?>
-      <span class="prod-thumb-emoji"><?= $emoji ?></span>
-    <?php endif; ?>
-    <span class="stock-pill <?= $pill ?>"><?= $pillTxt ?></span>
+HTML;
+  if (!empty($p['imagen'])) {
+    echo '<img src="'.URL_ASSETS.'/img/productos/'.htmlspecialchars($p['imagen']).'" alt="'.$nombre.'" class="prod-thumb-img" loading="lazy">';
+  } else {
+    echo '<span class="prod-thumb-emoji">'.$emoji.'</span>';
+  }
+  echo <<<HTML
+    <span class="stock-pill {$pill}">{$pillTxt}</span>
   </div>
   <div class="prod-body">
-    <div class="prod-name"><?= $nombre ?></div>
-    <div class="prod-price">$<?= $precio ?></div>
-    <div class="prod-stock-txt"><?= $stockTxt ?></div>
-    <?php if ($p['tipo'] === 'box'): ?><span class="prod-type-tag">Box</span><?php endif; ?>
+    <div class="prod-name">{$nombre}</div>
+    <div class="prod-price">\${$precio}</div>
+    <div class="prod-stock-txt">{$stockTxt}</div>
+HTML;
+  if ($p['tipo'] === 'box') echo '<span class="prod-type-tag">Box</span>';
+  $btnCls = $stock <= 0 ? 'btn-ver-detalle disabled' : 'btn-ver-detalle';
+  $btnTxt = $stock <= 0 ? 'Sin stock' : 'Ver detalle →';
+  echo <<<HTML
   </div>
-  <div class="btn-ver-detalle<?= $stock <= 0 ? ' disabled' : '' ?>">
-    <?= $stock <= 0 ? 'Sin stock' : 'Ver detalle →' ?>
-  </div>
+  <div class="{$btnCls}">{$btnTxt}</div>
 </div>
-<?php endforeach; endif; ?>
+HTML;
+}
+?>
+
+<!-- Cookies -->
+<div class="prods-section-label">🍪 Cookies</div>
+<div class="prods-grid" id="prodsGrid">
+<?php if (empty($galletitas)): ?>
+  <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#aaa;font-size:14px">
+    Próximamente más galletitas
+  </div>
+<?php else: foreach ($galletitas as $p): renderProductCard($p); endforeach; endif; ?>
 </div>
 
-<!-- ── BOX BUILDER CTA ─────────── -->
-<div class="box-cta">
-  <div class="box-cta-tag">Personalizado</div>
-  <div class="box-cta-title">Armá <em>tu Box</em></div>
-  <div class="box-cta-desc">Elegí tus galletitas favoritas y armá tu combinación ideal para regalar o darte un gusto</div>
-  <button class="btn-box-open" id="btnOpenBox">📦 Armar mi Box</button>
+<!-- Divisor -->
+<div class="prods-divisor">
+  <span>📦 Boxes</span>
 </div>
+
+<!-- Boxes -->
+<div class="prods-grid" id="boxesGrid">
+<?php if (empty($boxes)): ?>
+  <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#aaa;font-size:14px">
+    Próximamente más boxes
+  </div>
+<?php else: foreach ($boxes as $p): renderProductCard($p); endforeach; endif; ?>
+</div>
+
 
 <!-- ── BRANCHES ────────────────── -->
 <?php if (!empty($sucursales)): ?>
@@ -352,14 +395,64 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 </div>
 <?php endif; ?>
 
+<!-- ── SOBRE NOSOTROS ────────────── -->
+<section id="sobre-nosotros" style="padding:28px 20px 8px;max-width:560px;margin:0 auto;">
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c88e99;margin-bottom:16px;">Sobre Nosotros</div>
+
+  <div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+
+    <div class="sn-row" onclick="toggleSobreNos()">
+      <span class="sn-ic">🍪</span>
+      <div class="sn-txt">
+        <div class="sn-title">Quiénes somos</div>
+        <div class="sn-sub">Conocé nuestra historia</div>
+      </div>
+      <i class="fa-solid fa-chevron-right sn-chev" id="chevSN"></i>
+    </div>
+    <div id="sobreNosTxt" style="display:none;padding:0 20px 18px;font-size:14px;color:#475569;line-height:1.7;border-top:1px solid #f1e8ea;">
+      Somos Canetto, una marca artesanal nacida del amor por las galletitas. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.
+    </div>
+
+    <?php $waPhone = preg_replace('/\D/', '', $sucursales[0]['telefono'] ?? ''); ?>
+    <a href="https://wa.me/<?= $waPhone ?: '3764820012' ?>" target="_blank" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;" onclick="event.stopPropagation()">
+      <span class="sn-ic" style="background:#dcfce7;color:#16a34a;">💬</span>
+      <div class="sn-txt">
+        <div class="sn-title">Contacto por WhatsApp</div>
+        <div class="sn-sub">Consultas y pedidos personalizados</div>
+      </div>
+      <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
+    </a>
+
+    <a href="https://instagram.com/canettocookies" target="_blank" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
+      <span class="sn-ic" style="background:#fdf0f3;color:#c88e99;">📸</span>
+      <div class="sn-txt">
+        <div class="sn-title">Seguinos en Instagram</div>
+        <div class="sn-sub">@canettocookies</div>
+      </div>
+      <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
+    </a>
+
+    <a href="#sucursales" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
+      <span class="sn-ic" style="background:#eff6ff;color:#3b82f6;">📍</span>
+      <div class="sn-txt">
+        <div class="sn-title">Dónde retiramos</div>
+        <div class="sn-sub">Ver puntos de retiro</div>
+      </div>
+      <i class="fa-solid fa-chevron-right" style="color:#94a3b8;font-size:13px;"></i>
+    </a>
+
+  </div>
+</section>
+
 <!-- ── FOOTER ──────────────────── -->
 <footer class="t-footer">
   <div class="t-footer-brand">Canetto</div>
   <div class="t-footer-tag">Galletitas artesanales hechas con amor ❤️</div>
   <div class="t-footer-links">
     <a href="mis-pedidos.php">Mis pedidos</a>
-    <a href="login.php">Mi cuenta</a>
+    <a href="mi-cuenta.php">Mi cuenta</a>
     <a href="#sucursales">Sucursales</a>
+    <a href="#sobre-nosotros">Sobre nosotros</a>
   </div>
   <div class="t-footer-copy">&copy; <?= date('Y') ?> Canetto. Todos los derechos reservados.</div>
 </footer>
@@ -551,10 +644,21 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
         <!-- Dirección (solo envío) -->
         <div class="fg" id="wrapEnvio" style="display:none">
           <label>Tu dirección de entrega *</label>
+
+          <?php if ($cliente_id): ?>
+          <!-- Direcciones guardadas -->
+          <div id="dirsGuardadasWrap" style="margin-bottom:10px"></div>
+          <?php endif; ?>
+
           <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA">
           <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
             📍 Usar mi ubicación actual
           </button>
+          <?php if ($cliente_id): ?>
+          <button type="button" class="btn-geo" id="btnGuardarDir" onclick="guardarDireccionActual()" style="display:none;margin-top:6px;background:#f0fdf4;border-color:#bbf7d0;color:#15803d">
+            💾 Guardar esta dirección
+          </button>
+          <?php endif; ?>
           <input type="hidden" id="ckLat">
           <input type="hidden" id="ckLng">
           <div id="geoStatus"></div>
@@ -666,6 +770,7 @@ const URL_ASSETS_JS = '<?= URL_ASSETS ?>';
 const SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
 const CLIENTE_PHP = <?= json_encode($cliente_id ? ['id'=>$cliente_id,'nombre'=>$cliente_nombre] : null) ?>;
 const BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
+const DIRS_GUARDADAS = <?= json_encode($direcciones_guardadas, JSON_UNESCAPED_UNICODE) ?>;
 
 // ── SWIPER ──────────────────────────────
 new Swiper('#mainSwiper',{loop:true,autoplay:{delay:4500,disableOnInteraction:false},pagination:{el:'.swiper-pagination',clickable:true}});
@@ -702,7 +807,19 @@ function addToCart(btn){
 }
 function updateQty(id,d){const c=getCart(),i=c.findIndex(x=>x.id===id);if(i<0)return;c[i].cantidad+=d;if(c[i].cantidad<=0)c.splice(i,1);saveCart(c)}
 function clearCart(){saveCart([]);showToast('Carrito vaciado')}
-function clearCartConfirm(){if(!confirm('¿Vaciar el carrito?'))return;clearCart()}
+async function clearCartConfirm(){
+  const r=await Swal.fire({
+    title:'¿Vaciar carrito?',
+    text:'Se eliminarán todos los productos del carrito.',
+    icon:'warning',
+    showCancelButton:true,
+    confirmButtonColor:'#e74c3c',
+    cancelButtonColor:'#94a3b8',
+    confirmButtonText:'Sí, vaciar',
+    cancelButtonText:'Cancelar'
+  });
+  if(r.isConfirmed) clearCart();
+}
 const total=c=>c.reduce((s,i)=>s+i.precio*i.cantidad,0);
 const count=c=>c.reduce((s,i)=>s+i.cantidad,0);
 const fmt=n=>'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:0});
@@ -1032,11 +1149,109 @@ function setEntrega(tipo){
     const el=document.getElementById('envioEstimate');
     if(el) el.style.display='none';
   }
+  if(tipo==='envio') renderDirsGuardadas();
   const sub=document.querySelector('.ck-success-sub');
   if(sub) sub.textContent=tipo==='envio'
     ?'Tu pedido fue registrado. Un repartidor lo llevará a tu domicilio.'
     :'Tu pedido fue registrado. Te esperamos en la sucursal.';
 }
+
+// ── DIRECCIONES GUARDADAS ────────────────────────────────────────────────────
+let _dirs = [...(window.DIRS_GUARDADAS||[])];
+
+function renderDirsGuardadas(){
+  const wrap = document.getElementById('dirsGuardadasWrap');
+  if(!wrap) return;
+  if(!_dirs.length){wrap.innerHTML='';return;}
+  wrap.innerHTML = `
+    <div style="margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:8px">Mis direcciones guardadas</div>
+      <div style="display:flex;flex-direction:column;gap:6px" id="dirsList">
+        ${_dirs.map(d=>`
+          <button type="button" class="dir-chip" data-id="${d.id}"
+            onclick="usarDirGuardada(${d.id})">
+            <span class="dir-chip-ic">📍</span>
+            <span class="dir-chip-txt">
+              <strong>${d.apodo}</strong>
+              <small>${d.direccion}</small>
+            </span>
+            <button type="button" class="dir-chip-del" onclick="event.stopPropagation();borrarDir(${d.id})" title="Eliminar">✕</button>
+          </button>`).join('')}
+      </div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:6px;padding-left:2px">o ingresá una nueva abajo:</div>
+    </div>`;
+}
+
+function usarDirGuardada(id){
+  const d = _dirs.find(x=>x.id==id);
+  if(!d) return;
+  document.getElementById('ckDireccion').value = d.direccion;
+  if(d.lat){ document.getElementById('ckLat').value=d.lat; document.getElementById('ckLng').value=d.lng; _initMapa(parseFloat(d.lat),parseFloat(d.lng)); }
+  document.querySelectorAll('.dir-chip').forEach(c=>c.classList.toggle('on',c.dataset.id==id));
+  const btn=document.getElementById('btnGuardarDir');
+  if(btn) btn.style.display='none';
+}
+
+async function guardarDireccionActual(){
+  const dir = document.getElementById('ckDireccion').value.trim();
+  if(!dir){showToast('Ingresá una dirección primero','err');return;}
+  const {value:apodo} = await Swal.fire({
+    title:'Guardar dirección',
+    input:'text',
+    inputLabel:'¿Cómo querés llamarla?',
+    inputPlaceholder:'Ej: Casa, Trabajo, Casa de mamá...',
+    inputAttributes:{maxlength:50},
+    showCancelButton:true,
+    cancelButtonText:'Cancelar',
+    confirmButtonText:'Guardar',
+    confirmButtonColor:'#c88e99',
+    inputValidator:v=>!v&&'Escribí un nombre para la dirección'
+  });
+  if(!apodo) return;
+  const lat=document.getElementById('ckLat').value||null;
+  const lng=document.getElementById('ckLng').value||null;
+  const fd=new FormData();
+  fd.append('action','guardar_direccion');
+  fd.append('apodo',apodo);
+  fd.append('direccion',dir);
+  if(lat) fd.append('lat',lat);
+  if(lng) fd.append('lng',lng);
+  try{
+    const d=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
+    if(d.success){
+      _dirs.unshift({id:d.id,apodo,direccion:dir,lat:lat||null,lng:lng||null});
+      renderDirsGuardadas();
+      const btn=document.getElementById('btnGuardarDir');
+      if(btn) btn.style.display='none';
+      showToast('Dirección guardada ✓','ok');
+    } else showToast(d.message||'No se pudo guardar','err');
+  }catch{showToast('Error de conexión','err');}
+}
+
+async function borrarDir(id){
+  const {isConfirmed}=await Swal.fire({
+    title:'¿Eliminar dirección?',icon:'question',
+    showCancelButton:true,cancelButtonText:'No',
+    confirmButtonText:'Sí, eliminar',confirmButtonColor:'#e74c3c'
+  });
+  if(!isConfirmed) return;
+  const fd=new FormData();fd.append('action','borrar_direccion');fd.append('id',id);
+  try{
+    const d=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
+    if(d.success){ _dirs=_dirs.filter(x=>x.id!=id); renderDirsGuardadas(); showToast('Dirección eliminada','ok'); }
+  }catch{}
+}
+
+// Mostrar botón "guardar" cuando el usuario tipea una dirección nueva
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('ckDireccion');
+  const btn=document.getElementById('btnGuardarDir');
+  if(inp&&btn) inp.addEventListener('input',()=>{
+    const val=inp.value.trim();
+    const usandoGuardada=_dirs.some(d=>d.direccion===val);
+    btn.style.display=(val&&!usandoGuardada)?'':'none';
+  });
+});
 
 // ── MAPA LEAFLET (instancia única) ──────────────────────────────────────────
 let _ckMap=null, _ckMarker=null;
@@ -1455,6 +1670,14 @@ function addBoxDesdeModal() {
   saveCart(cart);
   showToast(nombre + ' agregado ✓', 'ok');
   cerrarModalBox();
+}
+
+function toggleSobreNos() {
+  const txt  = document.getElementById('sobreNosTxt');
+  const chev = document.getElementById('chevSN');
+  const open = txt.style.display === 'block';
+  txt.style.display = open ? 'none' : 'block';
+  chev.classList.toggle('open', !open);
 }
 </script>
 
