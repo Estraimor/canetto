@@ -20,6 +20,8 @@ $fecha_fin             = ($_POST['fecha_fin']    ?? '') !== '' ? $_POST['fecha_f
 $imagenActual          = trim($_POST['imagen_actual']            ?? '');
 $productos_idproductos = ($_POST['productos_idproductos'] ?? '') !== '' ? (int)$_POST['productos_idproductos'] : null;
 $tipo_panel            = trim($_POST['tipo_panel'] ?? 'promo');
+$link                  = trim($_POST['link']    ?? '') ?: null;
+$btn_txt               = trim($_POST['btn_txt'] ?? '') ?: null;
 
 if (!$titulo) { echo json_encode(['ok'=>false,'msg'=>'El título es obligatorio.']); exit; }
 
@@ -55,13 +57,17 @@ if (empty($_POST['imagen_actual']) && empty($_FILES['imagen']['name'])) {
     $imagenFinal = null;
 }
 
+// Agregar columnas si no existen (idempotente)
+try { $pdo->exec("ALTER TABLE oferta ADD COLUMN link VARCHAR(500) NULL"); } catch (Throwable $e) {}
+try { $pdo->exec("ALTER TABLE oferta ADD COLUMN btn_txt VARCHAR(80) NULL"); } catch (Throwable $e) {}
+
 if ($id) {
-    $stmt = $pdo->prepare("UPDATE oferta SET titulo=?,descripcion=?,emoji=?,tipo=?,tipo_panel=?,valor=?,imagen=?,activo=?,fecha_inicio=?,fecha_fin=?,productos_idproductos=? WHERE idoferta=?");
-    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $id]);
+    $stmt = $pdo->prepare("UPDATE oferta SET titulo=?,descripcion=?,emoji=?,tipo=?,tipo_panel=?,valor=?,imagen=?,activo=?,fecha_inicio=?,fecha_fin=?,productos_idproductos=?,link=?,btn_txt=? WHERE idoferta=?");
+    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $link, $btn_txt, $id]);
     audit($pdo, 'editar', 'ofertas', 'Editó panel: ' . $titulo);
 } else {
-    $stmt = $pdo->prepare("INSERT INTO oferta (titulo,descripcion,emoji,tipo,tipo_panel,valor,imagen,activo,fecha_inicio,fecha_fin,productos_idproductos) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos]);
+    $stmt = $pdo->prepare("INSERT INTO oferta (titulo,descripcion,emoji,tipo,tipo_panel,valor,imagen,activo,fecha_inicio,fecha_fin,productos_idproductos,link,btn_txt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $link, $btn_txt]);
     audit($pdo, 'crear', 'ofertas', 'Creó panel: ' . $titulo);
 }
 

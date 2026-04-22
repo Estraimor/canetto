@@ -555,9 +555,14 @@ function onDirInput(el) {
       );
       const data = await res.json();
       if (!data.length) { dd.innerHTML = '<div class="ac-loading">Sin resultados</div>'; return; }
-      dd.innerHTML = data.map(r =>
-        `<div class="ac-item" onclick="seleccionarDir(${r.lat},${r.lon},${JSON.stringify(r.display_name)})">${r.display_name}</div>`
-      ).join('');
+      dd.innerHTML = '';
+      data.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'ac-item';
+        div.textContent = r.display_name;
+        div.addEventListener('click', () => seleccionarDir(parseFloat(r.lat), parseFloat(r.lon), r.display_name));
+        dd.appendChild(div);
+      });
     } catch { dd.innerHTML = '<div class="ac-loading">Error de búsqueda</div>'; }
   }, 400);
 }

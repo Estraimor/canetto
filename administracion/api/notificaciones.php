@@ -79,7 +79,7 @@ try {
 
     // Materias primas Sin Stock
     $filas = $pdo->query("
-        SELECT mp.nombre, um.sigla AS unidad
+        SELECT mp.nombre, um.abreviatura AS unidad
         FROM materia_prima mp
         LEFT JOIN unidad_medida um ON um.idunidad_medida = mp.unidad_medida_idunidad_medida
         WHERE mp.stock_actual <= 0 AND mp.activo = 1
@@ -99,7 +99,7 @@ try {
 
     // Materias primas Stock bajo mínimo
     $filas = $pdo->query("
-        SELECT mp.nombre, mp.stock_actual, mp.stock_minimo, um.sigla AS unidad
+        SELECT mp.nombre, mp.stock_actual, mp.stock_minimo, um.abreviatura AS unidad
         FROM materia_prima mp
         LEFT JOIN unidad_medida um ON um.idunidad_medida = mp.unidad_medida_idunidad_medida
         WHERE mp.stock_actual > 0 AND mp.stock_actual <= mp.stock_minimo AND mp.activo = 1

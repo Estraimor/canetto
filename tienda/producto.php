@@ -297,6 +297,7 @@ document.getElementById('btnOpenCart2')?.addEventListener('click', () => {
 });
 
 updateBadge();
+window.addEventListener('pageshow', function() { updateBadge(); });
 </script>
 <script src="transitions.js"></script>
 </body>

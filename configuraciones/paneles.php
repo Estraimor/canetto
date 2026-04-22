@@ -29,17 +29,20 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS tipos_panel (
     orden  INT         NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-if ((int)$pdo->query("SELECT COUNT(*) FROM tipos_panel")->fetchColumn() === 0) {
-    $ins = $pdo->prepare("INSERT INTO tipos_panel (clave,label,emoji,color,orden) VALUES (?,?,?,?,?)");
-    foreach ([
-        ['promo','Promo','📢','#c88e99',0],
-        ['bienvenida','Bienvenida','👋','#1d9e75',1],
-        ['regalo','Regalo','🎁','#7c3aed',2],
-        ['soporte','Soporte','🛟','#0891b2',3],
-        ['temporada','Temporada','🌸','#f59e0b',4],
-        ['descuento','Descuento','💸','#dc2626',5],
-    ] as $d) $ins->execute($d);
-}
+// INSERT IGNORE garantiza que siempre existan los tipos base sin duplicar
+$ins = $pdo->prepare("INSERT IGNORE INTO tipos_panel (clave,label,emoji,color,orden) VALUES (?,?,?,?,?)");
+foreach ([
+    ['promo',       'Promo',        '📢', '#c88e99', 0],
+    ['bienvenida',  'Bienvenida',   '👋', '#1d9e75', 1],
+    ['regalo',      'Regalo',       '🎁', '#7c3aed', 2],
+    ['soporte',     'Soporte',      '🛟', '#0891b2', 3],
+    ['temporada',   'Temporada',    '🌸', '#f59e0b', 4],
+    ['descuento',   'Descuento',    '💸', '#dc2626', 5],
+    ['novedad',     'Novedad',      '✨', '#8b5cf6', 6],
+    ['anuncio',     'Anuncio',      '📣', '#0ea5e9', 7],
+    ['informativo', 'Informativo',  'ℹ️',  '#64748b', 8],
+    ['marketing',   'Marketing',    '🚀', '#f97316', 9],
+] as $d) $ins->execute($d);
 
 // Cargar tipos desde DB
 $tiposRows   = $pdo->query("SELECT * FROM tipos_panel WHERE activo=1 ORDER BY orden ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -65,6 +68,12 @@ foreach ($tiposRows as $t) {
 .panel-tipo-opt input:checked + .panel-tipo-badge{
   border-color:currentColor;background:rgba(200,142,153,.08);
 }
+.btn-link-preset{
+  padding:5px 12px;border-radius:20px;border:1.5px solid #e0e0e0;
+  background:#f8f8f8;color:#444;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.btn-link-preset:hover{background:#f0e8ea;border-color:#c88e99;color:#c88e99}
 </style>
 
 <div class="cfg-module">
@@ -181,15 +190,7 @@ foreach ($tiposRows as $t) {
                     <label>Descripción</label>
                     <textarea id="oDesc" rows="2" placeholder="Descripción breve del panel..." style="resize:vertical"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Tipo oferta</label>
-                    <select id="oTipo">
-                        <option value="promo">Promoción</option>
-                        <option value="descuento">Descuento (%)</option>
-                        <option value="temporada">Temporada</option>
-                    </select>
-                </div>
-                <div class="form-group">
+                <div class="form-group" id="valorWrap">
                     <label>Valor <span id="valorLabel" style="font-size:11px;color:#888">(opcional)</span></label>
                     <input type="number" id="oValor" min="0" step="0.01" placeholder="0">
                 </div>
@@ -216,6 +217,20 @@ foreach ($tiposRows as $t) {
                         <label>Fecha fin <span style="font-size:11px;color:#888">(opcional)</span></label>
                         <input type="date" id="oFechaFin">
                     </div>
+                </div>
+                <div class="form-group full">
+                    <label>Enlace / Contacto <span style="font-size:11px;color:#888">(opcional — URL, WhatsApp, Instagram...)</span></label>
+                    <input type="text" id="oLink" placeholder="Ej: https://wa.me/5493764... o https://instagram.com/canetto">
+                    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+                        <button type="button" class="btn-link-preset" onclick="setLinkPreset('wa')">💬 WhatsApp</button>
+                        <button type="button" class="btn-link-preset" onclick="setLinkPreset('ig')">📸 Instagram</button>
+                        <button type="button" class="btn-link-preset" onclick="setLinkPreset('tel')">📞 Teléfono</button>
+                    </div>
+                    <div id="linkPreview" style="margin-top:6px;font-size:12px;color:#64748b;display:none"></div>
+                </div>
+                <div class="form-group full">
+                    <label>Texto del botón <span style="font-size:11px;color:#888">(opcional — aparece si hay enlace)</span></label>
+                    <input type="text" id="oBtnTxt" placeholder="Ej: Contactar, Ver más, Pedir ahora...">
                 </div>
                 <div class="form-group full">
                     <label>Imagen del slide <span style="font-size:11px;color:#888">(JPG/PNG/WebP, max 2MB)</span></label>
@@ -350,7 +365,7 @@ function closeModal(){
     document.getElementById('oDesc').value = '';
     document.getElementById('oValor').value = '';
     document.getElementById('oEmoji').value = '';
-    document.getElementById('oTipo').value = 'promo';
+    document.getElementById('valorLabel').textContent = '(opcional)';
     document.getElementById('oProducto').value = '';
     document.getElementById('oFechaIni').value = '';
     document.getElementById('oFechaFin').value = '';
@@ -359,14 +374,27 @@ function closeModal(){
     document.getElementById('previewWrap').style.display = 'none';
     document.getElementById('oImagenActual').value = '';
     document.getElementById('oImagen').value = '';
+    document.getElementById('oLink').value = '';
+    document.getElementById('oBtnTxt').value = '';
+    document.getElementById('linkPreview').style.display = 'none';
     document.getElementById('oTipoPanel').value = 'promo';
     document.querySelectorAll('input[name="tipoPanelRadio"]').forEach(r=>r.checked=(r.value==='promo'));
 }
 document.getElementById('oActivo').addEventListener('change', function(){
     document.getElementById('oToggleLbl').textContent = this.checked ? 'Activo' : 'Inactivo';
 });
-document.getElementById('oTipo').addEventListener('change', function(){
-    document.getElementById('valorLabel').textContent = this.value==='descuento' ? '(%)' : '(opcional)';
+
+// Actualizar etiqueta del valor según tipo de panel
+function onTipoPanelChange(val) {
+    const label = document.getElementById('valorLabel');
+    label.textContent = val === 'descuento' ? '(%)' : '(opcional)';
+}
+// Enganchar el evento a cada radio
+document.querySelectorAll('input[name="tipoPanelRadio"]').forEach(r => {
+    r.addEventListener('change', () => {
+        document.getElementById('oTipoPanel').value = r.value;
+        onTipoPanelChange(r.value);
+    });
 });
 function previewImage(input){
     if(input.files && input.files[0]){
@@ -383,6 +411,32 @@ function removeImage(){
     document.getElementById('oImagenActual').value = '__remove__';
     document.getElementById('previewWrap').style.display = 'none';
 }
+function setLinkPreset(tipo) {
+    const inp = document.getElementById('oLink');
+    if (tipo === 'wa')  inp.value = 'https://wa.me/549';
+    if (tipo === 'ig')  inp.value = 'https://instagram.com/';
+    if (tipo === 'tel') inp.value = 'tel:+549';
+    inp.focus();
+    inp.setSelectionRange(inp.value.length, inp.value.length);
+    actualizarLinkPreview();
+}
+
+function actualizarLinkPreview() {
+    const v   = document.getElementById('oLink').value.trim();
+    const pre = document.getElementById('linkPreview');
+    if (!v) { pre.style.display = 'none'; return; }
+    let label = '🔗 ' + v;
+    if (v.includes('wa.me'))        label = '💬 WhatsApp: ' + v;
+    else if (v.includes('instagram')) label = '📸 Instagram: ' + v;
+    else if (v.startsWith('tel:'))  label = '📞 Teléfono: ' + v.replace('tel:','');
+    pre.textContent = label;
+    pre.style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('oLink')?.addEventListener('input', actualizarLinkPreview);
+});
+
 function onProductoChange(sel){
     const opt = sel.options[sel.selectedIndex];
     if(!opt.value) return;
@@ -409,9 +463,14 @@ async function editar(id){
     document.getElementById('oToggleLbl').textContent = o.activo==1?'Activo':'Inactivo';
     document.getElementById('oProducto').value  = o.productos_idproductos || '';
     document.getElementById('oImagenActual').value = o.imagen || '';
+    document.getElementById('oLink').value   = o.link || '';
+    document.getElementById('oBtnTxt').value = o.btn_txt || '';
+    actualizarLinkPreview();
     const tp = o.tipo_panel || 'promo';
     document.getElementById('oTipoPanel').value = tp;
     document.querySelectorAll('input[name="tipoPanelRadio"]').forEach(r=>r.checked=(r.value===tp));
+    onTipoPanelChange(tp);
+    document.getElementById('oValor').value = o.valor || '';
     if(o.imagen){
         document.getElementById('imgPreview').src = `<?= URL_ASSETS ?>/img/ofertas/${o.imagen}`;
         document.getElementById('previewWrap').style.display='block';
@@ -428,11 +487,15 @@ async function guardar(){
     btn.disabled = true; btn.textContent = 'Guardando...';
 
     const fd = new FormData();
-    if(editId) fd.append('id', editId);
+    if(editId) fd.append('idoferta', editId);
+    const tipoPanel = document.getElementById('oTipoPanel').value;
+    // Derivar tipo desde tipo_panel (una sola configuración)
+    const tipoMap   = { descuento: 'descuento', temporada: 'temporada' };
+    const tipoOferta= tipoMap[tipoPanel] || 'promo';
     fd.append('titulo',    titulo);
     fd.append('descripcion', document.getElementById('oDesc').value.trim());
-    fd.append('tipo',      document.getElementById('oTipo').value);
-    fd.append('tipo_panel',document.getElementById('oTipoPanel').value);
+    fd.append('tipo',      tipoOferta);
+    fd.append('tipo_panel', tipoPanel);
     fd.append('valor',     document.getElementById('oValor').value || '');
     fd.append('emoji',     document.getElementById('oEmoji').value || '');
     fd.append('fecha_inicio', document.getElementById('oFechaIni').value || '');
@@ -440,6 +503,8 @@ async function guardar(){
     fd.append('activo',    document.getElementById('oActivo').checked ? 1 : 0);
     fd.append('productos_idproductos', document.getElementById('oProducto').value || '');
     fd.append('imagen_actual', document.getElementById('oImagenActual').value || '');
+    fd.append('link',    document.getElementById('oLink').value.trim() || '');
+    fd.append('btn_txt', document.getElementById('oBtnTxt').value.trim() || '');
     const imgFile = document.getElementById('oImagen').files[0];
     if(imgFile) fd.append('imagen', imgFile);
 
@@ -447,11 +512,11 @@ async function guardar(){
     btn.disabled = false;
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar`;
 
-    if(res?.success){
+    if(res?.ok){
         closeModal(); dt.ajax.reload();
         Swal.fire({icon:'success',title:'Guardado',timer:1200,showConfirmButton:false});
     } else {
-        Swal.fire({icon:'error',title:'Error',text:res?.message||'Error al guardar',confirmButtonColor:'#c88e99'});
+        Swal.fire({icon:'error',title:'Error',text:res?.msg||'Error al guardar',confirmButtonColor:'#c88e99'});
     }
 }
 
@@ -465,11 +530,11 @@ async function eliminar(id){
     if(!isConfirmed) return;
     const fd = new FormData(); fd.append('id', id);
     const res = await fetch('ajax/eliminar_oferta.php',{method:'POST',body:fd}).then(r=>r.json());
-    if(res?.success){
+    if(res?.ok){
         dt.ajax.reload();
         Swal.fire({icon:'success',title:'Eliminado',timer:1000,showConfirmButton:false});
     } else {
-        Swal.fire({icon:'error',title:'Error',text:res?.message||'No se pudo eliminar',confirmButtonColor:'#c88e99'});
+        Swal.fire({icon:'error',title:'Error',text:res?.msg||'No se pudo eliminar',confirmButtonColor:'#c88e99'});
     }
 }
 

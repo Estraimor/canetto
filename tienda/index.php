@@ -209,6 +209,13 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
             <?= $o['tipo'] === 'descuento' ? number_format($o['valor'],0).'% OFF' : '$'.number_format($o['valor'],0,',','.') ?>
           </div>
         <?php endif; ?>
+        <?php if (!empty($o['link'])): ?>
+          <?php $btnLabel = !empty($o['btn_txt']) ? htmlspecialchars($o['btn_txt']) : 'Ver más'; ?>
+          <a href="<?= htmlspecialchars($o['link']) ?>" target="_blank" rel="noopener"
+             class="slide-cart-btn" style="display:inline-block;text-decoration:none;text-align:center;margin-top:10px;">
+            <?= $btnLabel ?>
+          </a>
+        <?php endif; ?>
         <?php if (!empty($o['productos_idproductos']) && !empty($o['prod_nombre'])): ?>
           <?php
             $pStock      = (float)($o['prod_stock'] ?? 0);
@@ -773,7 +780,20 @@ const BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
 const DIRS_GUARDADAS = <?= json_encode($direcciones_guardadas, JSON_UNESCAPED_UNICODE) ?>;
 
 // ── SWIPER ──────────────────────────────
-new Swiper('#mainSwiper',{loop:true,autoplay:{delay:4500,disableOnInteraction:false},pagination:{el:'.swiper-pagination',clickable:true}});
+(function(){
+  const slides = document.querySelectorAll('#mainSwiper .swiper-slide').length;
+  new Swiper('#mainSwiper', {
+    loop:   slides > 1,
+    speed:  600,
+    effect: 'fade',
+    fadeEffect: { crossFade: true },
+    autoplay: slides > 1
+      ? { delay: 4000, disableOnInteraction: false, pauseOnMouseEnter: true }
+      : false,
+    pagination: { el: '.swiper-pagination', clickable: true },
+    grabCursor: true,
+  });
+})();
 
 // ── CART ────────────────────────────────
 // Clave de carrito vinculada al usuario para que cada cuenta tenga su propio carrito
@@ -1005,8 +1025,8 @@ function addBoxToCart(){
   saveCart(cart);closeBoxModal();openCart();showToast('Box de '+box.size+' agregada al carrito 🎉','ok');
 }
 function backBoxStep1(){document.getElementById('boxStep2').classList.remove('on');document.getElementById('boxStep1').classList.add('on');document.getElementById('boxFoot2').style.display='none';document.getElementById('boxFoot1').style.display=''}
-document.getElementById('btnOpenBox').addEventListener('click',openBoxModal);
-document.getElementById('boxModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeBoxModal()});
+document.getElementById('btnOpenBox')?.addEventListener('click',openBoxModal);
+document.getElementById('boxModal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeBoxModal()});
 
 // ── CHECKOUT ────────────────────────────
 let ckCliente=null;
@@ -1445,6 +1465,19 @@ function copiarDato(valId,icoId){
 // ── INIT ──────────────────────────────────
 renderCart();
 document.getElementById('btnOpenCart').addEventListener('click',openCart);
+
+// Refrescar badge al volver con history.back() (bfcache) y resetear overflow
+window.addEventListener('pageshow', function() {
+  document.body.style.overflow = '';
+  document.getElementById('cartDrawer')?.classList.remove('on');
+  document.getElementById('cartOverlay')?.classList.remove('on');
+  renderCart();
+  // Abrir carrito si viene de producto.php con #cart
+  if (window.location.hash === '#cart') {
+    history.replaceState(null, '', window.location.pathname);
+    openCart();
+  }
+});
 
 // ── BRANCH MAPS (Leaflet + OpenStreetMap) ──────────────────────────────
 

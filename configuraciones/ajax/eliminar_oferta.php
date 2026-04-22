@@ -6,8 +6,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION['usuario_id'])) { http_response_code(403); exit; }
 
 header('Content-Type: application/json; charset=utf-8');
-$data = json_decode(file_get_contents('php://input'), true);
-$id   = (int)($data['idoferta'] ?? 0);
+$id = (int)($_POST['id'] ?? $_POST['idoferta'] ?? 0);
 
 if (!$id) { echo json_encode(['ok'=>false,'msg'=>'ID inválido.']); exit; }
 
