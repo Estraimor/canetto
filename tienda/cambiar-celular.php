@@ -69,12 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uid && !$error && $pdo) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cambiar celular — Canetto</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap">
 <style>
+@font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee-Regular.otf") format("opentype");font-weight:400;font-display:swap}
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  font-family:'DM Sans',sans-serif;
+  font-family:'Speedee',sans-serif;
   min-height:100vh;
   background:linear-gradient(160deg,#fdf5f7 0%,#f0e8ea 100%);
   display:flex;align-items:center;justify-content:center;padding:24px 16px;
@@ -100,7 +100,7 @@ body{
   box-shadow:0 4px 16px rgba(0,0,0,.15);
 }
 .brand-name{
-  font-family:'Josefin Sans',sans-serif;
+  font-family:'Speedee',sans-serif;
   font-size:20px;font-weight:700;letter-spacing:5px;
   color:#fff;text-transform:uppercase;
 }
@@ -122,7 +122,7 @@ body{
   letter-spacing:.5px;color:#94a3b8;margin-bottom:8px;}
 .fg input{
   width:100%;padding:14px 16px;border:2px solid #e8d5d9;border-radius:14px;
-  font-size:16px;font-family:'DM Sans',sans-serif;color:#1e293b;
+  font-size:16px;font-family:'Speedee',sans-serif;color:#1e293b;
   outline:none;transition:border-color .2s,box-shadow .2s;background:#fdf8f9;
 }
 .fg input:focus{border-color:#c88e99;box-shadow:0 0 0 4px rgba(200,142,153,.12);background:#fff;}
@@ -131,7 +131,7 @@ body{
 .btn-primary{
   width:100%;padding:15px;border:none;border-radius:14px;
   background:linear-gradient(135deg,#c88e99 0%,#a46678 100%);
-  color:#fff;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;
+  color:#fff;font-size:16px;font-weight:700;font-family:'Speedee',sans-serif;
   cursor:pointer;transition:opacity .18s,transform .15s;
   box-shadow:0 6px 20px rgba(164,102,120,.35);
   margin-top:4px;
@@ -155,7 +155,7 @@ body{
 .btn-sec{
   display:block;width:100%;padding:13px;border-radius:14px;
   background:#f1f5f9;color:#334155;text-decoration:none;text-align:center;
-  font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:600;font-family:'Speedee',sans-serif;
   transition:background .18s;margin-top:10px;
 }
 .btn-sec:hover{background:#e2e8f0;}
@@ -172,7 +172,7 @@ body{
 
   <!-- Header -->
   <div class="card-header">
-    <img src="<?= URL_ASSETS ?>/img/canetto_logo.jpg" alt="Canetto" class="brand-logo"
+    <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="brand-logo"
          onerror="this.style.display='none'">
     <div class="brand-name">Canetto</div>
     <div class="brand-sub">Cookies &amp; más</div>

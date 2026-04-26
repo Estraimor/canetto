@@ -271,130 +271,108 @@ MODAL CREAR / EDITAR
             <input type="hidden" name="idproducto" id="idproducto">
             <input type="hidden" name="imagen_actual" id="imagenActual">
 
-            <!-- =========================
-            DATOS BASICOS
-            ========================= -->
-
-            <div class="form-group">
-                <label>Nombre</label>
-                <input type="text" name="nombre" id="nombreProducto" required>
-            </div>
-
-            <div class="form-group">
-                <label>Precio</label>
-                <input type="number" step="0.01" name="precio" id="precioProducto">
-            </div>
-
-            <div class="form-group">
-                <label>Tipo</label>
-
-                <select name="tipo" id="tipoProducto">
-                    <option value="producto">Producto</option>
-                    <option value="box">Box</option>
-                </select>
-
-            </div>
-
-            <!-- =========================
-            IMAGEN
-            ========================= -->
-
-            <div class="form-group">
-                <label>Imagen del producto</label>
-                <div id="imgPreviewWrap" style="display:none;margin-bottom:8px">
-                    <img id="imgPreview" src="" alt="preview"
-                         style="width:100%;max-height:160px;object-fit:contain;border-radius:10px;border:1px solid #eee;padding:4px">
-                    <button type="button" onclick="quitarImagen()"
-                            style="margin-top:6px;font-size:12px;color:#e74c3c;background:none;border:none;cursor:pointer">
-                        ✕ Quitar imagen
-                    </button>
+            <!-- ── COLUMNA IZQUIERDA: imagen ── -->
+            <div class="prod-modal-img-col">
+                <div class="prod-modal-img-box" id="imgPreviewWrap" onclick="document.getElementById('inputImagen').click()">
+                    <img id="imgPreview" src="" alt="preview" style="display:none">
+                    <div class="prod-modal-img-placeholder" id="imgPlaceholder">
+                        <i class="fa-solid fa-image"></i>
+                    </div>
                 </div>
-                <input type="file" name="imagen" id="inputImagen" accept="image/jpeg,image/png,image/webp"
-                       onchange="previsualizarImagen(this)">
-                <small style="color:#999;font-size:11px">JPG, PNG o WebP · Máx 2 MB</small>
+                <div class="prod-modal-img-actions">
+                    <label for="inputImagen">
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i> Subir imagen
+                    </label>
+                    <input type="file" name="imagen" id="inputImagen" accept="image/jpeg,image/png,image/webp"
+                           onchange="previsualizarImagen(this)" style="display:none">
+                    <button type="button" class="btn-quitar-img" id="btnQuitarImg" onclick="quitarImagen()" style="display:none">
+                        <i class="fa-solid fa-trash"></i> Quitar imagen
+                    </button>
+                    <small style="color:#bbb;font-size:11px;text-align:center">JPG, PNG o WebP · Máx 2 MB</small>
+                </div>
             </div>
 
-            <!-- =========================
-            RECETA (SOLO PRODUCTO)
-            ========================= -->
+            <!-- ── COLUMNA DERECHA: campos ── -->
+            <div class="prod-modal-fields-col">
 
-            <div class="form-group" id="grupoReceta">
-
-                <label>Receta</label>
-
-                <select name="recetas_idrecetas" id="selectRecetas"></select>
-
-            </div>
-
-            <!-- =========================
-            STOCK CONFIG 🔥
-            ========================= -->
-
-            <div id="grupoStock">
-
-                <h3 style="margin-top:20px;">📦 Configuración de stock</h3>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" name="nombre" id="nombreProducto" required>
+                </div>
 
                 <div class="form-grid">
-
                     <div class="form-group">
-                        <label>Stock mínimo congelado</label>
-                        <input 
-                            type="number" 
-                            name="min_congelado" 
-                            value="0" 
-                            min="0"
-                        >
+                        <label>Precio</label>
+                        <input type="number" step="0.01" name="precio" id="precioProducto">
                     </div>
-
                     <div class="form-group">
-                        <label>Stock mínimo hecho</label>
-                        <input 
-                            type="number" 
-                            name="min_hecho" 
-                            value="0" 
-                            min="0"
-                        >
+                        <label>Tipo</label>
+                        <select name="tipo" id="tipoProducto">
+                            <option value="producto">Producto</option>
+                            <option value="box">Box</option>
+                        </select>
                     </div>
-
                 </div>
 
-            </div>
+                <!-- Receta (solo producto) -->
+                <div class="form-group" id="grupoReceta">
+                    <label>Receta</label>
+                    <select name="recetas_idrecetas" id="selectRecetas"></select>
+                </div>
 
-            <!-- =========================
-            BUILDER BOX
-            ========================= -->
+                <!-- Stock -->
+                <div id="grupoStock">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin:16px 0 10px;display:flex;align-items:center;gap:8px">
+                        Stock mínimo
+                        <span style="flex:1;height:1px;background:#ebebeb;display:block"></span>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Congelado</label>
+                            <input type="number" name="min_congelado" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Hecho</label>
+                            <input type="number" name="min_hecho" value="0" min="0">
+                        </div>
+                    </div>
+                </div>
 
-            <div id="builderBox" style="display:none">
+                <!-- Builder Box -->
+                <div id="builderBox" style="display:none">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin:16px 0 10px;display:flex;align-items:center;gap:8px">
+                        Contenido del box
+                        <span style="flex:1;height:1px;background:#ebebeb;display:block"></span>
+                    </div>
+                    <div id="listaBox"></div>
+                    <button type="button" class="btn-secondary" onclick="agregarProductoBox()">
+                        <i class="fa-solid fa-plus"></i> Agregar producto
+                    </button>
+                </div>
 
-                <h3>Contenido del Box</h3>
+                <!-- Toppings (solo producto) -->
+                <div id="grupoToppings" style="display:none">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin:16px 0 10px;display:flex;align-items:center;gap:8px">
+                        <i class="fa-solid fa-candy-cane" style="color:#c88e99"></i> Toppings disponibles
+                        <span style="flex:1;height:1px;background:#ebebeb;display:block"></span>
+                    </div>
+                    <p style="font-size:12px;color:#888;margin:0 0 10px">Extras que el cliente podrá elegir al pedir este producto</p>
+                    <div id="toppingsCheckList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <div style="color:#aaa;font-size:13px;grid-column:1/-1">Cargando...</div>
+                    </div>
+                    <div style="margin-top:8px;font-size:11px;color:#bbb">
+                        Sin selección = sin toppings en la tienda ·
+                        <a href="../../administracion/toppings/" style="color:#c88e99;font-weight:600" target="_blank">Crear toppings →</a>
+                    </div>
+                </div>
 
-                <div id="listaBox"></div>
+            </div><!-- /fields-col -->
 
-                <button 
-                    type="button" 
-                    class="btn-secondary"
-                    onclick="agregarProductoBox()"
-                >
-                    + Agregar producto
-                </button>
-
-            </div>
-
-            <!-- =========================
-            ACCIONES
-            ========================= -->
-
-            <div class="modal-actions">
-
-                <button 
-                    type="button" 
-                    onclick="cerrarModalProducto()"
-                >
-                    Cancelar
-                </button>
-
+            <!-- ── ACCIONES (fila completa) ── -->
+            <div class="modal-actions prod-modal-full">
+                <button type="button" onclick="cerrarModalProducto()">Cancelar</button>
                 <button class="btn-primary">
-                    Guardar
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar
                 </button>
 
             </div>
@@ -414,7 +392,7 @@ EDITAR PRODUCTO / BOX
 
 function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho, imagen) {
 
-    abrirModalProducto();
+    abrirModalProducto(id);
 
     setTimeout(() => {
 
@@ -429,16 +407,20 @@ function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho, ima
         document.getElementById("tituloModal").innerText = "Editar";
 
         // Imagen actual
-        const imgActual = document.getElementById("imagenActual");
-        const imgWrap   = document.getElementById("imgPreviewWrap");
-        const imgEl     = document.getElementById("imgPreview");
-        imgActual.value = imagen || '';
+        const imgEl  = document.getElementById("imgPreview");
+        const ph     = document.getElementById("imgPlaceholder");
+        const btnQ   = document.getElementById("btnQuitarImg");
+        document.getElementById("imagenActual").value = imagen || '';
         if (imagen) {
-            imgEl.src = '../img/productos/' + imagen;
-            imgWrap.style.display = 'block';
+            imgEl.src          = '<?= URL_ASSETS ?>/img/productos/' + imagen;
+            imgEl.style.display = 'block';
+            ph.style.display    = 'none';
+            btnQ.style.display  = '';
         } else {
-            imgWrap.style.display = 'none';
-            imgEl.src = '';
+            imgEl.src          = '';
+            imgEl.style.display = 'none';
+            ph.style.display    = '';
+            btnQ.style.display  = 'none';
         }
 
         if (receta) {
@@ -456,20 +438,28 @@ function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho, ima
 }
 
 function previsualizarImagen(input) {
-    const wrap = document.getElementById("imgPreviewWrap");
     const img  = document.getElementById("imgPreview");
+    const ph   = document.getElementById("imgPlaceholder");
+    const btn  = document.getElementById("btnQuitarImg");
     if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = e => { img.src = e.target.result; wrap.style.display = 'block'; };
+        reader.onload = e => {
+            img.src = e.target.result;
+            img.style.display = 'block';
+            ph.style.display  = 'none';
+            btn.style.display = '';
+        };
         reader.readAsDataURL(input.files[0]);
     }
 }
 
 function quitarImagen() {
-    document.getElementById("inputImagen").value = '';
+    document.getElementById("inputImagen").value  = '';
     document.getElementById("imagenActual").value = '';
-    document.getElementById("imgPreviewWrap").style.display = 'none';
-    document.getElementById("imgPreview").src = '';
+    const img = document.getElementById("imgPreview");
+    img.src = ''; img.style.display = 'none';
+    document.getElementById("imgPlaceholder").style.display = '';
+    document.getElementById("btnQuitarImg").style.display   = 'none';
 }
 
 
@@ -526,7 +516,7 @@ async function toggleActivo(id, activo) {
 ABRIR MODAL
 ========================= */
 
-async function abrirModalProducto() {
+async function abrirModalProducto(idProductoEditar = 0) {
 
     resetModalProducto();
 
@@ -534,34 +524,54 @@ async function abrirModalProducto() {
     modal.classList.add("open");
 
     try{
+        const [resRecetas, resProductos, resToppings] = await Promise.all([
+            fetch("api/obtener_recetas.php").then(r=>r.json()),
+            fetch("api/obtener_productos.php").then(r=>r.json()),
+            fetch("../../administracion/toppings/api/listar.php").then(r=>r.json()),
+        ]);
 
         /* RECETAS */
-
-        const res = await fetch("api/obtener_recetas.php");
-        const recetas = await res.json();
-
         const select = document.getElementById("selectRecetas");
-
-        select.innerHTML = `
-<option value="">Seleccionar receta</option>
-${recetas.map(r => `
-<option value="${r.idrecetas}">
-${r.nombre}
-</option>
-`).join("")}
-`;
+        select.innerHTML = `<option value="">Seleccionar receta</option>`
+            + resRecetas.map(r=>`<option value="${r.idrecetas}">${r.nombre}</option>`).join('');
 
         /* PRODUCTOS PARA BOX */
+        window.productosDisponibles = resProductos;
 
-        const resProductos = await fetch("api/obtener_productos.php");
-        window.productosDisponibles = await resProductos.json();
+        /* TOPPINGS */
+        window._todosLosToppings = resToppings;
+        let asignadosIds = new Set();
+        if (idProductoEditar) {
+            const rAsig = await fetch(`../../administracion/toppings/api/toppings_producto.php?id=${idProductoEditar}`).then(r=>r.json());
+            asignadosIds = new Set(rAsig.map(Number));
+        }
+        renderToppingsCheck(resToppings, asignadosIds);
 
     }catch(e){
-
         Swal.fire("Error","No se pudieron cargar los datos","error");
-
     }
+}
 
+function renderToppingsCheck(toppings, asignadosIds = new Set()) {
+    const wrap = document.getElementById("toppingsCheckList");
+    if (!toppings || !toppings.length) {
+        wrap.innerHTML = `<div style="color:#aaa;font-size:13px;grid-column:1/-1">No hay toppings creados aún.
+            <a href="../../administracion/toppings/" style="color:#c88e99;font-weight:600" target="_blank">Crear toppings →</a></div>`;
+        return;
+    }
+    wrap.innerHTML = toppings.map(t => `
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1.5px solid ${asignadosIds.has(+t.idtoppings)?'#c88e99':'#e8e8e8'};
+               border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:#333;
+               background:${asignadosIds.has(+t.idtoppings)?'#fdf0f3':'#fff'};transition:all .15s;"
+               onmouseenter="this.style.borderColor='#c88e99'"
+               onmouseleave="if(!this.querySelector('input').checked){this.style.borderColor='#e8e8e8';this.style.background='#fff';}">
+          <input type="checkbox" name="toppings[]" value="${t.idtoppings}"
+                 ${asignadosIds.has(+t.idtoppings)?'checked':''}
+                 style="accent-color:#c88e99;width:15px;height:15px"
+                 onchange="this.closest('label').style.borderColor=this.checked?'#c88e99':'#e8e8e8';this.closest('label').style.background=this.checked?'#fdf0f3':'#fff'">
+          <span style="flex:1">${t.nombre}</span>
+          <span style="font-size:12px;color:#c88e99;font-weight:700">+$${Number(t.precio).toLocaleString('es-AR')}</span>
+        </label>`).join('');
 }
 
 
@@ -574,8 +584,10 @@ function resetModalProducto(){
     document.getElementById("formCrearProducto").reset();
     document.getElementById("idproducto").value = "";
     document.getElementById("imagenActual").value = "";
-    document.getElementById("imgPreviewWrap").style.display = 'none';
-    document.getElementById("imgPreview").src = '';
+    const imgEl = document.getElementById("imgPreview");
+    imgEl.src = ''; imgEl.style.display = 'none';
+    document.getElementById("imgPlaceholder").style.display = '';
+    document.getElementById("btnQuitarImg").style.display   = 'none';
 
     document.getElementById("tituloModal").innerText = "Crear Producto";
 
@@ -619,19 +631,17 @@ MODOS
 ========================= */
 
 function activarModoBox(){
-
     document.getElementById("grupoReceta").style.display = "none";
     document.getElementById("builderBox").style.display = "block";
     document.getElementById("grupoStock").style.display = "none";
-
+    document.getElementById("grupoToppings").style.display = "none";
 }
 
 function activarModoProducto(){
-
     document.getElementById("grupoReceta").style.display = "block";
     document.getElementById("builderBox").style.display = "none";
     document.getElementById("grupoStock").style.display = "block";
-
+    document.getElementById("grupoToppings").style.display = "block";
 }
 
 
@@ -788,13 +798,22 @@ document
 
     if(data.status === "ok"){
 
-        // Animación de guardado
-        const btn = document.querySelector('#formCrearProducto .btn-primary');
-        const orig = btn.textContent;
-        btn.textContent = '✓ Guardado';
-        btn.style.background = '#2d8a4e';
-        btn.style.transform = 'scale(1.04)';
-        setTimeout(() => { btn.style.transform = ''; btn.style.background = ''; btn.textContent = orig; }, 800);
+        // Guardar toppings si es producto (no box)
+        const tipo = document.getElementById("tipoProducto").value;
+        if (tipo !== 'box') {
+            const idGuardado = data.id || document.getElementById("idproducto").value;
+            if (idGuardado) {
+                const tpIds = [...document.querySelectorAll('#toppingsCheckList input[type="checkbox"]:checked')]
+                    .map(c => +c.value);
+                try {
+                    await fetch('../../administracion/toppings/api/asignar.php', {
+                        method: 'POST',
+                        body: JSON.stringify({ productos_idproductos: +idGuardado, toppings: tpIds }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                } catch {}
+            }
+        }
 
         Swal.fire({
             icon:"success",
@@ -818,8 +837,9 @@ document
 
 });
 
+
+
+
 </script>
-
-
 
 <?php include '../../panel/dashboard/layaut/footer.php'; ?>

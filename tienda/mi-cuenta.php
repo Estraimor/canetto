@@ -42,6 +42,85 @@ $iniciales = strtoupper(
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
+@media (min-width: 1024px) {
+  body, body.has-bottom-nav { padding-bottom: 0 !important; }
+  body { background: #f0eeec !important; }
+  .bottom-nav { display: none !important; }
+  body.has-bottom-nav .t-footer { display: block !important; }
+  #page-wrap { padding-bottom: 0 !important; }
+  .perfil-mini-stats { display: none !important; }
+  #alertGlobal { display: none; }
+
+  /* NAV */
+  .t-nav { padding: 0 48px; box-shadow: 0 1px 0 #e8e8e8; }
+  .t-btn-label { display: inline !important; }
+  .t-btn { height: 40px; }
+  .t-btn .t-cart-badge { display: none; }
+
+  /* HERO — full width, contenido centrado adentro */
+  .cuenta-wrap { max-width: none !important; padding: 0 !important; width: 100% !important; }
+
+  .perfil-hero {
+    flex-direction: row;
+    align-items: center;
+    gap: 32px;
+    padding: 36px 48px;
+    background: #1a0d11;
+    border-radius: 0;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 0;
+  }
+  .perfil-avatar {
+    width: 64px; height: 64px; font-size: 24px; flex-shrink: 0;
+    background: linear-gradient(135deg, #c88e99, #a46678);
+    box-shadow: 0 0 0 3px rgba(200,142,153,.3);
+    border-width: 0;
+  }
+  .perfil-info { flex: 1; min-width: 0; }
+  .perfil-name  { font-size: 20px; font-weight: 700; }
+  .perfil-phone { font-size: 13px; opacity: .6; margin-top: 2px; }
+  .perfil-badge { font-size: 11px; margin-top: 5px; opacity: .5; }
+  .perfil-hero-stats { display: flex; gap: 8px; flex-shrink: 0; }
+  .perfil-stat-item {
+    text-align: center; padding: 12px 20px;
+    background: rgba(255,255,255,.07);
+    border-radius: 12px; border: 1px solid rgba(255,255,255,.1);
+    min-width: 80px;
+  }
+  .perfil-stat-val { font-size: 24px; font-weight: 800; color: #fff; line-height: 1; }
+  .perfil-stat-lbl { font-size: 9px; color: rgba(255,255,255,.4); font-weight: 700;
+    text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+
+  /* CONTENIDO centrado */
+  .cuenta-body {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 48px 64px;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 24px 32px;
+    align-items: start;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .cuenta-col-item { display: flex; flex-direction: column; gap: 8px; }
+  .settings-group {
+    margin: 0; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+  }
+  .settings-group-label {
+    padding: 0 0 6px !important; margin: 0 !important;
+    font-size: 10px !important; font-weight: 800 !important;
+    color: #aaa !important; text-transform: uppercase !important; letter-spacing: 1px !important;
+  }
+  .settings-row { padding: 13px 18px; }
+  .settings-row-title { font-size: 14px; font-weight: 600; }
+  .settings-row-sub { font-size: 12px; color: #94a3b8; }
+  .settings-input-wrap { padding: 0 18px 14px; }
+}
+
 /* Modal de dirección */
 #modalDirOverlay{
   display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
@@ -140,10 +219,20 @@ $iniciales = strtoupper(
 <header class="t-nav">
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
-      <img src="<?= URL_ASSETS ?>/img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo">
+      <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="t-brand-logo">
     </div>
     <span class="t-brand-name">Canetto</span>
   </a>
+  <div class="t-actions" style="display:flex;align-items:center;gap:8px">
+    <a href="mis-pedidos.php" class="t-btn" title="Mis pedidos" style="font-size:13px;font-weight:700;width:auto;padding:0 16px;border-radius:22px;gap:6px;display:flex;align-items:center">
+      <i class="fa-solid fa-bag-shopping" style="font-size:14px"></i>
+      <span class="t-btn-label" style="display:none">Mis pedidos</span>
+    </a>
+    <a href="index.php" class="t-btn" title="Tienda" style="font-size:13px;font-weight:700;width:auto;padding:0 16px;border-radius:22px;gap:6px;display:flex;align-items:center;background:#111;color:#fff">
+      <i class="fa-solid fa-cart-shopping" style="font-size:14px"></i>
+      <span class="t-btn-label" style="display:none">Tienda</span>
+    </a>
+  </div>
 </header>
 
 <div class="cuenta-wrap">
@@ -159,163 +248,186 @@ $iniciales = strtoupper(
         <?= $totalPedidos ?> pedido<?= $totalPedidos !== 1 ? 's' : '' ?> realizados
       </div>
     </div>
+    <!-- Stats mobile -->
+    <div class="perfil-mini-stats">
+      <div class="perfil-mini-stat">
+        <strong><?= $totalPedidos ?></strong>
+        <span>Pedidos</span>
+      </div>
+      <div class="perfil-mini-stat">
+        <strong><?= count($misDir) ?></strong>
+        <span>Direcciones</span>
+      </div>
+    </div>
+    <!-- Stats desktop -->
+    <div class="perfil-hero-stats">
+      <div class="perfil-stat-item">
+        <div class="perfil-stat-val"><?= $totalPedidos ?></div>
+        <div class="perfil-stat-lbl">Pedidos</div>
+      </div>
+      <div class="perfil-stat-item">
+        <div class="perfil-stat-val"><?= count($misDir) ?></div>
+        <div class="perfil-stat-lbl">Direcciones</div>
+      </div>
+    </div>
   </div>
 
   <div id="alertGlobal" class="c-alert" style="margin:16px 16px 0"></div>
 
-  <!-- Datos personales -->
-  <div class="settings-group-label" style="padding-left:20px">Datos de la cuenta</div>
-  <div class="settings-group">
+  <!-- ══ BODY: 2 columnas en desktop ══ -->
+  <div class="cuenta-body">
 
-    <div class="settings-row" onclick="toggleEdit('nombre')">
-      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-user"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title">Nombre y apellido</div>
-        <div class="settings-row-sub"><?= htmlspecialchars($nombreCompleto) ?></div>
+    <!-- ── Columna 1 ── -->
+    <div class="cuenta-col-item">
+      <div class="settings-group-label" style="padding-left:4px">Datos de la cuenta</div>
+      <div class="settings-group">
+        <div class="settings-row" onclick="toggleEdit('nombre')">
+          <div class="settings-row-body">
+            <div class="settings-row-title">Nombre y apellido</div>
+            <div class="settings-row-sub"><?= htmlspecialchars($nombreCompleto) ?></div>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+        <div class="settings-input-wrap" id="edit-nombre">
+          <input type="text" id="uNombre" value="<?= htmlspecialchars($user['nombre'] ?? '') ?>" placeholder="Nombre">
+          <input type="text" id="uApellido" value="<?= htmlspecialchars($user['apellido'] ?? '') ?>" placeholder="Apellido">
+          <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
+        </div>
+
+        <div class="settings-row" onclick="toggleEdit('email')">
+          <div class="settings-row-body">
+            <div class="settings-row-title">Email</div>
+            <div class="settings-row-sub"><?= $user['email'] ? htmlspecialchars($user['email']) : 'Sin email configurado' ?></div>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+        <div class="settings-input-wrap" id="edit-email">
+          <input type="email" id="uEmail" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="tu@email.com">
+          <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
+        </div>
+
+        <div class="settings-row" onclick="toggleEdit('dni')">
+          <div class="settings-row-body">
+            <div class="settings-row-title">DNI</div>
+            <div class="settings-row-sub"><?= $user['dni'] ? htmlspecialchars($user['dni']) : 'Sin DNI cargado' ?></div>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+        <div class="settings-input-wrap" id="edit-dni">
+          <input type="text" id="uDni" value="<?= htmlspecialchars($user['dni'] ?? '') ?>" placeholder="Número de DNI">
+          <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
+        </div>
+
+        <div class="settings-row" onclick="toggleEdit('celular')">
+          <div class="settings-row-body">
+            <div class="settings-row-title">Celular</div>
+            <div class="settings-row-sub"><?= htmlspecialchars($user['celular'] ?? '') ?></div>
+          </div>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+        <div class="settings-input-wrap" id="edit-celular">
+          <?php if ($user['email']): ?>
+            <p style="margin:0 0 10px;font-size:13px;color:#666;line-height:1.6;">
+              Te enviaremos un enlace a <strong><?= htmlspecialchars($user['email']) ?></strong> para confirmar el cambio.
+            </p>
+            <button class="btn-save-sm" onclick="solicitarCambioCelular()">Enviar enlace al email</button>
+          <?php else: ?>
+            <p style="margin:0;font-size:13px;color:#e74c3c;line-height:1.6;">
+              Agregá un email primero para poder cambiar el celular.
+            </p>
+          <?php endif; ?>
+        </div>
+      </div><!-- /settings-group -->
+    </div><!-- /col-1 -->
+
+    <!-- ── Columna 2 ── -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <!-- Seguridad -->
+      <div class="cuenta-col-item">
+        <div class="settings-group-label" style="padding-left:4px">Seguridad</div>
+        <div class="settings-group">
+          <div class="settings-row" onclick="solicitarReset()">
+            <div class="settings-row-body">
+              <div class="settings-row-title">Cambiar contraseña</div>
+              <div class="settings-row-sub">Te enviamos un enlace seguro al email</div>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+          </div>
+        </div>
       </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </div>
-    <div class="settings-input-wrap" id="edit-nombre">
-      <input type="text" id="uNombre" value="<?= htmlspecialchars($user['nombre'] ?? '') ?>" placeholder="Nombre">
-      <input type="text" id="uApellido" value="<?= htmlspecialchars($user['apellido'] ?? '') ?>" placeholder="Apellido">
-      <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
-    </div>
 
-    <div class="settings-row" onclick="toggleEdit('email')">
-      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-envelope"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title">Email</div>
-        <div class="settings-row-sub"><?= $user['email'] ? htmlspecialchars($user['email']) : 'Sin email configurado' ?></div>
+      <!-- Actividad -->
+      <div class="cuenta-col-item">
+        <div class="settings-group-label" style="padding-left:4px">Actividad</div>
+        <div class="settings-group">
+          <a href="mis-pedidos.php" class="settings-row" style="text-decoration:none">
+            <div class="settings-row-body">
+              <div class="settings-row-title">Mis pedidos</div>
+              <div class="settings-row-sub"><?= $totalPedidos ?> pedido<?= $totalPedidos !== 1 ? 's' : '' ?> realizados</div>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+        </div>
       </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </div>
-    <div class="settings-input-wrap" id="edit-email">
-      <input type="email" id="uEmail" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="tu@email.com">
-      <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
-    </div>
 
-    <div class="settings-row" onclick="toggleEdit('dni')">
-      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-id-card"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title">DNI</div>
-        <div class="settings-row-sub"><?= $user['dni'] ? htmlspecialchars($user['dni']) : 'Sin DNI cargado' ?></div>
+      <!-- Direcciones -->
+      <div class="cuenta-col-item">
+        <div class="settings-group-label" style="padding-left:4px">Direcciones de envío</div>
+        <div class="settings-group" id="dirGroup">
+          <?php if (!empty($misDir)): foreach ($misDir as $d): ?>
+          <div class="settings-row dir-row" data-id="<?= (int)$d['id'] ?>">
+            <div class="settings-row-body">
+              <div class="settings-row-title"><?= htmlspecialchars($d['apodo']) ?></div>
+              <div class="settings-row-sub"><?= htmlspecialchars($d['direccion']) ?></div>
+            </div>
+            <button onclick="borrarDirPerfil(<?= (int)$d['id'] ?>,this)"
+              style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;padding:4px 8px;">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <?php endforeach; else: ?>
+          <div class="settings-row">
+            <div class="settings-row-body" id="dirVacioMsg">
+              <div class="settings-row-title" style="color:#94a3b8;">Sin direcciones guardadas</div>
+              <div class="settings-row-sub">Guardá ubicaciones desde el checkout</div>
+            </div>
+          </div>
+          <?php endif; ?>
+          <div class="settings-row" onclick="agregarDireccionPerfil()" style="cursor:pointer">
+            <div class="settings-row-body">
+              <div class="settings-row-title" style="color:#3b82f6;">Agregar dirección</div>
+              <div class="settings-row-sub">Casa, trabajo, etc.</div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color:#3b82f6;"></i>
+          </div>
+        </div>
       </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </div>
-    <div class="settings-input-wrap" id="edit-dni">
-      <input type="text" id="uDni" value="<?= htmlspecialchars($user['dni'] ?? '') ?>" placeholder="Número de DNI">
-      <button class="btn-save-sm" onclick="guardarDatos()">Guardar</button>
-    </div>
 
-    <div class="settings-row" onclick="toggleEdit('celular')">
-      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-phone"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title">Celular</div>
-        <div class="settings-row-sub"><?= htmlspecialchars($user['celular'] ?? '') ?></div>
+      <!-- Sesión -->
+      <div class="cuenta-col-item">
+        <div class="settings-group-label" style="padding-left:4px">Sesión</div>
+        <div class="settings-group">
+          <div class="settings-row settings-row--danger" onclick="doLogout()">
+            <div class="settings-row-body">
+              <div class="settings-row-title">Cerrar sesión</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </div>
-    <div class="settings-input-wrap" id="edit-celular">
-      <?php if ($user['email']): ?>
-        <p style="margin:0 0 12px;font-size:13px;color:#666;line-height:1.6;">
-          Por seguridad, te enviaremos un enlace a <strong><?= htmlspecialchars($user['email']) ?></strong> para confirmar el cambio.
-        </p>
-        <button class="btn-save-sm" onclick="solicitarCambioCelular()">Enviar enlace al email</button>
-      <?php else: ?>
-        <p style="margin:0;font-size:13px;color:#e74c3c;line-height:1.6;">
-          Necesitás tener un email guardado para poder cambiar el celular. Agregalo en el campo <strong>Email</strong> primero.
-        </p>
-      <?php endif; ?>
-    </div>
 
-  </div>
+    </div><!-- /col-2 -->
 
-  <!-- Seguridad -->
-  <div class="settings-group-label" style="padding-left:20px">Seguridad</div>
-  <div class="settings-group">
-    <div class="settings-row" onclick="solicitarReset()">
-      <div class="settings-row-icon sri-pink"><i class="fa-solid fa-lock"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title">Cambiar contraseña</div>
-        <div class="settings-row-sub">Te enviamos un enlace seguro al email</div>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </div>
-  </div>
+  </div><!-- /cuenta-body -->
 
-  <!-- Direcciones de envío -->
-  <div class="settings-group-label" style="padding-left:20px">Direcciones de envío</div>
-  <div class="settings-group" id="dirGroup">
-
-    <?php if (!empty($misDir)): foreach ($misDir as $d): ?>
-    <div class="settings-row dir-row" data-id="<?= (int)$d['id'] ?>">
-      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-location-dot"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title"><?= htmlspecialchars($d['apodo']) ?></div>
-        <div class="settings-row-sub"><?= htmlspecialchars($d['direccion']) ?></div>
-      </div>
-      <button onclick="borrarDirPerfil(<?= (int)$d['id'] ?>,this)"
-        style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:18px;padding:4px 8px;">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
-    </div>
-    <?php endforeach; else: ?>
-    <div class="settings-row" style="color:#94a3b8;font-size:13px;">
-      <div class="settings-row-icon sri-gray"><i class="fa-solid fa-location-dot"></i></div>
-      <div class="settings-row-body" id="dirVacioMsg">
-        <div class="settings-row-title" style="color:#94a3b8;">Sin direcciones guardadas</div>
-        <div class="settings-row-sub">Guardá ubicaciones desde el checkout</div>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <div class="settings-row" onclick="agregarDireccionPerfil()" style="cursor:pointer">
-      <div class="settings-row-icon" style="background:#eff6ff;color:#3b82f6;"><i class="fa-solid fa-plus"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title" style="color:#3b82f6;">Agregar dirección</div>
-        <div class="settings-row-sub">Casa, trabajo, etc.</div>
-      </div>
-      <i class="fa-solid fa-chevron-right" style="color:#3b82f6;"></i>
-    </div>
-
-  </div>
-
-  <!-- Mis pedidos -->
-  <div class="settings-group-label" style="padding-left:20px">Actividad</div>
-  <div class="settings-group">
-    <a href="mis-pedidos.php" class="settings-row" style="text-decoration:none">
-      <div class="settings-row-icon sri-green"><i class="fa-solid fa-bag-shopping"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title">Mis pedidos</div>
-        <div class="settings-row-sub"><?= $totalPedidos ?> pedido<?= $totalPedidos !== 1 ? 's' : '' ?> en total</div>
-      </div>
-      <i class="fa-solid fa-chevron-right"></i>
-    </a>
-  </div>
-
-  <!-- Sesión -->
-  <div class="settings-group-label" style="padding-left:20px">Sesión</div>
-  <div class="settings-group">
-    <div class="settings-row settings-row--danger" onclick="doLogout()">
-      <div class="settings-row-icon sri-red"><i class="fa-solid fa-right-from-bracket"></i></div>
-      <div class="settings-row-body">
-        <div class="settings-row-title">Cerrar sesión</div>
-      </div>
-    </div>
-  </div>
-
-  <p style="text-align:center;font-size:11px;color:#ccc;padding:24px 0 8px">
-    Canetto · v2.0 · <?= date('Y') ?>
-  </p>
-
-</div>
+</div><!-- /cuenta-wrap -->
 </div><!-- /page-wrap -->
 
 <!-- ── MODAL AGREGAR DIRECCIÓN ───────────────────────── -->
 <div id="modalDirOverlay" onclick="if(event.target===this)cerrarModalDir()">
   <div id="modalDir">
     <div class="mdir-handle"></div>
-    <div class="mdir-title">📍 Nueva dirección</div>
+    <div class="mdir-title"><i class="fa-solid fa-location-dot" style="color:#c88e99;margin-right:8px"></i>Nueva dirección</div>
     <div class="mdir-body">
 
       <div class="mdir-fg">
@@ -333,7 +445,7 @@ $iniciales = strtoupper(
       </div>
 
       <button class="btn-geo-dir" onclick="usarUbicacionDir()">
-        📍 Usar mi ubicación actual
+        <i class="fa-solid fa-location-crosshairs" style="margin-right:6px"></i>Usar mi ubicación actual
       </button>
       <div id="geoDirStatus"></div>
 
@@ -351,6 +463,11 @@ $iniciales = strtoupper(
     </div>
   </div>
 </div>
+
+<footer class="t-footer">
+  <div class="t-footer-brand">Canetto</div>
+  <div class="t-footer-tag">Cookies hechas con amor</div>
+</footer>
 
 <nav class="bottom-nav">
   <a href="index.php" class="bn-item">

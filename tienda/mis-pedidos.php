@@ -76,33 +76,110 @@ $tl = [
 <header class="t-nav">
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
-      <img src="<?= URL_ASSETS ?>/img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo">
+      <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="t-brand-logo">
     </div>
     <span class="t-brand-name">Canetto</span>
   </a>
-</header>
-
-<div class="page-hd">
-  <a href="index.php" class="back-btn">←</a>
-  <div>
-    <div class="page-title">Mis pedidos</div>
-    <div style="font-size:12px;color:#888">Hola, <?= htmlspecialchars($cliente_nombre) ?> 👋</div>
+  <div class="t-actions" style="display:flex;align-items:center;gap:8px">
+    <a href="mi-cuenta.php" class="t-btn" title="Mi cuenta"><i class="fa-solid fa-user" style="font-size:15px"></i></a>
+    <a href="index.php" class="t-btn" title="Ir a la tienda" style="font-size:12px;font-weight:700;padding:0 16px;border-radius:22px;width:auto">
+      <i class="fa-solid fa-cart-shopping" style="font-size:14px"></i><span class="t-btn-label"> Tienda</span>
+    </a>
   </div>
-</div>
-
-<style>
-.ped-pago-recibir{display:flex;align-items:flex-start;gap:10px;margin:0 16px 12px;padding:12px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;font-size:13px;color:#166534}
-.ped-pago-recibir i{color:#22c55e;margin-top:1px;flex-shrink:0}
-.ped-breakdown{padding:10px 16px;border-top:1px solid #f5f5f5;font-size:13px;color:#666}
-.ped-breakdown-row{display:flex;justify-content:space-between;padding:3px 0}
-.ped-breakdown-row.total{font-weight:700;color:#111;font-size:14px;border-top:1px solid #eee;margin-top:4px;padding-top:6px}
-.tl-dot i{font-size:11px}
-.ped-empty-ic{width:52px;height:52px;background:#f5f4f1;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:#bbb;font-size:22px}
-</style>
+</header>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<div style="padding:16px 20px 40px">
+<style>
+/* ── Estilos inline de la página ── */
+.ped-pago-recibir{display:flex;align-items:flex-start;gap:10px;margin:0 0 12px;padding:12px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;font-size:13px;color:#166534}
+.ped-pago-recibir i{color:#22c55e;margin-top:1px;flex-shrink:0}
+.ped-breakdown{padding:12px 0 0;font-size:13px;color:#666}
+.ped-breakdown-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f5f5f5}
+.ped-breakdown-row:last-child{border-bottom:none}
+.ped-breakdown-row.total{font-weight:800;color:#111;font-size:15px;padding-top:10px;margin-top:4px}
+.tl-dot i{font-size:11px}
+.ped-empty-ic{width:64px;height:64px;background:#f5f4f1;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#ccc;font-size:26px}
+
+/* ── Desktop layout ── */
+@media(min-width:1024px){
+  .bottom-nav{display:none!important}
+  body.has-bottom-nav{padding-bottom:0}
+  #page-wrap{padding-bottom:0}
+  .t-btn-label{display:inline!important}
+
+  /* Page header */
+  .ped-page-hd{
+    max-width:1100px;margin:0 auto;
+    padding:36px 52px 0;
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid #f0f0f0;padding-bottom:24px;margin-bottom:32px;
+  }
+  .ped-page-hd-left h1{font-family:'Speedee',sans-serif;font-size:28px;font-weight:700;color:#111;margin:0 0 4px}
+  .ped-page-hd-left p{font-size:14px;color:#888;margin:0}
+
+  /* Contenedor central */
+  .ped-outer{max-width:1100px;margin:0 auto;padding:0 52px 80px;display:grid;grid-template-columns:1fr 320px;gap:32px;align-items:start}
+  .ped-col-main{min-width:0}
+  .ped-col-side{position:sticky;top:96px}
+
+  /* Cards de pedidos más grandes */
+  .ped-card{border-radius:20px;margin-bottom:16px;box-shadow:0 2px 16px rgba(0,0,0,.06)}
+  .ped-hd{padding:18px 22px}
+  .ped-id{font-size:15px}
+  .ped-date{font-size:12px}
+  .ped-items-wrap{padding:12px 22px 16px}
+  .ped-item-row{font-size:13px;padding:5px 0}
+  .ped-total{padding:14px 22px;font-size:15px}
+  .ped-breakdown{padding:12px 22px 4px}
+  .ped-pago-recibir{margin:0 22px 14px}
+  .timeline{padding:16px 22px}
+
+  /* Panel lateral de info */
+  .ped-side-card{background:#fff;border-radius:20px;box-shadow:0 2px 16px rgba(0,0,0,.06);overflow:hidden;margin-bottom:16px}
+  .ped-side-hd{padding:16px 20px;border-bottom:1px solid #f5f5f5;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#555;display:flex;align-items:center;gap:8px}
+  .ped-side-hd i{color:#c88e99}
+  .ped-side-body{padding:16px 20px}
+  .ped-stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f8f5f6;font-size:13px}
+  .ped-stat-row:last-child{border-bottom:none}
+  .ped-stat-lbl{color:#888;font-weight:600}
+  .ped-stat-val{font-weight:800;color:#111}
+
+  /* Footer */
+  body.has-bottom-nav .t-footer{display:block}
+}
+@media(max-width:1023px){
+  .ped-page-hd{display:none}
+  .ped-outer{display:block;padding:0}
+  .ped-col-side{display:none}
+  .ped-col-main{padding:16px 20px 40px}
+}
+</style>
+
+<!-- Header de página (mobile) -->
+<div class="page-hd" style="display:flex" id="pedHdMobile">
+  <a href="index.php" class="back-btn">←</a>
+  <div>
+    <div class="page-title">Mis pedidos</div>
+    <div style="font-size:12px;color:#888">Hola, <?= htmlspecialchars($cliente_nombre) ?></div>
+  </div>
+</div>
+
+<!-- Header desktop -->
+<div class="ped-page-hd">
+  <div class="ped-page-hd-left">
+    <h1>Mis pedidos</h1>
+    <p>Hola, <?= htmlspecialchars($cliente_nombre) ?> — acá podés seguir todos tus pedidos</p>
+  </div>
+  <a href="index.php" style="display:inline-flex;align-items:center;gap:8px;background:#111;color:#fff;padding:12px 24px;border-radius:22px;text-decoration:none;font-size:14px;font-weight:700;transition:background .18s" onmouseover="this.style.background='#c88e99'" onmouseout="this.style.background='#111'">
+    <i class="fa-solid fa-cart-shopping"></i> Ir a la tienda
+  </a>
+</div>
+
+<!-- Layout -->
+<div class="ped-outer">
+<div class="ped-col-main">
+<div class="ped-list-wrap" style="display:contents">
 <?php if (empty($pedidos)): ?>
   <div style="text-align:center;padding:60px 20px;color:#888">
     <div class="ped-empty-ic"><i class="fa-solid fa-box-open"></i></div>
@@ -208,17 +285,64 @@ $tl = [
   <?php endif; ?>
 </div>
 <?php endforeach; endif; ?>
-</div>
+</div><!-- /ped-list-wrap -->
+</div><!-- /ped-col-main -->
+
+<!-- Sidebar desktop -->
+<aside class="ped-col-side">
+  <?php
+    $totalPedidos   = count($pedidos);
+    $totalGastado   = array_sum(array_column($pedidos, 'total'));
+    $entregados     = count(array_filter($pedidos, fn($p)=>($p['estado_id']??0)==4));
+    $enCurso        = $totalPedidos - $entregados;
+  ?>
+  <div class="ped-side-card">
+    <div class="ped-side-hd"><i class="fa-solid fa-chart-bar"></i> Resumen</div>
+    <div class="ped-side-body">
+      <div class="ped-stat-row">
+        <span class="ped-stat-lbl">Total pedidos</span>
+        <span class="ped-stat-val"><?= $totalPedidos ?></span>
+      </div>
+      <div class="ped-stat-row">
+        <span class="ped-stat-lbl">En curso</span>
+        <span class="ped-stat-val" style="color:#c88e99"><?= $enCurso ?></span>
+      </div>
+      <div class="ped-stat-row">
+        <span class="ped-stat-lbl">Entregados</span>
+        <span class="ped-stat-val" style="color:#16a34a"><?= $entregados ?></span>
+      </div>
+      <div class="ped-stat-row">
+        <span class="ped-stat-lbl">Total gastado</span>
+        <span class="ped-stat-val">$<?= number_format($totalGastado, 0, ',', '.') ?></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ped-side-card">
+    <div class="ped-side-hd"><i class="fa-solid fa-circle-info"></i> ¿Necesitás ayuda?</div>
+    <div class="ped-side-body" style="display:flex;flex-direction:column;gap:10px">
+      <?php $waPhone = preg_replace('/\D/', '', $pedidos[0]['sucursal_nombre'] ?? '3764820012'); ?>
+      <a href="https://wa.me/3764820012" target="_blank"
+         style="display:flex;align-items:center;gap:10px;padding:12px;background:#f0fdf4;border-radius:12px;text-decoration:none;color:#166534;font-size:13px;font-weight:700;transition:background .15s"
+         onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+        <i class="fa-brands fa-whatsapp" style="font-size:18px;color:#22c55e"></i>
+        Contactar por WhatsApp
+      </a>
+      <a href="index.php"
+         style="display:flex;align-items:center;gap:10px;padding:12px;background:#fdf0f3;border-radius:12px;text-decoration:none;color:#c88e99;font-size:13px;font-weight:700;transition:background .15s"
+         onmouseover="this.style.background='#f9dde3'" onmouseout="this.style.background='#fdf0f3'">
+        <i class="fa-solid fa-cookie-bite" style="font-size:16px"></i>
+        Hacer otro pedido
+      </a>
+    </div>
+  </div>
+</aside>
+
+</div><!-- /ped-outer -->
 
 <footer class="t-footer">
   <div class="t-footer-brand">Canetto</div>
-  <div class="t-footer-tag">Galletitas artesanales hechas con amor ❤️</div>
-  <div class="t-footer-links">
-    <a href="index.php">Tienda</a>
-    <a href="mis-pedidos.php">Mis pedidos</a>
-    <a href="login.php">Mi cuenta</a>
-  </div>
-  <div class="t-footer-copy">&copy; <?= date('Y') ?> Canetto. Todos los derechos reservados.</div>
+  <div class="t-footer-tag">Cookies hechas con amor</div>
 </footer>
 </div><!-- /page-wrap -->
 

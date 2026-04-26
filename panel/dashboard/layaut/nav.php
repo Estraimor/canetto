@@ -161,6 +161,12 @@ $current = $_SERVER['PHP_SELF'];
             Crear producto
         </a>
 
+        <a href="<?= URL_ADMIN ?>/toppings/index.php"
+           class="<?= str_contains($current,'toppings') ? 'active' : '' ?>">
+            <i class="fa-solid fa-candy-cane"></i>
+            Toppings
+        </a>
+
     </div>
 </div>
 

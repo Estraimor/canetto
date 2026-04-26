@@ -120,7 +120,7 @@ try {
 
     audit($pdo, $accion, 'productos', $desc);
 
-    echo json_encode(["status" => "ok"]);
+    echo json_encode(["status" => "ok", "id" => (int)$idProducto]);
 
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();

@@ -18,6 +18,8 @@ $direccion_entrega= trim($input['direccion_entrega'] ?? '');
 $lat_entrega      = isset($input['lat_entrega'])  && is_numeric($input['lat_entrega'])  ? (float)$input['lat_entrega']  : null;
 $lng_entrega      = isset($input['lng_entrega'])  && is_numeric($input['lng_entrega'])  ? (float)$input['lng_entrega']  : null;
 $costo_envio_cli  = isset($input['costo_envio'])  && is_numeric($input['costo_envio'])  ? (float)$input['costo_envio']  : 0.0;
+$toppings_data    = is_array($input['toppings'] ?? null) ? $input['toppings'] : [];
+$costo_toppings   = isset($input['costo_toppings']) && is_numeric($input['costo_toppings']) ? (float)$input['costo_toppings'] : 0.0;
 
 /* ── Haversine ── */
 function haversineKm(float $la1, float $lo1, float $la2, float $lo2): float {
@@ -43,6 +45,7 @@ try {
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
     // Agregar columnas si no existen (antes de la transacción para evitar implicit commit de DDL)
     foreach ([
+        "ALTER TABLE ventas ADD COLUMN toppings_json TEXT NULL",
         "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
         "ALTER TABLE ventas ADD COLUMN repartidor_idusuario INT NULL",
         "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
@@ -53,6 +56,9 @@ try {
 
     /* ── Calcular costo de envío server-side ── */
     $costo_envio = 0.0;
+    // Sumar costo de toppings al total
+    $total += $costo_toppings;
+
     if ($tipo_entrega === 'envio' && $lat_entrega !== null && $lng_entrega !== null) {
         $sucRow = $pdo->query("SELECT latitud, longitud FROM sucursal WHERE activo=1 AND latitud IS NOT NULL AND longitud IS NOT NULL ORDER BY idsucursal ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
         if ($sucRow) {
@@ -108,8 +114,8 @@ try {
         (usuario_idusuario, total, estado_venta_idestado_venta,
          metodo_pago_idmetodo_pago, sucursal_retiro_idsucursal,
          observacion_cliente, tipo_entrega, direccion_entrega,
-         lat_entrega, lng_entrega, costo_envio, origen, fecha, created_at, updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
+         lat_entrega, lng_entrega, costo_envio, toppings_json, origen, fecha, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
     ")->execute([
         $idusuario, $total, $es_mp ? 5 : 1, $metodo_pago,
         $tipo_entrega === 'retiro' ? $sucursal_id : null,
@@ -119,6 +125,7 @@ try {
         $lat_entrega,
         $lng_entrega,
         $costo_envio,
+        !empty($toppings_data) ? json_encode($toppings_data, JSON_UNESCAPED_UNICODE) : null,
     ]);
     $id_venta = (int)$pdo->lastInsertId();
 

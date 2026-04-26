@@ -256,8 +256,8 @@
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.45);
-    backdrop-filter: blur(3px);
+    background: rgba(0,0,0,.48);
+    backdrop-filter: blur(4px);
     display: none;
     justify-content: center;
     align-items: center;
@@ -268,19 +268,131 @@
 
 .modal-card {
     background: #fff;
-    padding: 28px;
-    border-radius: 16px;
+    border-radius: 20px;
     width: 100%;
-    max-width: 440px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    max-width: 760px;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0,0,0,.22);
 }
+
+/* Header fijo */
 .modal-card h2 {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 20px;
+    font-size: 19px;
+    font-weight: 800;
     color: #111;
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid #f0f0f0;
+    margin: 0;
+    flex-shrink: 0;
+    letter-spacing: -.2px;
+}
+
+/* Cuerpo scrollable */
+#formCrearProducto {
+    overflow-y: auto;
+    flex: 1;
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0 28px;
+    align-items: start;
+}
+
+/* Columna izquierda: imagen */
+.prod-modal-img-col {
+    grid-column: 1;
+    grid-row: 1 / span 8;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+}
+
+.prod-modal-img-box {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    border: 2px dashed #e8e8e8;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f9edf0, #f0efec);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: border-color .2s;
+}
+.prod-modal-img-box:hover { border-color: #c88e99; }
+
+.prod-modal-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.prod-modal-img-placeholder {
+    font-size: 52px;
+    color: #c88e99;
+    opacity: .5;
+}
+
+.prod-modal-img-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prod-modal-img-actions label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px;
+    border-radius: 10px;
+    border: 1.5px solid #e8e8e8;
+    background: #fafafa;
+    font-size: 12px;
+    font-weight: 700;
+    color: #555;
+    cursor: pointer;
+    transition: all .15s;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.prod-modal-img-actions label:hover { border-color: #c88e99; color: #c88e99; background: #fdf0f3; }
+
+.prod-modal-img-actions .btn-quitar-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1.5px solid #ffe4e6;
+    background: #fff1f2;
+    font-size: 12px;
+    font-weight: 700;
+    color: #e11d48;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.prod-modal-img-actions .btn-quitar-img:hover { background: #fecdd3; border-color: #fecdd3; }
+
+/* Columna derecha: campos */
+.prod-modal-fields-col {
+    grid-column: 2;
+}
+
+/* Ocupa todo el ancho cuando hay cosas que no aplican a columnas */
+.prod-modal-full {
+    grid-column: 1 / -1;
 }
 
 /* ── FORM ───────────────────────────────────────────────── */

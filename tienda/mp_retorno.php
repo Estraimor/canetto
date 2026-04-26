@@ -11,7 +11,7 @@ $status   = $_GET['status']   ?? 'pending';
 $pedidoId = (int)($_GET['pedido'] ?? 0);
 
 $msgs = [
-    'success' => ['ic' => '🎉', 'titulo' => '¡Pago confirmado!',     'color' => '#2d8a4e', 'sub' => 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!'],
+    'success' => ['ic' => '', 'titulo' => '¡Pago confirmado!',     'color' => '#2d8a4e', 'sub' => 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!'],
     'failure' => ['ic' => '❌', 'titulo' => 'El pago no se completó', 'color' => '#c0392b', 'sub' => 'Hubo un problema con el pago. Podés intentar nuevamente o elegir otro método.'],
     'pending' => ['ic' => '⏳', 'titulo' => 'Pago en proceso',        'color' => '#c88e99', 'sub' => 'Tu pago está siendo procesado. Te avisaremos cuando se confirme.'],
 ];
@@ -23,12 +23,13 @@ $info = $msgs[$status] ?? $msgs['pending'];
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Canetto — Estado del pago</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap">
 <style>
+@font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee-Regular.otf") format("opentype");font-weight:400;font-display:swap}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"DM Sans",sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .card{background:#fff;border-radius:20px;padding:40px 32px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.1)}
-.brand{font-family:"Josefin Sans",sans-serif;font-size:22px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#111;margin-bottom:28px}
+.brand{font-family:"Speedee",sans-serif;font-size:22px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#111;margin-bottom:28px}
 .ic{font-size:52px;margin-bottom:16px}
 .titulo{font-size:22px;font-weight:700;color:#1e293b;margin-bottom:10px}
 .sub{font-size:14px;color:#64748b;line-height:1.6;margin-bottom:24px}
@@ -51,10 +52,10 @@ body{font-family:"DM Sans",sans-serif;background:#f8f9fa;display:flex;align-item
   <?php endif; ?>
 
   <?php if ($status === 'failure'): ?>
-    <a href="index.php" class="btn btn-primary">🛒 Volver a la tienda</a>
+    <a href="index.php" class="btn btn-primary">Volver a la tienda</a>
   <?php else: ?>
     <?php if (isset($_SESSION['tienda_cliente_id'])): ?>
-      <a href="mis-pedidos.php" class="btn btn-primary">📦 Ver mis pedidos</a>
+      <a href="mis-pedidos.php" class="btn btn-primary">Ver mis pedidos</a>
     <?php endif; ?>
     <a href="index.php" class="btn btn-sec">← Seguir comprando</a>
   <?php endif; ?>

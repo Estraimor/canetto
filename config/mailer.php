@@ -33,7 +33,7 @@ define('SITE_URL', $_isProd
 );
 unset($_siteHost, $_isProd);
 
-define('MAIL_LOGO_URL', 'https://canettocookies.com/img/canetto_logo.jpg');
+define('MAIL_LOGO_URL', 'https://canettocookies.com/img/Logo_Canetto_Cookie.png');
 
 /**
  * Crea y devuelve un PHPMailer listo para usar.
@@ -83,7 +83,7 @@ function plantillaEmail(string $titulo, string $contenido): string
           <tr>
             <td align="center"
                 style="background:linear-gradient(135deg,#c88e99 0%,#a46678 100%);padding:32px 40px 24px;">
-              <img src="https://canettocookies.com/img/canetto_logo.jpg"
+              <img src="https://canettocookies.com/img/Logo_Canetto_Cookie.png"
                    alt="Canetto Cookies"
                    width="90" height="90"
                    style="border-radius:50%;display:block;margin:0 auto 14px;border:3px solid rgba(255,255,255,.4);">

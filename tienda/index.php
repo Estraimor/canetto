@@ -95,6 +95,37 @@ try {
 
     $metodos_pago = $pdo->query("SELECT idmetodo_pago, nombre FROM metodo_pago ORDER BY nombre")->fetchAll();
 
+    // Toppings por producto
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS toppings (
+            idtoppings INT AUTO_INCREMENT PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            precio DECIMAL(10,2) NOT NULL DEFAULT 0,
+            activo TINYINT(1) NOT NULL DEFAULT 1,
+            created_at DATETIME DEFAULT NOW()
+        )");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS producto_toppings (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            productos_idproductos INT NOT NULL,
+            toppings_idtoppings INT NOT NULL,
+            UNIQUE KEY uq_pt (productos_idproductos, toppings_idtoppings)
+        )");
+        $toppingsRaw = $pdo->query("
+            SELECT pt.productos_idproductos, t.idtoppings, t.nombre, t.precio
+            FROM producto_toppings pt
+            JOIN toppings t ON t.idtoppings = pt.toppings_idtoppings AND t.activo = 1
+            ORDER BY t.nombre
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        $toppingsByProducto = [];
+        foreach ($toppingsRaw as $row) {
+            $toppingsByProducto[$row['productos_idproductos']][] = [
+                'id'     => (int)$row['idtoppings'],
+                'nombre' => $row['nombre'],
+                'precio' => (float)$row['precio'],
+            ];
+        }
+    } catch (Throwable $e) { $toppingsByProducto = []; }
+
     // Tabla de direcciones guardadas
     try { $pdo->exec("CREATE TABLE IF NOT EXISTS direcciones_guardadas (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -150,6 +181,62 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 #ckMapa{height:180px;width:100%}
 #geoStatus{font-size:12px;color:#64748b;margin-top:5px;min-height:16px}
 
+/* Toppings en checkout */
+.ck-topping-row{
+  display:flex;align-items:center;gap:12px;padding:13px 14px;
+  border:1.5px solid #f0e8ea;border-radius:14px;cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.ck-topping-row:has(input:checked){ border-color:#c88e99;background:#fdf0f3; }
+.ck-topping-row:hover{ border-color:#ddb8c3; }
+.ck-topping-row input{ position:absolute;opacity:0;width:0;height:0; }
+.ck-tp-ic{
+  width:38px;height:38px;border-radius:10px;background:#fdf0f3;color:#c88e99;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+}
+.ck-topping-row:has(input:checked) .ck-tp-ic{ background:#c88e99;color:#fff; }
+.ck-tp-info{ flex:1;min-width:0; }
+.ck-tp-name{ font-size:14px;font-weight:600;color:#1e293b; }
+.ck-tp-price{ font-size:12px;color:#c88e99;font-weight:700;margin-top:2px; }
+.ck-tp-chkmark{
+  width:22px;height:22px;border-radius:50%;border:2px solid #e2e8f0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;
+  color:transparent;transition:all .15s;flex-shrink:0;
+}
+.ck-topping-row:has(input:checked) .ck-tp-chkmark{ background:#c88e99;border-color:#c88e99;color:#fff; }
+
+/* Toppings selector */
+.tp-sel-row{
+  display:flex;align-items:center;gap:12px;padding:13px;
+  border:1.5px solid #f0e8ea;border-radius:14px;margin-bottom:8px;
+  cursor:pointer;transition:border-color .15s,background .15s;position:relative;
+}
+.tp-sel-row:hover{border-color:#c88e99;background:#fdf8f9}
+.tp-sel-row input{position:absolute;opacity:0;width:0;height:0}
+.tp-sel-row:has(input:checked){border-color:#c88e99;background:#fdf0f3}
+.tp-sel-ic{
+  width:40px;height:40px;border-radius:12px;background:#fdf0f3;color:#c88e99;
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+}
+.tp-sel-info{flex:1;min-width:0}
+.tp-sel-name{font-size:14px;font-weight:600;color:#1e293b}
+.tp-sel-price{font-size:13px;color:#c88e99;font-weight:700;margin-top:2px}
+.tp-sel-chkmark{
+  width:24px;height:24px;border-radius:50%;border:2px solid #e2e8f0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:transparent;transition:all .15s;flex-shrink:0;
+}
+.tp-sel-row:has(input:checked) .tp-sel-chkmark{
+  background:#c88e99;border-color:#c88e99;color:#fff;
+}
+/* Cart toppings tags */
+.cart-toppings{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px}
+.cart-topping-tag{
+  font-size:10px;font-weight:600;
+  background:#fdf0f3;color:#c88e99;
+  padding:2px 7px;border-radius:10px;
+  border:1px solid #f9dde3;
+}
 /* Sobre nosotros */
 .sn-row{
   display:flex;align-items:center;gap:14px;padding:16px 18px;
@@ -176,19 +263,41 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <header class="t-nav">
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
-      <img src="<?= URL_ASSETS ?>/img/canetto_logo.jpg" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
+      <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
     </div>
     <span class="t-brand-name">Canetto</span>
   </a>
+
+  <!-- Nav links desktop -->
+  <nav class="t-nav-links">
+    <a href="#prodsGrid"   class="t-nav-link">Productos</a>
+    <a href="#boxesGrid"   class="t-nav-link">Boxes</a>
+    <a href="#sucursales"  class="t-nav-link">Sucursales</a>
+    <a href="#sobre-nosotros" class="t-nav-link">Nosotros</a>
+  </nav>
+
   <div class="t-actions">
+    <?php if ($cliente_id): ?>
+    <a href="mis-pedidos.php" class="t-btn" title="Mis pedidos" style="font-size:13px;font-weight:700;width:auto;padding:0 14px;border-radius:20px;gap:6px;display:flex;">
+      <i class="fa-solid fa-bag-shopping" style="font-size:14px"></i>
+      <span style="display:none" class="t-btn-label">Pedidos</span>
+    </a>
+    <a href="mi-cuenta.php" class="t-btn" title="Mi cuenta" style="font-size:13px;font-weight:700;width:auto;padding:0 14px;border-radius:20px;gap:6px;display:flex;">
+      <i class="fa-solid fa-user" style="font-size:14px"></i>
+    </a>
+    <?php else: ?>
+    <a href="login.php" class="t-btn" style="font-size:12px;font-weight:700;width:auto;padding:0 14px;border-radius:20px">
+      Ingresar
+    </a>
+    <?php endif; ?>
     <button class="t-btn" id="btnOpenCart" title="Carrito">
-      🛒
+      <i class="fa-solid fa-cart-shopping" style="font-size:16px"></i>
       <span class="t-cart-badge" id="cartBadge">0</span>
     </button>
   </div>
 </header>
 
-<!-- ── CAROUSEL ────────────────── -->
+<!-- ── CAROUSEL (full bleed) ───── -->
 <div class="swiper" id="mainSwiper">
   <div class="swiper-wrapper">
     <?php foreach ($ofertas as $i => $o): ?>
@@ -238,7 +347,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
               data-descuento="<?= $esDescuento ? $ofValor : 0 ?>"
               data-stock="<?= (int)$pStock ?>"
               onclick="abrirModalBox(this)">
-              <?= $pStock <= 0 ? 'Sin stock' : '📦 Ver contenido' ?>
+              <?= $pStock <= 0 ? 'Sin stock' : 'Ver contenido' ?>
             </button>
           <?php else: ?>
             <button class="btn-add-cart slide-cart-btn"
@@ -262,6 +371,31 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   <div class="swiper-pagination"></div>
 </div>
 
+<!-- ── CATEGORY BAR (desktop) ──── -->
+<nav class="t-cat-bar" id="tCatBar">
+  <div class="t-cat-bar-inner">
+    <a href="#prodsGrid" class="t-cat-item active" onclick="setCatActive(this)">
+      <span class="t-cat-ic"><i class="fa-solid fa-cookie-bite"></i></span>
+      <span class="t-cat-lbl">Cookies</span>
+    </a>
+    <a href="#boxesGrid" class="t-cat-item" onclick="setCatActive(this)">
+      <span class="t-cat-ic"><i class="fa-solid fa-box-open"></i></span>
+      <span class="t-cat-lbl">Boxes</span>
+    </a>
+    <a href="#sucursales" class="t-cat-item" onclick="setCatActive(this)">
+      <span class="t-cat-ic"><i class="fa-solid fa-location-dot"></i></span>
+      <span class="t-cat-lbl">Sucursales</span>
+    </a>
+    <a href="#sobre-nosotros" class="t-cat-item" onclick="setCatActive(this)">
+      <span class="t-cat-ic"><i class="fa-solid fa-circle-info"></i></span>
+      <span class="t-cat-lbl">Nosotros</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ── LAYOUT PRINCIPAL ────────── -->
+<div class="t-main-layout">
+<div class="t-content-col">
 <!-- ── PRODUCTS ────────────────── -->
 <div class="sec-head">
   <div>
@@ -276,7 +410,7 @@ function renderProductCard($p) {
   if ($stock <= 0)       { $pill = 'sp-out'; $pillTxt = 'Sin stock';       $stockTxt = 'No disponible'; }
   elseif ($stock <= 10)  { $pill = 'sp-low'; $pillTxt = 'Pocas unidades';  $stockTxt = 'Quedan '.(int)$stock.' u.'; }
   else                   { $pill = 'sp-ok';  $pillTxt = 'Disponible';      $stockTxt = (int)$stock.' disponibles'; }
-  $emoji  = $p['tipo'] === 'box' ? '📦' : '🍪';
+  $emoji  = $p['tipo'] === 'box' ? '<i class="fa-solid fa-box-open" style="font-size:40px;color:#c88e99"></i>' : '<i class="fa-solid fa-cookie-bite" style="font-size:40px;color:#c88e99"></i>';
   $nombre = htmlspecialchars($p['nombre']);
   $precio = number_format((float)$p['precio'], 0, ',', '.');
   echo <<<HTML
@@ -308,7 +442,7 @@ HTML;
 ?>
 
 <!-- Cookies -->
-<div class="prods-section-label">🍪 Cookies</div>
+<div class="prods-section-label"><i class="fa-solid fa-cookie-bite" style="color:#c88e99;margin-right:6px"></i>Cookies</div>
 <div class="prods-grid" id="prodsGrid">
 <?php if (empty($galletitas)): ?>
   <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#aaa;font-size:14px">
@@ -319,7 +453,7 @@ HTML;
 
 <!-- Divisor -->
 <div class="prods-divisor">
-  <span>📦 Boxes</span>
+  <span><i class="fa-solid fa-box-open" style="color:#c88e99;margin-right:6px"></i>Boxes</span>
 </div>
 
 <!-- Boxes -->
@@ -340,7 +474,7 @@ HTML;
     <div class="sec-sub">Retirá tu pedido en la más cercana</div>
   </div>
   <button class="btn-nearest" id="btnNearest" onclick="findNearest()">
-    📍 La más cercana
+    <i class="fa-solid fa-location-crosshairs"></i> La más cercana
   </button>
 </div>
 
@@ -360,9 +494,9 @@ HTML;
        data-lat="<?= $lat ?? '' ?>" data-lng="<?= $lng ?? '' ?>"
        data-nombre="<?= htmlspecialchars($s['nombre']) ?>">
     <div class="branch-head">
-      <div class="branch-ic">📍</div>
+      <div class="branch-ic"><i class="fa-solid fa-location-dot"></i></div>
       <div class="branch-name"><?= htmlspecialchars($s['nombre']) ?></div>
-      <span class="branch-nearest-badge" id="badge-<?= $i ?>" style="display:none">⭐ Más cercana</span>
+      <span class="branch-nearest-badge" id="badge-<?= $i ?>" style="display:none"><i class="fa-solid fa-star"></i> Más cercana</span>
     </div>
     <?php if ($addr): ?><div class="branch-addr"><?= htmlspecialchars($addr) ?></div><?php endif; ?>
     <?php if ($lat && $lng): ?>
@@ -403,65 +537,137 @@ HTML;
 <?php endif; ?>
 
 <!-- ── SOBRE NOSOTROS ────────────── -->
+</div><!-- /t-content-col -->
+</div><!-- /t-main-layout -->
+
+<style>
+/* ── Sobre nosotros desktop ── */
+@media (min-width: 1024px) {
+  #sobre-nosotros {
+    max-width: 1000px !important;
+    padding: 48px 52px 32px !important;
+  }
+  .sn-desktop-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .sn-brand-card {
+    background: linear-gradient(135deg, #1a0d11 0%, #2e1020 60%, #a46678 100%);
+    border-radius: 20px;
+    padding: 32px;
+    color: #fff;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 220px;
+  }
+  .sn-brand-card-name {
+    font-family: 'Speedee', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .sn-brand-card-desc {
+    font-size: 14px;
+    color: rgba(255,255,255,.7);
+    line-height: 1.75;
+    flex: 1;
+  }
+  .sn-brand-card-tag {
+    margin-top: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #c88e99;
+  }
+  /* Ocultar el row expandible en desktop */
+  .sn-row-quienes { display: none !important; }
+  #sobreNosTxt { display: none !important; }
+}
+</style>
+
 <section id="sobre-nosotros" style="padding:28px 20px 8px;max-width:560px;margin:0 auto;">
   <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#c88e99;margin-bottom:16px;">Sobre Nosotros</div>
 
-  <div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+  <div class="sn-desktop-grid">
 
-    <div class="sn-row" onclick="toggleSobreNos()">
-      <span class="sn-ic">🍪</span>
-      <div class="sn-txt">
-        <div class="sn-title">Quiénes somos</div>
-        <div class="sn-sub">Conocé nuestra historia</div>
+    <!-- Columna izquierda: tarjeta de marca (solo desktop) -->
+    <div class="sn-brand-card" style="display:none">
+      <div>
+        <div class="sn-brand-card-name">Canetto</div>
+        <div class="sn-brand-card-desc">Somos una marca artesanal nacida del amor por las galletitas. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.</div>
       </div>
-      <i class="fa-solid fa-chevron-right sn-chev" id="chevSN"></i>
-    </div>
-    <div id="sobreNosTxt" style="display:none;padding:0 20px 18px;font-size:14px;color:#475569;line-height:1.7;border-top:1px solid #f1e8ea;">
-      Somos Canetto, una marca artesanal nacida del amor por las galletitas. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.
+      <div class="sn-brand-card-tag">Cookies hechas con amor</div>
     </div>
 
-    <?php $waPhone = preg_replace('/\D/', '', $sucursales[0]['telefono'] ?? ''); ?>
-    <a href="https://wa.me/<?= $waPhone ?: '3764820012' ?>" target="_blank" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;" onclick="event.stopPropagation()">
-      <span class="sn-ic" style="background:#dcfce7;color:#16a34a;">💬</span>
-      <div class="sn-txt">
-        <div class="sn-title">Contacto por WhatsApp</div>
-        <div class="sn-sub">Consultas y pedidos personalizados</div>
-      </div>
-      <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
-    </a>
+    <!-- Columna derecha: links -->
+    <div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
 
-    <a href="https://instagram.com/canettocookies" target="_blank" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
-      <span class="sn-ic" style="background:#fdf0f3;color:#c88e99;">📸</span>
-      <div class="sn-txt">
-        <div class="sn-title">Seguinos en Instagram</div>
-        <div class="sn-sub">@canettocookies</div>
+      <div class="sn-row sn-row-quienes" onclick="toggleSobreNos()">
+        <span class="sn-ic"><i class="fa-solid fa-circle-info"></i></span>
+        <div class="sn-txt">
+          <div class="sn-title">Quiénes somos</div>
+          <div class="sn-sub">Conocé nuestra historia</div>
+        </div>
+        <i class="fa-solid fa-chevron-right sn-chev" id="chevSN"></i>
       </div>
-      <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
-    </a>
-
-    <a href="#sucursales" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
-      <span class="sn-ic" style="background:#eff6ff;color:#3b82f6;">📍</span>
-      <div class="sn-txt">
-        <div class="sn-title">Dónde retiramos</div>
-        <div class="sn-sub">Ver puntos de retiro</div>
+      <div id="sobreNosTxt" style="display:none;padding:0 20px 18px;font-size:14px;color:#475569;line-height:1.7;border-top:1px solid #f1e8ea;">
+        Somos Canetto, una marca artesanal nacida del amor por las galletitas. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.
       </div>
-      <i class="fa-solid fa-chevron-right" style="color:#94a3b8;font-size:13px;"></i>
-    </a>
 
-  </div>
+      <?php $waPhone = preg_replace('/\D/', '', $sucursales[0]['telefono'] ?? ''); ?>
+      <a href="https://wa.me/<?= $waPhone ?: '3764820012' ?>" target="_blank" class="sn-row" style="text-decoration:none;" onclick="event.stopPropagation()">
+        <span class="sn-ic" style="background:#dcfce7;color:#16a34a;"><i class="fa-brands fa-whatsapp"></i></span>
+        <div class="sn-txt">
+          <div class="sn-title">Contacto por WhatsApp</div>
+          <div class="sn-sub">Consultas y pedidos personalizados</div>
+        </div>
+        <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
+      </a>
+
+      <a href="https://instagram.com/canettocookies" target="_blank" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
+        <span class="sn-ic" style="background:#fdf0f3;color:#c88e99;"><i class="fa-brands fa-instagram"></i></span>
+        <div class="sn-txt">
+          <div class="sn-title">Seguinos en Instagram</div>
+          <div class="sn-sub">@canettocookies</div>
+        </div>
+        <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
+      </a>
+
+      <a href="#sucursales" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
+        <span class="sn-ic" style="background:#eff6ff;color:#3b82f6;"><i class="fa-solid fa-location-dot"></i></span>
+        <div class="sn-txt">
+          <div class="sn-title">Dónde retiramos</div>
+          <div class="sn-sub">Ver puntos de retiro</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:#94a3b8;font-size:13px;"></i>
+      </a>
+
+    </div>
+  </div><!-- /sn-desktop-grid -->
 </section>
+
+<script>
+// Mostrar tarjeta de marca solo en desktop
+(function(){
+  var card = document.querySelector('.sn-brand-card');
+  function checkBrand(){ if(card) card.style.display = window.innerWidth >= 1024 ? 'flex' : 'none'; }
+  checkBrand();
+  window.addEventListener('resize', checkBrand);
+})();
+</script>
 
 <!-- ── FOOTER ──────────────────── -->
 <footer class="t-footer">
   <div class="t-footer-brand">Canetto</div>
-  <div class="t-footer-tag">Galletitas artesanales hechas con amor ❤️</div>
-  <div class="t-footer-links">
-    <a href="mis-pedidos.php">Mis pedidos</a>
-    <a href="mi-cuenta.php">Mi cuenta</a>
-    <a href="#sucursales">Sucursales</a>
-    <a href="#sobre-nosotros">Sobre nosotros</a>
-  </div>
-  <div class="t-footer-copy">&copy; <?= date('Y') ?> Canetto. Todos los derechos reservados.</div>
+  <div class="t-footer-tag">Cookies hechas con amor</div>
 </footer>
 </div><!-- /page-wrap -->
 
@@ -485,9 +691,9 @@ HTML;
 
 <!-- ── PRODUCT DETAIL SHEET ──────── -->
 <div class="prod-detail-overlay" id="pdOverlay" onclick="cerrarDetalle()"></div>
-<div class="prod-detail-sheet" id="pdSheet" style="position:fixed;">
+<div class="prod-detail-sheet" id="pdSheet" style="position:fixed">
   <div class="pd-img-wrap" id="pdImgWrap">
-    <span id="pdEmoji">🍪</span>
+    <i class="fa-solid fa-cookie-bite" id="pdEmoji" style="font-size:72px;color:#c88e99;opacity:.35"></i>
   </div>
   <button class="pd-close" onclick="cerrarDetalle()" style="position:absolute;top:14px;right:16px;z-index:2">×</button>
   <div class="pd-body">
@@ -536,7 +742,7 @@ HTML;
 <div class="modal-bg" id="boxModal">
   <div class="modal-sheet">
     <div class="modal-hd">
-      <span class="modal-title">📦 Armá tu Box</span>
+      <span class="modal-title">Armá tu Box</span>
       <button class="btn-close" onclick="closeBoxModal()">✕</button>
     </div>
     <div class="modal-body">
@@ -580,8 +786,24 @@ HTML;
     </div>
     <div class="modal-body">
 
+      <!-- Paso 0: Toppings -->
+      <div class="ck-step" id="ckToppings">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="width:56px;height:56px;background:#fdf0f3;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><i class="fa-solid fa-candy-cane" style="font-size:24px;color:#c88e99"></i></div>
+          <div style="font-size:17px;font-weight:800;color:#1e293b;margin-bottom:4px">¿Querés agregarle algo?</div>
+          <div style="font-size:13px;color:#94a3b8">Toppings disponibles para tu pedido</div>
+        </div>
+        <div id="ckToppingsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+        <button class="btn-pk" onclick="confirmarToppingsOrden()" style="margin-bottom:10px">
+          <i class="fa-solid fa-check"></i> Confirmar y continuar
+        </button>
+        <button class="btn-sec" onclick="saltearToppings()" style="background:#f1f5f9;color:#64748b">
+          <i class="fa-solid fa-ban"></i> Continuar sin toppings
+        </button>
+      </div>
+
       <!-- Paso A: quién sos -->
-      <div class="ck-step on" id="ckAuth">
+      <div class="ck-step" id="ckAuth">
         <div class="ck-tabs">
           <button class="ck-tab on" onclick="switchCkTab('guest',this)">Invitado</button>
           <button class="ck-tab"   onclick="switchCkTab('login',this)">Ingresar</button>
@@ -672,8 +894,17 @@ HTML;
           <div id="ckMapaWrap">
             <div id="ckMapa"></div>
           </div>
-          <div id="envioEstimate" style="display:none;margin-top:8px;padding:10px 12px;background:#f0f9ff;border:1.5px solid #bfdbfe;border-radius:10px;font-size:13px;color:#1d4ed8">
-            <i class="fa-solid fa-motorcycle"></i> <span id="envioEstimateTxt"></span>
+          <div id="envioEstimate" style="display:none;margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc">
+              <div style="width:36px;height:36px;background:#dbeafe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="fa-solid fa-motorcycle" style="color:#3b82f6;font-size:15px"></i>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:2px">Costo de envío</div>
+                <div id="envioEstimateTxt" style="font-size:14px;font-weight:700;color:#1e293b"></div>
+              </div>
+              <div id="envioEstimatePrice" style="font-size:18px;font-weight:800;color:#3b82f6;font-family:'Speedee',sans-serif;flex-shrink:0"></div>
+            </div>
           </div>
         </div>
 
@@ -720,16 +951,18 @@ HTML;
         </div>
         <!-- Panel datos bancarios (transferencia) -->
         <div id="transferPanel" style="display:none;margin-top:4px">
-          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:12px">
-              <i class="fa-solid fa-building-columns"></i> Datos para transferencia
+          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden">
+            <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e2e8f0">
+              <div style="width:32px;height:32px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="fa-solid fa-building-columns" style="color:#3b82f6;font-size:14px"></i>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:#1e293b">Datos para transferencia</div>
+                <div style="font-size:11px;color:#94a3b8;margin-top:1px">Copiá el CBU o alias y transferí el total</div>
+              </div>
             </div>
-            <div id="transferBody" style="font-size:13px;color:#374151">
-              <div style="text-align:center;padding:10px;color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
-            </div>
-            <div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e;display:flex;gap:8px;align-items:flex-start">
-              <i class="fa-solid fa-clock" style="margin-top:1px;flex-shrink:0"></i>
-              <span>Las transferencias se acreditan en 24–72 hs hábiles. Tu pedido se confirma luego de verificar el pago.</span>
+            <div id="transferBody" style="padding:12px 16px;font-size:13px;color:#374151">
+              <div style="text-align:center;padding:16px;color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
             </div>
           </div>
         </div>
@@ -746,11 +979,11 @@ HTML;
       <!-- Paso C: éxito -->
       <div class="ck-step" id="ckSuccess">
         <div class="ck-success">
-          <div class="ck-success-ic">🎉</div>
+          <div class="ck-success-ic"><i class="fa-solid fa-circle-check" style="color:#22c55e;font-size:58px"></i></div>
           <div class="ck-success-title">¡Pedido realizado!</div>
           <div class="ck-success-sub">Tu pedido fue registrado. Te esperamos en la sucursal.</div>
           <div class="ck-success-order" id="ckOrderNum">#0</div>
-          <button class="btn-pk" onclick="closeCheckout();clearCart()">¡Entendido! 🍪</button>
+          <button class="btn-pk" onclick="closeCheckout();clearCart()">¡Entendido!</button>
           <?php if ($cliente_id): ?>
             <a href="mis-pedidos.php" class="btn-sec">Ver mis pedidos →</a>
           <?php else: ?>
@@ -762,9 +995,35 @@ HTML;
   </div>
 </div>
 
+<!-- ── TOPPINGS SELECTOR MODAL ────── -->
+<div class="modal-bg" id="toppingsModal" style="z-index:1100">
+  <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
+    <div class="modal-hd">
+      <div>
+        <span class="modal-title" id="tpSelTitulo">Personalizá tu cookie</span>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px">Seleccioná los toppings (obligatorio)</div>
+      </div>
+      <button class="btn-close" onclick="cerrarSelectorToppings()">✕</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:16px 20px" id="tpSelLista"></div>
+    <div style="padding:14px 20px 20px;border-top:1px solid #f5f5f5">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;color:#64748b">Total con toppings</span>
+        <span style="font-size:20px;font-weight:800;color:#c88e99" id="tpSelTotal">$0</span>
+      </div>
+      <div style="font-size:12px;color:#e11d48;margin-bottom:10px;display:none" id="tpSelAlert">
+        <i class="fa-solid fa-triangle-exclamation"></i> Seleccioná al menos un topping para continuar
+      </div>
+      <button class="btn-pk" id="tpSelConfirmar" onclick="confirmarToppings()">
+        <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST + FAB -->
 <div class="toast" id="toast"></div>
-<button class="fab" id="fabCart" onclick="openCart()">🛒<span class="fab-badge" id="fabBadge">0</span></button>
+<button class="fab" id="fabCart" onclick="openCart()"><i class="fa-solid fa-cart-shopping"></i><span class="fab-badge" id="fabBadge">0</span></button>
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -772,6 +1031,7 @@ HTML;
 
 <script>
 // ── PHP DATA ────────────────────────────
+const TOPPINGS_BY_PRODUCTO = <?= json_encode($toppingsByProducto ?? [], JSON_UNESCAPED_UNICODE) ?>;
 const PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
 const URL_ASSETS_JS = '<?= URL_ASSETS ?>';
 const SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
@@ -801,7 +1061,7 @@ const CK = CLIENTE_PHP ? 'canetto_cart_' + CLIENTE_PHP.id : 'canetto_cart_guest'
 // Limpiar clave genérica legada si quedó de versiones anteriores
 if (localStorage.getItem('canetto_cart') !== null) { localStorage.removeItem('canetto_cart'); }
 const getCart=()=>{try{return JSON.parse(localStorage.getItem(CK)||'[]')}catch{return[]}};
-const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart()};
+const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart();renderDesktopCart()};
 
 function requireLogin(){
   if(!CLIENTE_PHP){
@@ -826,6 +1086,7 @@ function addToCart(btn){
   setTimeout(()=>{btn.innerHTML=o;btn.style.background=''},1200);
 }
 function updateQty(id,d){const c=getCart(),i=c.findIndex(x=>x.id===id);if(i<0)return;c[i].cantidad+=d;if(c[i].cantidad<=0)c.splice(i,1);saveCart(c)}
+function updateQtyByIdx(idx,d){const c=getCart();if(!c[idx])return;c[idx].cantidad+=d;if(c[idx].cantidad<=0)c.splice(idx,1);saveCart(c)}
 function clearCart(){saveCart([]);showToast('Carrito vaciado')}
 async function clearCartConfirm(){
   const r=await Swal.fire({
@@ -841,9 +1102,10 @@ async function clearCartConfirm(){
   if(r.isConfirmed) clearCart();
 }
 const total=c=>c.reduce((s,i)=>s+i.precio*i.cantidad,0);
+const precioBase=it=>it.precio_base||it.precio;
 const count=c=>c.reduce((s,i)=>s+i.cantidad,0);
 const fmt=n=>'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:0});
-function emoji(n,t){if(t==='box')return'📦';const l=(n||'').toLowerCase();if(l.includes('alfajor'))return'🍫';if(l.includes('torta'))return'🎂';if(l.includes('brownie'))return'🟫';if(l.includes('muffin')||l.includes('cupcake'))return'🧁';return'🍪'}
+function emoji(n,t){return''}
 
 function thumbHtml(it){
   if(it.imagen){
@@ -857,8 +1119,12 @@ function renderCart(){
   document.getElementById('cartCountTag').textContent=n+(n===1?' item':' items');
   document.getElementById('cartTotal').textContent=fmt(t);
   const w=document.getElementById('cartItemsWrap');
-  if(!c.length){w.innerHTML='<div class="cart-empty"><div class="cart-empty-ic">🛒</div><div class="cart-empty-txt">Tu carrito está vacío</div></div>';return}
-  w.innerHTML=c.map(it=>`<div class="cart-item">${thumbHtml(it)}<div class="cart-item-inf"><div class="cart-item-name">${it.nombre}</div><div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="updateQty(${it.id},-1)">−</button><span class="qty-num">${it.cantidad}</span><button class="qty-btn" onclick="updateQty(${it.id},1)">+</button></div></div>`).join('');
+  if(!c.length){w.innerHTML='<div class="cart-empty"><div class="cart-empty-ic"><i class="fa-solid fa-cart-shopping"></i></div><div class="cart-empty-txt">Tu carrito está vacío</div></div>';return}
+  w.innerHTML=c.map((it,idx)=>{
+    const tpHtml=it.toppings&&it.toppings.length
+      ?`<div class="cart-toppings">${it.toppings.map(t=>`<span class="cart-topping-tag">+ ${t.nombre}</span>`).join('')}</div>`:'';
+    return `<div class="cart-item">${thumbHtml(it)}<div class="cart-item-inf"><div class="cart-item-name">${it.nombre}</div>${tpHtml}<div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="updateQtyByIdx(${idx},-1)">−</button><span class="qty-num">${it.cantidad}</span><button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button></div></div>`;
+  }).join('');
 }
 
 // ── PRODUCT DETAIL ──────────────────────
@@ -874,9 +1140,9 @@ function abrirDetalle(id){
   // Imagen o emoji
   const imgWrap = document.getElementById('pdImgWrap');
   if(p.imagen){
-    imgWrap.innerHTML=`<img src="${URL_ASSETS_JS}/img/productos/${encodeURIComponent(p.imagen)}" alt="${p.nombre}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='🍪'">`;
+    imgWrap.innerHTML=`<img src="${URL_ASSETS_JS}/img/productos/${encodeURIComponent(p.imagen)}" alt="${p.nombre}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<i class=\'fa-solid fa-cookie\' style=\'font-size:28px;color:#c88e99\'></i>'">`;
   } else {
-    imgWrap.innerHTML=`<span style="font-size:72px">${p.tipo==='box'?'📦':'🍪'}</span>`;
+    imgWrap.innerHTML=`<i class="fa-solid ${p.tipo==='box'?'fa-box-open':'fa-cookie-bite'}" style="font-size:72px;color:#c88e99;opacity:.35"></i>`;
   }
 
   document.getElementById('pdNombre').textContent = p.nombre;
@@ -1022,7 +1288,7 @@ function addBoxToCart(){
   const items=Object.values(box.items);if(!items.length){showToast('Seleccioná al menos un producto','err');return}
   const cart=getCart();
   items.forEach(it=>{const ex=cart.find(i=>i.id===it.id);if(ex)ex.cantidad+=it.cantidad;else cart.push({id:it.id,nombre:it.nombre,precio:it.precio,tipo:'producto',cantidad:it.cantidad})});
-  saveCart(cart);closeBoxModal();openCart();showToast('Box de '+box.size+' agregada al carrito 🎉','ok');
+  saveCart(cart);closeBoxModal();openCart();showToast('Box de '+box.size+' agregada al carrito','ok');
 }
 function backBoxStep1(){document.getElementById('boxStep2').classList.remove('on');document.getElementById('boxStep1').classList.add('on');document.getElementById('boxFoot2').style.display='none';document.getElementById('boxFoot1').style.display=''}
 document.getElementById('btnOpenBox')?.addEventListener('click',openBoxModal);
@@ -1030,13 +1296,67 @@ document.getElementById('boxModal')?.addEventListener('click',e=>{if(e.target===
 
 // ── CHECKOUT ────────────────────────────
 let ckCliente=null;
+let _toppingsOrden=[];  // toppings globales seleccionados para el pedido
+let _costoToppings=0;
+
 function openCheckout(){
   if(!getCart().length){showToast('Tu carrito está vacío','err');return}
   closeCart();
-  if(CLIENTE_PHP){ckCliente={id:CLIENTE_PHP.id,nombre:CLIENTE_PHP.nombre};showCkStep('ckDetails');buildSummary()}
-  else{showCkStep('ckAuth');syncCkTab()}
+  _toppingsOrden=[];_costoToppings=0;
+
+  // Obtener toppings activos disponibles
+  const todosLosToppings=Object.values(
+    Object.fromEntries(
+      Object.entries(TOPPINGS_BY_PRODUCTO).flatMap(([,ts])=>ts.map(t=>[t.id,t]))
+    )
+  ).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  if(todosLosToppings.length){
+    // Armar la lista de toppings
+    document.getElementById('ckToppingsList').innerHTML=todosLosToppings.map(t=>`
+      <label class="ck-topping-row" onclick="recalcToppingsOrden()">
+        <input type="checkbox" class="ck-tp-chk" value="${t.id}"
+               data-nombre="${t.nombre.replace(/"/g,'&quot;')}" data-precio="${t.precio}">
+        <div class="ck-tp-ic"><i class="fa-solid fa-candy-cane"></i></div>
+        <div class="ck-tp-info">
+          <div class="ck-tp-name">${t.nombre}</div>
+          <div class="ck-tp-price">+ $${Number(t.precio).toLocaleString('es-AR')}</div>
+        </div>
+        <div class="ck-tp-chkmark"><i class="fa-solid fa-check"></i></div>
+      </label>`).join('');
+    showCkStep('ckToppings');
+  } else {
+    // No hay toppings — saltar al flujo normal
+    _abrirCheckoutPrincipal();
+  }
+
   document.getElementById('checkoutModal').classList.add('on');
   document.body.style.overflow='hidden';
+}
+
+function recalcToppingsOrden(){
+  // pequeño delay para que el checkbox se actualice
+  setTimeout(()=>{
+    _costoToppings=[...document.querySelectorAll('.ck-tp-chk:checked')]
+      .reduce((s,c)=>s+(+c.dataset.precio),0);
+  },10);
+}
+
+function confirmarToppingsOrden(){
+  _toppingsOrden=[...document.querySelectorAll('.ck-tp-chk:checked')]
+    .map(c=>({id:+c.value,nombre:c.dataset.nombre,precio:+c.dataset.precio}));
+  _costoToppings=_toppingsOrden.reduce((s,t)=>s+t.precio,0);
+  _abrirCheckoutPrincipal();
+}
+
+function saltearToppings(){
+  _toppingsOrden=[];_costoToppings=0;
+  _abrirCheckoutPrincipal();
+}
+
+function _abrirCheckoutPrincipal(){
+  if(CLIENTE_PHP){ckCliente={id:CLIENTE_PHP.id,nombre:CLIENTE_PHP.nombre};showCkStep('ckDetails');buildSummary()}
+  else{showCkStep('ckAuth');syncCkTab()}
 }
 function closeCheckout(){
   document.getElementById('checkoutModal').classList.remove('on');
@@ -1058,10 +1378,13 @@ function syncCkTab(){document.querySelectorAll('.ck-form').forEach(f=>f.classLis
 function buildSummary(){
   const c=getCart();
   const subtotal=total(c);
-  const totalFinal=subtotal+_costoEnvio;
+  const totalFinal=subtotal+_costoEnvio+_costoToppings;
   let html=c.map(i=>`<div class="ck-sum-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('');
+  if(_toppingsOrden.length){
+    html+=`<div class="ck-sum-row" style="color:#c88e99"><span><i class="fa-solid fa-candy-cane"></i> ${_toppingsOrden.map(t=>t.nombre).join(', ')}</span><span>${fmt(_costoToppings)}</span></div>`;
+  }
   if(_costoEnvio>0||_tipoEntrega==='envio'){
-    html+=`<div class="ck-sum-row subtot"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>`;
+    html+=`<div class="ck-sum-row subtot"><span>Subtotal</span><span>${fmt(subtotal+_costoToppings)}</span></div>`;
     html+=`<div class="ck-sum-row envio-row"><span><i class="fa-solid fa-motorcycle"></i> Envío</span><span>${_costoEnvio>0?fmt(_costoEnvio):'A calcular'}</span></div>`;
   }
   html+=`<div class="ck-sum-row tot"><span>Total</span><span>${fmt(totalFinal)}</span></div>`;
@@ -1139,20 +1462,26 @@ function calcularCostoEnvioJs(km){
 async function actualizarCostoEnvio(lat,lng){
   const el=document.getElementById('envioEstimate');
   const tx=document.getElementById('envioEstimateTxt');
-  if(el){el.style.display='';} if(tx) tx.textContent='Calculando costo de envío...';
+  const pr=document.getElementById('envioEstimatePrice');
+  if(el) el.style.display='';
+  if(tx) tx.textContent='Calculando...';
+  if(pr) pr.textContent='';
   try{
     const res=await fetch(`<?= base() ?>/tienda/api/calcular_envio.php?lat=${lat}&lng=${lng}`);
     const d=await res.json();
     if(d.ok){
       _costoEnvio=d.costo;
-      if(tx) tx.textContent=`~${d.distancia_km} km · ${d.tramo} · ${fmt(d.costo)}`;
+      if(tx) tx.innerHTML=`<span style="color:#64748b;font-weight:600">~${d.distancia_km} km</span> &nbsp;·&nbsp; ${d.tramo}`;
+      if(pr) pr.textContent=fmt(d.costo);
     } else {
       _costoEnvio=0;
-      if(tx) tx.textContent='No se pudo calcular el envío. Se calculará al confirmar.';
+      if(tx) tx.textContent='Se calculará al confirmar';
+      if(pr) pr.textContent='';
     }
   }catch{
     _costoEnvio=0;
-    if(tx) tx.textContent='No se pudo calcular el envío.';
+    if(tx) tx.textContent='No se pudo calcular';
+    if(pr) pr.textContent='';
   }
   buildSummary();
 }
@@ -1371,8 +1700,10 @@ async function confirmOrder(){
       carrito:getCart(),cliente:ckCliente,metodo_pago:+met,
       sucursal_id:_tipoEntrega==='retiro'?document.getElementById('ckSuc').value||null:null,
       observacion:document.getElementById('ckObs').value.trim(),
-      total:total(getCart()),
+      total:total(getCart())+_costoToppings,
       costo_envio:_costoEnvio,
+      costo_toppings:_costoToppings,
+      toppings:_toppingsOrden,
       tipo_entrega:_tipoEntrega,
       direccion_entrega:_tipoEntrega==='envio'?document.getElementById('ckDireccion').value.trim():'',
       lat_entrega:document.getElementById('ckLat')?.value||null,
@@ -1449,22 +1780,54 @@ function renderBancarios(d){
 }
 
 function copiarDato(valId,icoId){
-  const txt=document.getElementById(valId)?.textContent||'';
+  const txt=document.getElementById(valId)?.textContent.trim()||'';
+  const label=valId==='valCbu'?'CBU':'Alias';
   navigator.clipboard.writeText(txt).then(()=>{
     const ico=document.getElementById(icoId);
     if(ico){
       const btn=ico.closest('.btn-copy');
       ico.className='fa-solid fa-check';
       if(btn){btn.style.background='#dcfce7';btn.style.borderColor='#22c55e';btn.style.color='#16a34a';}
-      setTimeout(()=>{ico.className='fa-solid fa-copy';if(btn){btn.style.background='';btn.style.borderColor='';btn.style.color='';}},2000);
+      setTimeout(()=>{ico.className='fa-solid fa-copy';if(btn){btn.style.background='';btn.style.borderColor='';btn.style.color='';}},2500);
     }
-    showToast('¡Copiado!','ok');
+    Swal.fire({
+      icon:'success',
+      title:label+' copiado',
+      html:`<span style="font-family:monospace;font-size:15px;font-weight:700;letter-spacing:.5px;color:#1e293b">${txt}</span>`,
+      timer:2200,
+      showConfirmButton:false,
+      position:'center',
+      customClass:{popup:'swal-copy-popup'},
+    });
   }).catch(()=>showToast('No se pudo copiar','err'));
 }
 
 // ── INIT ──────────────────────────────────
 renderCart();
 document.getElementById('btnOpenCart').addEventListener('click',openCart);
+
+// ── CATEGORY BAR ────────────────────────
+function setCatActive(el){ document.querySelectorAll('.t-cat-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
+
+// Observador scroll para marcar categoría activa automáticamente
+(function(){
+  const sections=[
+    {id:'prodsGrid',   cat:0},
+    {id:'boxesGrid',   cat:1},
+    {id:'sucursales',  cat:2},
+    {id:'sobre-nosotros',cat:3},
+  ];
+  const cats=document.querySelectorAll('.t-cat-item');
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const s=sections.find(x=>x.id===e.target.id);
+        if(s&&cats[s.cat]){cats.forEach(c=>c.classList.remove('active'));cats[s.cat].classList.add('active');}
+      }
+    });
+  },{threshold:0.2,rootMargin:'-80px 0px -40% 0px'});
+  sections.forEach(s=>{const el=document.getElementById(s.id);if(el)obs.observe(el);});
+})();
 
 // Refrescar badge al volver con history.back() (bfcache) y resetear overflow
 window.addEventListener('pageshow', function() {
@@ -1581,14 +1944,14 @@ async function findNearest() {
 
       nearest.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      btn.textContent = '📍 La más cercana';
+      btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> La más cercana';
       btn.disabled = false;
     },
 
     // ❌ ERROR
     err => {
 
-      btn.textContent = '📍 La más cercana';
+      btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> La más cercana';
       btn.disabled = false;
 
       if (err.code === 1) {
@@ -1705,6 +2068,34 @@ function addBoxDesdeModal() {
   cerrarModalBox();
 }
 
+// ── DESKTOP CART PANEL ──────────────────
+function renderDesktopCart(){
+  const c=getCart(),n=count(c),t=total(c);
+  const countEl=document.getElementById('desktopCartCount');
+  const totalEl=document.getElementById('desktopCartTotal');
+  const itemsEl=document.getElementById('desktopCartItems');
+  if(countEl) countEl.textContent=n+(n===1?' item':' items');
+  if(totalEl) totalEl.textContent=fmt(t);
+  if(!itemsEl) return;
+  if(!c.length){
+    itemsEl.innerHTML='<div class="t-cart-panel-empty"><div class="t-cart-panel-empty-ic"><i class="fa-solid fa-cart-shopping"></i></div>Tu carrito está vacío</div>';
+    return;
+  }
+  itemsEl.innerHTML=c.map((it,idx)=>`
+    <div class="cart-item">
+      ${thumbHtml(it)}
+      <div class="cart-item-inf">
+        <div class="cart-item-name">${it.nombre}</div>
+        <div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="updateQtyByIdx(${idx},-1)">−</button>
+        <span class="qty-num">${it.cantidad}</span>
+        <button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button>
+      </div>
+    </div>`).join('');
+}
+
 function toggleSobreNos() {
   const txt  = document.getElementById('sobreNosTxt');
   const chev = document.getElementById('chevSN');
@@ -1712,6 +2103,70 @@ function toggleSobreNos() {
   txt.style.display = open ? 'none' : 'block';
   chev.classList.toggle('open', !open);
 }
+
+// ── SELECTOR DE TOPPINGS ────────────────
+let _tpCallback = null;
+let _tpPrecioBase = 0;
+let _tpToppingsDisp = [];
+
+function abrirSelectorToppings(idProducto, nombre, precioBase, stock, qty, callback) {
+  _tpCallback   = callback;
+  _tpPrecioBase = precioBase;
+  _tpToppingsDisp = TOPPINGS_BY_PRODUCTO[idProducto] || [];
+
+  document.getElementById('tpSelTitulo').textContent = nombre;
+  document.getElementById('tpSelAlert').style.display = 'none';
+
+  document.getElementById('tpSelLista').innerHTML = _tpToppingsDisp.map(t => `
+    <label class="tp-sel-row">
+      <input type="checkbox" class="tp-sel-chk" value="${t.id}"
+             data-precio="${t.precio}" data-nombre="${t.nombre.replace(/"/g,'&quot;')}"
+             onchange="recalcTpTotal()">
+      <div class="tp-sel-ic"><i class="fa-solid fa-candy-cane"></i></div>
+      <div class="tp-sel-info">
+        <div class="tp-sel-name">${t.nombre}</div>
+        <div class="tp-sel-price">+ $${Number(t.precio).toLocaleString('es-AR')}</div>
+      </div>
+      <div class="tp-sel-chkmark"><i class="fa-solid fa-check"></i></div>
+    </label>`).join('');
+
+  recalcTpTotal();
+  document.getElementById('toppingsModal').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function recalcTpTotal() {
+  const extras = [...document.querySelectorAll('.tp-sel-chk:checked')]
+    .reduce((s,c) => s + (+c.dataset.precio), 0);
+  document.getElementById('tpSelTotal').textContent =
+    '$' + Number(_tpPrecioBase + extras).toLocaleString('es-AR');
+}
+
+function cerrarSelectorToppings() {
+  document.getElementById('toppingsModal').classList.remove('on');
+  document.body.style.overflow = '';
+  _tpCallback = null;
+}
+
+function confirmarToppings() {
+  const seleccionados = [...document.querySelectorAll('.tp-sel-chk:checked')];
+  if (!seleccionados.length) {
+    document.getElementById('tpSelAlert').style.display = 'block';
+    document.getElementById('tpSelLista').scrollTop = 999;
+    return;
+  }
+  const toppings = seleccionados.map(c => ({
+    id:     +c.value,
+    nombre: c.dataset.nombre,
+    precio: +c.dataset.precio,
+  }));
+  cerrarSelectorToppings();
+  if (_tpCallback) _tpCallback(toppings);
+}
+
+document.getElementById('toppingsModal')?.addEventListener('click', e => {
+  if (e.target === e.currentTarget) cerrarSelectorToppings();
+});
 </script>
 
 <nav class="bottom-nav">

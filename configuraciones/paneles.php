@@ -454,7 +454,6 @@ async function editar(id){
     document.getElementById('modalTitle').textContent = 'Editar panel';
     document.getElementById('oTitulo').value    = o.titulo || '';
     document.getElementById('oDesc').value      = o.descripcion || '';
-    document.getElementById('oTipo').value      = o.tipo || 'promo';
     document.getElementById('oValor').value     = o.valor || '';
     document.getElementById('oEmoji').value     = o.emoji || '';
     document.getElementById('oFechaIni').value  = o.fecha_inicio || '';

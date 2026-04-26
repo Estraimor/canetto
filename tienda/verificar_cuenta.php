@@ -84,7 +84,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100vh;bac
 <body>
 <div class="vf-card">
   <?php if ($ok): ?>
-    <div class="vf-icon">🎉</div>
+    <div class="vf-icon"><i class="fa-solid fa-circle-check" style="color:#2d8a4e"></i></div>
     <div class="vf-title">¡Cuenta vinculada!</div>
     <div class="vf-sub">
       Tu cuenta fue actualizada correctamente, <strong><?= htmlspecialchars($nombre) ?></strong>.<br>
