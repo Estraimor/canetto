@@ -1,3 +1,3 @@
 <?php
-header('Location: /canetto/tienda/');
+header('Location: /tienda/');
 exit;

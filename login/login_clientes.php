@@ -64,8 +64,10 @@ unset($_SESSION['error_cliente']);
       <button type="submit" class="btn-login">Ingresar</button>
     </form>
 
-    <div style="text-align:right;margin-top:-6px;margin-bottom:10px;">
-      <a href="recuperar_password.php" style="font-size:12px;color:#c88e99;text-decoration:none;">¿Olvidaste tu contraseña?</a>
+    <div style="text-align:center;margin-top:4px;margin-bottom:14px;">
+      <a href="recuperar_password.php" style="font-size:14px;font-weight:600;color:#c88e99;text-decoration:none;display:inline-flex;align-items:center;gap:5px">
+        <i class="fa-solid fa-lock-open" style="font-size:13px"></i> ¿Olvidaste tu contraseña?
+      </a>
     </div>
 
     <div class="divider"><span>o continuar con</span></div>

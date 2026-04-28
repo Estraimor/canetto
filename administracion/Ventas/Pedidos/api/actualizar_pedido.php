@@ -101,6 +101,17 @@ try {
 
     audit($pdo, 'editar', 'pedidos', "Estado pedido #{$id_venta}: '{$estadoAnterior}' → '{$nombreEstado}'");
 
+    // Notificación push al cliente si cambia de estado
+    if ($estadoAnteriorId !== $estado) {
+        $stmtUid = $pdo->prepare("SELECT usuario_idusuario FROM ventas WHERE idventas = ?");
+        $stmtUid->execute([$id_venta]);
+        $clienteUid = (int)$stmtUid->fetchColumn();
+        if ($clienteUid) {
+            require_once __DIR__ . '/../../../../config/web_push.php';
+            push_enviar_a_usuario($pdo, $clienteUid, $id_venta, $estado);
+        }
+    }
+
     ob_end_clean();
     echo json_encode(['success' => true]);
 

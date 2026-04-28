@@ -397,12 +397,6 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <div class="t-main-layout">
 <div class="t-content-col">
 <!-- ── PRODUCTS ────────────────── -->
-<div class="sec-head">
-  <div>
-    <div class="sec-title">Nuestros <em>productos</em></div>
-    <div class="sec-sub"><?= count($productos) ?> productos disponibles</div>
-  </div>
-</div>
 
 <?php
 function renderProductCard($p) {
@@ -524,11 +518,13 @@ HTML;
     </div>
     <?php if ($osmDir): ?>
     <?php if ($lat && $lng): ?>
-<a href="https://www.google.com/maps/dir/?api=1&destination=<?= $lat ?>,<?= $lng ?>"
-   target="_blank"
-   class="btn-dir">
-   🧭 Cómo llegar
-</a>
+<div style="text-align:center;margin-top:14px">
+  <a href="https://www.google.com/maps/dir/?api=1&destination=<?= $lat ?>,<?= $lng ?>"
+     target="_blank"
+     class="btn-dir btn-dir-big">
+     🧭 Cómo llegar
+  </a>
+</div>
 <?php endif; ?>
     <?php endif; ?>
   </div>
@@ -875,19 +871,23 @@ HTML;
           <label>Tu dirección de entrega *</label>
 
           <?php if ($cliente_id): ?>
-          <!-- Direcciones guardadas -->
-          <div id="dirsGuardadasWrap" style="margin-bottom:10px"></div>
+          <!-- Cards de direcciones guardadas -->
+          <div id="dirsGuardadasWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px"></div>
           <?php endif; ?>
 
-          <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA">
-          <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
-            📍 Usar mi ubicación actual
-          </button>
-          <?php if ($cliente_id): ?>
-          <button type="button" class="btn-geo" id="btnGuardarDir" onclick="guardarDireccionActual()" style="display:none;margin-top:6px;background:#f0fdf4;border-color:#bbf7d0;color:#15803d">
-            💾 Guardar esta dirección
-          </button>
-          <?php endif; ?>
+          <!-- Input manual (oculto por defecto si hay dirs guardadas) -->
+          <div id="nuevaDirSection" class="nueva-dir-section" style="display:none">
+            <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA">
+            <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
+              📍 Usar mi ubicación actual
+            </button>
+            <?php if ($cliente_id): ?>
+            <button type="button" class="btn-geo" id="btnGuardarDir" onclick="guardarDireccionActual()" style="display:none;background:#f0fdf4;border-color:#bbf7d0;color:#15803d">
+              💾 Guardar esta dirección
+            </button>
+            <?php endif; ?>
+          </div>
+
           <input type="hidden" id="ckLat">
           <input type="hidden" id="ckLng">
           <div id="geoStatus"></div>
@@ -1300,7 +1300,23 @@ let _toppingsOrden=[];  // toppings globales seleccionados para el pedido
 let _costoToppings=0;
 
 function openCheckout(){
-  if(!getCart().length){showToast('Tu carrito está vacío','err');return}
+  const c=getCart();
+  if(!c.length){showToast('Tu carrito está vacío','err');return}
+  // Mínimo 4 cookies (no aplica a boxes)
+  const totalCookies=c.filter(i=>i.tipo!=='box').reduce((s,i)=>s+i.cantidad,0);
+  if(totalCookies>0&&totalCookies<4){
+    Swal.fire({
+      icon:'warning',
+      title:'Mínimo 4 cookies',
+      html:`Tenés <strong>${totalCookies}</strong> cookie${totalCookies===1?'':'s'} en el carrito.<br>El pedido mínimo es de <strong>4 unidades</strong> 🍪`,
+      confirmButtonText:'Agregar más',
+      confirmButtonColor:'#c88e99',
+      showCancelButton:true,
+      cancelButtonText:'Cancelar',
+      cancelButtonColor:'#aaa',
+    });
+    return;
+  }
   closeCart();
   _toppingsOrden=[];_costoToppings=0;
 
@@ -1507,38 +1523,106 @@ function setEntrega(tipo){
 
 // ── DIRECCIONES GUARDADAS ────────────────────────────────────────────────────
 let _dirs = [...(window.DIRS_GUARDADAS||[])];
+let _dirSeleccionada = null;
 
 function renderDirsGuardadas(){
   const wrap = document.getElementById('dirsGuardadasWrap');
   if(!wrap) return;
-  if(!_dirs.length){wrap.innerHTML='';return;}
-  wrap.innerHTML = `
-    <div style="margin-bottom:8px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:8px">Mis direcciones guardadas</div>
-      <div style="display:flex;flex-direction:column;gap:6px" id="dirsList">
-        ${_dirs.map(d=>`
-          <button type="button" class="dir-chip" data-id="${d.id}"
-            onclick="usarDirGuardada(${d.id})">
-            <span class="dir-chip-ic">📍</span>
-            <span class="dir-chip-txt">
-              <strong>${d.apodo}</strong>
-              <small>${d.direccion}</small>
-            </span>
-            <button type="button" class="dir-chip-del" onclick="event.stopPropagation();borrarDir(${d.id})" title="Eliminar">✕</button>
-          </button>`).join('')}
+
+  const nuevaSection = document.getElementById('nuevaDirSection');
+
+  if(!_dirs.length){
+    // Sin dirs guardadas: mostrar input manual directamente
+    wrap.innerHTML = '';
+    if(nuevaSection) nuevaSection.style.display = '';
+    document.getElementById('ckDireccion')?.focus();
+    return;
+  }
+
+  // Construir cards
+  const cardsHtml = _dirs.map(d=>`
+    <button type="button" class="dir-card${_dirSeleccionada==d.id?' on':''}" data-id="${d.id}" onclick="usarDirGuardada(${d.id})">
+      <div class="dir-card-icon">📍</div>
+      <div class="dir-card-info">
+        <div class="dir-card-name">${esc2(d.apodo)}</div>
+        <div class="dir-card-addr">${esc2(d.direccion)}</div>
       </div>
-      <div style="font-size:12px;color:#94a3b8;margin-top:6px;padding-left:2px">o ingresá una nueva abajo:</div>
-    </div>`;
+      <div class="dir-card-check">
+        ${_dirSeleccionada==d.id?'<i class="fa-solid fa-check" style="font-size:11px"></i>':''}
+      </div>
+      <button type="button" class="dir-card-del" onclick="event.stopPropagation();borrarDir(${d.id})" title="Eliminar">
+        <i class="fa-solid fa-trash-can"></i>
+      </button>
+    </button>`).join('');
+
+  // Card "Agregar nueva dirección"
+  const addCard = `
+    <button type="button" class="dir-card dir-card-add" onclick="mostrarNuevaDireccion()">
+      <div class="dir-card-icon" style="font-size:16px">＋</div>
+      <div class="dir-card-info">
+        <div class="dir-card-name">Agregar dirección</div>
+        <div class="dir-card-addr">Casa, trabajo, etc.</div>
+      </div>
+      <i class="fa-solid fa-chevron-right" style="color:#3b82f6;font-size:12px"></i>
+    </button>`;
+
+  wrap.innerHTML = `
+    <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin-bottom:8px">
+      Direcciones guardadas
+    </div>
+    ${cardsHtml}
+    ${addCard}`;
+
+  // Ocultar input manual si hay dirs (se muestra al elegir "Agregar")
+  if(nuevaSection) nuevaSection.style.display = _dirSeleccionada === 'nueva' ? '' : 'none';
 }
+
+function esc2(s){ return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function usarDirGuardada(id){
   const d = _dirs.find(x=>x.id==id);
   if(!d) return;
+  _dirSeleccionada = id;
+
+  // Llenar los campos que usa confirmOrder()
   document.getElementById('ckDireccion').value = d.direccion;
-  if(d.lat){ document.getElementById('ckLat').value=d.lat; document.getElementById('ckLng').value=d.lng; _initMapa(parseFloat(d.lat),parseFloat(d.lng)); }
-  document.querySelectorAll('.dir-chip').forEach(c=>c.classList.toggle('on',c.dataset.id==id));
-  const btn=document.getElementById('btnGuardarDir');
-  if(btn) btn.style.display='none';
+  document.getElementById('ckLat').value = d.lat || '';
+  document.getElementById('ckLng').value = d.lng || '';
+
+  // Ocultar input manual y mapa
+  const ns = document.getElementById('nuevaDirSection');
+  if(ns) ns.style.display = 'none';
+  const btn = document.getElementById('btnGuardarDir');
+  if(btn) btn.style.display = 'none';
+
+  // Calcular envío si tiene coordenadas
+  if(d.lat && d.lng){
+    actualizarCostoEnvio(parseFloat(d.lat), parseFloat(d.lng));
+    // Mostrar mapa chico como confirmación visual
+    _initMapa(parseFloat(d.lat), parseFloat(d.lng));
+  } else {
+    // Sin coords: limpiar estimación y ocultar mapa
+    _costoEnvio = 0;
+    const wrap = document.getElementById('ckMapaWrap');
+    if(wrap) wrap.style.display = 'none';
+    const est = document.getElementById('envioEstimate');
+    if(est) est.style.display = 'none';
+    buildSummary();
+  }
+
+  renderDirsGuardadas();
+}
+
+function mostrarNuevaDireccion(){
+  _dirSeleccionada = 'nueva';
+  // Limpiar selección anterior
+  document.getElementById('ckDireccion').value = '';
+  document.getElementById('ckLat').value = '';
+  document.getElementById('ckLng').value = '';
+  const ns = document.getElementById('nuevaDirSection');
+  if(ns) ns.style.display = '';
+  document.getElementById('ckDireccion').focus();
+  renderDirsGuardadas();
 }
 
 async function guardarDireccionActual(){
@@ -1566,14 +1650,14 @@ async function guardarDireccionActual(){
   if(lat) fd.append('lat',lat);
   if(lng) fd.append('lng',lng);
   try{
-    const d=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
-    if(d.success){
-      _dirs.unshift({id:d.id,apodo,direccion:dir,lat:lat||null,lng:lng||null});
+    const res=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
+    if(res.success){
+      const nueva={id:res.id,apodo,direccion:dir,lat:lat||null,lng:lng||null};
+      _dirs.unshift(nueva);
+      _dirSeleccionada = res.id;
       renderDirsGuardadas();
-      const btn=document.getElementById('btnGuardarDir');
-      if(btn) btn.style.display='none';
       showToast('Dirección guardada ✓','ok');
-    } else showToast(d.message||'No se pudo guardar','err');
+    } else showToast(res.message||'No se pudo guardar','err');
   }catch{showToast('Error de conexión','err');}
 }
 
@@ -1586,8 +1670,18 @@ async function borrarDir(id){
   if(!isConfirmed) return;
   const fd=new FormData();fd.append('action','borrar_direccion');fd.append('id',id);
   try{
-    const d=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
-    if(d.success){ _dirs=_dirs.filter(x=>x.id!=id); renderDirsGuardadas(); showToast('Dirección eliminada','ok'); }
+    const res=await(await fetch('api/auth.php',{method:'POST',body:fd})).json();
+    if(res.success){
+      _dirs=_dirs.filter(x=>x.id!=id);
+      if(_dirSeleccionada==id){
+        _dirSeleccionada=null;
+        document.getElementById('ckDireccion').value='';
+        document.getElementById('ckLat').value='';
+        document.getElementById('ckLng').value='';
+      }
+      renderDirsGuardadas();
+      showToast('Dirección eliminada','ok');
+    }
   }catch{}
 }
 

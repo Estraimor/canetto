@@ -611,21 +611,27 @@ body.page-exit #page-wrap {
 .btn-dir {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 7px 14px;
+  gap: 8px;
+  padding: 13px 28px;
   background: var(--dk);
   color: #fff;
-  border-radius: 8px;
-  font-size: 11px;
+  border-radius: 30px;
+  font-size: 15px;
   font-weight: 700;
   text-decoration: none;
-  transition: background 0.2s;
-  align-self: flex-start;
+  transition: background 0.2s, transform 0.15s;
   margin-top: 2px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
 }
 .btn-dir:hover {
   background: var(--pk);
   color: #fff;
+  transform: translateY(-1px);
+}
+.btn-dir-big {
+  padding: 15px 36px;
+  font-size: 16px;
+  border-radius: 30px;
 }
 
 /* Branch highlight + nearest badge */
@@ -2191,34 +2197,64 @@ body.has-bottom-nav {
 }
 
 /* ── DIRECCIONES GUARDADAS ──────────────────────────── */
-.dir-chip {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 10px 12px;
-  background: #fdf8f9; border: 2px solid #e8d0d5;
-  border-radius: 12px; cursor: pointer;
-  transition: border-color .18s, background .18s;
-  text-align: left; font-family: inherit;
+.dir-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s;
 }
-.dir-chip:hover, .dir-chip.on {
-  border-color: #c88e99; background: #fdf0f3;
+.dir-card:hover { border-color: #c88e99; background: #fdf5f7; }
+.dir-card.on {
+  border-color: #c88e99;
+  background: #fdf0f3;
+  box-shadow: 0 0 0 3px rgba(200,142,153,.18);
 }
-.dir-chip-ic { font-size: 18px; flex-shrink: 0; }
-.dir-chip-txt {
-  flex: 1; display: flex; flex-direction: column; gap: 2px;
-  overflow: hidden;
+.dir-card-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: #f5f0ff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
 }
-.dir-chip-txt strong { font-size: 14px; color: #1e293b; white-space: nowrap; }
-.dir-chip-txt small {
-  font-size: 12px; color: #64748b;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.dir-card.on .dir-card-icon { background: rgba(200,142,153,.15); }
+.dir-card-info { flex: 1; min-width: 0; }
+.dir-card-name { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 3px; }
+.dir-card-addr {
+  font-size: 12px; color: #888;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.dir-chip-del {
-  background: none; border: none; color: #cbd5e1;
-  font-size: 14px; cursor: pointer; padding: 2px 4px;
-  border-radius: 6px; flex-shrink: 0; line-height: 1;
+.dir-card-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .15s;
+}
+.dir-card.on .dir-card-check {
+  background: #c88e99; border-color: #c88e99; color: #fff;
+}
+.dir-card-del {
+  background: none; border: none;
+  color: #fca5a5; font-size: 15px;
+  cursor: pointer; padding: 6px 8px;
+  border-radius: 8px; flex-shrink: 0;
   transition: color .15s, background .15s;
 }
-.dir-chip-del:hover { color: #e74c3c; background: #fee2e2; }
+.dir-card-del:hover { background: #fee2e2; color: #dc2626; }
+.dir-card-add { border-style: dashed; background: #fafafa; }
+.dir-card-add:hover { background: #eff6ff; border-color: #3b82f6; }
+.dir-card-add .dir-card-icon { background: #eff6ff; }
+.dir-card-add .dir-card-name { color: #3b82f6; }
+/* wrapper de nueva dirección manual */
+.nueva-dir-section { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
 
 /* ══════════════════════════════════════════════════════════
    BASE MOBILE-ONLY
@@ -2346,12 +2382,17 @@ body.has-bottom-nav {
     box-shadow: 0 2px 12px rgba(0,0,0,.05);
   }
 
+  /* Offset para scroll-anchor: nav (72px) + cat-bar (~66px) + margen (12px) */
+  #prodsGrid, #boxesGrid, #sucursales, #sobre-nosotros {
+    scroll-margin-top: 160px;
+  }
+
   /* ═══ LAYOUT: sin sidebar, centrado, ancho máximo ═══ */
   .t-main-layout {
     display: block;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 48px 56px 80px;
+    padding: 40px 56px 80px;
   }
   .t-content-col { min-width: 0; }
   .t-sidebar-col { display: none !important; }

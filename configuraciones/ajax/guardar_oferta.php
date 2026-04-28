@@ -65,10 +65,11 @@ if ($id) {
     $stmt = $pdo->prepare("UPDATE oferta SET titulo=?,descripcion=?,emoji=?,tipo=?,tipo_panel=?,valor=?,imagen=?,activo=?,fecha_inicio=?,fecha_fin=?,productos_idproductos=?,link=?,btn_txt=? WHERE idoferta=?");
     $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $link, $btn_txt, $id]);
     audit($pdo, 'editar', 'ofertas', 'Editó panel: ' . $titulo);
+    echo json_encode(['ok' => true, 'idoferta' => $id]);
 } else {
     $stmt = $pdo->prepare("INSERT INTO oferta (titulo,descripcion,emoji,tipo,tipo_panel,valor,imagen,activo,fecha_inicio,fecha_fin,productos_idproductos,link,btn_txt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
     $stmt->execute([$titulo, $descripcion ?: null, $emoji, $tipo, $tipo_panel, $valor, $imagenFinal, $activo, $fecha_inicio, $fecha_fin, $productos_idproductos, $link, $btn_txt]);
+    $newId = (int)$pdo->lastInsertId();
     audit($pdo, 'crear', 'ofertas', 'Creó panel: ' . $titulo);
+    echo json_encode(['ok' => true, 'idoferta' => $newId]);
 }
-
-echo json_encode(['ok'=>true]);
