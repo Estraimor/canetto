@@ -698,7 +698,7 @@ HTML;
     <div class="pd-price" id="pdPrecio"></div>
     <div class="pd-stock-row">
       <span class="stock-pill" id="pdStockPill"></span>
-      <span style="font-size:13px;color:#888" id="pdStockTxt"></span>
+      <span class="pd-stock-txt" id="pdStockTxt"></span>
     </div>
     <div class="pd-desc" id="pdDesc" style="display:none"></div>
     <div class="pd-specs" id="pdSpecs" style="display:none"></div>

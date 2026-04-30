@@ -68,133 +68,200 @@ else                  { $pillCls='sp-ok';  $pillTxt='Disponible'; }
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 /* ════════════════════════════════
-   PRODUCTO.PHP — Mobile first
+   PRODUCTO.PHP — Mobile first (McD style)
 ════════════════════════════════ */
-body { background:#f8f9fa; margin:0; }
+*, *::before, *::after { box-sizing: border-box; }
+body { background: #f8f9fa; margin: 0; font-family: inherit; }
 
+/* ── NAV siempre visible ── */
 .det-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: #fff; border-bottom: 1px solid #f0f0f0;
-  height: 64px; padding: 0 20px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: 60px; padding: 0 16px;
   display: flex; align-items: center; justify-content: space-between;
-  box-shadow: 0 1px 8px rgba(0,0,0,.04);
+  background: #fff;
+  border-bottom: 1px solid #f0ece8;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
 }
 .det-nav-back {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 38px; height: 38px; border-radius: 50%;
   background: #f5f5f5; border: none; cursor: pointer;
-  font-size: 18px; display: flex; align-items: center; justify-content: center;
-  color: #111; transition: background .15s; text-decoration: none;
+  font-size: 15px; display: flex; align-items: center; justify-content: center;
+  color: #333; text-decoration: none;
 }
-.det-nav-back:hover { background: #fdf0f3; }
-.det-nav-title { font-weight: 700; font-size: 15px; color: #1e293b; }
+.det-nav-title { display: none; }
 .det-nav-cart {
-  position: relative; width: 40px; height: 40px; border-radius: 50%;
-  background: #111; border: none; cursor: pointer;
+  position: relative; width: 38px; height: 38px; border-radius: 50%;
+  background: #1e293b; border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 16px; transition: background .15s;
+  color: #fff; font-size: 15px;
 }
-.det-nav-cart:hover { background: #c88e99; }
 
-/* Mobile layout */
-.det-wrap { max-width: 540px; margin: 0 auto; padding-bottom: 100px; }
-
+/* ── IMAGEN hero — ocupa 45% de la pantalla ── */
+.det-img-col { display: block; }
 .det-img-wrap {
-  width: 100%; aspect-ratio: 1/1; max-height: 360px;
+  width: 100%; height: 52vw; max-height: 260px; min-height: 200px;
   background: linear-gradient(135deg, #fdf0f3, #fff5f7);
   display: flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden;
 }
 .det-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-.det-img-emoji { font-size: 96px; line-height: 1; }
+.det-img-emoji {
+  font-size: 100px; line-height: 1; color: #c88e99; opacity: .5;
+}
 .det-pill {
-  position: absolute; top: 14px; right: 14px;
-  padding: 5px 14px; border-radius: 20px; font-size: 11px;
+  position: absolute; top: 12px; right: 12px;
+  padding: 5px 13px; border-radius: 20px; font-size: 11px;
   font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-  backdrop-filter: blur(4px);
 }
 .det-pill.sp-ok  { background: #dcfce7; color: #16a34a; }
 .det-pill.sp-low { background: #fef9c3; color: #ca8a04; }
 .det-pill.sp-out { background: #fee2e2; color: #dc2626; }
 
-.det-body { padding: 22px 20px 0; }
+/* ── CARD blanca que sube sobre la imagen ── */
+.det-info-col { display: block; }
+.det-body {
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  margin-top: -20px;
+  position: relative;
+  padding: 24px 22px 120px;
+  min-height: 60vh;
+}
+
+/* Handle decorativo */
+.det-body::before {
+  content: '';
+  display: block;
+  width: 40px; height: 4px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  margin: 0 auto 20px;
+}
+
 .det-tipo-tag {
-  display: inline-block; font-size: 10px; font-weight: 700;
+  display: inline-block; font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 1px;
   color: #c88e99; background: #fdf0f3;
-  padding: 4px 12px; border-radius: 20px; margin-bottom: 10px;
+  padding: 5px 13px; border-radius: 20px; margin-bottom: 12px;
 }
-.det-nombre { font-size: 26px; font-weight: 800; color: #1e293b; line-height: 1.2; margin-bottom: 6px; }
-.det-precio  { font-size: 30px; font-weight: 800; color: #c88e99; font-family: 'Speedee', sans-serif; margin-bottom: 4px; }
-.det-stock-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-.det-stock-txt { font-size: 13px; color: #94a3b8; }
+.det-nombre {
+  font-size: 28px; font-weight: 800; color: #1e293b;
+  line-height: 1.15; margin-bottom: 8px;
+  font-family: 'Speedee', sans-serif;
+}
+.det-precio {
+  font-size: 32px; font-weight: 800; color: #c88e99;
+  font-family: 'Speedee', sans-serif; margin-bottom: 14px;
+}
 
+/* Stock row */
+.det-stock-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 22px; padding-bottom: 22px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.det-stock-row .det-pill { position: static; font-size: 12px; }
+.det-stock-txt { font-size: 15px; color: #64748b; font-weight: 500; }
+
+/* Descripción */
 .det-desc {
-  font-size: 14px; color: #475569; line-height: 1.75;
-  border-top: 1px solid #f1e8ea; padding-top: 18px; margin-bottom: 18px;
+  font-size: 16px; color: #475569; line-height: 1.8;
+  margin-bottom: 22px;
 }
-.det-specs { background: #fdf8f9; border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
-.det-specs-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: #c88e99; margin-bottom: 10px; }
-.det-specs p { font-size: 13px; color: #475569; line-height: 1.7; margin: 0; }
 
-.box-items-list { margin-bottom: 18px; }
-.box-items-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: #c88e99; margin-bottom: 10px; }
+/* Specs */
+.det-specs {
+  background: #fdf8f9; border-radius: 16px;
+  padding: 16px 18px; margin-bottom: 22px;
+}
+.det-specs-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: #c88e99; margin-bottom: 10px;
+}
+.det-specs p { font-size: 15px; color: #475569; line-height: 1.7; margin: 0; }
+
+/* Box items */
+.box-items-list { margin-bottom: 22px; }
+.box-items-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: #c88e99; margin-bottom: 12px;
+}
 .box-item-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0; border-bottom: 1px solid #f1e8ea; font-size: 14px; color: #334155;
+  padding: 12px 0; border-bottom: 1px solid #f1e8ea;
+  font-size: 15px; color: #334155;
 }
 .box-item-row:last-child { border-bottom: none; }
 .box-item-qty { font-weight: 700; color: #c88e99; }
 
-/* Qty selector */
-.det-qty-section { margin-bottom: 8px; }
-.det-qty-label { font-size: 12px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: #94a3b8; margin-bottom: 12px; }
+/* ── Selector de cantidad ── */
+.det-qty-section {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #f8fafc; border-radius: 16px;
+  padding: 14px 18px; margin-bottom: 10px;
+}
+.det-qty-label {
+  font-size: 16px; font-weight: 600; color: #1e293b;
+}
 .qty-selector {
-  display: inline-flex; align-items: center;
-  border: 2px solid #e8d0d5; border-radius: 14px; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 4px;
 }
 .qty-selector button {
-  background: none; border: none; width: 48px; height: 48px;
-  font-size: 22px; cursor: pointer; color: #c88e99; transition: background .15s;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #fff; border: 1.5px solid #e2e8f0;
+  font-size: 22px; cursor: pointer; color: #c88e99;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .15s;
 }
-.qty-selector button:hover { background: #fdf0f3; }
-.qty-selector span { min-width: 52px; text-align: center; font-size: 20px; font-weight: 700; color: #1e293b; }
+.qty-selector button:active { background: #fdf0f3; border-color: #c88e99; }
+.qty-selector span {
+  min-width: 44px; text-align: center;
+  font-size: 22px; font-weight: 800; color: #1e293b;
+}
 
-/* CTA fija mobile */
+/* ── CTA fija ── */
 .det-cta {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: #fff; border-top: 1px solid #f1e8ea;
-  padding: 12px 20px 16px; display: flex; gap: 10px;
-  box-shadow: 0 -4px 20px rgba(0,0,0,.08); z-index: 200;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+  padding: 12px 20px 20px;
+  background: linear-gradient(to top, #fff 80%, transparent);
 }
 .btn-add-det {
-  flex: 1; padding: 16px; border: none; border-radius: 14px;
-  background: linear-gradient(135deg, #c88e99, #a46678);
-  color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
-  font-family: inherit; transition: opacity .18s;
-  box-shadow: 0 4px 14px rgba(164,102,120,.35);
+  width: 100%; padding: 18px; border: none; border-radius: 18px;
+  background: #1e293b;
+  color: #fff; font-size: 18px; font-weight: 800; cursor: pointer;
+  font-family: inherit; letter-spacing: .2px;
+  transition: transform .15s, opacity .15s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
 }
-.btn-add-det:disabled { background: #e2e8f0; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
-.btn-add-det:hover:not(:disabled) { opacity: .9; }
+.btn-add-det:active:not(:disabled) { transform: scale(.97); }
+.btn-add-det:disabled {
+  background: #e2e8f0; color: #94a3b8; cursor: not-allowed;
+}
 
-/* ── Ocultar en mobile, solo desktop ── */
-.det-breadcrumb,
-.det-img-thumbs,
-.det-btn-back,
-.det-trust,
-.det-btn-desktop,
-.det-divider,
-.det-nav-brand,
+/* ── Ocultar elementos solo desktop ── */
+.det-breadcrumb, .det-img-thumbs, .det-btn-back,
+.det-trust, .det-btn-desktop, .det-divider,
 .det-nav-link { display: none; }
 
-/* El stock row en mobile: ocultar el pill duplicado */
-.det-stock-row .det-pill { display: none; }
+/* Logo en nav */
+.det-nav-brand {
+  display: flex; align-items: center; gap: 9px; text-decoration: none;
+}
+.det-nav-brand-icon {
+  width: 38px; height: 38px; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(135deg, #a46678, #c88e99);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; padding: 4px;
+}
+.det-nav-brand-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.det-nav-brand-name {
+  font-family: 'Speedee', sans-serif;
+  font-size: 16px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: #1e293b;
+}
 
-/* La imagen no tiene columna en mobile */
-.det-img-col { display: block; }
-.det-info-col { display: block; }
+/* Wrap mobile */
+.det-wrap { padding-bottom: 0; padding-top: 60px; }
 
 /* ════════════════════════════════
    DESKTOP ≥ 1024px
@@ -370,10 +437,10 @@ body { background:#f8f9fa; margin:0; }
   </a>
   <span class="det-nav-title"><?= $esBox ? 'Box' : 'Cookie' ?></span>
 
-  <!-- Desktop: logo en el centro -->
-  <a href="index.php" class="det-nav-brand" style="display:none;position:absolute;left:50%;transform:translateX(-50%)">
+  <!-- Logo centrado — visible siempre -->
+  <a href="index.php" class="det-nav-brand" style="position:absolute;left:50%;transform:translateX(-50%)">
     <div class="det-nav-brand-icon">
-      <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto">
+      <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" onerror="this.style.display='none'">
     </div>
     <span class="det-nav-brand-name">Canetto</span>
   </a>
@@ -517,7 +584,11 @@ body { background:#f8f9fa; margin:0; }
   <button class="btn-add-det" id="btnAddDet"
     <?= $stock <= 0 ? 'disabled' : '' ?>
     onclick="agregarAlCarrito()">
-    <?= $stock <= 0 ? 'Sin stock' : '+ Agregar al carrito' ?>
+    <?php if ($stock > 0): ?>
+      <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+    <?php else: ?>
+      Sin stock disponible
+    <?php endif; ?>
   </button>
 </div>
 
@@ -577,14 +648,10 @@ document.getElementById('btnOpenCart2')?.addEventListener('click', () => {
   window.location.href = 'index.php';
 });
 
-// Mostrar elementos desktop
+// Mostrar elementos solo desktop
 function applyDesktop(){
   const isDesk = window.innerWidth >= 1024;
-  // Logo centrado en nav
-  document.querySelector('.det-nav-brand').style.display = isDesk ? 'flex' : 'none';
-  // Link "Volver al catálogo"
   document.querySelector('.det-nav-link').style.display  = isDesk ? 'flex' : 'none';
-  // Botón de desktop en columna de info
   const bd = document.getElementById('btnAddDetDesk');
   if(bd) bd.style.display = isDesk ? 'block' : 'none';
 }
@@ -593,6 +660,7 @@ window.addEventListener('resize', applyDesktop);
 
 updateBadge();
 window.addEventListener('pageshow', function() { updateBadge(); });
+
 </script>
 <script src="transitions.js"></script>
 </body>
