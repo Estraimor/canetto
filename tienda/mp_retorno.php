@@ -23,6 +23,7 @@ $info = $msgs[$status] ?? $msgs['pending'];
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Canetto — Estado del pago</title>
+<link rel="icon" type="image/png" href="/canetto/img/Logo_Canetto_Cookie.png">
 <style>
 @font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
 @font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee-Regular.otf") format("opentype");font-weight:400;font-display:swap}
