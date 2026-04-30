@@ -2,7 +2,18 @@
    CANETTO — REPARTIDOR APP  ·  Studio Edition
    Paleta: Negro · Gris · Rosa (#e91e8c brand)
 ═══════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@font-face {
+  font-family: "Speedee";
+  src: url("../assets/fonts/Speedee.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Speedee";
+  src: url("../assets/fonts/Speedee-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -48,7 +59,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Speedee", system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;

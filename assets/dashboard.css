@@ -3,6 +3,19 @@
    Layout: sidebar oscuro fijo + main expandible
    ========================================================== */
 
+@font-face {
+    font-family: "Speedee";
+    src: url("fonts/Speedee.ttf") format("truetype");
+    font-weight: 700;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Speedee";
+    src: url("fonts/Speedee-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-display: swap;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -25,7 +38,7 @@
     --shadow:           0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.05);
 }
 
-html, body { height: 100%; font-family: 'Segoe UI', sans-serif; background: var(--bg-page); color: var(--text); font-size: 15px; }
+html, body { height: 100%; font-family: "Speedee", system-ui, sans-serif; background: var(--bg-page); color: var(--text); font-size: 15px; }
 
 /* ── Layout ─────────────────────────────────────────────── */
 .app {
