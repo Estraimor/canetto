@@ -38,6 +38,7 @@ $current = $_SERVER['PHP_SELF'];
 <head>
 <meta charset="UTF-8">
 <title><?= $pageTitle ?></title>
+<link rel="icon" type="image/png" href="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png">
 
 <link rel="stylesheet" href="<?= URL_ASSETS ?>/assets/dashboard.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -114,11 +115,6 @@ $current = $_SERVER['PHP_SELF'];
                 Horneado
             </a>
 
-            <a href="<?= URL_ADMIN ?>/incidencias/index.php"
-               class="nav-panico <?= str_contains($current,'incidencias') ? 'nav-panico--active' : '' ?>">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                Reportar incidencia
-            </a>
 
         </div>
     </div>
