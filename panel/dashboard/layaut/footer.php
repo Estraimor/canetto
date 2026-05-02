@@ -147,8 +147,8 @@ window.addEventListener("load", function() {
 .notif-toast {
     position:fixed; top:72px; right:24px;
     background:#1e293b; color:#fff;
-    border-radius:12px; padding:14px 18px;
-    max-width:320px; z-index:99999;
+    border-radius:12px; padding:10px 14px;
+    max-width:260px; z-index:99999;
     box-shadow:0 8px 30px rgba(0,0,0,.25);
     animation:toastSlide .35s cubic-bezier(.36,.07,.19,.97);
     cursor:pointer; border-left:4px solid #3b82f6;
@@ -271,10 +271,10 @@ const NotifApp = (() => {
         }
     });
 
-    // Arrancar polling cada 10s
+    // Arrancar polling cada 30s
     document.addEventListener('DOMContentLoaded', () => {
         poll();
-        _interval = setInterval(poll, 10000);
+        _interval = setInterval(poll, 30000);
     });
 
     return { toggle, marcar, marcarTodas };

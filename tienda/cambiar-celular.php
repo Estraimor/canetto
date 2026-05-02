@@ -69,10 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $uid && !$error && $pdo) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cambiar celular — Canetto</title>
-<link rel="icon" type="image/png" href="/canetto/img/Logo_Canetto_Cookie.png">
+<link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
 <style>
-@font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
-@font-face{font-family:"Speedee";src:url("../assets/fonts/Speedee-Regular.otf") format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:"Speedee";src:url("https://canettocookies.com/assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Speedee";src:url("https://canettocookies.com/assets/fonts/Speedee-Regular.otf") format("opentype");font-weight:400;font-display:swap}
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:'Speedee',sans-serif;

@@ -109,7 +109,6 @@ include '../panel/dashboard/layaut/nav.php';
                 <i class="fa-regular fa-calendar"></i>
                 <?= strtoupper($diaNombre) ?>, <?= $fechaHoy ?>
             </div>
-            <h1 class="db-title">Dashboard <em>general</em></h1>
             <p class="db-subtitle">Vista de operaciones · Canetto</p>
         </div>
         <div class="db-header-right">

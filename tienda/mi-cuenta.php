@@ -38,7 +38,7 @@ $iniciales = strtoupper(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mi Cuenta — Canetto</title>
-<link rel="icon" type="image/png" href="/canetto/img/Logo_Canetto_Cookie.png">
+<link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
 <link rel="stylesheet" href="tienda.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

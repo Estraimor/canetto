@@ -69,7 +69,7 @@ if (!$token) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Verificación de cuenta — Canetto</title>
-<link rel="icon" type="image/png" href="/canetto/img/Logo_Canetto_Cookie.png">
+<link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
 <link rel="stylesheet" href="tienda.css">
 <style>
 body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f1f4f8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
