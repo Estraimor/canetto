@@ -194,13 +194,6 @@ $current = $_SERVER['PHP_SELF'];
         </div>
     </div>
 
-    <!-- ANALÍTICA -->
-    <a href="<?= URL_ADMIN ?>/analitica/index.php" data-tip="Analítica"
-       class="<?= str_contains($current,'analitica') ? 'active' : '' ?>">
-        <i class="fa-solid fa-chart-bar"></i>
-        <span class="nav-label">Analítica</span>
-    </a>
-
     <div class="nav-section">Comercial</div>
 
     <!-- VENTAS -->

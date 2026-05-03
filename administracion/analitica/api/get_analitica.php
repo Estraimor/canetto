@@ -183,6 +183,25 @@ try {
         $porOrigen = $origStmt->fetchAll();
     } catch (Throwable $e) {}
 
+    // ── Retiro vs Envío ───────────────────────────────────────
+    $retiroEnvio = ['retiro' => ['cantidad' => 0, 'total' => 0.0], 'envio' => ['cantidad' => 0, 'total' => 0.0]];
+    try {
+        $reStmt = $pdo->prepare("
+            SELECT COALESCE(tipo_entrega,'retiro') AS tipo,
+                   COUNT(*) AS cantidad,
+                   COALESCE(SUM(total),0) AS total
+            FROM ventas
+            WHERE estado_venta_idestado_venta = 4
+              AND DATE(fecha) BETWEEN :ini AND :fin
+            GROUP BY COALESCE(tipo_entrega,'retiro')
+        ");
+        $reStmt->execute([':ini'=>$inicio,':fin'=>$fin]);
+        foreach ($reStmt->fetchAll() as $row) {
+            $k = $row['tipo'] === 'envio' ? 'envio' : 'retiro';
+            $retiroEnvio[$k] = ['cantidad' => (int)$row['cantidad'], 'total' => (float)$row['total']];
+        }
+    } catch (Throwable $e) {}
+
     // ── Costos por materia prima del período ──────────────────
     $mpStmt = $pdo->prepare("
         SELECT mp.nombre,
@@ -272,8 +291,8 @@ try {
         'por_pago'     => $porPago,
         'por_origen'   => $porOrigen,
         'costos_mp'    => $costosMP,
-        'debe_haber'   => $debeHaber,
         'heatmap'      => $heatmap,
+        'retiro_envio' => $retiroEnvio,
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {
