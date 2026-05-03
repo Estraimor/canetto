@@ -45,13 +45,35 @@ try {
     $venta['direccion_entrega'] = $venta['direccion_entrega'] ?? '';
 
     $stmtDet = $pdo->prepare("
-        SELECT p.nombre, dv.cantidad, dv.precio_unitario
+        SELECT p.nombre, p.tipo, dv.cantidad, dv.precio_unitario,
+               (SELECT GROUP_CONCAT(p2.nombre, ' x', bp.cantidad ORDER BY p2.nombre SEPARATOR ' · ')
+                FROM box_productos bp
+                JOIN productos p2 ON p2.idproductos = bp.producto_item
+                WHERE bp.producto_box = p.idproductos
+               ) AS contenido_box
         FROM detalle_ventas dv
         JOIN productos p ON p.idproductos = dv.productos_idproductos
         WHERE dv.ventas_idventas = :id
     ");
     $stmtDet->execute([':id' => $id]);
     $venta['productos'] = $stmtDet->fetchAll();
+
+    // Toppings: formato flat [{id, nombre, precio}, ...]
+    $stmtTop = $pdo->prepare("SELECT COALESCE(toppings_json,'') FROM ventas WHERE idventas=:id LIMIT 1");
+    $stmtTop->execute([':id' => $id]);
+    $tj = $stmtTop->fetchColumn();
+    $toppingsList = [];
+    if ($tj) {
+        $parsed = json_decode($tj, true);
+        if (is_array($parsed)) {
+            foreach ($parsed as $t) {
+                $nombre = $t['nombre'] ?? '';
+                $precio = isset($t['precio']) ? (float)$t['precio'] : 0;
+                if ($nombre) $toppingsList[] = ['nombre' => $nombre, 'precio' => $precio];
+            }
+        }
+    }
+    $venta['toppings'] = $toppingsList;
 
     ob_end_clean();
     echo json_encode($venta, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);

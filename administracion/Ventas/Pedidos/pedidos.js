@@ -96,9 +96,14 @@ const PedidosApp = (() => {
       const esCancelado = estadoId === 6;
       const est        = ESTADOS[estadoId] || ESTADOS[1];
 
-      const productos = (v.productos || []).map(p =>
-        `<span class="prod-tag">${p.nombre} ×${p.cantidad}</span>`
-      ).join('');
+      const productos = [
+        ...(v.productos || []).map(p =>
+          `<span class="prod-tag">${p.nombre} ×${p.cantidad}</span>`
+        ),
+        ...(v.toppings || []).map(t =>
+          `<span class="prod-tag prod-tag--topping">✨ ${t.nombre}</span>`
+        )
+      ].join('');
 
       const tipoEntrega  = v.tipo_entrega || 'retiro';
       const esEnvio      = tipoEntrega === 'envio';
@@ -364,12 +369,27 @@ const PedidosApp = (() => {
       <div class="detalle-section">
         <h4>🛍️ Productos</h4>
         <div class="detalle-items-list">
-          ${(d.productos || []).map(p => `
+          ${(d.productos || []).map(p => {
+            const boxHtml = p.contenido_box
+              ? `<div class="di-box">📦 ${p.contenido_box}</div>` : '';
+            return `
             <div class="detalle-item">
-              <div><div class="di-nombre">🍪 ${p.nombre}</div><div class="di-qty">Cantidad: ${p.cantidad}</div></div>
+              <div style="flex:1">
+                <div class="di-nombre">${p.tipo === 'box' ? '📦' : '🍪'} ${p.nombre}</div>
+                <div class="di-qty">Cantidad: ${p.cantidad}</div>
+                ${boxHtml}
+              </div>
               <div class="di-precio">${fmt(p.precio_unitario * p.cantidad)}</div>
-            </div>
-          `).join('')}
+            </div>`;
+          }).join('')}
+          ${(d.toppings || []).map(t => `
+            <div class="detalle-item detalle-item--topping">
+              <div style="flex:1">
+                <div class="di-nombre">✨ ${t.nombre}</div>
+                <div class="di-qty">Extra / Topping</div>
+              </div>
+              <div class="di-precio di-precio--topping">+${fmt(t.precio)}</div>
+            </div>`).join('')}
         </div>
         <div class="detalle-total"><span>Total</span><span>${fmt(d.total)}</span></div>
       </div>

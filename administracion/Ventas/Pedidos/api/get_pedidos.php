@@ -53,6 +53,7 @@ try {
             v.direccion_entrega,
             COALESCE(v.via_uber, 0) AS via_uber,
             COALESCE(v.origen, 'pos') AS origen,
+            COALESCE(v.toppings_json, '') AS toppings_json,
 
             u.nombre   AS cliente_nombre,
             u.apellido AS cliente_apellido,
@@ -88,6 +89,11 @@ try {
         $row['tipo_entrega']      = $row['tipo_entrega'] ?? 'retiro';
         $row['direccion_entrega'] = $row['direccion_entrega'] ?? '';
         $row['productos'] = [];
+        $row['toppings']  = [];
+        if (!empty($row['toppings_json'] ?? '')) {
+            $tj = json_decode($row['toppings_json'], true);
+            if (is_array($tj)) $row['toppings'] = $tj;
+        }
         $pedidos[$row['idventas']] = $row;
         $ids[] = $row['idventas'];
     }

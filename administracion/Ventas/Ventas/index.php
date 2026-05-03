@@ -4,8 +4,7 @@ require_once __DIR__ . '/../../../config/conexion.php';
 include '../../../panel/dashboard/layaut/nav.php';
 ?>
 
-<link rel="stylesheet" href="ventas.css">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ventas.css?v=<?=filemtime(__DIR__.'/ventas.css')?>">
 
 <div class="ventas-wrapper">
 
@@ -33,6 +32,21 @@ include '../../../panel/dashboard/layaut/nav.php';
       </div>
     </div>
     <div class="info-total-stock">Stock total: <span id="info-total-val">—</span></div>
+
+    <!-- Toppings del producto -->
+    <div class="info-toppings-wrap" id="info-toppings-wrap" style="display:none;">
+      <div class="info-toppings-title">✨ Extras / Toppings</div>
+      <div class="info-toppings-list" id="info-toppings-list"></div>
+      <div class="info-toppings-total" id="info-toppings-total" style="display:none;">
+        Extras seleccionados: <strong id="info-toppings-sum">$0</strong>
+      </div>
+    </div>
+
+    <div class="info-precio-total-wrap" id="info-precio-total-wrap" style="display:none;">
+      <span class="ipt-label">Total con extras</span>
+      <span class="ipt-val" id="info-precio-total">$0.00</span>
+    </div>
+
     <button class="btn-agregar-info" id="btn-agregar-info">
       🛒 Agregar al pedido
     </button>

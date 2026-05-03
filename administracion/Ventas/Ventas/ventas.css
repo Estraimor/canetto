@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -20,7 +19,7 @@
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   background: var(--paper);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -60,7 +59,7 @@ body {
 }
 
 .panel-header h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--ink);
@@ -74,7 +73,7 @@ body {
   border: 1px solid var(--rule-dark);
   border-radius: var(--radius);
   background: var(--white);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .85rem;
   color: var(--ink);
   outline: none;
@@ -128,7 +127,7 @@ body {
 .producto-card:hover:not(.active) .producto-icon { transform: scale(1.08); }
 
 .producto-nombre {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-weight: 600;
   font-size: .83rem;
   color: var(--ink-mid);
@@ -136,7 +135,7 @@ body {
   margin-bottom: 5px;
 }
 .producto-precio {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1rem;
   font-weight: 700;
   color: var(--ink);
@@ -195,7 +194,7 @@ body {
 }
 
 .info-nombre {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--ink);
@@ -203,7 +202,7 @@ body {
 }
 
 .info-precio {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--ink);
@@ -229,7 +228,7 @@ body {
   color: var(--ink-mid);
 }
 .info-stock-pill strong {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1rem;
   font-weight: 700;
   color: var(--ink);
@@ -249,7 +248,7 @@ body {
   color: var(--white);
   border: none;
   border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .88rem;
   font-weight: 600;
   cursor: pointer;
@@ -296,7 +295,7 @@ body {
   flex-shrink: 0;
 }
 .carrito-header h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--ink);
@@ -412,7 +411,7 @@ body {
 }
 
 .item-subtotal {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-weight: 700;
   font-size: .88rem;
   color: var(--ink);
@@ -447,13 +446,13 @@ body {
   border-top: 1px dashed var(--rule);
   margin-top: 6px; padding-top: 10px;
 }
-.total-row.total-final span:last-child { font-family: 'Playfair Display', serif; font-size: 1.15rem; }
+.total-row.total-final span:last-child { font-family: "Speedee", sans-serif; font-size: 1.15rem; }
 
 .btn-confirmar {
   width: 100%; margin-top: 12px; padding: 12px;
   background: var(--ink); color: var(--white);
   border: none; border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .88rem; font-weight: 600;
   cursor: pointer; transition: all var(--transition);
   letter-spacing: .03em;
@@ -495,7 +494,7 @@ body {
   flex-shrink: 0;
 }
 .modal-header h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1.25rem; font-weight: 700; color: var(--ink);
 }
 .modal-close {
@@ -528,7 +527,7 @@ body {
 .form-group input {
   padding: .62rem .9rem;
   border: 1px solid var(--rule-dark); border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-size: .88rem; color: var(--ink);
+  font-family: "Speedee", sans-serif; font-size: .88rem; color: var(--ink);
   background: var(--white); outline: none;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -543,7 +542,7 @@ body {
   padding: .62rem 1rem;
   background: var(--ink); color: var(--white); border: none;
   border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .82rem;
+  font-family: "Speedee", sans-serif; font-weight: 600; font-size: .82rem;
   cursor: pointer; transition: background var(--transition); white-space: nowrap;
 }
 .btn-buscar:hover { background: var(--ink-mid); }
@@ -582,7 +581,7 @@ body {
   flex: 1; min-width: 100px; padding: 10px 13px;
   border: 1px solid var(--rule); border-radius: var(--radius);
   background: var(--white); color: var(--ink-mid);
-  font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: .84rem;
+  font-family: "Speedee", sans-serif; font-weight: 500; font-size: .84rem;
   cursor: pointer; transition: all var(--transition); text-align: center;
 }
 .metodo-btn:hover { border-color: var(--ink); color: var(--ink); }
@@ -616,7 +615,7 @@ body {
   padding: .6rem 1.2rem; background: none;
   border: 1px solid var(--rule); border-radius: var(--radius);
   color: var(--ink-soft);
-  font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: .85rem;
+  font-family: "Speedee", sans-serif; font-weight: 500; font-size: .85rem;
   cursor: pointer; transition: all var(--transition);
 }
 .btn-cancelar:hover { border-color: var(--danger); color: var(--danger); }
@@ -625,7 +624,7 @@ body {
   padding: .6rem 1.4rem;
   background: var(--ink); color: var(--white); border: none;
   border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .88rem;
+  font-family: "Speedee", sans-serif; font-weight: 600; font-size: .88rem;
   cursor: pointer; transition: all var(--transition); letter-spacing: .02em;
 }
 .btn-finalizar:hover { background: var(--ink-mid); transform: translateY(-1px); box-shadow: var(--shadow-md); }
@@ -638,7 +637,7 @@ body {
   position: fixed; bottom: 24px; right: 24px;
   background: var(--ink); color: var(--white);
   padding: 11px 18px; border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .86rem;
+  font-family: "Speedee", sans-serif; font-weight: 600; font-size: .86rem;
   box-shadow: var(--shadow-md); z-index: 2000; max-width: 280px;
   animation: toastIn .25s ease;
 }
@@ -662,4 +661,125 @@ body {
   .producto-info-panel { display: none !important; }
   .carrito-panel { max-height: 320px; border-top: 1px solid var(--rule); border-left: none; }
   .form-row { grid-template-columns: 1fr; }
+}
+
+/* ── SECCIONES BOXES / GALLETITAS ────────── */
+.productos-section-header {
+  grid-column: 1 / -1;
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--ink-soft);
+  padding: 14px 4px 6px;
+  border-bottom: 1.5px solid var(--rule);
+  margin-bottom: 4px;
+}
+.productos-section {
+  display: contents;
+}
+
+/* ── CARD MEJORAS ────────────────────────── */
+.producto-card.agotado { opacity: .55; cursor: not-allowed; }
+.producto-card.agotado:hover { transform: none; box-shadow: none; }
+.producto-stock.sin-stock { color: #c0392b; font-weight: 700; }
+.producto-topping-badge {
+  font-size: .63rem;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-top: 3px;
+  display: inline-block;
+}
+.producto-img {
+  width: 56px; height: 56px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+
+/* ── TOPPINGS EN PANEL INFO ──────────────── */
+.info-toppings-wrap {
+  width: 100%;
+  margin-top: 14px;
+}
+.info-toppings-title {
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.info-toppings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.topping-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--rule);
+  background: #fafaf9;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: .82rem;
+}
+.topping-toggle:hover  { border-color: #c88e99; background: #fff; }
+.topping-toggle.selected { border-color: #b45309; background: #fffbeb; }
+.tt-icon   { font-size: .9rem; flex-shrink: 0; }
+.tt-nombre { flex: 1; font-weight: 600; color: var(--ink); }
+.tt-precio { color: #b45309; font-weight: 700; font-size: .78rem; white-space: nowrap; }
+.tt-check  { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ccc;
+             display: flex; align-items: center; justify-content: center;
+             font-size: .65rem; flex-shrink: 0; transition: all .15s; }
+.topping-toggle.selected .tt-check { border-color: #b45309; background: #b45309; color: #fff; }
+
+.info-toppings-total {
+  font-size: .75rem;
+  color: #b45309;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #fffbeb;
+  border-radius: 6px;
+  border: 1px solid #fde68a;
+}
+
+.info-precio-total-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--ink);
+  border-radius: 8px;
+  margin-top: 12px;
+}
+.ipt-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,.6); }
+.ipt-val   { font-size: 1.1rem; font-weight: 800; color: #fff; }
+
+/* ── TOPPINGS EN CARRITO ─────────────────── */
+.item-toppings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.item-top-tag {
+  font-size: .68rem;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.item-top-extra {
+  font-size: .7rem;
+  color: #b45309;
+  font-weight: 600;
 }

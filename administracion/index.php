@@ -100,9 +100,15 @@ include '../panel/dashboard/layaut/nav.php';
     gap: 14px;
     height: 58px;
     position: sticky;
-    top: 60px;
+    top: 0;
     z-index: 90;
     box-shadow: 0 3px 12px rgba(200,142,153,.1);
+    transition: transform .28s ease, opacity .28s ease;
+}
+.cv-bar.cv-bar--hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
 }
 .cv-bar-label {
     font-family: 'Inter', sans-serif;
@@ -222,6 +228,117 @@ include '../panel/dashboard/layaut/nav.php';
 .kpi-card.kpi-envio  { border-left-color: #2563eb; }
 .kpi-ico-green { color: #16a34a; background: #dcfce7; }
 .kpi-ico-blue  { color: #2563eb; background: #dbeafe; }
+
+/* ── FILTROS DE ANALÍTICA ─────────────────────────────────────── */
+.ana-filtros-wrap {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.4rem;
+    background: #fff;
+    border: 1px solid #e8e7e4;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+.ana-filtros {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 18px;
+}
+.ana-filtros + .ana-filtros {
+    border-top: 1px solid #f0eeeb;
+    background: #fafaf9;
+}
+.flt-pills {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+.flt-pill {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1.5px solid #e8e7e4;
+    background: transparent;
+    font-family: "Speedee", sans-serif;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #3a3a3a;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    line-height: 1.35;
+}
+.flt-pill:hover  { border-color: #aaa; color: #0f0f0f; background: #f0eeeb; }
+.flt-pill.active { background: #0f0f0f; color: #fff; border-color: #0f0f0f; }
+.flt-mes-sel { display: flex; gap: 6px; margin-left: auto; }
+.flt-rango { padding: 10px 18px; }
+.flt-rango-label {
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #888;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.ana-select-sm {
+    padding: 6px 10px;
+    border: 1.5px solid #e8e7e4;
+    border-radius: 6px;
+    font-family: "Speedee", sans-serif;
+    font-size: .8rem;
+    background: #f4f3f0;
+    color: #0f0f0f;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .15s, background .15s;
+}
+.ana-select-sm:focus { border-color: #0f0f0f; background: #fff; }
+
+/* flt-pill-fin es igual a flt-pill (mismos estilos) */
+.flt-pill-fin {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1.5px solid #e8e7e4;
+    background: transparent;
+    font-family: "Speedee", sans-serif;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #3a3a3a;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    line-height: 1.35;
+}
+.flt-pill-fin:hover  { border-color: #aaa; color: #0f0f0f; background: #f0eeeb; }
+.flt-pill-fin.active { background: #0f0f0f; color: #fff; border-color: #0f0f0f; }
+
+/* Debe y Haber */
+.dh-resumen {
+    display: flex; gap: 1px; margin-bottom: 16px;
+    border-radius: 8px; overflow: hidden; border: 1px solid #e8e7e4;
+}
+.dh-res-item {
+    flex: 1; display: flex; flex-direction: column; gap: 4px;
+    padding: 14px 18px; background: #fff;
+}
+.dh-res-item + .dh-res-item { border-left: 1px solid #e8e7e4; }
+.dh-res-item span   { font-size: .63rem; text-transform: uppercase; letter-spacing: .07em; color: #888; font-weight: 700; }
+.dh-res-item strong { font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; }
+.dh-res-haber   strong { color: #16a34a; }
+.dh-res-debe    strong { color: #c0392b; }
+.dh-res-balance.pos strong { color: #16a34a; }
+.dh-res-balance.neg strong { color: #c0392b; }
+.dh-saldo     { font-weight: 700; white-space: nowrap; }
+.dh-saldo.pos { color: #16a34a; }
+.dh-saldo.neg { color: #c0392b; }
+.dh-ingreso td { background: rgba(22,163,74,.025); }
+.dh-costo   td { background: rgba(192,57,43,.025); }
 </style>
 
 <!-- SELECTOR DE VISTA -->
@@ -232,6 +349,7 @@ include '../panel/dashboard/layaut/nav.php';
     <select id="viewSelect" class="cv-select" onchange="toggleVista(this.value)">
         <option value="dashboard">Dashboard operacional</option>
         <option value="analitica">Analítica de ventas</option>
+        <option value="finanzas">Finanzas</option>
     </select>
     <div class="cv-badge">
         <span class="cv-badge-dot"></span>
@@ -545,23 +663,6 @@ include '../panel/dashboard/layaut/nav.php';
       </div>
       <i class="fa-solid fa-chevron-right kpi-arrow"></i>
     </div>
-    <div class="kpi-card kpi-costo" onclick="scrollToSec('#sec-materiales')">
-      <div class="kpi-ico kpi-ico-red"><i class="fa-solid fa-cart-shopping"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-label">Inversión materiales</div>
-        <div class="kpi-value kpi-red" id="k-costo-periodo">—</div>
-        <div class="kpi-sub">Compras del período</div>
-      </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
-    </div>
-    <div class="kpi-card kpi-beneficio-card" id="kpi-beneficio-card">
-      <div class="kpi-ico" id="k-benef-ico"><i class="fa-solid fa-scale-balanced"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-label">Beneficio estimado</div>
-        <div class="kpi-value" id="k-beneficio">—</div>
-        <div class="kpi-sub">Ingresos − Costos</div>
-      </div>
-    </div>
     <div class="kpi-card kpi-retiro">
       <div class="kpi-ico kpi-ico-green"><i class="fa-solid fa-store"></i></div>
       <div class="kpi-body">
@@ -649,22 +750,6 @@ include '../panel/dashboard/layaut/nav.php';
     </div>
   </div>
 
-  <!-- INVERSIÓN EN MATERIALES -->
-  <div class="ana-section" id="sec-materiales" style="margin-bottom:1.4rem">
-    <div class="ana-section-header">
-      <h2>Inversión en materiales</h2>
-      <span id="costo-total-badge" class="costo-badge">—</span>
-    </div>
-    <div class="sf-wrap" id="sf-materiales" style="display:none">
-      <div class="sf-bar">
-        <span class="sf-lbl">Sub-período:</span>
-        <div class="sf-pills" id="sfp-materiales"></div>
-        <button class="sf-reset" id="sfr-materiales" onclick="resetSubfiltro('materiales')" style="display:none">← Todo el período</button>
-      </div>
-    </div>
-    <div class="mp-bars" id="mp-bars"><div class="ana-loading">Cargando...</div></div>
-  </div>
-
   <!-- HEATMAP -->
   <div class="ana-section" id="sec-heatmap">
     <div class="ana-section-header">
@@ -693,6 +778,135 @@ include '../panel/dashboard/layaut/nav.php';
   </div>
 </div>
 </div><!-- /view-analitica -->
+
+
+<!-- ═══════════════ VISTA: FINANZAS ═══════════════ -->
+<div id="view-finanzas" style="display:none">
+<div class="ana-wrap">
+
+  <div class="ana-header">
+    <div>
+      <h1>Finanzas</h1>
+      <p class="ana-subtitle">Costos, beneficios y movimientos — <span id="fin-lblPeriodo">—</span></p>
+    </div>
+    <button class="ana-btn-refresh" onclick="cargarFinanzas()">
+      <i class="fa-solid fa-rotate-right"></i> Actualizar
+    </button>
+  </div>
+
+  <!-- FILTROS FINANZAS (mismo componente, IDs distintos) -->
+  <div class="ana-filtros-wrap">
+    <div class="ana-filtros">
+      <div class="flt-pills">
+        <button class="flt-pill-fin" data-modo="hoy"             onclick="setModoFin(this)">Hoy</button>
+        <button class="flt-pill-fin" data-modo="semana_actual"   onclick="setModoFin(this)">Esta semana</button>
+        <button class="flt-pill-fin" data-modo="semana_anterior" onclick="setModoFin(this)">Semana pasada</button>
+        <button class="flt-pill-fin active" data-modo="mes_actual" onclick="setModoFin(this)">Este mes</button>
+        <button class="flt-pill-fin" data-modo="mes_anterior"    onclick="setModoFin(this)">Mes anterior</button>
+      </div>
+      <div class="flt-mes-sel">
+        <select id="fin-mesSelect" class="ana-select-sm" onchange="setModoMesFin()">
+          <option value="0">Todos los meses</option>
+          <option value="1">Enero</option><option value="2">Febrero</option>
+          <option value="3">Marzo</option><option value="4">Abril</option>
+          <option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option>
+          <option value="9">Septiembre</option><option value="10">Octubre</option>
+          <option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <select id="fin-anioSelect" class="ana-select-sm" onchange="onAnioChangeFin()">
+          <?php for($y=date('Y'); $y>=2023; $y--): ?>
+          <option value="<?=$y?>" <?=$y==date('Y')?'selected':''?>><?=$y?></option>
+          <?php endfor; ?>
+        </select>
+      </div>
+    </div>
+    <div class="ana-filtros flt-rango">
+      <span class="flt-rango-label"><i class="fa-regular fa-calendar-days"></i> Rango:</span>
+      <input type="date" id="fin-fltDesde" class="ana-select-sm" oninput="setModoRangoFin()">
+      <span style="color:#888;font-size:.8rem">→</span>
+      <input type="date" id="fin-fltHasta" class="ana-select-sm" oninput="setModoRangoFin()">
+      <button class="flt-pill-fin" id="fin-btnRangoReset" onclick="resetRangoFin()" style="display:none;padding:5px 10px">✕</button>
+      <span style="flex:1"></span>
+      <span class="flt-rango-label"><i class="fa-regular fa-calendar"></i> Día exacto:</span>
+      <input type="date" id="fin-fltDia" class="ana-select-sm" oninput="setModoDiaFin()">
+      <button class="flt-pill-fin" id="fin-btnDiaReset" onclick="resetDiaFin()" style="display:none;padding:5px 10px">✕</button>
+    </div>
+  </div>
+
+  <!-- KPIs FINANCIEROS -->
+  <div class="kpi-grid" style="margin-bottom:1.4rem">
+    <div class="kpi-card kpi-costo">
+      <div class="kpi-ico kpi-ico-red"><i class="fa-solid fa-cart-shopping"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Inversión en materiales</div>
+        <div class="kpi-value kpi-red" id="fin-k-costo">—</div>
+        <div class="kpi-sub">Compras del período</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left-color:#2563eb">
+      <div class="kpi-ico" style="background:#eff6ff;color:#2563eb"><i class="fa-solid fa-arrow-trend-up"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Ingresos del período</div>
+        <div class="kpi-value" id="fin-k-ingresos">—</div>
+        <div class="kpi-sub" id="fin-k-ingresos-sub">—</div>
+      </div>
+    </div>
+    <div class="kpi-card kpi-beneficio-card" id="fin-kpi-beneficio-card">
+      <div class="kpi-ico" id="fin-k-benef-ico"><i class="fa-solid fa-scale-balanced"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Beneficio estimado</div>
+        <div class="kpi-value" id="fin-k-beneficio">—</div>
+        <div class="kpi-sub">Ingresos − Costos</div>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-left-color:#c88e99">
+      <div class="kpi-ico" style="background:#f9edf0;color:#c88e99"><i class="fa-solid fa-percent"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Margen bruto</div>
+        <div class="kpi-value" id="fin-k-margen">—</div>
+        <div class="kpi-sub">Beneficio / Ingresos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVERSIÓN EN MATERIALES -->
+  <div class="ana-section" id="fin-sec-materiales" style="margin-bottom:1.4rem">
+    <div class="ana-section-header">
+      <h2>Inversión en materiales</h2>
+      <span id="fin-costo-badge" class="costo-badge">—</span>
+    </div>
+    <div class="mp-bars" id="fin-mp-bars"><div class="ana-loading">Cargando...</div></div>
+  </div>
+
+  <!-- DEBE Y HABER -->
+  <div class="ana-section" id="fin-sec-debe-haber">
+    <div class="ana-section-header">
+      <h2>Debe y Haber</h2>
+      <span class="chart-note">Movimientos del período ordenados por fecha</span>
+    </div>
+    <div class="dh-resumen" id="fin-dh-resumen"></div>
+    <div style="overflow-x:auto">
+      <table class="ana-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th>Detalle</th>
+            <th style="text-align:right;color:#c0392b">Debe (Costo)</th>
+            <th style="text-align:right;color:#16a34a">Haber (Ingreso)</th>
+            <th style="text-align:right">Saldo acum.</th>
+          </tr>
+        </thead>
+        <tbody id="fin-tb-debe-haber">
+          <tr><td colspan="6" class="ana-loading">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div><!-- /view-finanzas -->
 
 
 <script>
@@ -835,10 +1049,8 @@ function limpiarRangoUI() {
 }
 
 async function cargar() {
-    ['tb-productos'].forEach(function(id){
-        document.getElementById(id).innerHTML='<tr><td colspan="4" class="ana-loading">Cargando...</td></tr>';
-    });
-    document.getElementById('mp-bars').innerHTML='<div class="ana-loading">Cargando...</div>';
+    var tbProd = document.getElementById('tb-productos');
+    if (tbProd) tbProd.innerHTML='<tr><td colspan="4" class="ana-loading">Cargando...</td></tr>';
 
     var url = 'analitica/api/get_analitica.php?modo='+_modo;
     var anio=document.getElementById('anioSelect').value;
@@ -859,7 +1071,6 @@ async function cargar() {
         renderChartResumen(data.kpis, data.costos);
         renderTopProductos(data.top_productos, true);
         renderPago(data.por_pago);
-        renderCostosMP(data.costos_mp, data.costos);
         renderHeatmap(data.heatmap||{});
         actualizarSubfiltros();
     } catch(e){ showToast('Error de conexión: '+e.message,'err'); }
@@ -869,11 +1080,11 @@ async function cargar() {
 function renderKPIs(k, c, re) {
     function animAmt(id, val) {
         var el=document.getElementById(id);
-        countUp(el, parseFloat(val||0), true, 0);
+        if (el) countUp(el, parseFloat(val||0), true, 0);
     }
     function animCnt(id, val, suffix) {
         var el=document.getElementById(id);
-        el.textContent = val + (suffix||'');
+        if (el) el.textContent = val + (suffix||'');
     }
 
     animAmt('k-ventas-hoy', k.ventas_hoy);
@@ -882,18 +1093,22 @@ function renderKPIs(k, c, re) {
     animCnt('k-pedidos-semana', k.pedidos_semana, ' pedido'+(k.pedidos_semana!=1?'s':''));
     animAmt('k-ventas-periodo', k.ventas_periodo);
     animCnt('k-pedidos-periodo', k.pedidos_periodo, ' pedido'+(k.pedidos_periodo!=1?'s':''));
-    animAmt('k-costo-periodo', c.costo_periodo);
+    var elCosto = document.getElementById('k-costo-periodo');
+    if (elCosto) countUp(elCosto, parseFloat(c.costo_periodo||0), true, 0);
 
     var benef = parseFloat(k.ventas_periodo) - parseFloat(c.costo_periodo);
-    var el=document.getElementById('k-beneficio');
-    countUp(el, Math.abs(benef), true, 0);
-    var card=document.getElementById('kpi-beneficio-card'), ico=document.getElementById('k-benef-ico');
-    if (benef>=0) {
-        el.style.color='#1a7a4a'; card.style.borderLeftColor='#1a7a4a'; card.style.background='#f0faf4';
-        ico.innerHTML='<i class="fa-solid fa-arrow-trend-up" style="color:#1a7a4a"></i>';
-    } else {
-        el.style.color='#c0392b'; card.style.borderLeftColor='#c0392b'; card.style.background='#fff8f7';
-        ico.innerHTML='<i class="fa-solid fa-arrow-trend-down" style="color:#c0392b"></i>';
+    var el   = document.getElementById('k-beneficio');
+    var card = document.getElementById('kpi-beneficio-card');
+    var ico  = document.getElementById('k-benef-ico');
+    if (el)   countUp(el, Math.abs(benef), true, 0);
+    if (el && card && ico) {
+        if (benef>=0) {
+            el.style.color='#1a7a4a'; card.style.borderLeftColor='#1a7a4a'; card.style.background='#f0faf4';
+            ico.innerHTML='<i class="fa-solid fa-arrow-trend-up" style="color:#1a7a4a"></i>';
+        } else {
+            el.style.color='#c0392b'; card.style.borderLeftColor='#c0392b'; card.style.background='#fff8f7';
+            ico.innerHTML='<i class="fa-solid fa-arrow-trend-down" style="color:#c0392b"></i>';
+        }
     }
 
     // Retiro / Envío
@@ -992,8 +1207,10 @@ function renderPago(pagos) {
 
 // ── COSTOS MATERIALES ─────────────────────────────────────────────────
 function renderCostosMP(mp, costos) {
-    document.getElementById('costo-total-badge').textContent='Total período: '+fmt(costos.costo_periodo);
+    var badge=document.getElementById('costo-total-badge');
+    if (badge) badge.textContent='Total período: '+fmt(costos.costo_periodo);
     var cont=document.getElementById('mp-bars');
+    if (!cont) return;
     if (!mp||!mp.length) { cont.innerHTML='<div class="ana-loading">Sin compras en el período</div>'; return; }
     var max=Math.max.apply(null,mp.map(function(m){return parseFloat(m.total_invertido);}));
     cont.innerHTML=mp.map(function(m){
@@ -1230,19 +1447,232 @@ async function cargarCard(cardId, desde, hasta) {
 
 // ── TOGGLE DE VISTAS ─────────────────────────────────────────────────
 var _anaLoaded=false;
+var _finLoaded = false;
+
 function toggleVista(v) {
-    var vD=document.getElementById('view-dashboard'), vA=document.getElementById('view-analitica');
-    var nombre=document.getElementById('cv-nombre');
-    if (v==='dashboard') {
-        vD.style.display=''; vA.style.display='none';
-        nombre.textContent='Dashboard';
-        if (chartProd) setTimeout(function(){chartProd.resize();},50);
-    } else {
-        vD.style.display='none'; vA.style.display='';
-        nombre.textContent='Analítica de ventas';
-        if (!_anaLoaded) { cargar(); _anaLoaded=true; }
+    var vD = document.getElementById('view-dashboard');
+    var vA = document.getElementById('view-analitica');
+    var vF = document.getElementById('view-finanzas');
+    var nombre = document.getElementById('cv-nombre');
+
+    vD.style.display = 'none';
+    vA.style.display = 'none';
+    vF.style.display = 'none';
+
+    if (v === 'dashboard') {
+        vD.style.display = '';
+        nombre.textContent = 'Dashboard';
+        if (chartProd) setTimeout(function(){ chartProd.resize(); }, 50);
+    } else if (v === 'analitica') {
+        vA.style.display = '';
+        nombre.textContent = 'Analítica de ventas';
+        if (!_anaLoaded) { cargar(); _anaLoaded = true; }
+    } else if (v === 'finanzas') {
+        vF.style.display = '';
+        nombre.textContent = 'Finanzas';
+        if (!_finLoaded) { cargarFinanzas(); _finLoaded = true; }
     }
-    localStorage.setItem('canetto_vista',v);
+    localStorage.setItem('canetto_vista', v);
+}
+
+// Ocultar/mostrar cv-bar según dirección de scroll dentro de .main-content
+(function() {
+    var bar = null;
+    var scroller = null;
+    var lastY = 0;
+    function onScroll() {
+        if (!bar) bar = document.querySelector('.cv-bar');
+        if (!bar) return;
+        var y = scroller.scrollTop;
+        if (y > lastY && y > 60) {
+            bar.classList.add('cv-bar--hidden');
+        } else {
+            bar.classList.remove('cv-bar--hidden');
+        }
+        lastY = y;
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        scroller = document.querySelector('.main-content');
+        if (scroller) scroller.addEventListener('scroll', onScroll, { passive: true });
+    });
+})();
+
+// ══════════════════════════════════════════════════════
+//  VISTA FINANZAS
+// ══════════════════════════════════════════════════════
+var _finModo = 'mes_actual', _finLastData = null;
+
+function cargarFinanzas() {
+    var params = buildParamsFin();
+    fetch('analitica/api/get_analitica.php?' + params)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            _finLastData = data;
+            renderFinKPIs(data);
+            renderFinMateriales(data.costos_mp, data.costos);
+            renderDebeHaber(data.debe_haber, data.kpis, data.costos);
+            var lbl = document.getElementById('fin-lblPeriodo');
+            if (lbl) lbl.textContent = data.periodo_label || '—';
+        })
+        .catch(function(e){ console.error('Finanzas error:', e); });
+}
+
+function buildParamsFin() {
+    var p = new URLSearchParams();
+    p.set('modo', _finModo);
+    p.set('mes',  document.getElementById('fin-mesSelect').value  || '0');
+    p.set('anio', document.getElementById('fin-anioSelect').value || new Date().getFullYear());
+    if (_finModo === 'rango_custom') {
+        p.set('desde', document.getElementById('fin-fltDesde').value);
+        p.set('hasta', document.getElementById('fin-fltHasta').value);
+    }
+    if (_finModo === 'dia_especifico') {
+        p.set('dia', document.getElementById('fin-fltDia').value);
+    }
+    return p.toString();
+}
+
+function renderFinKPIs(data) {
+    var k = data.kpis || {}, c = data.costos || {};
+    var ingresos  = parseFloat(k.periodo || 0);
+    var costo     = parseFloat(c.costo_periodo || 0);
+    var beneficio = ingresos - costo;
+    var margen    = ingresos > 0 ? ((beneficio / ingresos) * 100).toFixed(1) : 0;
+
+    var elC = document.getElementById('fin-k-costo');
+    var elI = document.getElementById('fin-k-ingresos');
+    var elB = document.getElementById('fin-k-beneficio');
+    var elM = document.getElementById('fin-k-margen');
+    var elIS = document.getElementById('fin-k-ingresos-sub');
+
+    if (elC) elC.textContent = fmt(costo);
+    if (elI) elI.textContent = fmt(ingresos);
+    if (elIS) elIS.textContent = (k.pedidos_periodo || 0) + ' pedidos';
+    if (elB) {
+        elB.textContent = fmt(beneficio);
+        elB.style.color = beneficio >= 0 ? '#16a34a' : '#c0392b';
+    }
+    if (elM) {
+        elM.textContent = margen + '%';
+        elM.style.color = margen >= 0 ? '#c88e99' : '#c0392b';
+    }
+    var card = document.getElementById('fin-kpi-beneficio-card');
+    if (card) card.style.borderLeftColor = beneficio >= 0 ? '#16a34a' : '#c0392b';
+}
+
+function renderFinMateriales(mp, costos) {
+    var badge = document.getElementById('fin-costo-badge');
+    var bars  = document.getElementById('fin-mp-bars');
+    if (!bars) return;
+    if (badge) badge.textContent = 'Total período: ' + fmt((costos||{}).costo_periodo || 0);
+    if (!mp || !mp.length) { bars.innerHTML = '<div class="ana-loading">Sin compras en el período</div>'; return; }
+    var max = Math.max.apply(null, mp.map(function(m){ return parseFloat(m.total_invertido); }));
+    bars.innerHTML = mp.map(function(m) {
+        var pct = max > 0 ? (parseFloat(m.total_invertido) / max * 100).toFixed(1) : 0;
+        return '<div class="mp-row" onclick="abrirDetalleMaterial(\'' + m.nombre.replace(/'/g,"\\'")+'\')"><span class="mp-nombre">' + m.nombre + '</span>'
+            + '<div class="mp-bar-wrap"><div class="mp-bar" style="width:' + pct + '%"></div></div>'
+            + '<span class="mp-val">' + fmt(m.total_invertido) + '</span>'
+            + '<span class="mp-cnt">' + m.num_compras + ' compras</span></div>';
+    }).join('');
+}
+
+function renderDebeHaber(dh, kpis, costos) {
+    var tb     = document.getElementById('fin-tb-debe-haber');
+    var resDiv = document.getElementById('fin-dh-resumen');
+    if (!tb) return;
+
+    var totalHaber = parseFloat((kpis||{}).periodo || 0);
+    var totalDebe  = parseFloat((costos||{}).costo_periodo || 0);
+    var saldoFinal = totalHaber - totalDebe;
+
+    if (resDiv) {
+        resDiv.className = 'dh-resumen';
+        resDiv.innerHTML =
+            '<div class="dh-res-item dh-res-haber"><span>Total ingresos</span><strong>' + fmt(totalHaber) + '</strong></div>'
+          + '<div class="dh-res-item dh-res-debe"><span>Total costos</span><strong>' + fmt(totalDebe) + '</strong></div>'
+          + '<div class="dh-res-item dh-res-balance ' + (saldoFinal>=0?'pos':'neg') + '"><span>Balance</span><strong>' + fmt(saldoFinal) + '</strong></div>';
+    }
+
+    if (!dh || !dh.length) { tb.innerHTML = '<tr><td colspan="6" class="ana-loading">Sin movimientos en el período</td></tr>'; return; }
+
+    var saldo = 0;
+    tb.innerHTML = dh.map(function(f) {
+        var debe = parseFloat(f.debe || 0), haber = parseFloat(f.haber || 0);
+        saldo += haber - debe;
+        var cls = haber > 0 ? 'dh-ingreso' : 'dh-costo';
+        var saldoCls = saldo >= 0 ? 'dh-saldo pos' : 'dh-saldo neg';
+        return '<tr class="' + cls + '">'
+            + '<td style="font-size:.78rem;color:#888;white-space:nowrap">' + (f.fecha || '') + '</td>'
+            + '<td style="font-weight:600;font-size:.83rem">' + (f.concepto || '') + '</td>'
+            + '<td style="font-size:.75rem;color:#888">' + (f.detalle || '') + '</td>'
+            + '<td style="text-align:right;color:#c0392b;font-weight:600">' + (debe > 0 ? fmt(debe) : '') + '</td>'
+            + '<td style="text-align:right;color:#16a34a;font-weight:600">' + (haber > 0 ? fmt(haber) : '') + '</td>'
+            + '<td style="text-align:right"><span class="' + saldoCls + '">' + fmt(saldo) + '</span></td>'
+            + '</tr>';
+    }).join('');
+}
+
+// Filtros finanzas
+function desactivarPillsFin() { document.querySelectorAll('.flt-pill-fin').forEach(function(b){ b.classList.remove('active'); }); }
+function setModoFin(btn) {
+    desactivarPillsFin(); btn.classList.add('active');
+    _finModo = btn.dataset.modo;
+    document.getElementById('fin-mesSelect').value = '0';
+    limpiarRangoUIFin(); cargarFinanzas();
+}
+function setModoMesFin() {
+    var mes = document.getElementById('fin-mesSelect').value;
+    desactivarPillsFin(); limpiarRangoUIFin();
+    _finModo = (!mes || mes === '0') ? 'anio_completo' : 'mes_especifico';
+    cargarFinanzas();
+}
+function onAnioChangeFin() {
+    var mes = document.getElementById('fin-mesSelect').value;
+    desactivarPillsFin(); limpiarRangoUIFin();
+    _finModo = (!mes || mes === '0') ? 'anio_completo' : 'mes_especifico';
+    cargarFinanzas();
+}
+function setModoRangoFin() {
+    var desde = document.getElementById('fin-fltDesde').value;
+    var hasta = document.getElementById('fin-fltHasta').value;
+    if (!desde || !hasta) return;
+    desactivarPillsFin();
+    document.getElementById('fin-mesSelect').value = '0';
+    document.getElementById('fin-fltDia').value = '';
+    document.getElementById('fin-btnDiaReset').style.display = 'none';
+    document.getElementById('fin-btnRangoReset').style.display = '';
+    _finModo = 'rango_custom'; cargarFinanzas();
+}
+function setModoDiaFin() {
+    var dia = document.getElementById('fin-fltDia').value;
+    if (!dia) return;
+    desactivarPillsFin();
+    document.getElementById('fin-mesSelect').value = '0';
+    document.getElementById('fin-fltDesde').value = '';
+    document.getElementById('fin-fltHasta').value = '';
+    document.getElementById('fin-btnRangoReset').style.display = 'none';
+    document.getElementById('fin-btnDiaReset').style.display = '';
+    _finModo = 'dia_especifico'; cargarFinanzas();
+}
+function resetRangoFin() {
+    document.getElementById('fin-fltDesde').value = '';
+    document.getElementById('fin-fltHasta').value = '';
+    document.getElementById('fin-btnRangoReset').style.display = 'none';
+    document.querySelector('.flt-pill-fin[data-modo="mes_actual"]').classList.add('active');
+    _finModo = 'mes_actual'; cargarFinanzas();
+}
+function resetDiaFin() {
+    document.getElementById('fin-fltDia').value = '';
+    document.getElementById('fin-btnDiaReset').style.display = 'none';
+    document.querySelector('.flt-pill-fin[data-modo="mes_actual"]').classList.add('active');
+    _finModo = 'mes_actual'; cargarFinanzas();
+}
+function limpiarRangoUIFin() {
+    document.getElementById('fin-fltDesde').value = '';
+    document.getElementById('fin-fltHasta').value = '';
+    document.getElementById('fin-fltDia').value = '';
+    document.getElementById('fin-btnRangoReset').style.display = 'none';
+    document.getElementById('fin-btnDiaReset').style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', function() {

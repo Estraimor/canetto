@@ -1,4 +1,3 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,7 +18,7 @@
   --transition: .22s cubic-bezier(.4,0,.2,1);
 }
 
-body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
 
 .pedidos-wrapper { padding: 2.5rem 2rem 5rem; max-width: 1400px; margin: 0 auto; }
 
@@ -30,7 +29,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
   border-bottom: 2px solid var(--ink); flex-wrap: wrap;
 }
 .pedidos-header h1 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 2.2rem; font-weight: 700; color: var(--ink);
   letter-spacing: -.03em; line-height: 1;
 }
@@ -44,14 +43,14 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
 .filter-select, .filter-input {
   padding: .55rem .9rem; border: 1px solid var(--rule-dark);
   border-radius: var(--radius); background: var(--white);
-  font-family: 'DM Sans', sans-serif; font-size: .95rem; color: var(--ink);
+  font-family: "Speedee", sans-serif; font-size: .95rem; color: var(--ink);
   outline: none; transition: border-color var(--transition); cursor: pointer;
 }
 .filter-select:focus, .filter-input:focus { border-color: var(--ink); }
 .btn-filter {
   padding: .55rem 1.1rem; background: var(--white); color: var(--ink);
   border: 1px solid var(--rule-dark); border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .93rem;
+  font-family: "Speedee", sans-serif; font-weight: 600; font-size: .93rem;
   cursor: pointer; transition: all var(--transition);
 }
 .btn-filter:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }
@@ -60,7 +59,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
   display: inline-flex; align-items: center; gap: 6px;
   padding: .6rem 1.2rem; background: var(--ink); color: var(--white);
   text-decoration: none; border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: .95rem;
+  font-family: "Speedee", sans-serif; font-weight: 600; font-size: .95rem;
   transition: all var(--transition); white-space: nowrap; box-shadow: var(--shadow-sm);
 }
 .btn-nueva-venta:hover { background: var(--ink-mid); transform: translateY(-1px); box-shadow: var(--shadow-md); }
@@ -82,7 +81,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
 .stat-pill.active .stat-dot { background: var(--white); }
 .stat-pill.total-pill { cursor: default; background: var(--paper); }
 .stat-pill.total-pill:hover { border-color: var(--rule); box-shadow: none; }
-.stat-pill strong { font-family: 'Playfair Display', serif; font-weight: 700; }
+.stat-pill strong { font-family: "Speedee", sans-serif; font-weight: 700; }
 .stat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .stat-dot.pendiente   { background: #e6a817; }
 .stat-dot.preparacion { background: #1565c0; }
@@ -101,7 +100,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
 .ventas-table thead { background: var(--ink); }
 .ventas-table thead th {
   padding: 13px 16px; text-align: left; color: var(--white);
-  font-family: 'DM Sans', sans-serif; font-weight: 600;
+  font-family: "Speedee", sans-serif; font-weight: 600;
   font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
 }
 .ventas-table tbody tr { border-bottom: 1px solid var(--rule); transition: background var(--transition); }
@@ -127,7 +126,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
 
 .loading-row { text-align: center; padding: 48px !important; color: var(--ink-soft); font-size: .9rem; }
 
-.venta-id { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--ink); font-size: .95rem; }
+.venta-id { font-family: "Speedee", sans-serif; font-weight: 700; color: var(--ink); font-size: .95rem; }
 
 .cliente-info strong { display: block; color: var(--ink); font-weight: 600; font-size: .97rem; }
 .cliente-info small  { color: var(--ink-soft); font-size: .97rem; }
@@ -138,8 +137,12 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
   border-radius: 4px; padding: 2px 7px;
   font-size: .85rem; color: var(--ink-mid); white-space: nowrap; font-weight: 500;
 }
+.prod-tag--topping {
+  background: #fffbeb; border-color: #fde68a;
+  color: #b45309; font-size: .78rem;
+}
 
-.total-cell { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--ink); font-size: 1rem; }
+.total-cell { font-family: "Speedee", sans-serif; font-weight: 700; color: var(--ink); font-size: 1rem; }
 .pago-badge {
   background: var(--paper); border: 1px solid var(--rule);
   border-radius: var(--radius); padding: 3px 9px;
@@ -175,7 +178,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
 .estado-select {
   padding: 5px 10px; border: 1px solid var(--rule);
   border-radius: var(--radius); background: var(--white);
-  font-family: 'DM Sans', sans-serif; font-size: .92rem; color: var(--ink);
+  font-family: "Speedee", sans-serif; font-size: .92rem; color: var(--ink);
   outline: none; cursor: pointer;
 }
 .estado-select:focus { border-color: var(--ink); }
@@ -198,7 +201,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
 .btn-accion {
   display: inline-flex; align-items: center; gap: .35rem;
   padding: .38rem .85rem; border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif; font-size: .97rem; font-weight: 600;
+  font-family: "Speedee", sans-serif; font-size: .97rem; font-weight: 600;
   cursor: pointer; border: 1px solid var(--rule);
   transition: all var(--transition); white-space: nowrap;
   background: var(--white); color: var(--ink);
@@ -235,7 +238,7 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
   display: flex; align-items: center; justify-content: space-between;
   background: var(--white); z-index: 1;
 }
-.modal-header h3 { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--ink); }
+.modal-header h3 { font-family:"Speedee", sans-serif; font-size:1.2rem; font-weight:700; color:var(--ink); }
 .modal-close { background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:.3rem;border-radius:var(--radius);display:flex;transition:all var(--transition); }
 .modal-close:hover { color:var(--ink);background:var(--rule); }
 .modal-body { padding:1.4rem 1.6rem;overflow-y:auto;flex:1; }
@@ -251,13 +254,19 @@ body { font-family: 'DM Sans', sans-serif; font-size: 16px; background: var(--pa
 .info-item label { font-size:.85rem;color:var(--ink-soft);font-weight:600;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em; }
 .info-item span { font-size:.88rem;color:var(--ink);font-weight:600; }
 .detalle-items-list { display:flex;flex-direction:column;gap:6px; }
-.detalle-item { display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);font-size:.85rem; }
-.detalle-item .di-nombre { color:var(--ink);font-weight:600; }
-.detalle-item .di-qty    { color:var(--ink-soft);font-size:.9rem; }
-.detalle-item .di-precio { font-family:'Playfair Display',serif;font-weight:700;color:var(--ink); }
+.detalle-item { display:flex;justify-content:space-between;align-items:flex-start;padding:10px 13px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);font-size:.85rem;gap:10px; }
+.detalle-item .di-nombre   { color:var(--ink);font-weight:600; }
+.detalle-item .di-qty      { color:var(--ink-soft);font-size:.8rem;margin-top:2px; }
+.detalle-item .di-box      { font-size:.73rem;color:#7c3aed;margin-top:4px;background:#f5f3ff;border:1px solid #ddd6fe;padding:2px 8px;border-radius:4px;display:inline-block; }
+.detalle-item .di-toppings { font-size:.73rem;color:#b45309;margin-top:4px;background:#fffbeb;border:1px solid #fde68a;padding:2px 8px;border-radius:4px;display:inline-block; }
+.detalle-item--topping { background:#fffbeb !important; border-color:#fde68a !important; }
+.detalle-item--topping .di-nombre { color:#b45309; font-weight:600; }
+.detalle-item--topping .di-qty { color:#d97706; }
+.di-precio--topping { color:#b45309 !important; }
+.detalle-item .di-precio   { font-family:"Speedee", sans-serif;font-weight:700;color:var(--ink);white-space:nowrap;padding-top:1px; }
 .detalle-total { background:var(--ink);color:#fff;border-radius:var(--radius);padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px; }
 .detalle-total span:first-child { font-size:.9rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.7; }
-.detalle-total span:last-child  { font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700; }
+.detalle-total span:last-child  { font-family:"Speedee", sans-serif;font-size:1.2rem;font-weight:700; }
 
 /* ── TOAST ── */
 .toast {

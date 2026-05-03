@@ -277,22 +277,35 @@ try {
         $heatmap[(int)$h['dow']][(int)$h['hora']] = (int)$h['cantidad'];
     }
 
+    // Formatear debe_haber para el front
+    $debeHaberFront = array_map(function($f) {
+        return [
+            'fecha'    => $f['fecha'] ?? '',
+            'concepto' => $f['concepto'] ?? '',
+            'detalle'  => $f['detalle'] ?? '',
+            'debe'     => $f['tipo'] === 'costo'   ? $f['monto'] : 0,
+            'haber'    => $f['tipo'] === 'ingreso' ? $f['monto'] : 0,
+        ];
+    }, $debeHaber);
+
     echo json_encode([
-        'periodo'      => $label_periodo,
-        'inicio'       => $inicio,
-        'fin'          => $fin,
-        'kpis'         => $kpis,
-        'costos'       => $costos,
-        'labels'       => $labels,
-        'ingresos'     => $ingresos,
-        'costos_arr'   => $costoArr,
-        'beneficio'    => $beneficio,
-        'top_productos'=> $topProductos,
-        'por_pago'     => $porPago,
-        'por_origen'   => $porOrigen,
-        'costos_mp'    => $costosMP,
-        'heatmap'      => $heatmap,
-        'retiro_envio' => $retiroEnvio,
+        'periodo'       => $label_periodo,
+        'periodo_label' => $label_periodo,
+        'inicio'        => $inicio,
+        'fin'           => $fin,
+        'kpis'          => $kpis,
+        'costos'        => $costos,
+        'labels'        => $labels,
+        'ingresos'      => $ingresos,
+        'costos_arr'    => $costoArr,
+        'beneficio'     => $beneficio,
+        'top_productos' => $topProductos,
+        'por_pago'      => $porPago,
+        'por_origen'    => $porOrigen,
+        'costos_mp'     => $costosMP,
+        'heatmap'       => $heatmap,
+        'retiro_envio'  => $retiroEnvio,
+        'debe_haber'    => $debeHaberFront,
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {

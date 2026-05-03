@@ -145,19 +145,62 @@ window.addEventListener("load", function() {
 
 /* Toast de notificación */
 .notif-toast {
-    position:fixed; top:72px; right:24px;
+    position:fixed; top:72px; right:20px;
     background:#1e293b; color:#fff;
-    border-radius:12px; padding:10px 14px;
-    max-width:260px; z-index:99999;
-    box-shadow:0 8px 30px rgba(0,0,0,.25);
-    animation:toastSlide .35s cubic-bezier(.36,.07,.19,.97);
-    cursor:pointer; border-left:4px solid #3b82f6;
+    border-radius:12px; padding:0;
+    width:270px; height:auto !important;
+    display:flex; flex-direction:column;
+    z-index:99999;
+    box-shadow:0 8px 28px rgba(0,0,0,.35);
+    animation:toastSlide .28s cubic-bezier(.36,.07,.19,.97);
+    border-left:3px solid #3b82f6;
+    overflow:hidden; cursor:pointer;
 }
 .notif-toast.stock_bajo { border-left-color:#f97316; }
-.notif-toast-title { font-weight:800; font-size:.93rem; margin-bottom:4px; }
-.notif-toast-desc  { font-size:.8rem; opacity:.85; }
-.notif-toast-close { position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;opacity:.6;cursor:pointer;font-size:.9rem;padding:2px; }
-@keyframes toastSlide { from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)} }
+.notif-toast-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 10px 6px; gap:6px;
+}
+.notif-toast-title { font-weight:800; font-size:.82rem; line-height:1.2; flex:1; }
+.notif-toast-close {
+    background:none; border:none; color:#fff; opacity:.45;
+    cursor:pointer; font-size:.75rem; padding:1px 3px; line-height:1;
+    flex-shrink:0; transition:opacity .15s;
+}
+.notif-toast-close:hover { opacity:1; }
+.notif-toast-meta {
+    display:flex; gap:5px; padding:0 10px 7px; flex-wrap:wrap;
+}
+.notif-toast-tag {
+    font-size:.65rem; font-weight:700; padding:2px 7px;
+    border-radius:20px; background:rgba(255,255,255,.13);
+    white-space:nowrap; line-height:1.4;
+}
+.notif-toast-prods {
+    padding:6px 10px; border-top:1px solid rgba(255,255,255,.09);
+}
+.notif-toast-prod-row {
+    display:flex; align-items:center; gap:5px;
+    font-size:.76rem; padding:3px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+}
+.notif-toast-prod-row:last-child { border-bottom:none; }
+.ntpr-name { flex:1; font-weight:600; }
+.ntpr-qty  { opacity:.65; font-size:.7rem; white-space:nowrap; }
+.ntpr-box  { font-size:.67rem; opacity:.6; color:#c4b5fd; }
+.notif-toast-total {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:6px 10px; border-top:1px solid rgba(255,255,255,.1);
+}
+.ntotal-label { font-size:.65rem; opacity:.6; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+.ntotal-val   { font-size:.9rem; font-weight:800; color:#86efac; }
+.notif-toast-progress { height:2px; background:rgba(255,255,255,.12); }
+.notif-toast-progress-bar {
+    height:2px; background:#3b82f6;
+    animation:toastProgress 30s linear forwards;
+}
+@keyframes toastProgress { from{width:100%} to{width:0%} }
+@keyframes toastSlide { from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)} }
 </style>
 
 <script>
@@ -207,22 +250,66 @@ const NotifApp = (() => {
     }
 
     const _shownToasts = new Set();
+    const fmt$ = v => '$' + Math.round(parseFloat(v||0)).toLocaleString('es-AR');
+
     function showToastNotif(n) {
         if (_shownToasts.has(n.id)) return;
         _shownToasts.add(n.id);
 
+        let datos = {};
+        try { datos = JSON.parse(n.datos_json || '{}'); } catch(e) {}
+
+        const prods   = datos.productos  || [];
+        const tops    = datos.toppings   || [];
+        const cliente = datos.cliente    || '';
+        const origen  = datos.origen     || '';
+        const entrega = datos.entrega    || '';
+        const metodo  = datos.metodo     || '';
+        const total   = datos.total      || 0;
+
+        const prodsHtml = prods.map(p => {
+            const boxInfo   = p.contenido_box ? `<div class="ntpr-box">📦 ${p.contenido_box}</div>` : '';
+            return `<div class="notif-toast-prod-row">
+                <div style="flex:1">
+                    <div class="ntpr-name">🍪 ${p.nombre}</div>
+                    ${boxInfo}
+                </div>
+                <div class="ntpr-qty">×${p.cantidad}</div>
+            </div>`;
+        }).join('');
+
+        const topsHtml = tops.length
+            ? `<div style="padding:6px 14px 8px;border-top:1px solid rgba(255,255,255,.08);font-size:.74rem;opacity:.75">
+                <span style="font-weight:700">Extras:</span> ${tops.join(', ')}
+               </div>`
+            : '';
+
         const el = document.createElement('div');
         el.className = 'notif-toast ' + n.tipo;
         el.innerHTML = `
-            <button class="notif-toast-close" onclick="this.parentElement.remove()">✕</button>
-            <div class="notif-toast-title">${ICONS[n.tipo] || '🔔'} ${n.titulo}</div>
-            <div class="notif-toast-desc">${n.descripcion || ''}</div>
+            <div class="notif-toast-head">
+                <div class="notif-toast-title">${ICONS[n.tipo] || '🔔'} ${n.titulo}</div>
+                <button class="notif-toast-close" onclick="event.stopPropagation();this.closest('.notif-toast').remove()">✕</button>
+            </div>
+            <div class="notif-toast-meta">
+                ${cliente ? `<span class="notif-toast-tag">👤 ${cliente}</span>` : ''}
+                ${entrega ? `<span class="notif-toast-tag">${entrega}</span>` : ''}
+                ${metodo  ? `<span class="notif-toast-tag">💳 ${metodo}</span>`  : ''}
+                ${origen  ? `<span class="notif-toast-tag">${origen}</span>`  : ''}
+            </div>
+            ${prods.length ? `<div class="notif-toast-prods">${prodsHtml}</div>` : ''}
+            ${topsHtml}
+            <div class="notif-toast-total">
+                <span class="ntotal-label">Total</span>
+                <span class="ntotal-val">${fmt$(total)}</span>
+            </div>
+            <div class="notif-toast-progress"><div class="notif-toast-progress-bar"></div></div>
         `;
         el.addEventListener('click', () => {
             if (n.link) { marcar(n.id); window.location.href = n.link; }
         });
         document.body.appendChild(el);
-        setTimeout(() => el.remove(), 10000);
+        setTimeout(() => el && el.remove(), 30000);
     }
 
     function renderList(notifs) {

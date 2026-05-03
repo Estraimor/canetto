@@ -56,8 +56,7 @@ try {
 
     /* ── Calcular costo de envío server-side ── */
     $costo_envio = 0.0;
-    // Sumar costo de toppings al total
-    $total += $costo_toppings;
+    // El total ya viene con toppings incluidos desde el front — no sumar de nuevo
 
     if ($tipo_entrega === 'envio' && $lat_entrega !== null && $lng_entrega !== null) {
         $sucRow = $pdo->query("SELECT latitud, longitud FROM sucursal WHERE activo=1 AND latitud IS NOT NULL AND longitud IS NOT NULL ORDER BY idsucursal ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);

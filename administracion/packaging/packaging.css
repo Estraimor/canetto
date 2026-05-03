@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 :root {
   --ink:        #0a0a0a;
@@ -22,7 +21,7 @@
 * { box-sizing: border-box; }
 
 .content-body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   color: var(--ink);
   background: var(--paper);
   min-height: 100vh;
@@ -39,7 +38,7 @@
 }
 
 .pkg-header h1 {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 4px;
@@ -158,7 +157,7 @@
   border-radius: 8px;
   padding: 0 12px 0 34px;
   font-size: 13.5px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   background: var(--white);
   color: var(--ink);
   transition: border-color var(--transition), box-shadow var(--transition);
@@ -181,7 +180,7 @@
   border: none;
   font-size: 13.5px;
   font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   cursor: pointer;
   transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
   background: var(--pk);
@@ -386,7 +385,7 @@ table.pkg-table {
   border-radius: 8px;
   padding: 0 12px;
   font-size: 13.5px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   background: var(--white);
   color: var(--ink);
   transition: border-color var(--transition), box-shadow var(--transition);
@@ -499,7 +498,7 @@ table.pkg-table {
   border-radius: 8px;
   padding: 0 12px;
   font-size: 13.5px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   background: var(--white);
   color: var(--ink);
   transition: border-color var(--transition), box-shadow var(--transition);
@@ -571,7 +570,7 @@ table.pkg-table {
   border-radius: 7px;
   padding: 0 10px;
   font-size: 13.5px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   text-align: center;
   font-weight: 700;
   background: var(--white);
@@ -590,7 +589,7 @@ table.pkg-table {
   border-radius: 7px;
   padding: 0 10px;
   font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   background: var(--white);
   min-width: 180px;
   transition: border-color var(--transition), box-shadow var(--transition);
@@ -817,7 +816,7 @@ input:checked + .slider::before { transform: translateX(20px); }
   border-radius: 7px;
   padding: 0 8px;
   font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   text-align: center;
   font-weight: 700;
   background: var(--white);

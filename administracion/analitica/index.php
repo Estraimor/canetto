@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../config/conexion.php';
 $pageTitle = "Analítica de Ventas";
 include '../../panel/dashboard/layaut/nav.php';
 ?>
-<link rel="stylesheet" href="analitica.css">
+<link rel="stylesheet" href="analitica.css?v=<?=filemtime(__DIR__.'/analitica.css')?>">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <div class="ana-wrap">
@@ -21,45 +21,62 @@ include '../../panel/dashboard/layaut/nav.php';
   </div>
 
   <!-- FILTROS DE TIEMPO -->
-  <div class="ana-filtros-wrap">
-    <!-- Fila 1: Pills rápidos + mes/año -->
-    <div class="ana-filtros">
-      <div class="flt-pills">
-        <button class="flt-pill" data-modo="hoy"             onclick="setModo(this)">Hoy</button>
-        <button class="flt-pill" data-modo="semana_actual"   onclick="setModo(this)">Esta semana</button>
-        <button class="flt-pill" data-modo="semana_anterior" onclick="setModo(this)">Semana pasada</button>
-        <button class="flt-pill active" data-modo="mes_actual" onclick="setModo(this)">Este mes</button>
-        <button class="flt-pill" data-modo="mes_anterior"    onclick="setModo(this)">Mes anterior</button>
+  <div class="afb-card">
+
+    <!-- Fila 1: pills + mes/año -->
+    <div class="afb-row afb-row--top">
+      <div class="afb-group">
+        <span class="afb-label"><i class="fa-solid fa-bolt"></i> Período</span>
+        <div class="afb-pills">
+          <button class="afb-pill" data-modo="hoy"             onclick="setModo(this)">Hoy</button>
+          <button class="afb-pill" data-modo="semana_actual"   onclick="setModo(this)">Esta semana</button>
+          <button class="afb-pill" data-modo="semana_anterior" onclick="setModo(this)">Semana pasada</button>
+          <button class="afb-pill active" data-modo="mes_actual" onclick="setModo(this)">Este mes</button>
+          <button class="afb-pill" data-modo="mes_anterior"    onclick="setModo(this)">Mes anterior</button>
+        </div>
       </div>
-      <div class="flt-mes-sel">
-        <select id="mesSelect" class="ana-select-sm" onchange="setModoMes()">
-          <option value="0">Todos los meses</option>
-          <option value="1">Enero</option><option value="2">Febrero</option>
-          <option value="3">Marzo</option><option value="4">Abril</option>
-          <option value="5">Mayo</option><option value="6">Junio</option>
-          <option value="7">Julio</option><option value="8">Agosto</option>
-          <option value="9">Septiembre</option><option value="10">Octubre</option>
-          <option value="11">Noviembre</option><option value="12">Diciembre</option>
-        </select>
-        <select id="anioSelect" class="ana-select-sm" onchange="onAnioChange()">
-          <?php for($y=date('Y'); $y>=2023; $y--): ?>
-          <option value="<?=$y?>" <?=$y==date('Y')?'selected':''?>><?=$y?></option>
-          <?php endfor; ?>
-        </select>
+      <div class="afb-group afb-group--right">
+        <span class="afb-label"><i class="fa-regular fa-calendar"></i> Mes / Año</span>
+        <div class="afb-selects">
+          <select id="mesSelect" class="afb-select" onchange="setModoMes()">
+            <option value="0">Todos los meses</option>
+            <option value="1">Enero</option><option value="2">Febrero</option>
+            <option value="3">Marzo</option><option value="4">Abril</option>
+            <option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option>
+            <option value="9">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+          <select id="anioSelect" class="afb-select afb-select--sm" onchange="onAnioChange()">
+            <?php for($y=date('Y'); $y>=2023; $y--): ?>
+            <option value="<?=$y?>" <?=$y==date('Y')?'selected':''?>><?=$y?></option>
+            <?php endfor; ?>
+          </select>
+        </div>
       </div>
     </div>
-    <!-- Fila 2: Rango de fechas personalizado -->
-    <div class="ana-filtros flt-rango">
-      <span class="flt-rango-label"><i class="fa-regular fa-calendar-days"></i> Rango específico:</span>
-      <input type="date" id="fltDesde" class="ana-select-sm" oninput="setModoRango()">
-      <span style="color:var(--ink-soft);font-size:.8rem">→</span>
-      <input type="date" id="fltHasta" class="ana-select-sm" oninput="setModoRango()">
-      <button class="flt-pill" id="btnRangoReset" onclick="resetRango()" style="display:none;padding:5px 10px">✕</button>
-      <span style="flex:1"></span>
-      <span class="flt-rango-label" style="margin-left:8px"><i class="fa-regular fa-calendar"></i> Día exacto:</span>
-      <input type="date" id="fltDia" class="ana-select-sm" oninput="setModoDia()">
-      <button class="flt-pill" id="btnDiaReset" onclick="resetDia()" style="display:none;padding:5px 10px">✕</button>
+
+    <!-- Fila 2: rango + día exacto -->
+    <div class="afb-row afb-row--bottom">
+      <div class="afb-group">
+        <span class="afb-label"><i class="fa-regular fa-calendar-days"></i> Rango de fechas</span>
+        <div class="afb-inline">
+          <input type="date" id="fltDesde" class="afb-date" oninput="setModoRango()">
+          <span class="afb-arrow">→</span>
+          <input type="date" id="fltHasta" class="afb-date" oninput="setModoRango()">
+          <button class="afb-clear" id="btnRangoReset" onclick="resetRango()" style="display:none" title="Limpiar"><i class="fa-solid fa-xmark"></i> Limpiar</button>
+        </div>
+      </div>
+      <div class="afb-vsep"></div>
+      <div class="afb-group">
+        <span class="afb-label"><i class="fa-regular fa-calendar-check"></i> Día exacto</span>
+        <div class="afb-inline">
+          <input type="date" id="fltDia" class="afb-date" oninput="setModoDia()">
+          <button class="afb-clear" id="btnDiaReset" onclick="resetDia()" style="display:none" title="Limpiar"><i class="fa-solid fa-xmark"></i> Limpiar</button>
+        </div>
+      </div>
     </div>
+
   </div>
 
   <!-- KPIs -->
@@ -240,7 +257,7 @@ let chartIngresos=null, chartResumen=null, chartPago=null;
 let _modo='mes_actual', _lastData=null;
 
 // ── FILTROS ───────────────────────────────────────────────────────────
-function desactivarPills(){ document.querySelectorAll('.flt-pill').forEach(b=>b.classList.remove('active')); }
+function desactivarPills(){ document.querySelectorAll('.afb-pill').forEach(b=>b.classList.remove('active')); }
 
 function setModo(btn){
   desactivarPills();
@@ -304,7 +321,7 @@ function resetRango(){
   document.getElementById('fltDesde').value = '';
   document.getElementById('fltHasta').value = '';
   document.getElementById('btnRangoReset').style.display = 'none';
-  document.querySelector('.flt-pill[data-modo="mes_actual"]').classList.add('active');
+  document.querySelector('.afb-pill[data-modo="mes_actual"]').classList.add('active');
   _modo = 'mes_actual';
   cargar();
 }
@@ -312,7 +329,7 @@ function resetRango(){
 function resetDia(){
   document.getElementById('fltDia').value = '';
   document.getElementById('btnDiaReset').style.display = 'none';
-  document.querySelector('.flt-pill[data-modo="mes_actual"]').classList.add('active');
+  document.querySelector('.afb-pill[data-modo="mes_actual"]').classList.add('active');
   _modo = 'mes_actual';
   cargar();
 }

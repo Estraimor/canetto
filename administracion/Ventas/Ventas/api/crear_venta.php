@@ -18,6 +18,7 @@ $carrito     = $input['carrito']     ?? [];
 $cliente     = $input['cliente']     ?? null;
 $metodo_pago = intval($input['metodo_pago'] ?? 0);
 $total       = floatval($input['total']     ?? 0);
+$toppings_global = $input['toppings'] ?? []; // [{id, nombre, precio}]
 
 if (!$carrito || !$cliente || !$metodo_pago) {
     echo json_encode(['success' => false, 'message' => 'Faltan datos obligatorios']); exit;
@@ -56,13 +57,19 @@ try {
         $idusuario = $pdo->lastInsertId();
     }
 
+    // Agregar toppings al total (el front ya los incluye, pero re-validamos)
+    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN toppings_json TEXT NULL"); } catch (Throwable $e) {}
+    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'"); } catch (Throwable $e) {}
+
+    $toppingsJson = !empty($toppings_global) ? json_encode($toppings_global, JSON_UNESCAPED_UNICODE) : null;
+
     // 2. Crear venta
     $stmt = $pdo->prepare(
         "INSERT INTO ventas (usuario_idusuario, total, estado_venta_idestado_venta,
-                             metodo_pago_idmetodo_pago, fecha, created_at, updated_at)
-         VALUES (:usuario, :total, 2, :metodo, NOW(), NOW(), NOW())"
+                             metodo_pago_idmetodo_pago, toppings_json, origen, fecha, created_at, updated_at)
+         VALUES (:usuario, :total, 2, :metodo, :toppings, 'pos', NOW(), NOW(), NOW())"
     );
-    $stmt->execute([':usuario' => $idusuario, ':total' => $total, ':metodo' => $metodo_pago]);
+    $stmt->execute([':usuario' => $idusuario, ':total' => $total, ':metodo' => $metodo_pago, ':toppings' => $toppingsJson]);
     $id_venta = $pdo->lastInsertId();
 
     // 3. Detalle de venta
@@ -78,7 +85,8 @@ try {
             ':cantidad' => intval($item['cantidad']),
             ':precio'   => floatval($item['precio']),
         ]);
-        $productosResumen[] = ($item['nombre'] ?? "Prod #{$item['id']}") . " x{$item['cantidad']}";
+        $tops = !empty($item['toppings']) ? ' (+'.implode(', ', array_column($item['toppings'], 'nombre')).')' : '';
+        $productosResumen[] = ($item['nombre'] ?? "Prod #{$item['id']}") . " x{$item['cantidad']}" . $tops;
     }
 
     // 4. Consumir packaging

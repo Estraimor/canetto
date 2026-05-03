@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 :root {
   --ink:        #0a0a0a;
@@ -21,7 +20,7 @@
 * { box-sizing: border-box; }
 
 .content-body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   color: var(--ink);
   background: var(--paper);
   min-height: 100vh;
@@ -40,7 +39,7 @@
 }
 
 .mp-title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 2.4rem;
   font-weight: 700;
   letter-spacing: -.5px;
@@ -49,7 +48,7 @@
 }
 
 .mp-sub {
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .72rem;
   font-weight: 500;
   letter-spacing: .2em;
@@ -70,7 +69,7 @@
   border: none;
   padding: .7rem 1.4rem;
   border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .85rem;
   font-weight: 600;
   letter-spacing: .03em;
@@ -116,7 +115,7 @@
   color: var(--ink-soft);
 }
 .mp-stat-value {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1.9rem;
   font-weight: 700;
   margin-top: .3rem;
@@ -172,7 +171,7 @@
   padding: .6rem .85rem;
   border: 1px solid var(--rule-dark);
   border-radius: var(--radius);
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .875rem;
   color: var(--ink);
   background: var(--white);
@@ -214,7 +213,7 @@
 table.dataTable {
   border-collapse: collapse !important;
   border-spacing: 0 !important;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .82rem;
 }
 
@@ -250,7 +249,7 @@ div.dataTables_wrapper div.dataTables_filter input {
   border: 1px solid var(--rule-dark);
   border-radius: var(--radius);
   padding: .4rem .7rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .82rem;
   outline: none;
 }
@@ -259,7 +258,7 @@ div.dataTables_wrapper div.dataTables_length select {
   border: 1px solid var(--rule-dark);
   border-radius: var(--radius);
   padding: .3rem .5rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
 }
 div.dataTables_wrapper div.dataTables_info {
   font-size: .78rem;
@@ -269,7 +268,7 @@ div.dataTables_wrapper div.dataTables_info {
 div.dataTables_wrapper div.dataTables_paginate { padding: .5rem 1rem 1rem; }
 div.dataTables_wrapper div.dataTables_paginate .paginate_button {
   border-radius: var(--radius) !important;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .78rem !important;
 }
 div.dataTables_wrapper div.dataTables_paginate .paginate_button.current {
@@ -369,7 +368,7 @@ div.dataTables_wrapper div.dataTables_length { padding: .8rem 1rem .4rem; }
   background: var(--white); z-index: 1;
 }
 .mp-modal-title {
-  font-family: 'Playfair Display', serif;
+  font-family: "Speedee", sans-serif;
   font-size: 1.3rem;
   font-weight: 700;
 }
@@ -463,7 +462,7 @@ div.dataTables_wrapper div.dataTables_length { padding: .8rem 1rem .4rem; }
   padding: .75rem 1.2rem;
   box-shadow: var(--shadow-lg);
   display: flex; gap: .6rem; align-items: center;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Speedee", sans-serif;
   font-size: .82rem; font-weight: 500;
 }
 .mp-toast-inner i { color: #4caf50; }

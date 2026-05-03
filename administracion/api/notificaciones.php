@@ -13,11 +13,13 @@ try {
         tipo          VARCHAR(40)  NOT NULL,
         titulo        VARCHAR(200) NOT NULL,
         descripcion   VARCHAR(400) NULL,
+        datos_json    TEXT         NULL,
         link          VARCHAR(500) NULL,
         referencia_id INT NULL,
         leida         TINYINT(1)   NOT NULL DEFAULT 0,
         created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    try { $pdo->exec("ALTER TABLE notificaciones_admin ADD COLUMN datos_json TEXT NULL"); } catch (Throwable $e) {}
 
     try { $pdo->exec("ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'admin'"); } catch (Throwable $e) {}
 
@@ -147,10 +149,14 @@ try {
     $nuevos = $pdo->query("
         SELECT v.idventas, v.total, v.fecha,
                COALESCE(v.origen,'admin') AS origen,
+               COALESCE(v.tipo_entrega,'retiro') AS tipo_entrega,
+               COALESCE(v.toppings_json,'') AS toppings_json,
                COALESCE(u.nombre,'Consumidor') AS cliente_nombre,
-               COALESCE(u.apellido,'')          AS cliente_apellido
+               COALESCE(u.apellido,'')          AS cliente_apellido,
+               COALESCE(mp.nombre,'—')           AS metodo_pago
         FROM ventas v
-        LEFT JOIN usuario u ON u.idusuario = v.usuario_idusuario
+        LEFT JOIN usuario u    ON u.idusuario       = v.usuario_idusuario
+        LEFT JOIN metodo_pago mp ON mp.idmetodo_pago = v.metodo_pago_idmetodo_pago
         WHERE v.estado_venta_idestado_venta IN (1,5)
           AND v.fecha >= NOW() - INTERVAL 10 MINUTE
           AND NOT EXISTS (
@@ -162,15 +168,58 @@ try {
     ")->fetchAll();
 
     foreach ($nuevos as $p) {
+        // Obtener productos + contenido de boxes
+        $prods = $pdo->prepare("
+            SELECT pr.nombre, dv.cantidad, dv.precio_unitario,
+                   pr.tipo,
+                   (SELECT GROUP_CONCAT(p2.nombre ORDER BY p2.nombre SEPARATOR ', ')
+                    FROM box_productos bp
+                    JOIN productos p2 ON p2.idproductos = bp.producto_item
+                    WHERE bp.producto_box = pr.idproductos
+                   ) AS contenido_box
+            FROM detalle_ventas dv
+            JOIN productos pr ON pr.idproductos = dv.productos_idproductos
+            WHERE dv.ventas_idventas = :id
+        ");
+        $prods->execute([':id' => $p['idventas']]);
+        $productos = $prods->fetchAll();
+
+        // Parsear toppings_json
+        $toppings = [];
+        if ($p['toppings_json']) {
+            $tj = json_decode($p['toppings_json'], true);
+            if (is_array($tj)) {
+                foreach ($tj as $item) {
+                    if (!empty($item['toppings'])) {
+                        foreach ($item['toppings'] as $t) {
+                            $toppings[] = $t['nombre'] ?? $t;
+                        }
+                    }
+                }
+            }
+        }
+
         $origen  = $p['origen'] === 'tienda' ? '📱 App' : '🖥 Admin';
         $cliente = trim($p['cliente_nombre'] . ' ' . $p['cliente_apellido']);
-        $total   = '$' . number_format($p['total'], 2);
+        $entrega = $p['tipo_entrega'] === 'envio' ? '🛵 Envío' : '🏪 Retiro';
+
+        $datosJson = json_encode([
+            'cliente'    => $cliente,
+            'origen'     => $origen,
+            'entrega'    => $entrega,
+            'metodo'     => $p['metodo_pago'],
+            'total'      => $p['total'],
+            'productos'  => $productos,
+            'toppings'   => array_unique($toppings),
+        ], JSON_UNESCAPED_UNICODE);
+
         $pdo->prepare("
-            INSERT INTO notificaciones_admin (tipo, titulo, descripcion, link, referencia_id)
-            VALUES ('pedido_nuevo', :titulo, :desc, :link, :ref)
+            INSERT INTO notificaciones_admin (tipo, titulo, descripcion, datos_json, link, referencia_id)
+            VALUES ('pedido_nuevo', :titulo, :desc, :datos, :link, :ref)
         ")->execute([
             ':titulo' => "Nuevo pedido #{$p['idventas']}",
-            ':desc'   => "{$origen} · {$cliente} · {$total}",
+            ':desc'   => "{$origen} · {$cliente} · \${$p['total']}",
+            ':datos'  => $datosJson,
             ':link'   => URL_ADMIN . '/Ventas/Pedidos/index.php',
             ':ref'    => $p['idventas'],
         ]);
@@ -178,7 +227,7 @@ try {
 
     // ── Devolver: alertas vivas + pedidos no leídos ──────────────────────────
     $noLeidas = $pdo->query("
-        SELECT id, tipo, titulo, descripcion, link, created_at
+        SELECT id, tipo, titulo, descripcion, datos_json, link, created_at
         FROM notificaciones_admin
         WHERE leida = 0
         ORDER BY created_at DESC
