@@ -143,64 +143,93 @@ window.addEventListener("load", function() {
 .notif-desc   { font-size:.78rem; color:#6b7280; line-height:1.4; }
 .notif-time   { font-size:.7rem; color:#9ca3af; margin-top:4px; }
 
-/* Toast de notificación */
+/* ── Toast estilo WhatsApp ── */
 .notif-toast {
-    position:fixed; top:72px; right:20px;
+    position:fixed; top:72px; right:16px;
     background:#1e293b; color:#fff;
-    border-radius:12px; padding:0;
-    width:270px; height:auto !important;
+    border-radius:14px; width:280px;
+    height:fit-content; max-height:300px;
     display:flex; flex-direction:column;
-    z-index:99999;
-    box-shadow:0 8px 28px rgba(0,0,0,.35);
-    animation:toastSlide .28s cubic-bezier(.36,.07,.19,.97);
+    z-index:99999; overflow:hidden; cursor:pointer;
+    box-shadow:0 8px 32px rgba(0,0,0,.45);
+    animation:toastSlide .25s cubic-bezier(.22,.68,0,1.2) both;
     border-left:3px solid #3b82f6;
-    overflow:hidden; cursor:pointer;
 }
-.notif-toast.stock_bajo { border-left-color:#f97316; }
-.notif-toast-head {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:9px 10px 6px; gap:6px;
+.notif-toast.stock_bajo  { border-left-color:#f97316; }
+.notif-toast.sin_stock   { border-left-color:#ef4444; }
+.notif-toast.pedido_nuevo{ border-left-color:#22c55e; }
+
+/* Cabecera compacta */
+.nt-head {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px 8px;
 }
-.notif-toast-title { font-weight:800; font-size:.82rem; line-height:1.2; flex:1; }
-.notif-toast-close {
-    background:none; border:none; color:#fff; opacity:.45;
-    cursor:pointer; font-size:.75rem; padding:1px 3px; line-height:1;
+.nt-tipo-badge {
+    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+    background:rgba(255,255,255,.12); border-radius:6px;
+    padding:3px 7px; white-space:nowrap; flex-shrink:0;
+}
+.notif-toast.pedido_nuevo .nt-tipo-badge { background:rgba(34,197,94,.2); color:#86efac; }
+.notif-toast.sin_stock .nt-tipo-badge    { background:rgba(239,68,68,.2);  color:#fca5a5; }
+.notif-toast.stock_bajo .nt-tipo-badge   { background:rgba(249,115,22,.2); color:#fdba74; }
+.nt-text { flex:1; min-width:0; }
+.nt-title {
+    font-weight:800; font-size:15px;
+    white-space:normal; word-break:break-word;
+}
+.nt-subtitle {
+    font-size:13px; opacity:.6; margin-top:1px;
+    white-space:normal; word-break:break-word;
+}
+.nt-close {
+    background:none; border:none; color:#fff; opacity:.4;
+    cursor:pointer; font-size:.9rem; padding:4px; line-height:1;
     flex-shrink:0; transition:opacity .15s;
 }
-.notif-toast-close:hover { opacity:1; }
-.notif-toast-meta {
-    display:flex; gap:5px; padding:0 10px 7px; flex-wrap:wrap;
+.nt-close:hover { opacity:1; }
+
+/* Cuerpo: productos en una línea */
+.nt-body {
+    padding:0 12px 8px;
+    border-top:1px solid rgba(255,255,255,.07);
+    padding-top:7px;
 }
-.notif-toast-tag {
-    font-size:.65rem; font-weight:700; padding:2px 7px;
-    border-radius:20px; background:rgba(255,255,255,.13);
-    white-space:nowrap; line-height:1.4;
+.nt-prods {
+    font-size:14px; font-weight:600;
+    white-space:normal; word-break:break-word;
+    opacity:.9;
 }
-.notif-toast-prods {
-    padding:6px 10px; border-top:1px solid rgba(255,255,255,.09);
+.nt-tops {
+    font-size:13px; color:#c4b5fd; margin-top:3px;
+    white-space:normal; word-break:break-word;
 }
-.notif-toast-prod-row {
-    display:flex; align-items:center; gap:5px;
-    font-size:.76rem; padding:3px 0;
-    border-bottom:1px solid rgba(255,255,255,.06);
+
+/* Footer: tags + total */
+.nt-footer {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 12px 8px; gap:6px;
 }
-.notif-toast-prod-row:last-child { border-bottom:none; }
-.ntpr-name { flex:1; font-weight:600; }
-.ntpr-qty  { opacity:.65; font-size:.7rem; white-space:nowrap; }
-.ntpr-box  { font-size:.67rem; opacity:.6; color:#c4b5fd; }
-.notif-toast-total {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:6px 10px; border-top:1px solid rgba(255,255,255,.1);
+.nt-tags { display:flex; gap:4px; flex-wrap:wrap; }
+.nt-tag {
+    font-size:12px; font-weight:700; padding:2px 7px;
+    border-radius:20px; background:rgba(255,255,255,.12);
+    white-space:nowrap;
 }
-.ntotal-label { font-size:.65rem; opacity:.6; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
-.ntotal-val   { font-size:.9rem; font-weight:800; color:#86efac; }
-.notif-toast-progress { height:2px; background:rgba(255,255,255,.12); }
-.notif-toast-progress-bar {
-    height:2px; background:#3b82f6;
-    animation:toastProgress 30s linear forwards;
+.nt-total {
+    font-size:16px; font-weight:800; color:#86efac; white-space:nowrap;
+}
+
+/* Barra de progreso */
+.nt-bar { height:2px; background:rgba(255,255,255,.1); }
+.nt-bar-fill {
+    height:2px; background:#22c55e;
+    animation:toastProgress 60s linear forwards;
 }
 @keyframes toastProgress { from{width:100%} to{width:0%} }
-@keyframes toastSlide { from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)} }
+@keyframes toastSlide {
+    from { opacity:0; transform:translateX(calc(100% + 20px)); }
+    to   { opacity:1; transform:translateX(0); }
+}
 </style>
 
 <script>
@@ -267,49 +296,45 @@ const NotifApp = (() => {
         const metodo  = datos.metodo     || '';
         const total   = datos.total      || 0;
 
-        const prodsHtml = prods.map(p => {
-            const boxInfo   = p.contenido_box ? `<div class="ntpr-box">📦 ${p.contenido_box}</div>` : '';
-            return `<div class="notif-toast-prod-row">
-                <div style="flex:1">
-                    <div class="ntpr-name">🍪 ${p.nombre}</div>
-                    ${boxInfo}
-                </div>
-                <div class="ntpr-qty">×${p.cantidad}</div>
-            </div>`;
-        }).join('');
+        // Línea de productos compacta: "Cookie ×4, Brownie ×2"
+        const prodsLinea = prods.map(p => `${p.nombre} ×${p.cantidad}`).join(' · ') || '—';
 
-        const topsHtml = tops.length
-            ? `<div style="padding:6px 14px 8px;border-top:1px solid rgba(255,255,255,.08);font-size:.74rem;opacity:.75">
-                <span style="font-weight:700">Extras:</span> ${tops.join(', ')}
-               </div>`
-            : '';
+        // Toppings si los hay
+        const topsLinea = tops.length ? `✨ ${tops.join(', ')}` : '';
+
+        // Subtítulo: cliente + entrega
+        const subtitulo = [cliente, entrega].filter(Boolean).join(' · ');
 
         const el = document.createElement('div');
         el.className = 'notif-toast ' + n.tipo;
+        const tipoLabel = {pedido_nuevo:'Nuevo pedido', sin_stock:'Sin stock', stock_bajo:'Stock bajo', mp_sin_stock:'Sin stock', mp_stock_bajo:'Stock bajo'}[n.tipo] || 'Notificación';
         el.innerHTML = `
-            <div class="notif-toast-head">
-                <div class="notif-toast-title">${ICONS[n.tipo] || '🔔'} ${n.titulo}</div>
-                <button class="notif-toast-close" onclick="event.stopPropagation();this.closest('.notif-toast').remove()">✕</button>
+            <div class="nt-head">
+                <div class="nt-tipo-badge">${tipoLabel}</div>
+                <div class="nt-text">
+                    <div class="nt-title">${n.titulo}</div>
+                    ${subtitulo ? `<div class="nt-subtitle">${subtitulo}</div>` : ''}
+                </div>
+                <button class="nt-close" onclick="event.stopPropagation();this.closest('.notif-toast').remove()">✕</button>
             </div>
-            <div class="notif-toast-meta">
-                ${cliente ? `<span class="notif-toast-tag">👤 ${cliente}</span>` : ''}
-                ${entrega ? `<span class="notif-toast-tag">${entrega}</span>` : ''}
-                ${metodo  ? `<span class="notif-toast-tag">💳 ${metodo}</span>`  : ''}
-                ${origen  ? `<span class="notif-toast-tag">${origen}</span>`  : ''}
+            <div class="nt-body">
+                <div class="nt-prods">${prodsLinea}</div>
+                ${topsLinea ? `<div class="nt-tops">${topsLinea}</div>` : ''}
             </div>
-            ${prods.length ? `<div class="notif-toast-prods">${prodsHtml}</div>` : ''}
-            ${topsHtml}
-            <div class="notif-toast-total">
-                <span class="ntotal-label">Total</span>
-                <span class="ntotal-val">${fmt$(total)}</span>
+            <div class="nt-footer">
+                <div class="nt-tags">
+                    ${metodo ? `<span class="nt-tag">${metodo}</span>` : ''}
+                    ${origen ? `<span class="nt-tag">${origen}</span>` : ''}
+                </div>
+                <span class="nt-total">${fmt$(total)}</span>
             </div>
-            <div class="notif-toast-progress"><div class="notif-toast-progress-bar"></div></div>
+            <div class="nt-bar"><div class="nt-bar-fill"></div></div>
         `;
         el.addEventListener('click', () => {
             if (n.link) { marcar(n.id); window.location.href = n.link; }
         });
         document.body.appendChild(el);
-        setTimeout(() => el && el.remove(), 30000);
+        setTimeout(() => { el.style.transition='opacity .4s,transform .4s'; el.style.opacity='0'; el.style.transform='translateX(calc(100% + 20px))'; setTimeout(()=>el.remove(),400); }, 60000);
     }
 
     function renderList(notifs) {

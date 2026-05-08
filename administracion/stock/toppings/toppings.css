@@ -1,0 +1,461 @@
+/* ── Layout ── */
+.tp-wrap {
+    padding: 28px 32px;
+}
+
+/* ── Header ── */
+.tp-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+}
+
+.tp-page-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #2d1f3d;
+}
+
+.tp-page-header p {
+    font-size: 13px;
+    color: #999;
+    margin: 0;
+}
+
+/* ── Stats ── */
+.tp-stats-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.tp-stat-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 28px;
+    text-align: center;
+    min-width: 100px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.tp-stat-box.warn {
+    background: #fff5f5;
+    border: 1.5px solid #f5c6cb;
+}
+
+.tp-stat-num {
+    font-size: 30px;
+    font-weight: 700;
+    color: #2d1f3d;
+    line-height: 1;
+}
+
+.tp-stat-box.warn .tp-stat-num { color: #c0392b; }
+
+.tp-stat-lbl {
+    font-size: 10px;
+    color: #bbb;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-top: 4px;
+}
+
+/* ── Table wrapper ── */
+.tp-table-wrap {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    padding: 22px 24px 18px;
+}
+
+/* ── DataTables DOM layout ── */
+.dt-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.dt-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Search — en DT2 el input vive DENTRO del label, no ocultar el label */
+.dt-search label {
+    font-size: 0;       /* oculta el texto "Search:" sin ocultar el input */
+    color: transparent;
+}
+
+.dt-search input {
+    font-size: 13px;
+    color: #2d1f3d;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 9px 14px 9px 38px;
+    width: 240px;
+    outline: none;
+    background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center;
+    transition: .2s;
+    display: block;
+}
+
+.dt-search input:focus {
+    border-color: #c88e99;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(200,142,153,.12);
+}
+
+/* Length select */
+.dt-len select {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #555;
+    background: #f9fafb;
+    outline: none;
+    cursor: pointer;
+}
+
+.dt-len select:focus { border-color: #c88e99; }
+.dt-len label { font-size: 13px; color: #888; display: flex; align-items: center; gap: 8px; }
+
+/* Info text */
+.dt-info {
+    font-size: 12px;
+    color: #aaa;
+}
+
+/* ── Pagination ── */
+.dt-paging .dt-paging-button {
+    border: none;
+    background: none;
+    border-radius: 8px;
+    padding: 6px 11px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: .15s;
+    margin: 0 1px;
+}
+
+.dt-paging .dt-paging-button:hover:not(.disabled) {
+    background: #f3f0f8;
+    color: #7c3aed;
+}
+
+.dt-paging .dt-paging-button.current {
+    background: #c88e99;
+    color: #fff;
+}
+
+.dt-paging .dt-paging-button.disabled {
+    color: #ddd;
+    cursor: default;
+}
+
+/* ── Table ── */
+.tp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+
+.tp-table thead th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #9b7ab8;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    border-bottom: 2px solid #f0eaf8;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tp-table thead th.dt-orderable-asc::after,
+.tp-table thead th.dt-orderable-desc::after { opacity: .4; }
+
+.tp-table thead th.dt-ordering-asc::after,
+.tp-table thead th.dt-ordering-desc::after { opacity: 1; color: #c88e99; }
+
+.tp-table tbody tr {
+    border-bottom: 1px solid #f7f4fc;
+    transition: background .12s;
+}
+
+.tp-table tbody tr:last-child { border-bottom: none; }
+
+.tp-table tbody tr:hover { background: #fbf8ff; }
+
+.tp-table td {
+    padding: 12px 14px;
+    vertical-align: middle;
+}
+
+/* ── Cell types ── */
+.tp-td-nombre {
+    font-weight: 600;
+    color: #2d1f3d;
+}
+
+.td-precio {
+    font-weight: 700;
+    color: #7c3aed;
+}
+
+.td-gratis {
+    color: #bbb;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.td-stock-ok {
+    font-weight: 700;
+    color: #16a34a;
+}
+
+.td-stock-low {
+    font-weight: 700;
+    color: #c0392b;
+}
+
+.td-minimo {
+    color: #aaa;
+}
+
+/* ── Badges ── */
+.badge-low {
+    background: #fdecea;
+    color: #c0392b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 7px;
+    vertical-align: middle;
+}
+
+.badge-activo {
+    background: #ecfdf5;
+    color: #16a34a;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.badge-inactivo {
+    background: #f3f4f6;
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* ── Action buttons ── */
+.tp-icon-btn {
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 12px;
+    margin: 0 2px;
+    transition: .18s;
+}
+
+.tp-icon-btn.edit {
+    background: #f0eaff;
+    color: #7c3aed;
+}
+
+.tp-icon-btn.edit:hover {
+    background: #7c3aed;
+    color: #fff;
+    transform: scale(1.08);
+}
+
+.tp-icon-btn.del {
+    background: #fff0f0;
+    color: #c0392b;
+}
+
+.tp-icon-btn.del:hover {
+    background: #c0392b;
+    color: #fff;
+    transform: scale(1.08);
+}
+
+/* ── Buttons ── */
+.tp-btn-new {
+    background: #c88e99;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+.tp-btn-new:hover { background: #b37a87; transform: translateY(-1px); }
+
+.tp-btn-soft {
+    background: #f3f4f6;
+    color: #555;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.tp-btn-soft:hover { background: #e5e7eb; }
+
+/* ── Modal ── */
+.tp-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 998;
+    backdrop-filter: blur(2px);
+}
+
+.tp-modal-overlay.open { display: block; }
+
+.tp-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(.96);
+    background: #fff;
+    border-radius: 18px;
+    width: 560px;
+    max-width: 95vw;
+    z-index: 999;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+    transition: transform .18s ease, opacity .18s ease;
+    opacity: 0;
+}
+
+.tp-modal.open {
+    display: block;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+.tp-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d1f3d;
+    border-bottom: 1px solid #f0eaf8;
+}
+
+.tp-modal-x {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #bbb;
+    transition: color .15s;
+}
+
+.tp-modal-x:hover { color: #c0392b; }
+
+.tp-modal-body { padding: 22px 24px; }
+
+/* ── Form ── */
+.mf-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.mf-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.mf-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 6px;
+}
+
+.mf-group input,
+.mf-group select {
+    padding: 10px 13px;
+    border-radius: 10px;
+    border: 1.5px solid #e9e4f0;
+    font-size: 14px;
+    background: #fafafa;
+    transition: .2s;
+    color: #2d1f3d;
+}
+
+.mf-group input:focus,
+.mf-group select:focus {
+    outline: none;
+    border-color: #c88e99;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(200,142,153,.12);
+}
+
+/* ── Alert ── */
+.tp-modal-alert {
+    display: none;
+    background: #fdecea;
+    color: #c0392b;
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    border-left: 3px solid #c0392b;
+}
+
+.tp-modal-alert.show { display: block; }
+
+/* ── Modal footer ── */
+.mf-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+}

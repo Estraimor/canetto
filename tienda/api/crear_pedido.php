@@ -54,25 +54,12 @@ try {
         "ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
-    /* ── Calcular costo de envío server-side ── */
+    /* ── Costo de envío: se usa el valor que confirmó el cliente ── */
+    // El front calcula el envío via calcular_envio.php y lo muestra al usuario.
+    // Aquí confiamos en ese valor para que el total guardado coincida con lo que vio el cliente.
     $costo_envio = 0.0;
-    // El total ya viene con toppings incluidos desde el front — no sumar de nuevo
-
-    if ($tipo_entrega === 'envio' && $lat_entrega !== null && $lng_entrega !== null) {
-        $sucRow = $pdo->query("SELECT latitud, longitud FROM sucursal WHERE activo=1 AND latitud IS NOT NULL AND longitud IS NOT NULL ORDER BY idsucursal ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-        if ($sucRow) {
-            $distKm  = haversineKm((float)$sucRow['latitud'], (float)$sucRow['longitud'], $lat_entrega, $lng_entrega);
-            $tarRow  = $pdo->prepare("SELECT precio FROM tarifas_envio WHERE activo=1 AND km_desde<=? AND km_hasta>? ORDER BY km_desde ASC LIMIT 1");
-            $tarRow->execute([$distKm, $distKm]);
-            $tarifa  = $tarRow->fetchColumn();
-            if ($tarifa === false) {
-                // fallback: tramo más alto disponible
-                $tarifa = $pdo->query("SELECT precio FROM tarifas_envio WHERE activo=1 ORDER BY km_hasta DESC LIMIT 1")->fetchColumn();
-            }
-            $costo_envio = $tarifa !== false ? (float)$tarifa : ($costo_envio_cli > 0 ? $costo_envio_cli : 29000.0);
-        } else {
-            $costo_envio = $costo_envio_cli > 0 ? $costo_envio_cli : 29000.0;
-        }
+    if ($tipo_entrega === 'envio') {
+        $costo_envio = $costo_envio_cli > 0 ? $costo_envio_cli : 0.0;
         $total += $costo_envio;
     }
 

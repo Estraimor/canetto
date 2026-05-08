@@ -23,6 +23,7 @@ $stmtP = $pdo->prepare("
     SELECT v.idventas, v.total, v.fecha, v.created_at,
            COALESCE(v.tipo_entrega, 'retiro')  AS tipo_entrega,
            COALESCE(v.costo_envio, 0)          AS costo_envio,
+           COALESCE(v.toppings_json, '')        AS toppings_json,
            ev.nombre AS estado_nombre, ev.idestado_venta AS estado_id,
            mp.nombre AS metodo_pago,
            s.nombre  AS sucursal_nombre
@@ -48,6 +49,19 @@ foreach ($pedidos as &$p) {
     ");
     $d->execute([$p['idventas']]);
     $p['items'] = $d->fetchAll();
+
+    // Parsear toppings
+    $p['toppings'] = [];
+    if (!empty($p['toppings_json'])) {
+        $tj = json_decode($p['toppings_json'], true);
+        if (is_array($tj)) {
+            foreach ($tj as $t) {
+                if (!empty($t['nombre'])) {
+                    $p['toppings'][] = ['nombre' => $t['nombre'], 'precio' => (float)($t['precio'] ?? 0)];
+                }
+            }
+        }
+    }
 }
 unset($p);
 
@@ -376,6 +390,12 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
 .ped-item-name { font-weight: 600; color: #333; }
 .ped-item-qty  { color: #999; font-size: 11px; margin-left: 4px; }
 .ped-item-price { font-weight: 700; color: #111; flex-shrink: 0; }
+/* Toppings */
+.ped-item-topping { background: #fdf4f6; border-radius: 8px; padding: 5px 8px; margin: 2px 0; border-bottom: none !important; }
+.ped-topping-ic   { margin-right: 4px; font-size: 12px; }
+.ped-topping-tag  { display: inline-block; background: #f3d4da; color: #9b3a52; font-size: 10px;
+                    font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-left: 5px;
+                    text-transform: uppercase; letter-spacing: .04em; }
 
 /* ── Breakdown ── */
 .ped-breakdown { padding: 10px 16px; border-top: 1px solid #f5f5f5; font-size: 12px; color: #666; }
@@ -498,11 +518,11 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
 
   /* Filter toggle en desktop */
   .ped-filter-wrap {
-    max-width: 1100px;
+    max-width: 1340px;
     margin: 0 auto;
     border: none;
     background: transparent;
-    padding: 0 52px;
+    padding: 0 48px;
     margin-bottom: 8px;
   }
   .ped-filter-toggle { padding: 0 0 12px; }
@@ -510,9 +530,9 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
 
   /* Page header desktop */
   .ped-page-hd {
-    max-width: 1100px;
+    max-width: 1340px;
     margin: 0 auto;
-    padding: 36px 52px 24px;
+    padding: 36px 48px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -539,30 +559,39 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
 
   /* Grid layout */
   .ped-outer {
-    max-width: 1100px;
+    max-width: 1340px;
     margin: 0 auto;
-    padding: 0 52px 80px;
+    padding: 0 48px 80px;
     display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 32px;
+    grid-template-columns: 1fr 340px;
+    gap: 36px;
     align-items: start;
   }
   .ped-col-main { min-width: 0; }
   .ped-col-side { position: sticky; top: 90px; }
 
   /* Bigger cards on desktop */
-  .ped-card { border-radius: 20px; margin-bottom: 16px; box-shadow: 0 2px 16px rgba(0,0,0,.06); }
-  .ped-card-hd    { padding: 18px 22px 14px; }
-  .ped-card-num   { font-size: 16px; }
-  .ped-card-badge { font-size: 12px; padding: 6px 14px; }
-  .ped-tl         { padding: 12px 22px 16px; }
-  .ped-items      { padding: 4px 22px 12px; }
-  .ped-item-row   { font-size: 13px; }
-  .ped-breakdown  { padding: 12px 22px; }
-  .ped-total-row  { padding: 12px 22px; }
-  .ped-sucursal   { padding: 8px 22px; }
-  .ped-pago-recibir { padding: 12px 22px; font-size: 13px; }
-  .ped-btn-confirmar { width: calc(100% - 44px); margin: 4px 22px 16px; }
+  .ped-card { border-radius: 22px; margin-bottom: 20px; box-shadow: 0 3px 24px rgba(0,0,0,.07); }
+  .ped-card-hd    { padding: 22px 28px 16px; }
+  .ped-card-num   { font-size: 20px; font-weight: 800; }
+  .ped-card-date  { font-size: 13px; }
+  .ped-card-badge { font-size: 13px; padding: 8px 18px; }
+  .ped-tl         { padding: 14px 28px 20px; gap: 0; }
+  .ped-tl-dot     { width: 36px; height: 36px; font-size: 14px; }
+  .ped-tl-lbl     { font-size: 12px; margin-top: 6px; }
+  .ped-items      { padding: 6px 28px 14px; }
+  .ped-item-row   { font-size: 15px; padding: 9px 0; }
+  .ped-item-name  { font-size: 15px; }
+  .ped-item-qty   { font-size: 13px; }
+  .ped-item-price { font-size: 15px; }
+  .ped-topping-tag { font-size: 11px; padding: 2px 8px; }
+  .ped-breakdown  { padding: 14px 28px; font-size: 15px; }
+  .ped-breakdown-row { padding: 5px 0; }
+  .bdr-total      { font-size: 18px !important; padding-top: 10px !important; margin-top: 6px; }
+  .ped-total-row  { padding: 14px 28px; font-size: 16px; }
+  .ped-sucursal   { padding: 10px 28px; font-size: 14px; }
+  .ped-pago-recibir { padding: 14px 28px; font-size: 14px; }
+  .ped-btn-confirmar { width: calc(100% - 56px); margin: 6px 28px 20px; font-size: 16px; padding: 16px; }
 
   /* Sidebar */
   .ped-side-card {
@@ -807,7 +836,7 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
   </div>
 
   <!-- Ítems del pedido -->
-  <?php if (!empty($p['items'])): ?>
+  <?php if (!empty($p['items']) || !empty($p['toppings'])): ?>
   <div class="ped-items">
     <?php foreach ($p['items'] as $it): ?>
     <div class="ped-item-row">
@@ -816,6 +845,18 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
         <span class="ped-item-qty">×<?= (int)$it['cantidad'] ?></span>
       </span>
       <span class="ped-item-price">$<?= number_format($it['precio_unitario'] * $it['cantidad'], 0, ',', '.') ?></span>
+    </div>
+    <?php endforeach; ?>
+    <?php foreach ($p['toppings'] as $tp): ?>
+    <div class="ped-item-row ped-item-topping">
+      <span>
+        <span class="ped-topping-ic">✨</span>
+        <span class="ped-item-name"><?= htmlspecialchars($tp['nombre']) ?></span>
+        <span class="ped-topping-tag">Topping</span>
+      </span>
+      <?php if ($tp['precio'] > 0): ?>
+      <span class="ped-item-price" style="color:#c88e99">+$<?= number_format($tp['precio'], 0, ',', '.') ?></span>
+      <?php endif; ?>
     </div>
     <?php endforeach; ?>
   </div>

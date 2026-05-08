@@ -10,6 +10,6 @@ $id   = (int)($data['idtoppings'] ?? 0);
 if (!$id) { echo json_encode(['ok'=>false,'msg'=>'ID inválido']); exit; }
 
 $pdo = Conexion::conectar();
-$pdo->prepare("DELETE FROM producto_toppings WHERE toppings_idtoppings=?")->execute([$id]);
+$pdo->prepare("DELETE FROM toppings_stock WHERE toppings_idtoppings=?")->execute([$id]);
 $pdo->prepare("DELETE FROM toppings WHERE idtoppings=?")->execute([$id]);
 echo json_encode(['ok'=>true]);

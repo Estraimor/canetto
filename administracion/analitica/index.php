@@ -1,5 +1,7 @@
 <?php
 define('APP_BOOT', true);
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
 require_once __DIR__ . '/../../config/conexion.php';
 $pageTitle = "Analítica de Ventas";
 include '../../panel/dashboard/layaut/nav.php';
@@ -32,14 +34,14 @@ include '../../panel/dashboard/layaut/nav.php';
           <button class="afb-pill" data-modo="semana_actual"   onclick="setModo(this)">Esta semana</button>
           <button class="afb-pill" data-modo="semana_anterior" onclick="setModo(this)">Semana pasada</button>
           <button class="afb-pill active" data-modo="mes_actual" onclick="setModo(this)">Este mes</button>
-          <button class="afb-pill" data-modo="mes_anterior"    onclick="setModo(this)">Mes anterior</button>
+          <button class="afb-pill" data-modo="mes_anterior"    onclick="irMesAnterior()"><i class="fa-solid fa-arrow-left" style="font-size:.65rem"></i> Mes anterior</button>
         </div>
       </div>
       <div class="afb-group afb-group--right">
-        <span class="afb-label"><i class="fa-regular fa-calendar"></i> Mes / Año</span>
+        <span class="afb-label"><i class="fa-regular fa-calendar"></i> Ir a mes</span>
         <div class="afb-selects">
           <select id="mesSelect" class="afb-select" onchange="setModoMes()">
-            <option value="0">Todos los meses</option>
+            <option value="0">Año completo</option>
             <option value="1">Enero</option><option value="2">Febrero</option>
             <option value="3">Marzo</option><option value="4">Abril</option>
             <option value="5">Mayo</option><option value="6">Junio</option>
@@ -81,46 +83,34 @@ include '../../panel/dashboard/layaut/nav.php';
 
   <!-- KPIs -->
   <div class="kpi-grid">
-    <div class="kpi-card" onclick="abrirDetalle('hoy')" title="Ver detalle del día">
-      <div class="kpi-ico"><i class="fa-regular fa-calendar-day"></i></div>
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-ico kpi-ico-blue"><i class="fa-solid fa-peso-sign"></i></div>
       <div class="kpi-body">
-        <div class="kpi-label">Hoy</div>
-        <div class="kpi-value" id="k-ventas-hoy">—</div>
-        <div class="kpi-sub" id="k-pedidos-hoy">—</div>
-      </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
-    </div>
-    <div class="kpi-card" onclick="abrirDetalle('semana')" title="Ver detalle de la semana">
-      <div class="kpi-ico"><i class="fa-regular fa-calendar-week"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-label">Esta semana</div>
-        <div class="kpi-value" id="k-ventas-semana">—</div>
-        <div class="kpi-sub" id="k-pedidos-semana">—</div>
-      </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
-    </div>
-    <div class="kpi-card kpi-highlight" onclick="abrirDetalle('periodo')" title="Ver detalle del período">
-      <div class="kpi-ico"><i class="fa-regular fa-calendar-range"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-label">Período seleccionado</div>
+        <div class="kpi-label">Ingresos del período</div>
         <div class="kpi-value" id="k-ventas-periodo">—</div>
         <div class="kpi-sub" id="k-pedidos-periodo">—</div>
       </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
     </div>
-    <div class="kpi-card kpi-costo" onclick="scrollTo('#sec-materiales')">
-      <div class="kpi-ico kpi-ico-red"><i class="fa-solid fa-cart-shopping"></i></div>
+    <div class="kpi-card kpi-purple">
+      <div class="kpi-ico kpi-ico-purple"><i class="fa-solid fa-receipt"></i></div>
       <div class="kpi-body">
-        <div class="kpi-label">Inversión materiales (período)</div>
-        <div class="kpi-value kpi-red" id="k-costo-periodo">—</div>
-        <div class="kpi-sub">Compras de materias primas</div>
+        <div class="kpi-label">Ticket promedio</div>
+        <div class="kpi-value" id="k-ticket-prom">—</div>
+        <div class="kpi-sub">Por pedido entregado</div>
       </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
     </div>
-    <div class="kpi-card kpi-beneficio-card" id="kpi-beneficio-card">
+    <div class="kpi-card kpi-orange">
+      <div class="kpi-ico kpi-ico-orange"><i class="fa-solid fa-cart-shopping"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Inversión materiales</div>
+        <div class="kpi-value kpi-red" id="k-costo-periodo">—</div>
+        <div class="kpi-sub">Compras del período</div>
+      </div>
+    </div>
+    <div class="kpi-card" id="kpi-beneficio-card">
       <div class="kpi-ico" id="k-benef-ico"><i class="fa-solid fa-scale-balanced"></i></div>
       <div class="kpi-body">
-        <div class="kpi-label">Beneficio estimado (período)</div>
+        <div class="kpi-label">Beneficio estimado</div>
         <div class="kpi-value" id="k-beneficio">—</div>
         <div class="kpi-sub">Ingresos − Costos</div>
       </div>
@@ -230,16 +220,14 @@ include '../../panel/dashboard/layaut/nav.php';
 
 </div>
 
-<!-- MODAL DETALLE -->
+<!-- MODAL DETALLE (para gráficos y tablas) -->
 <div class="ana-modal-overlay" id="anaModal" onclick="if(event.target===this)cerrarModal()">
   <div class="ana-modal">
     <div class="ana-modal-header">
       <h3 id="anaModalTitle">Detalle</h3>
       <button onclick="cerrarModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="ana-modal-body" id="anaModalBody">
-      <div class="ana-loading">Cargando...</div>
-    </div>
+    <div class="ana-modal-body" id="anaModalBody"></div>
   </div>
 </div>
 
@@ -255,6 +243,52 @@ const MESES = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agos
 
 let chartIngresos=null, chartResumen=null, chartPago=null;
 let _modo='mes_actual', _lastData=null;
+let _kpiVals = { ventas:0, ticket:0, costo:0, benef:0 };
+let _animSeq  = 0;
+
+const fmtSigned = n => {
+  const v = Math.round(n);
+  return v < 0 ? '-' + fmt(-v) : fmt(v);
+};
+
+function kpiAnimate(elId, from, to, dur, fmter, seq) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const t0 = performance.now();
+  (function tick(now) {
+    if (_animSeq !== seq) return;
+    const p = Math.min((now - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+    el.textContent = fmter(from + (to - from) * e);
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+const _BAJAR_DUR = 320;
+
+function animarKPIsBajar() {
+  const seq = ++_animSeq;
+  kpiAnimate('k-ventas-periodo', _kpiVals.ventas, 0, _BAJAR_DUR, fmt,       seq);
+  kpiAnimate('k-ticket-prom',    _kpiVals.ticket,  0, _BAJAR_DUR, fmt,       seq);
+  kpiAnimate('k-costo-periodo',  _kpiVals.costo,   0, _BAJAR_DUR, fmt,       seq);
+  kpiAnimate('k-beneficio',      _kpiVals.benef,   0, _BAJAR_DUR, fmtSigned, seq);
+  _kpiVals = { ventas:0, ticket:0, costo:0, benef:0 };
+}
+
+function animarKPIsSubir(ing, ticket, costo, benef) {
+  // Capturamos el seq SIN incrementar para no cancelar la bajada en curso
+  const capturedSeq = _animSeq;
+  setTimeout(() => {
+    // Si se llamó a cargar() de nuevo mientras esperábamos, descartamos
+    if (_animSeq !== capturedSeq) return;
+    const seq = ++_animSeq;
+    kpiAnimate('k-ventas-periodo', 0, ing,    700, fmt,       seq);
+    kpiAnimate('k-ticket-prom',    0, ticket,  700, fmt,       seq);
+    kpiAnimate('k-costo-periodo',  0, costo,   700, fmt,       seq);
+    kpiAnimate('k-beneficio',      0, benef,   700, fmtSigned, seq);
+    _kpiVals = { ventas:ing, ticket, costo, benef };
+  }, _BAJAR_DUR);
+}
 
 // ── FILTROS ───────────────────────────────────────────────────────────
 function desactivarPills(){ document.querySelectorAll('.afb-pill').forEach(b=>b.classList.remove('active')); }
@@ -265,6 +299,19 @@ function setModo(btn){
   _modo = btn.dataset.modo;
   document.getElementById('mesSelect').value = '0';
   limpiarRangoUI();
+  cargar();
+}
+
+function irMesAnterior(){
+  const now = new Date();
+  let m = now.getMonth();     // getMonth() es 0-based → el valor coincide con el mes anterior en 1-based
+  let y = now.getFullYear();
+  if (m === 0) { m = 12; y--; } // Enero → ir a Diciembre del año anterior
+  desactivarPills();
+  limpiarRangoUI();
+  document.getElementById('mesSelect').value  = m;
+  document.getElementById('anioSelect').value = y;
+  _modo = 'mes_especifico';
   cargar();
 }
 
@@ -344,6 +391,10 @@ function limpiarRangoUI(){
 
 // ── CARGA PRINCIPAL ───────────────────────────────────────────────────
 async function cargar(){
+  animarKPIsBajar();
+  document.getElementById('k-pedidos-periodo').textContent = '—';
+  document.querySelectorAll('.ana-section').forEach(s => s.classList.add('ana-dimmed'));
+
   ['tb-productos','tb-debe-haber'].forEach(id=>{
     document.getElementById(id).innerHTML=`<tr><td colspan="6" class="ana-loading">Cargando...</td></tr>`;
   });
@@ -378,34 +429,41 @@ async function cargar(){
     renderCostosMP(data.costos_mp, data.costos);
     renderDebeHaber(data.debe_haber);
     renderHeatmap(data.heatmap || {});
+
+    // Restaurar secciones con fade-in
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.ana-section').forEach(s => s.classList.remove('ana-dimmed'));
+    });
   }catch(e){
     console.error(e);
     showToast('Error de conexión: '+e.message,'err');
+    document.querySelectorAll('.ana-section').forEach(s => s.classList.remove('ana-dimmed'));
   }
 }
 
 // ── KPIs ──────────────────────────────────────────────────────────────
-function renderKPIs(k,c){
-  document.getElementById('k-ventas-hoy').textContent     = fmt(k.ventas_hoy);
-  document.getElementById('k-pedidos-hoy').textContent    = k.pedidos_hoy+' pedido'+(k.pedidos_hoy!=1?'s':'');
-  document.getElementById('k-ventas-semana').textContent  = fmt(k.ventas_semana);
-  document.getElementById('k-pedidos-semana').textContent = k.pedidos_semana+' pedido'+(k.pedidos_semana!=1?'s':'');
-  document.getElementById('k-ventas-periodo').textContent = fmt(k.ventas_periodo);
-  document.getElementById('k-pedidos-periodo').textContent= k.pedidos_periodo+' pedido'+(k.pedidos_periodo!=1?'s':'');
-  document.getElementById('k-costo-periodo').textContent  = fmt(c.costo_periodo);
+function renderKPIs(k, c) {
+  const peds   = parseInt(k.pedidos_periodo)  || 0;
+  const ing    = parseFloat(k.ventas_periodo) || 0;
+  const costo  = parseFloat(c.costo_periodo)  || 0;
+  const ticket = peds > 0 ? ing / peds : 0;
+  const benef  = ing - costo;
 
-  const benef=parseFloat(k.ventas_periodo)-parseFloat(c.costo_periodo);
-  const el=document.getElementById('k-beneficio');
-  el.textContent=fmt(benef);
-  const card=document.getElementById('kpi-beneficio-card');
-  const ico=document.getElementById('k-benef-ico');
-  if(benef>=0){
-    el.style.color='#1a7a4a'; card.style.borderLeftColor='#1a7a4a'; card.style.background='#f0faf4';
-    ico.innerHTML='<i class="fa-solid fa-arrow-trend-up" style="color:#1a7a4a"></i>';
+  // Aplicar colores/icono antes de animar
+  const el   = document.getElementById('k-beneficio');
+  const card = document.getElementById('kpi-beneficio-card');
+  const ico  = document.getElementById('k-benef-ico');
+  if (benef >= 0) {
+    el.style.color = '#1a7a4a'; card.style.borderTopColor = '#1a7a4a'; card.style.background = '#f0faf4';
+    ico.innerHTML  = '<i class="fa-solid fa-arrow-trend-up" style="color:#1a7a4a"></i>';
   } else {
-    el.style.color='#c0392b'; card.style.borderLeftColor='#c0392b'; card.style.background='#fff8f7';
-    ico.innerHTML='<i class="fa-solid fa-arrow-trend-down" style="color:#c0392b"></i>';
+    el.style.color = '#c0392b'; card.style.borderTopColor = '#c0392b'; card.style.background = '#fff8f7';
+    ico.innerHTML  = '<i class="fa-solid fa-arrow-trend-down" style="color:#c0392b"></i>';
   }
+
+  animarKPIsSubir(ing, ticket, costo, benef);
+  document.getElementById('k-pedidos-periodo').textContent =
+    peds + ' pedido' + (peds !== 1 ? 's' : '') + ' entregado' + (peds !== 1 ? 's' : '');
 }
 
 // ── GRÁFICO INGRESOS ─────────────────────────────────────────────────
@@ -430,6 +488,7 @@ function renderChartIngresos(labels,ingresos){
     }]},
     options:{
       responsive:true,maintainAspectRatio:false,
+      animation:{ duration:750, easing:'easeOutCubic' },
       onClick:(_,els)=>{ if(els[0]) abrirDetalleDia(labels[els[0].index],ingresos[els[0].index]); },
       plugins:{
         legend:{display:false},
@@ -447,10 +506,11 @@ function renderChartIngresos(labels,ingresos){
 function renderChartResumen(k,c){
   const ing=parseFloat(k.ventas_periodo), cost=parseFloat(c.costo_periodo);
   const benef=ing-cost;
+  const colorBenef = benef>=0?'#1a7a4a':'#c0392b';
   document.getElementById('resumen-totales').innerHTML=`
-    <div class="resumen-fila"><span class="rf-dot" style="background:#378ADD"></span><span>Ingresos</span><strong>${fmt(ing)}</strong></div>
-    <div class="resumen-fila"><span class="rf-dot" style="background:#c88e99"></span><span>Costos mat.</span><strong style="color:#c88e99">${fmt(cost)}</strong></div>
-    <div class="resumen-fila resumen-total"><span></span><span>Beneficio est.</span><strong style="color:${benef>=0?'#1a7a4a':'#c0392b'}">${fmt(benef)}</strong></div>`;
+    <div class="resumen-fila anim-fila" style="animation-delay:.05s"><span class="rf-dot" style="background:#378ADD"></span><span>Ingresos</span><strong>${fmt(ing)}</strong></div>
+    <div class="resumen-fila anim-fila" style="animation-delay:.12s"><span class="rf-dot" style="background:#c88e99"></span><span>Costos mat.</span><strong style="color:#c88e99">${fmt(cost)}</strong></div>
+    <div class="resumen-fila resumen-total anim-fila" style="animation-delay:.2s"><span></span><span>Beneficio est.</span><strong style="color:${colorBenef}">${fmt(benef)}</strong></div>`;
   if(chartResumen){chartResumen.destroy();}
   const ctx=document.getElementById('chartResumen').getContext('2d');
   chartResumen=new Chart(ctx,{
@@ -466,6 +526,7 @@ function renderChartResumen(k,c){
     },
     options:{
       responsive:true,maintainAspectRatio:false,
+      animation:{ duration:750, easing:'easeOutCubic' },
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.parsed.y)}}},
       scales:{
         x:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}},
@@ -485,7 +546,7 @@ function renderTopProductos(prods, guardar=false){
   }
   const maxU=Math.max(...prods.map(p=>parseFloat(p.unidades)));
   tbody.innerHTML=prods.map((p,i)=>`
-    <tr class="tr-clickable" onclick="abrirDetalleProducto('${p.nombre.replace(/'/g,"\\'")}')">
+    <tr class="tr-clickable anim-fila" style="animation-delay:${i*55}ms" onclick="abrirDetalleProducto('${p.nombre.replace(/'/g,"\\'")}')">
       <td><span class="rank-badge ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}">${i+1}</span></td>
       <td>
         <div class="prod-nombre">${p.nombre}</div>
@@ -508,10 +569,12 @@ function renderPago(pagos){
   chartPago=new Chart(ctx,{
     type:'doughnut',
     data:{labels:pagos.map(p=>p.metodo),datasets:[{data:pagos.map(p=>parseFloat(p.total)),backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt(c.parsed)}}}}
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      animation:{ duration:700, easing:'easeOutCubic' },
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt(c.parsed)}}}}
   });
   document.getElementById('pago-lista').innerHTML=pagos.map((p,i)=>`
-    <div class="pago-item">
+    <div class="pago-item anim-fila" style="animation-delay:${i*60}ms">
       <span class="pago-dot" style="background:${colors[i]||'#ccc'}"></span>
       <span class="pago-label">${p.metodo}</span>
       <span class="pago-val">${fmt(p.total)}</span>
@@ -528,13 +591,18 @@ function renderCostosMP(mp,costos){
     return;
   }
   const max=Math.max(...mp.map(m=>parseFloat(m.total_invertido)));
-  cont.innerHTML=mp.map(m=>`
-    <div class="mp-row tr-clickable" onclick="abrirDetalleMaterial('${m.nombre.replace(/'/g,"\\'")}')">
+  const targets = mp.map(m => Math.round(parseFloat(m.total_invertido)/max*100));
+  cont.innerHTML=mp.map((m,i)=>`
+    <div class="mp-row tr-clickable anim-fila" style="animation-delay:${i*60}ms" onclick="abrirDetalleMaterial('${m.nombre.replace(/'/g,"\\'")}')">
       <div class="mp-nombre" title="${m.nombre}">${m.nombre}</div>
-      <div class="mp-bar-wrap"><div class="mp-bar" style="width:${Math.round(parseFloat(m.total_invertido)/max*100)}%"></div></div>
+      <div class="mp-bar-wrap"><div class="mp-bar" data-w="${targets[i]}" style="width:0%"></div></div>
       <div class="mp-val">${fmt(m.total_invertido)}</div>
       <div class="mp-cnt">${m.num_compras} compra${m.num_compras!=1?'s':''}</div>
     </div>`).join('');
+  // Animar barras al ancho real después de un frame (CSS transition las lleva de 0 al target)
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cont.querySelectorAll('.mp-bar[data-w]').forEach(b => { b.style.width = b.dataset.w + '%'; });
+  }));
 }
 
 // ── DEBE Y HABER ─────────────────────────────────────────────────────
@@ -546,13 +614,13 @@ function renderDebeHaber(filas){
     return;
   }
   let totalHaber=0,totalDebe=0;
-  tbody.innerHTML=filas.map(f=>{
+  tbody.innerHTML=filas.map((f,i)=>{
     const esIngreso=f.tipo==='ingreso';
     if(esIngreso) totalHaber+=parseFloat(f.monto);
     else           totalDebe +=parseFloat(f.monto);
     const saldo=parseFloat(f.saldo);
     const fecha=new Date(f.fecha+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-    return `<tr class="${esIngreso?'dh-ingreso':'dh-costo'}">
+    return `<tr class="${esIngreso?'dh-ingreso':'dh-costo'} anim-fila" style="animation-delay:${Math.min(i*40,400)}ms">
       <td class="dh-fecha">${fecha}</td>
       <td class="dh-concepto">${f.concepto}</td>
       <td class="dh-detalle">${f.detalle||'—'}</td>
@@ -571,45 +639,26 @@ function renderDebeHaber(filas){
     </div>`;
 }
 
-// ── MODALES DE DETALLE ────────────────────────────────────────────────
+
+// ── MODALES (gráfico de barras, productos, materiales) ────────────────
 function abrirModal(titulo, html){
-  document.getElementById('anaModalTitle').textContent=titulo;
-  document.getElementById('anaModalBody').innerHTML=html;
+  document.getElementById('anaModalTitle').textContent = titulo;
+  document.getElementById('anaModalBody').innerHTML   = html;
   document.getElementById('anaModal').classList.add('open');
 }
 function cerrarModal(){
   document.getElementById('anaModal').classList.remove('open');
 }
 
-function abrirDetalle(tipo){
-  if(!_lastData) return;
-  const k=_lastData.kpis, c=_lastData.costos;
-  const datos = tipo==='hoy'
-    ? {lbl:'Hoy', ventas:k.ventas_hoy, peds:k.pedidos_hoy, costo:c.costo_hoy}
-    : tipo==='semana'
-    ? {lbl:'Esta semana', ventas:k.ventas_semana, peds:k.pedidos_semana, costo:c.costo_semana}
-    : {lbl:'Período: '+(_lastData.periodo||''), ventas:k.ventas_periodo, peds:k.pedidos_periodo, costo:c.costo_periodo};
-  const benef=parseFloat(datos.ventas)-parseFloat(datos.costo);
-  abrirModal('Resumen — '+datos.lbl, `
-    <table class="ana-table">
-      <tr><td>Ventas (entregadas)</td><td class="text-right"><strong>${fmt(datos.ventas)}</strong></td></tr>
-      <tr><td>Pedidos</td><td class="text-right">${datos.peds}</td></tr>
-      <tr><td>Inversión materiales</td><td class="text-right" style="color:#c88e99">${fmt(datos.costo)}</td></tr>
-      <tr><td><strong>Beneficio estimado</strong></td><td class="text-right"><strong style="color:${benef>=0?'#1a7a4a':'#c0392b'}">${fmt(benef)}</strong></td></tr>
-    </table>`);
-}
-
 function abrirDetalleDia(label, monto){
   if(!_lastData) return;
-  // Filtrar debe_haber de ese día
   const filas=(_lastData.debe_haber||[]).filter(f=>{
     const fd=new Date(f.fecha+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
     return fd===label||(f.fecha&&f.fecha.endsWith('-'+label.split('/').reverse().join('-')));
   });
   const rows=filas.length
     ? filas.map(f=>`<tr class="${f.tipo==='ingreso'?'dh-ingreso':'dh-costo'}">
-        <td>${f.concepto}</td>
-        <td>${f.detalle||'—'}</td>
+        <td>${f.concepto}</td><td>${f.detalle||'—'}</td>
         <td class="text-right">${f.tipo!=='ingreso'?fmt(f.monto):'—'}</td>
         <td class="text-right">${f.tipo==='ingreso'?fmt(f.monto):'—'}</td>
       </tr>`).join('')
@@ -643,7 +692,7 @@ function abrirDetalleMaterial(nombre){
   abrirModal(`Material: ${nombre}`,`
     <table class="ana-table">
       <tr><td>Total invertido</td><td class="text-right"><strong style="color:#c88e99">${fmt(m.total_invertido)}</strong></td></tr>
-      <tr><td>Cantidad total comprada</td><td class="text-right">${parseFloat(m.total_cantidad).toLocaleString('es-AR')} unidades</td></tr>
+      <tr><td>Cantidad comprada</td><td class="text-right">${parseFloat(m.total_cantidad).toLocaleString('es-AR')} unidades</td></tr>
       <tr><td>Número de compras</td><td class="text-right">${m.num_compras}</td></tr>
       <tr><td>Costo promedio por compra</td><td class="text-right">${fmt(prom)}</td></tr>
     </table>`);

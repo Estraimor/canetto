@@ -56,9 +56,31 @@ try {
         foreach ($stmtD->fetchAll(PDO::FETCH_ASSOC) as $d) {
             $prods[$d['ventas_idventas']][] = $d['nombre'] . ' ×' . $d['cantidad'];
         }
+
+        // Toppings de cada venta
+        $toppingsMap = [];
+        $stmtT = $pdo->prepare("SELECT idventas, toppings_json FROM ventas WHERE idventas IN ($ph)");
+        $stmtT->execute($ids);
+        foreach ($stmtT->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (!empty($row['toppings_json'])) {
+                $tj = json_decode($row['toppings_json'], true);
+                if (is_array($tj)) {
+                    foreach ($tj as $t) {
+                        if (!empty($t['nombre'])) {
+                            $toppingsMap[$row['idventas']][] = '✨ ' . $t['nombre'];
+                        }
+                    }
+                }
+            }
+        }
+
         foreach ($ventas as &$v) {
-            $v['productos']      = implode(', ', $prods[$v['idventas']] ?? []);
-            $v['cliente_nombre'] = trim(($v['cliente_nombre'] ?: 'Cliente') . ' ' . ($v['cliente_apellido'] ?? ''));
+            $partes = array_merge(
+                $prods[$v['idventas']] ?? [],
+                $toppingsMap[$v['idventas']] ?? []
+            );
+            $v['productos']       = implode(', ', $partes);
+            $v['cliente_nombre']  = trim(($v['cliente_nombre'] ?: 'Cliente') . ' ' . ($v['cliente_apellido'] ?? ''));
             $v['cliente_celular'] = (string)($v['cliente_celular'] ?? '');
         }
         unset($v);

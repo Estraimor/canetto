@@ -227,3 +227,165 @@ CURSOR CLICK CARD
 .stock-card {
     cursor: pointer;
 }
+
+/* =========================
+SEPARADOR Y ACCIONES EN MODAL
+========================= */
+.lado-separador {
+    border-top: 1px dashed rgba(0,0,0,0.15);
+    margin: 14px 0 12px;
+}
+
+.lado-accion-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.lado-accion-row input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.btn-accion {
+    border: none;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+}
+
+.btn-accion:hover {
+    transform: scale(1.04);
+    opacity: 0.9;
+}
+
+.btn-producir {
+    background: #2980b9;
+    color: #fff;
+}
+
+.btn-hornear {
+    background: #e67e22;
+    color: #fff;
+}
+
+.lado label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+/* =========================
+SECCIÓN TOPPINGS
+========================= */
+.tp-stock-section {
+    padding: 0 25px 30px;
+}
+
+.tp-stock-header {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    padding-top: 10px;
+    border-top: 2px dashed #e8d0e0;
+    color: #8e44ad;
+}
+
+.tp-stock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+}
+
+.tp-stock-card {
+    background: linear-gradient(135deg, #fdf4ff, #f5e6ff);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.2s;
+    box-shadow: 0 4px 12px rgba(142,68,173,0.08);
+}
+
+.tp-stock-card:hover {
+    transform: translateY(-3px);
+    border-color: #c88e99;
+}
+
+.tp-stock-card.low {
+    background: linear-gradient(135deg, #fff0f0, #ffe0e0);
+    border-color: #f5c6cb;
+}
+
+.tp-card-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a235a;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tp-card-stock {
+    font-size: 26px;
+    font-weight: 700;
+    color: #6c3483;
+    margin-bottom: 4px;
+}
+
+.tp-card-stock.low {
+    color: #c0392b;
+}
+
+.tp-card-min {
+    font-size: 12px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tp-badge-low {
+    background: #fdecea;
+    color: #c0392b;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 20px;
+}
+
+/* Modal topping fields */
+.tp-field-group {
+    margin-bottom: 16px;
+}
+
+.tp-field-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.tp-field-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: 0.2s;
+}
+
+.tp-field-group input:focus {
+    outline: none;
+    border-color: #c88e99;
+}

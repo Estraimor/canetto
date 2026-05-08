@@ -95,7 +95,7 @@ try {
 
     $metodos_pago = $pdo->query("SELECT idmetodo_pago, nombre FROM metodo_pago ORDER BY nombre")->fetchAll();
 
-    // Toppings por producto
+    // Toppings globales (no se asignan por producto)
     try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS toppings (
             idtoppings INT AUTO_INCREMENT PRIMARY KEY,
@@ -104,25 +104,25 @@ try {
             activo TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME DEFAULT NOW()
         )");
-        $pdo->exec("CREATE TABLE IF NOT EXISTS producto_toppings (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            productos_idproductos INT NOT NULL,
-            toppings_idtoppings INT NOT NULL,
-            UNIQUE KEY uq_pt (productos_idproductos, toppings_idtoppings)
-        )");
-        $toppingsRaw = $pdo->query("
-            SELECT pt.productos_idproductos, t.idtoppings, t.nombre, t.precio
-            FROM producto_toppings pt
-            JOIN toppings t ON t.idtoppings = pt.toppings_idtoppings AND t.activo = 1
+        $allToppings = $pdo->query("
+            SELECT t.idtoppings, t.nombre, t.precio,
+                   COALESCE(ts.stock_actual, -1) AS stock
+            FROM toppings t
+            LEFT JOIN toppings_stock ts ON ts.toppings_idtoppings = t.idtoppings
+            WHERE t.activo = 1
             ORDER BY t.nombre
         ")->fetchAll(PDO::FETCH_ASSOC);
+        $allToppings = array_map(fn($r) => [
+            'id'     => (int)$r['idtoppings'],
+            'nombre' => $r['nombre'],
+            'precio' => (float)$r['precio'],
+        ], $allToppings);
+        // Compatibilidad: todos los productos reciben los mismos toppings
         $toppingsByProducto = [];
-        foreach ($toppingsRaw as $row) {
-            $toppingsByProducto[$row['productos_idproductos']][] = [
-                'id'     => (int)$row['idtoppings'],
-                'nombre' => $row['nombre'],
-                'precio' => (float)$row['precio'],
-            ];
+        foreach (($productos ?? []) as $prod) {
+            if (!empty($allToppings)) {
+                $toppingsByProducto[$prod['idproductos']] = $allToppings;
+            }
         }
     } catch (Throwable $e) { $toppingsByProducto = []; }
 
@@ -230,6 +230,11 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 .tp-sel-row:has(input:checked) .tp-sel-chkmark{
   background:#c88e99;border-color:#c88e99;color:#fff;
 }
+.tp-sel-sin-stock{
+  opacity:.45;cursor:not-allowed;pointer-events:none;
+  border-color:#eee !important;background:#fafafa !important;
+}
+.tp-sel-sin-stock .tp-sel-ic{background:#f1f1f1;color:#ccc}
 /* Cart toppings tags */
 .cart-toppings{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px}
 .cart-topping-tag{
@@ -351,18 +356,12 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
               <?= $pStock <= 0 ? 'Sin stock' : 'Ver contenido' ?>
             </button>
           <?php else: ?>
-            <button class="btn-add-cart slide-cart-btn"
-              <?= $pStock <= 0 ? 'disabled' : '' ?>
-              data-id="<?= $pid ?>"
-              data-nombre="<?= $pNombre ?>"
-              data-precio="<?= $pPrecioFinal ?>"
-              data-precio-original="<?= $pPrecio ?>"
-              data-descuento="<?= $esDescuento ? $ofValor : 0 ?>"
-              data-tipo="<?= $pTipo ?>"
-              data-stock="<?= (int)$pStock ?>"
-              onclick="addToCart(this)">
-              <?= $pStock <= 0 ? 'Sin stock' : '+ Agregar al carrito' ?>
-            </button>
+            <a class="slide-cart-btn btn-ver-producto"
+              href="producto.php?id=<?= $pid ?>"
+              style="display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">
+              <i class="fa-solid fa-eye" style="font-size:13px"></i>
+              <?= $pStock <= 0 ? 'Sin stock' : 'Ver producto' ?>
+            </a>
           <?php endif; ?>
         <?php endif; ?>
       </div>
@@ -878,7 +877,10 @@ HTML;
 
           <!-- Input manual (oculto por defecto si hay dirs guardadas) -->
           <div id="nuevaDirSection" class="nueva-dir-section" style="display:none">
-            <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA">
+            <div class="dir-ac-wrap">
+              <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA" autocomplete="off">
+              <div id="ckDirSuggestions" class="dir-suggestions" style="display:none"></div>
+            </div>
             <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
               📍 Usar mi ubicación actual
             </button>
@@ -1032,13 +1034,13 @@ HTML;
 
 <script>
 // ── PHP DATA ────────────────────────────
-const TOPPINGS_BY_PRODUCTO = <?= json_encode($toppingsByProducto ?? [], JSON_UNESCAPED_UNICODE) ?>;
-const PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
-const URL_ASSETS_JS = '<?= URL_ASSETS ?>';
-const SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
-const CLIENTE_PHP = <?= json_encode($cliente_id ? ['id'=>$cliente_id,'nombre'=>$cliente_nombre] : null) ?>;
-const BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
-const DIRS_GUARDADAS = <?= json_encode($direcciones_guardadas, JSON_UNESCAPED_UNICODE) ?>;
+window.TOPPINGS_BY_PRODUCTO = <?= json_encode($toppingsByProducto ?? [], JSON_UNESCAPED_UNICODE) ?>;
+window.PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
+window.URL_ASSETS_JS = '<?= URL_ASSETS ?>';
+window.SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
+window.CLIENTE_PHP = <?= json_encode($cliente_id ? ['id'=>$cliente_id,'nombre'=>$cliente_nombre] : null) ?>;
+window.BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
+window.DIRS_GUARDADAS = <?= json_encode($direcciones_guardadas, JSON_UNESCAPED_UNICODE) ?>;
 
 // ── SWIPER ──────────────────────────────
 (function(){
@@ -1551,9 +1553,6 @@ function renderDirsGuardadas(){
       <div class="dir-card-check">
         ${_dirSeleccionada==d.id?'<i class="fa-solid fa-check" style="font-size:11px"></i>':''}
       </div>
-      <button type="button" class="dir-card-del" onclick="event.stopPropagation();borrarDir(${d.id})" title="Eliminar">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
     </button>`).join('');
 
   // Card "Agregar nueva dirección"
@@ -1596,22 +1595,62 @@ function usarDirGuardada(id){
   const btn = document.getElementById('btnGuardarDir');
   if(btn) btn.style.display = 'none';
 
-  // Calcular envío si tiene coordenadas
+  // Calcular envío
   if(d.lat && d.lng){
     actualizarCostoEnvio(parseFloat(d.lat), parseFloat(d.lng));
-    // Mostrar mapa chico como confirmación visual
     _initMapa(parseFloat(d.lat), parseFloat(d.lng));
   } else {
-    // Sin coords: limpiar estimación y ocultar mapa
-    _costoEnvio = 0;
-    const wrap = document.getElementById('ckMapaWrap');
-    if(wrap) wrap.style.display = 'none';
-    const est = document.getElementById('envioEstimate');
-    if(est) est.style.display = 'none';
-    buildSummary();
+    // Sin coords guardadas: geocodificar con Nominatim y luego calcular
+    geocodificarYCalcular(d.direccion, d.id);
   }
 
   renderDirsGuardadas();
+}
+
+async function geocodificarYCalcular(direccion, dirId){
+  const el = document.getElementById('envioEstimate');
+  const tx = document.getElementById('envioEstimateTxt');
+  const pr = document.getElementById('envioEstimatePrice');
+  if(el) el.style.display = '';
+  if(tx) tx.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando dirección...';
+  if(pr) pr.textContent = '';
+
+  try{
+    // Tomar ciudad de la sucursal activa para mejorar precisión
+    const suc = (window.SUCURSALES||[])[0] || {};
+    const ciudad = suc.ciudad || suc.nombre || 'Posadas, Misiones, Argentina';
+    const q = encodeURIComponent(direccion + ', ' + ciudad);
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+      headers: {'Accept-Language':'es','User-Agent':'CanettoApp'}
+    });
+    const data = await res.json();
+
+    if(data && data[0]){
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+
+      // Guardar coords en los campos ocultos
+      document.getElementById('ckLat').value = lat;
+      document.getElementById('ckLng').value = lng;
+
+      // Persistir coords en _dirs para no geocodificar de nuevo
+      const dir = _dirs.find(x => x.id == dirId);
+      if(dir){ dir.lat = lat; dir.lng = lng; }
+
+      actualizarCostoEnvio(lat, lng);
+      _initMapa(lat, lng);
+    } else {
+      _costoEnvio = 0;
+      if(tx) tx.textContent = 'No se pudo ubicar — el costo se calculará al confirmar';
+      if(pr) pr.textContent = '';
+      buildSummary();
+    }
+  } catch {
+    _costoEnvio = 0;
+    if(tx) tx.textContent = 'Error al calcular — se calculará al confirmar';
+    if(pr) pr.textContent = '';
+    buildSummary();
+  }
 }
 
 function mostrarNuevaDireccion(){
@@ -1686,46 +1725,192 @@ async function borrarDir(id){
   }catch{}
 }
 
-// Mostrar botón "guardar" cuando el usuario tipea una dirección nueva
-document.addEventListener('DOMContentLoaded',()=>{
-  const inp=document.getElementById('ckDireccion');
-  const btn=document.getElementById('btnGuardarDir');
-  if(inp&&btn) inp.addEventListener('input',()=>{
-    const val=inp.value.trim();
-    const usandoGuardada=_dirs.some(d=>d.direccion===val);
-    btn.style.display=(val&&!usandoGuardada)?'':'none';
+// ── AUTOCOMPLETE DE DIRECCIÓN ────────────────────────────────────────────────
+let _acTimer = null;
+const _acCache = {};
+
+async function _acBuscar(q) {
+  if (q.length < 4) { _acOcultar(); return; }
+  if (_acCache[q]) { _acMostrar(_acCache[q]); return; }
+  try {
+    const suc  = (window.SUCURSALES || [])[0] || {};
+    const lat0 = suc.latitud  ? parseFloat(suc.latitud)  : -27.45;
+    const lng0 = suc.longitud ? parseFloat(suc.longitud) : -55.87;
+    const vb   = `&viewbox=${lng0-0.8},${lat0+0.5},${lng0+0.8},${lat0-0.5}&bounded=0`;
+    const base = `https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&countrycodes=ar${vb}`;
+    const hdrs = {headers:{'Accept-Language':'es','User-Agent':'CanettoApp'}};
+
+    // Detectar si hay número de altura (ej: "Corrientes 1234" o "1234 Corrientes")
+    const numMatch = q.match(/\b(\d{2,5})\b/);
+    let data = [];
+
+    if (numMatch) {
+      // Query estructurada: separar calle y número para mejor precisión
+      const num    = numMatch[1];
+      const street = q.replace(num, '').replace(/,/g,'').trim();
+      const structured = `${base}&street=${encodeURIComponent(num + ' ' + street)}&city=${encodeURIComponent(suc.ciudad||suc.nombre||'Posadas')}`;
+      const r1 = await (await fetch(structured, hdrs)).json();
+      if (r1.length) { data = r1; }
+    }
+
+    // Si la búsqueda estructurada no dio resultados (o no había número), hacer búsqueda libre
+    if (!data.length) {
+      const free = `${base}&q=${encodeURIComponent(q)}`;
+      data = await (await fetch(free, hdrs)).json();
+    }
+
+    _acCache[q] = data;
+    _acMostrar(data);
+  } catch { _acOcultar(); }
+}
+
+function _acMostrar(results) {
+  const box = document.getElementById('ckDirSuggestions');
+  if (!box || !results.length) { _acOcultar(); return; }
+
+  // Deduplicar por display_name
+  const seen = new Set();
+  const uniq  = results.filter(r => { if(seen.has(r.display_name)) return false; seen.add(r.display_name); return true; });
+
+  box.innerHTML = uniq.map(r => {
+    const a      = r.address || {};
+    // Armar dirección con altura si existe
+    const road   = a.road || a.pedestrian || a.path || r.display_name.split(',')[0];
+    const num    = a.house_number || '';
+    const calle  = num ? `${road} ${num}` : road;
+    const barrio = a.suburb || a.neighbourhood || '';
+    const ciudad = a.city || a.town || a.village || '';
+    const sub    = [barrio, ciudad, a.state].filter(Boolean).join(', ');
+    const lat = r.lat, lng = r.lon;
+    const fullLabel = (calle + (sub ? ', ' + sub : '')).replace(/'/g, "\\'");
+    const shortLabel = calle.replace(/'/g, "\\'");
+    return `<div class="dir-sug-item" onclick="_acSeleccionar(${lat},${lng},'${fullLabel}','${shortLabel}')">
+      <div class="dir-sug-ico"><i class="fa-solid fa-location-dot"></i></div>
+      <div>
+        <div class="dir-sug-main">${calle}</div>
+        ${sub ? `<div class="dir-sug-sec">${sub}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  box.style.display = '';
+}
+
+function _acOcultar() {
+  const box = document.getElementById('ckDirSuggestions');
+  if (box) box.style.display = 'none';
+}
+
+function _acSeleccionar(lat, lng, fullLabel, shortLabel) {
+  const inp = document.getElementById('ckDireccion');
+  const btn = document.getElementById('btnGuardarDir');
+  if (inp) inp.value = fullLabel;
+  document.getElementById('ckLat').value = lat;
+  document.getElementById('ckLng').value = lng;
+  _acOcultar();
+  actualizarCostoEnvio(parseFloat(lat), parseFloat(lng));
+  _initMapa(parseFloat(lat), parseFloat(lng));
+  if (btn) btn.style.display = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('ckDireccion');
+  const btn = document.getElementById('btnGuardarDir');
+  if (!inp) return;
+
+  inp.addEventListener('input', () => {
+    const val = inp.value.trim();
+    // Mostrar botón guardar
+    if (btn) {
+      const usandoGuardada = _dirs.some(d => d.direccion === val);
+      btn.style.display = (val && !usandoGuardada) ? '' : 'none';
+    }
+    // Limpiar coords si el usuario edita manualmente
+    document.getElementById('ckLat').value = '';
+    document.getElementById('ckLng').value = '';
+    // Autocomplete con debounce
+    clearTimeout(_acTimer);
+    _acTimer = setTimeout(() => _acBuscar(val), 350);
   });
+
+  // Cerrar dropdown al hacer click afuera
+  document.addEventListener('click', e => {
+    if (!inp.contains(e.target) && !document.getElementById('ckDirSuggestions')?.contains(e.target)) {
+      _acOcultar();
+    }
+  });
+
+  // Cerrar con Escape
+  inp.addEventListener('keydown', e => { if (e.key === 'Escape') _acOcultar(); });
 });
 
 // ── MAPA LEAFLET (instancia única) ──────────────────────────────────────────
 let _ckMap=null, _ckMarker=null;
 
+function _mkPinIcon(){
+  return L.divIcon({
+    html:`<div style="
+      width:28px;height:36px;position:relative;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))">
+      <div style="
+        width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+        background:#c88e99;border:3px solid #fff;position:absolute;top:0;left:0"></div>
+      <div style="
+        width:10px;height:10px;background:#fff;border-radius:50%;
+        position:absolute;top:9px;left:9px"></div>
+    </div>`,
+    iconSize:[28,36], iconAnchor:[14,36], className:''
+  });
+}
+
+async function _moverPin(lat,lng){
+  document.getElementById('ckLat').value=lat;
+  document.getElementById('ckLng').value=lng;
+  // Reverse geocode → actualizar input
+  const inp=document.getElementById('ckDireccion');
+  if(inp) inp.value='Buscando dirección...';
+  const dir=await _geocodeInverso(lat,lng);
+  if(inp) inp.value=dir||'';
+  const btn=document.getElementById('btnGuardarDir');
+  if(btn&&dir) btn.style.display='';
+  actualizarCostoEnvio(lat,lng);
+}
+
 function _initMapa(lat,lng){
   const wrap=document.getElementById('ckMapaWrap');
   wrap.style.display='block';
+
+  // Hint debajo del mapa
+  let hint=document.getElementById('ckMapaHint');
+  if(!hint){
+    hint=document.createElement('div');
+    hint.id='ckMapaHint';
+    hint.style.cssText='font-size:11px;color:#94a3b8;text-align:center;margin-top:5px;display:flex;align-items:center;justify-content:center;gap:4px';
+    hint.innerHTML='<i class="fa-solid fa-hand-pointer"></i> Tocá el mapa o arrastrá el pin para ajustar la ubicación';
+    wrap.appendChild(hint);
+  }
+
   if(!_ckMap){
     _ckMap=L.map('ckMapa',{zoomControl:true,attributionControl:false}).setView([lat,lng],16);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(_ckMap);
-    // Pin personalizado rosado
-    const icon=L.divIcon({
-      html:'<div style="background:#c88e99;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>',
-      iconSize:[16,16],iconAnchor:[8,8],className:''
-    });
-    _ckMarker=L.marker([lat,lng],{icon,draggable:true}).addTo(_ckMap);
-    // Al mover el pin a mano → actualizar coords y dirección
+
+    _ckMarker=L.marker([lat,lng],{icon:_mkPinIcon(),draggable:true}).addTo(_ckMap);
+
+    // Arrastrar el pin
     _ckMarker.on('dragend',async function(){
       const p=this.getLatLng();
-      document.getElementById('ckLat').value=p.lat;
-      document.getElementById('ckLng').value=p.lng;
-      const dir=await _geocodeInverso(p.lat,p.lng);
-      if(dir) document.getElementById('ckDireccion').value=dir;
-      actualizarCostoEnvio(p.lat,p.lng);
+      await _moverPin(p.lat,p.lng);
     });
+
+    // Click en el mapa → mover pin
+    _ckMap.on('click',async function(e){
+      _ckMarker.setLatLng(e.latlng);
+      await _moverPin(e.latlng.lat,e.latlng.lng);
+    });
+
   } else {
     _ckMap.setView([lat,lng],16);
     _ckMarker.setLatLng([lat,lng]);
+    _ckMarker.setIcon(_mkPinIcon());
   }
-  // Forzar redibujado (el modal puede ocultar el mapa al inicio)
   setTimeout(()=>_ckMap.invalidateSize(),150);
 }
 
@@ -2212,18 +2397,21 @@ function abrirSelectorToppings(idProducto, nombre, precioBase, stock, qty, callb
   document.getElementById('tpSelTitulo').textContent = nombre;
   document.getElementById('tpSelAlert').style.display = 'none';
 
-  document.getElementById('tpSelLista').innerHTML = _tpToppingsDisp.map(t => `
-    <label class="tp-sel-row">
+  document.getElementById('tpSelLista').innerHTML = _tpToppingsDisp.map(t => {
+    const sinStock = t.stock !== undefined && t.stock >= 0 && t.stock <= 0;
+    return `
+    <label class="tp-sel-row${sinStock ? ' tp-sel-sin-stock' : ''}">
       <input type="checkbox" class="tp-sel-chk" value="${t.id}"
              data-precio="${t.precio}" data-nombre="${t.nombre.replace(/"/g,'&quot;')}"
-             onchange="recalcTpTotal()">
+             onchange="recalcTpTotal()" ${sinStock ? 'disabled' : ''}>
       <div class="tp-sel-ic"><i class="fa-solid fa-candy-cane"></i></div>
       <div class="tp-sel-info">
         <div class="tp-sel-name">${t.nombre}</div>
-        <div class="tp-sel-price">+ $${Number(t.precio).toLocaleString('es-AR')}</div>
+        <div class="tp-sel-price">${sinStock ? '<span style="color:#e74c3c;font-size:11px">Sin stock</span>' : '+ $' + Number(t.precio).toLocaleString('es-AR')}</div>
       </div>
       <div class="tp-sel-chkmark"><i class="fa-solid fa-check"></i></div>
-    </label>`).join('');
+    </label>`;
+  }).join('');
 
   recalcTpTotal();
   document.getElementById('toppingsModal').classList.add('on');

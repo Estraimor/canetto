@@ -20,6 +20,103 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="repartidor.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+/* ══ UBER-STYLE MAP MODE ══════════════════════════════════ */
+
+/* Pantalla de mapa fullscreen */
+#uberMapScreen{
+  position:fixed;inset:0;z-index:500;display:none;flex-direction:column;
+  background:#1a1a2e;
+}
+#uberMapScreen.active{display:flex}
+
+/* Mapa ocupa todo el fondo */
+#uberMapFull{
+  position:absolute;inset:0;width:100%;height:100%;
+}
+
+/* Botón volver */
+.uber-back{
+  position:absolute;top:16px;left:16px;z-index:600;
+  width:40px;height:40px;border-radius:50%;background:rgba(15,23,42,.85);
+  border:none;color:#fff;font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.4);
+}
+
+/* Badge estado arriba al centro */
+.uber-status-badge{
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:600;
+  background:rgba(15,23,42,.85);color:#fff;padding:6px 16px;border-radius:20px;
+  font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  backdrop-filter:blur(8px);white-space:nowrap;
+}
+.uber-status-badge.pickup{color:#f59e0b}
+.uber-status-badge.delivery{color:#10b981}
+
+/* Card inferior estilo Uber */
+.uber-card{
+  position:absolute;bottom:0;left:0;right:0;z-index:600;
+  background:#0f172a;border-radius:24px 24px 0 0;
+  padding:16px 20px 32px;
+  box-shadow:0 -8px 32px rgba(0,0,0,.5);
+  animation:slideUp .35s cubic-bezier(.32,.72,0,1);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+.uber-card-handle{
+  width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);
+  margin:0 auto 16px;
+}
+
+/* Pedido activo en la card */
+.uber-order-num{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#c88e99;margin-bottom:6px}
+.uber-order-name{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.uber-order-addr{font-size:13px;color:rgba(255,255,255,.65);display:flex;align-items:flex-start;gap:6px;margin-bottom:12px}
+.uber-order-addr i{color:#f43f5e;margin-top:2px;flex-shrink:0}
+.uber-order-prods{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px;display:flex;align-items:flex-start;gap:6px}
+.uber-order-prods i{color:rgba(255,255,255,.4);margin-top:2px;flex-shrink:0}
+
+/* Puntos A→B visuales */
+.uber-route-info{
+  display:flex;gap:10px;margin-bottom:14px;
+}
+.uber-route-point{
+  flex:1;background:rgba(255,255,255,.07);border-radius:12px;padding:10px 12px;
+}
+.uber-route-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:3px}
+.uber-route-label.pickup-lbl{color:#f59e0b}
+.uber-route-label.delivery-lbl{color:#10b981}
+.uber-route-val{font-size:12px;color:#fff;font-weight:600;line-height:1.3}
+
+/* Botones acción */
+.uber-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.uber-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 6px;border-radius:14px;border:none;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:700;transition:.15s;
+}
+.uber-btn i{font-size:18px}
+.uber-btn-tel{background:rgba(99,102,241,.2);color:#818cf8}
+.uber-btn-nav{background:rgba(16,185,129,.2);color:#34d399}
+.uber-btn-ok{background:#10b981;color:#fff;font-size:13px;grid-column:span 3;
+  flex-direction:row;justify-content:center;gap:8px;padding:13px}
+.uber-btn-ok:active{background:#059669}
+
+/* Badge cobro efectivo */
+.uber-cobro{
+  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);
+  border-radius:10px;padding:10px 12px;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;font-size:13px;color:#fbbf24;
+}
+.uber-cobro i{flex-shrink:0}
+.uber-cobro strong{color:#fff}
+
+/* Sin pedidos → mapa normal chico */
+#repMapWrap{display:none}
+#repMap{height:180px;border-radius:16px;overflow:hidden}
+</style>
 <?php if ($googleClientId): ?>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <?php endif; ?>
@@ -31,13 +128,13 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 .btn-google-rep img{width:18px;height:18px}
 
 /* ── Banner Pendiente de Cobro ── */
-.pedido-cobro-banner{display:flex;align-items:flex-start;gap:10px;background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.35);border-radius:10px;padding:12px 14px;margin-bottom:12px}
-.pedido-cobro-banner>i{color:#f59e0b;font-size:16px;margin-top:2px;flex-shrink:0}
+.pedido-cobro-banner{display:flex;align-items:flex-start;gap:10px;background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.pedido-cobro-banner>i{color:#b45309;font-size:16px;margin-top:2px;flex-shrink:0}
 .pedido-cobro-body{flex:1}
-.pedido-cobro-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f59e0b;margin-bottom:6px}
+.pedido-cobro-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#92400e;margin-bottom:6px}
 .pedido-cobro-rows{display:flex;flex-direction:column;gap:3px}
-.pedido-cobro-row{display:flex;justify-content:space-between;font-size:13px;color:rgba(255,255,255,.8)}
-.cobro-total-row{font-weight:700;color:#fff;border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:4px;font-size:14px}
+.pedido-cobro-row{display:flex;justify-content:space-between;font-size:13px;color:#78350f}
+.cobro-total-row{font-weight:800;color:#1c1917;border-top:1.5px solid #d97706;margin-top:6px;padding-top:6px;font-size:15px}
 </style>
 </head>
 <body>
@@ -103,6 +200,56 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 </div>
 
 <!-- ══════════════════════════════════════
+     MAPA UBER FULLSCREEN
+══════════════════════════════════════ -->
+<div id="uberMapScreen">
+  <div id="uberMapFull"></div>
+
+  <button class="uber-back" onclick="cerrarUberMap()">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="uber-status-badge delivery" id="uberStatusBadge">En camino</div>
+
+  <div class="uber-card" id="uberCard">
+    <div class="uber-card-handle"></div>
+
+    <div class="uber-order-num" id="uberOrderNum">#—</div>
+    <div class="uber-order-name" id="uberOrderName">—</div>
+
+    <!-- Banner cobro efectivo -->
+    <div class="uber-cobro" id="uberCobro" style="display:none">
+      <i class="fa-solid fa-coins"></i>
+      <div>Cobrar en efectivo: <strong id="uberCobroTotal">—</strong></div>
+    </div>
+
+    <div class="uber-route-info">
+      <div class="uber-route-point">
+        <div class="uber-route-label pickup-lbl"><i class="fa-solid fa-store"></i> Retiro</div>
+        <div class="uber-route-val" id="uberPickup">Canetto</div>
+      </div>
+      <div class="uber-route-point">
+        <div class="uber-route-label delivery-lbl"><i class="fa-solid fa-location-dot"></i> Entrega</div>
+        <div class="uber-route-val" id="uberDelivery">—</div>
+      </div>
+    </div>
+
+    <div class="uber-order-prods"><i class="fa-solid fa-box"></i><span id="uberProds">—</span></div>
+
+    <div class="uber-actions">
+      <button class="uber-btn uber-btn-tel" id="uberBtnTel" onclick="uberLlamar()">
+        <i class="fa-solid fa-phone"></i>Llamar
+      </button>
+      <button class="uber-btn uber-btn-nav" onclick="uberNavegar()">
+        <i class="fa-solid fa-diamond-turn-right"></i>Navegar
+      </button>
+      <button class="uber-btn uber-btn-ok" id="uberBtnOk" onclick="uberEntregar()">
+        <i class="fa-solid fa-circle-check"></i> Marcar entregado
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      DASHBOARD
 ══════════════════════════════════════ -->
 <div id="appDash" class="app-screen <?= $repId ? '' : 'hidden' ?>">
@@ -139,6 +286,15 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 
   <!-- Tab Pedidos -->
   <div id="tabPedidos" class="tab-content active">
+
+    <!-- Mapa de entregas -->
+    <div id="repMapWrap">
+      <div id="repMap"></div>
+      <button class="map-ruta-btn" onclick="verRutaOptima()">
+        <i class="fa-solid fa-route"></i> Ver ruta óptima en Maps
+      </button>
+    </div>
+
     <div id="pedidosList" class="pedidos-list"></div>
     <button class="btn-refresh" onclick="cargarPedidos()">
       <i class="fa-solid fa-arrows-rotate"></i> Actualizar
@@ -340,9 +496,9 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
         <a class="btn-action btn-tel" href="#">
           <i class="fa-solid fa-phone"></i><span>Llamar</span>
         </a>
-        <a class="btn-action btn-map" href="#" target="_blank">
-          <i class="fa-solid fa-map-location-dot"></i><span>Mapa</span>
-        </a>
+        <button class="btn-action btn-uber-map">
+          <i class="fa-solid fa-map-location-dot"></i><span>Ver mapa</span>
+        </button>
         <button class="btn-action btn-entregar">
           <i class="fa-solid fa-circle-check"></i><span>Entregado</span>
         </button>
@@ -556,8 +712,11 @@ async function cargarPedidos() {
         <h3>¡Todo al día!</h3>
         <p>No tenés pedidos pendientes</p>
       </div>`;
+      actualizarMapa([]);
       return;
     }
+
+    actualizarMapa(data.pedidos);
 
     const tpl = document.getElementById('tplPedido');
     list.innerHTML = '';
@@ -597,15 +756,13 @@ async function cargarPedidos() {
         btnTel.addEventListener('click', e => e.preventDefault());
       }
 
-      const btnMap = clone.querySelector('.btn-map');
-      if (p.lat_entrega && p.lng_entrega) {
-        btnMap.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat_entrega},${p.lng_entrega}`;
-      } else if (p.direccion_entrega) {
-        btnMap.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.direccion_entrega)}`;
+      // Botón mapa Uber
+      const btnUberMap = clone.querySelector('.btn-uber-map');
+      if (p.lat_entrega && p.lng_entrega || p.direccion_entrega) {
+        btnUberMap.addEventListener('click', () => abrirUberMap(p));
       } else {
-        btnMap.classList.add('disabled');
-        btnMap.href = '#';
-        btnMap.addEventListener('click', e => e.preventDefault());
+        btnUberMap.classList.add('disabled');
+        btnUberMap.addEventListener('click', e => e.preventDefault());
       }
 
       clone.querySelector('.btn-entregar').addEventListener('click', function() {
@@ -1003,6 +1160,223 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
   document.getElementById('dashAvatar').textContent = initials(n);
   cargarPedidos();
   startAutoRefresh();
+}
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ════════════════════════════════════════
+   MAPA UBER — FULLSCREEN
+   Coordenadas de la tienda Canetto
+════════════════════════════════════════ */
+const CANETTO_LAT = -34.6037;   // <-- ajustar con la dirección real
+const CANETTO_LNG = -58.3816;
+const CANETTO_NOMBRE = 'Canetto Cookies';
+
+let _uberMap      = null;
+let _uberMarkers  = [];
+let _uberRoute    = null;
+let _uberDriver   = null;
+let _uberPedido   = null;
+let _uberWatcher  = null;
+
+function actualizarMapa(pedidos) {
+  // Se llama desde cargarPedidos — no hace nada visible aquí en modo Uber
+}
+
+function iconDiv(html, size = 44) {
+  return L.divIcon({ className: '', html, iconSize: [size, size], iconAnchor: [size/2, size/2], popupAnchor: [0, -size/2] });
+}
+
+function initUberMap() {
+  if (_uberMap) return;
+  _uberMap = L.map('uberMapFull', {
+    zoomControl:       false,
+    attributionControl: false,
+  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+  }).addTo(_uberMap);
+  L.control.zoom({ position: 'bottomright' }).addTo(_uberMap);
+}
+
+async function abrirUberMap(pedido) {
+  _uberPedido = pedido;
+  const screen = document.getElementById('uberMapScreen');
+  screen.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // Poblar card
+  document.getElementById('uberOrderNum').textContent  = '#' + pedido.idventas;
+  document.getElementById('uberOrderName').textContent = pedido.cliente_nombre || 'Cliente';
+  document.getElementById('uberDelivery').textContent  = pedido.direccion_entrega || 'Sin dirección';
+  document.getElementById('uberProds').textContent     = pedido.productos || '—';
+  document.getElementById('uberBtnOk').dataset.id      = pedido.idventas;
+
+  // Teléfono
+  const btnTel = document.getElementById('uberBtnTel');
+  if (pedido.cliente_celular) {
+    btnTel.onclick = () => window.location.href = 'tel:' + pedido.cliente_celular.replace(/\D/g, '');
+  } else {
+    btnTel.onclick = null; btnTel.style.opacity = '.4';
+  }
+
+  // Banner cobro efectivo
+  const cobro = document.getElementById('uberCobro');
+  const metodoNombre = (pedido.metodo_pago || '').toLowerCase();
+  if (metodoNombre.includes('efectivo') && pedido.tipo_entrega === 'envio') {
+    cobro.style.display = 'flex';
+    document.getElementById('uberCobroTotal').textContent = '$' + parseFloat(pedido.total || 0).toLocaleString('es-AR');
+  } else {
+    cobro.style.display = 'none';
+  }
+
+  // Init mapa
+  initUberMap();
+  setTimeout(() => { _uberMap.invalidateSize(); dibujarRuta(pedido); }, 200);
+
+  // Seguir posición del repartidor
+  iniciarGeolocalizacion();
+}
+
+function cerrarUberMap() {
+  document.getElementById('uberMapScreen').classList.remove('active');
+  document.body.style.overflow = '';
+  if (_uberWatcher !== null) {
+    navigator.geolocation.clearWatch(_uberWatcher);
+    _uberWatcher = null;
+  }
+}
+
+function uberLlamar() {
+  if (_uberPedido?.cliente_celular)
+    window.location.href = 'tel:' + _uberPedido.cliente_celular.replace(/\D/g, '');
+}
+
+function uberNavegar() {
+  if (!_uberPedido) return;
+  const p = _uberPedido;
+  if (p.lat_entrega && p.lng_entrega) {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.lat_entrega},${p.lng_entrega}&travelmode=driving`, '_blank');
+  } else if (p.direccion_entrega) {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.direccion_entrega)}&travelmode=driving`, '_blank');
+  }
+}
+
+async function uberEntregar() {
+  const btn = document.getElementById('uberBtnOk');
+  const id  = parseInt(btn.dataset.id);
+  btn.disabled  = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+  try {
+    const res  = await fetch('api/marcar_entregado.php', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id_venta: id }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      cerrarUberMap();
+      mostrarEntregaAnimacion(id, _uberPedido?.cliente_nombre);
+    } else {
+      alert(data.message || 'No se pudo marcar como entregado');
+      btn.disabled  = false;
+      btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Marcar entregado';
+    }
+  } catch(e) {
+    alert('Error de conexión');
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Marcar entregado';
+  }
+}
+
+async function dibujarRuta(pedido) {
+  // Limpiar mapa
+  _uberMarkers.forEach(m => _uberMap.removeLayer(m));
+  _uberMarkers = [];
+  if (_uberRoute) { _uberMap.removeLayer(_uberRoute); _uberRoute = null; }
+
+  const tiendaLat = CANETTO_LAT;
+  const tiendaLng = CANETTO_LNG;
+
+  // Determinar coordenadas destino
+  let destLat = parseFloat(pedido.lat_entrega || 0);
+  let destLng = parseFloat(pedido.lng_entrega || 0);
+
+  // Marcador tienda (punto A)
+  const iconTienda = iconDiv(`
+    <div style="background:#f59e0b;width:44px;height:44px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">🏪</div>`, 44);
+  const mTienda = L.marker([tiendaLat, tiendaLng], { icon: iconTienda })
+    .bindPopup(`<strong>${CANETTO_NOMBRE}</strong><br><small>Punto de retiro</small>`)
+    .addTo(_uberMap);
+  _uberMarkers.push(mTienda);
+
+  const bounds = [[tiendaLat, tiendaLng]];
+
+  if (destLat && destLng) {
+    // Marcador destino (punto B)
+    const iconDest = iconDiv(`
+      <div style="background:#f43f5e;width:44px;height:44px;border-radius:50%;
+        display:flex;align-items:center;justify-content:center;
+        border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">📍</div>`, 44);
+    const mDest = L.marker([destLat, destLng], { icon: iconDest })
+      .bindPopup(`<strong>${pedido.cliente_nombre || 'Cliente'}</strong><br><small>${pedido.direccion_entrega || ''}</small>`)
+      .addTo(_uberMap);
+    _uberMarkers.push(mDest);
+    bounds.push([destLat, destLng]);
+
+    // Ruta via OSRM (gratuito)
+    try {
+      const osrm = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${tiendaLng},${tiendaLat};${destLng},${destLat}?overview=full&geometries=geojson`
+      );
+      const rData = await osrm.json();
+      if (rData.routes?.length) {
+        const coords = rData.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        _uberRoute = L.polyline(coords, {
+          color: '#c88e99', weight: 5, opacity: .9,
+          dashArray: null, lineCap: 'round', lineJoin: 'round',
+        }).addTo(_uberMap);
+        // Línea animada de progreso (decorativa)
+        L.polyline(coords, {
+          color: '#fff', weight: 2, opacity: .4, dashArray: '6 10',
+        }).addTo(_uberMap);
+        bounds.push(...coords.slice(0, -1).slice(1, -1).filter((_, i) => i % 5 === 0));
+      }
+    } catch(e) {
+      // Sin ruta OSRM — línea recta
+      _uberRoute = L.polyline([[tiendaLat, tiendaLng], [destLat, destLng]], {
+        color: '#c88e99', weight: 4, opacity: .8, dashArray: '8 10',
+      }).addTo(_uberMap);
+    }
+
+    _uberMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+  } else {
+    // Sin coordenadas — centrar en tienda
+    _uberMap.setView([tiendaLat, tiendaLng], 14);
+  }
+}
+
+function iniciarGeolocalizacion() {
+  if (!navigator.geolocation) return;
+
+  const updateDriver = pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const iconDriver = iconDiv(`
+      <div style="background:#0f172a;width:44px;height:44px;border-radius:50%;
+        border:3px solid #c88e99;display:flex;align-items:center;justify-content:center;
+        font-size:20px;box-shadow:0 3px 12px rgba(0,0,0,.5)">🏍</div>`, 44);
+    if (_uberDriver) _uberMap.removeLayer(_uberDriver);
+    _uberDriver = L.marker([lat, lng], { icon: iconDriver, zIndexOffset: 1000 })
+      .bindPopup('<strong>Tu posición</strong>')
+      .addTo(_uberMap);
+  };
+
+  _uberWatcher = navigator.geolocation.watchPosition(updateDriver, () => {}, {
+    enableHighAccuracy: true, maximumAge: 10000, timeout: 15000,
+  });
 }
 </script>
 </body>

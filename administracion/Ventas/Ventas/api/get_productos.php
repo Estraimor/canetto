@@ -15,7 +15,7 @@ try {
                 COALESCE(SUM(CASE WHEN UPPER(sp.tipo_stock) = 'CONGELADO' THEN sp.stock_actual ELSE 0 END), 0) AS stock_congelado,
                 COALESCE(SUM(CASE WHEN UPPER(sp.tipo_stock) = 'HECHO'     THEN sp.stock_actual ELSE 0 END), 0) AS stock_hecho,
                 COALESCE(SUM(sp.stock_actual), 0) AS stock,
-                (SELECT COUNT(*) FROM producto_toppings pt WHERE pt.productos_idproductos = p.idproductos) AS tiene_toppings
+                (SELECT COUNT(*) FROM toppings WHERE activo = 1) AS tiene_toppings
             FROM productos p
             LEFT JOIN stock_productos sp
                    ON sp.productos_idproductos = p.idproductos

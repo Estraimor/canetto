@@ -88,84 +88,41 @@ $current = $_SERVER['PHP_SELF'];
         <span class="nav-label">Dashboard</span>
     </a>
 
-    <div class="nav-section">Operaciones</div>
-
-    <!-- PRODUCCIÓN -->
-    <div class="menu-group <?= str_contains($current,'produccion') ? 'open' : '' ?>">
-        <span class="menu-title" data-tip="Producción">
-            <i class="fa-solid fa-industry"></i>
-            <span class="menu-label">Producción</span>
-        </span>
-        <div class="submenu">
-            <a href="<?= URL_ADMIN ?>/produccion/plan_produccion.php"
-               class="<?= str_contains($current,'plan_produccion') ? 'active' : '' ?>">
-                <i class="fa-solid fa-calendar-check"></i>
-                Planificación
-            </a>
-
-            <a href="<?= URL_ADMIN ?>/produccion/congelado/index.php"
-               class="<?= str_contains($current,'administracion/produccion/congelado/index') ? 'active' : '' ?>">
-                <i class="fa-solid fa-snowflake"></i>
-                Masa congelada
-            </a>
-
-            <a href="<?= URL_ADMIN ?>/produccion/horneado/index.php"
-               class="<?= str_contains($current,'administracion/produccion/horneado') ? 'active' : '' ?>">
-                <i class="fa-solid fa-fire"></i>
-                Horneado
-            </a>
-
-
-        </div>
-    </div>
+    <div class="nav-section">Producción</div>
 
     <!-- RECETAS -->
-    <div class="menu-group <?= str_contains($current,'recetas') ? 'open' : '' ?>">
-        <span class="menu-title" data-tip="Recetas">
-            <i class="fa-solid fa-book-open"></i>
-            <span class="menu-label">Recetas</span>
+    <a href="<?= URL_ADMIN ?>/recetas/index.php" data-tip="Recetas"
+       class="<?= str_contains($current,'recetas') ? 'active' : '' ?>">
+        <i class="fa-solid fa-book-open"></i>
+        <span class="nav-label">Recetas</span>
+    </a>
+
+    <!-- PRODUCTOS -->
+    <div class="menu-group <?= str_contains($current,'productos') || str_contains($current,'toppings') ? 'open' : '' ?>">
+        <span class="menu-title" data-tip="Productos">
+            <i class="fa-solid fa-cookie-bite"></i>
+            <span class="menu-label">Productos</span>
         </span>
         <div class="submenu">
-            <a href="<?= URL_ADMIN ?>/recetas/index.php"
-               class="<?= str_contains($current,'administracion/recetas/index') ? 'active' : '' ?>">
+            <a href="<?= URL_ADMIN ?>/productos/index.php"
+               class="<?= str_contains($current,'administracion/productos/index') ? 'active' : '' ?>">
                 <i class="fa-solid fa-list"></i>
                 Listado
             </a>
-
-            
+            <a href="<?= URL_ADMIN ?>/productos/crear_producto.php"
+               class="<?= str_contains($current,'crear_producto') ? 'active' : '' ?>">
+                <i class="fa-solid fa-plus"></i>
+                Crear producto
+            </a>
+            <a href="<?= URL_ADMIN ?>/toppings/index.php"
+               class="<?= str_contains($current,'toppings') ? 'active' : '' ?>">
+                <i class="fa-solid fa-candy-cane"></i>
+                Toppings
+            </a>
         </div>
     </div>
 
-
-    <!-- PRODUCTOS -->
-    <div class="menu-group <?= str_contains($current,'productos') ? 'open' : '' ?>">
-    <span class="menu-title" data-tip="Productos">
-        <i class="fa-solid fa-cookie-bite"></i>
-        <span class="menu-label">Productos</span>
-    </span>
-    <div class="submenu">
-
-        <a href="<?= URL_ADMIN ?>/productos/index.php"
-           class="<?= str_contains($current,'administracion/productos/index') ? 'active' : '' ?>">
-            <i class="fa-solid fa-list"></i>
-            Listado
-        </a>
-
-        <a href="<?= URL_ADMIN ?>/productos/crear_producto.php"
-           class="<?= str_contains($current,'administracion/productos/crear_producto') ? 'active' : '' ?>">
-            <i class="fa-solid fa-plus"></i>
-            Crear producto
-        </a>
-
-        <a href="<?= URL_ADMIN ?>/toppings/index.php"
-           class="<?= str_contains($current,'toppings') ? 'active' : '' ?>">
-            <i class="fa-solid fa-candy-cane"></i>
-            Toppings
-        </a>
-
-    </div>
-</div>
-
+    <div class="nav-section">Inventario</div>
 
     <!-- STOCK -->
     <div class="menu-group <?= str_contains($current,'stock') || str_contains($current,'materias_primas') || str_contains($current,'packaging') ? 'open' : '' ?>">
@@ -175,24 +132,34 @@ $current = $_SERVER['PHP_SELF'];
         </span>
         <div class="submenu">
             <a href="<?= URL_ADMIN ?>/stock/index.php"
-               class="<?= str_contains($current,'administracion/stock') ? 'active' : '' ?>">
+               class="<?= str_contains($current,'stock/index.php') ? 'active' : '' ?>">
                 <i class="fa-solid fa-cookie-bite"></i>
                 Productos
             </a>
-
             <a href="<?= URL_ADMIN ?>/materias_primas/index.php"
                class="<?= str_contains($current,'materias_primas') ? 'active' : '' ?>">
                 <i class="fa-solid fa-seedling"></i>
                 Materias primas
             </a>
-
             <a href="<?= URL_ADMIN ?>/packaging/index.php"
                class="<?= str_contains($current,'packaging') ? 'active' : '' ?>">
                 <i class="fa-solid fa-box-open"></i>
                 Packaging
             </a>
+            <a href="<?= URL_ADMIN ?>/stock/toppings/index.php"
+               class="<?= str_contains($current,'stock/toppings') ? 'active' : '' ?>">
+                <i class="fa-solid fa-candy-cane"></i>
+                Toppings
+            </a>
         </div>
     </div>
+
+    <!-- MERMAS -->
+    <a href="<?= URL_ADMIN ?>/mermas/index.php" data-tip="Mermas"
+       class="<?= str_contains($current,'mermas') ? 'active' : '' ?>">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span class="nav-label">Mermas</span>
+    </a>
 
     <div class="nav-section">Comercial</div>
 
@@ -216,26 +183,24 @@ $current = $_SERVER['PHP_SELF'];
             <a href="<?= URL_ADMIN ?>/Ventas/Ventas/Historial/index.php"
                class="<?= str_contains($current,'Historial') ? 'active' : '' ?>">
                 <i class="fa-solid fa-clock-rotate-left"></i>
-                Historial de ventas
+                Historial
             </a>
         </div>
     </div>
 
-    <!-- COMPRAS -->
-    <div class="menu-group <?= str_contains($current,'compras') ? 'open' : '' ?>">
-        <span class="menu-title" data-tip="Compras">
-            <i class="fa-solid fa-truck"></i>
-            <span class="menu-label">Compras</span>
-        </span>
-        <div class="submenu">
-            <a href="<?= URL_ADMIN ?>/proveedor/index.php"
-               class="<?= str_contains($current,'proveedores') ? 'active' : '' ?>">
-                <i class="fa-solid fa-handshake"></i>
-                Proveedores
-            </a>
+    <!-- ANALÍTICA -->
+    <a href="<?= URL_ADMIN ?>/analitica/index.php" data-tip="Analítica"
+       class="<?= str_contains($current,'analitica') ? 'active' : '' ?>">
+        <i class="fa-solid fa-chart-column"></i>
+        <span class="nav-label">Analítica</span>
+    </a>
 
-        </div>
-    </div>
+    <!-- PROVEEDORES -->
+    <a href="<?= URL_ADMIN ?>/proveedor/index.php" data-tip="Proveedores"
+       class="<?= str_contains($current,'proveedor') ? 'active' : '' ?>">
+        <i class="fa-solid fa-handshake"></i>
+        <span class="nav-label">Proveedores</span>
+    </a>
 
     <div class="nav-section">Sistema</div>
 

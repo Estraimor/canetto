@@ -184,16 +184,16 @@ try {
         $prods->execute([':id' => $p['idventas']]);
         $productos = $prods->fetchAll();
 
-        // Parsear toppings_json
+        // Parsear toppings_json — estructura: [{id, nombre, precio}, ...]
         $toppings = [];
         if ($p['toppings_json']) {
             $tj = json_decode($p['toppings_json'], true);
             if (is_array($tj)) {
                 foreach ($tj as $item) {
-                    if (!empty($item['toppings'])) {
-                        foreach ($item['toppings'] as $t) {
-                            $toppings[] = $t['nombre'] ?? $t;
-                        }
+                    if (is_string($item)) {
+                        $toppings[] = $item;
+                    } elseif (is_array($item) && !empty($item['nombre'])) {
+                        $toppings[] = $item['nombre'];
                     }
                 }
             }

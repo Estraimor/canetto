@@ -223,6 +223,16 @@ include '../panel/dashboard/layaut/nav.php';
     font-style: italic;
 }
 
+/* ── KPI CARDS NO CLICKEABLES ──────────────────────────────────── */
+.kpi-card { cursor: default !important; }
+.kpi-card:hover { transform: none !important; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.06)) !important; }
+.kpi-arrow { display: none; }
+
+/* ── COLORES KPI ────────────────────────────────────────────────── */
+.kpi-blue   { border-top-color: #2563eb; border-left-color: transparent !important; }
+.kpi-purple { border-top-color: #7c3aed; border-left-color: transparent !important; }
+.kpi-ico-purple { background: #f5f3ff; color: #7c3aed; }
+
 /* ── RETIRO/ENVÍO KPI CARDS ────────────────────────────────────── */
 .kpi-card.kpi-retiro { border-left-color: #16a34a; }
 .kpi-card.kpi-envio  { border-left-color: #2563eb; }
@@ -636,32 +646,29 @@ include '../panel/dashboard/layaut/nav.php';
 
   <!-- KPIs -->
   <div class="kpi-grid">
-    <div class="kpi-card" onclick="abrirDetalle('hoy')" title="Ver detalle">
-      <div class="kpi-ico"><i class="fa-regular fa-calendar-day"></i></div>
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-ico kpi-ico-blue"><i class="fa-solid fa-peso-sign"></i></div>
       <div class="kpi-body">
-        <div class="kpi-label">Hoy</div>
-        <div class="kpi-value" id="k-ventas-hoy">—</div>
-        <div class="kpi-sub" id="k-pedidos-hoy">—</div>
-      </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
-    </div>
-    <div class="kpi-card" onclick="abrirDetalle('semana')" title="Ver detalle">
-      <div class="kpi-ico"><i class="fa-regular fa-calendar-week"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-label">Esta semana</div>
-        <div class="kpi-value" id="k-ventas-semana">—</div>
-        <div class="kpi-sub" id="k-pedidos-semana">—</div>
-      </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
-    </div>
-    <div class="kpi-card kpi-highlight" onclick="abrirDetalle('periodo')" title="Ver detalle">
-      <div class="kpi-ico"><i class="fa-regular fa-calendar-range"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-label">Período seleccionado</div>
+        <div class="kpi-label">Ingresos del período</div>
         <div class="kpi-value" id="k-ventas-periodo">—</div>
         <div class="kpi-sub" id="k-pedidos-periodo">—</div>
       </div>
-      <i class="fa-solid fa-chevron-right kpi-arrow"></i>
+    </div>
+    <div class="kpi-card kpi-purple">
+      <div class="kpi-ico kpi-ico-purple"><i class="fa-solid fa-receipt"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Ticket promedio</div>
+        <div class="kpi-value" id="k-ticket-prom">—</div>
+        <div class="kpi-sub">Por pedido entregado</div>
+      </div>
+    </div>
+    <div class="kpi-card" id="kpi-beneficio-card">
+      <div class="kpi-ico" id="k-benef-ico"><i class="fa-solid fa-scale-balanced"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Beneficio estimado</div>
+        <div class="kpi-value" id="k-beneficio">—</div>
+        <div class="kpi-sub">Ingresos − Costos</div>
+      </div>
     </div>
     <div class="kpi-card kpi-retiro">
       <div class="kpi-ico kpi-ico-green"><i class="fa-solid fa-store"></i></div>
@@ -755,13 +762,6 @@ include '../panel/dashboard/layaut/nav.php';
     <div class="ana-section-header">
       <h2>Concentración de pedidos por día y hora</h2>
       <span class="chart-note">Pedidos entregados del período</span>
-    </div>
-    <div class="sf-wrap" id="sf-heatmap" style="display:none">
-      <div class="sf-bar">
-        <span class="sf-lbl">Sub-período:</span>
-        <div class="sf-pills" id="sfp-heatmap"></div>
-        <button class="sf-reset" id="sfr-heatmap" onclick="resetSubfiltro('heatmap')" style="display:none">← Todo el período</button>
-      </div>
     </div>
     <div class="hm-wrap" id="hmWrap"><div class="ana-loading">Cargando...</div></div>
   </div>
@@ -984,9 +984,25 @@ function initChartProd() {
     });
 }
 
+var _DASH_BAJAR_DUR = 320;
+
+function countDown(el, from, isAmount) {
+    if (!el || from <= 0) { if (el) el.textContent = isAmount ? '$0' : '0'; return; }
+    var dur = _DASH_BAJAR_DUR, start = Date.now();
+    (function tick() {
+        var pct  = Math.min((Date.now() - start) / dur, 1);
+        var ease = pct * pct; // easeInQuad
+        var cur  = from * (1 - ease);
+        el.textContent = isAmount ? '$' + Math.round(cur).toLocaleString('es-AR') : Math.round(cur).toString();
+        if (pct < 1) requestAnimationFrame(tick);
+        else el.textContent = isAmount ? '$0' : '0';
+    })();
+}
+
 // ── ANALÍTICA ─────────────────────────────────────────────────────────
 var chartIngresos=null, chartResumen=null, chartPago=null;
 var _modo='mes_actual', _lastData=null;
+var _kpiDash = { hoy:0, semana:0, periodo:0, ticket:0, benef:0 };
 
 function desactivarPills() { document.querySelectorAll('.flt-pill').forEach(function(b){b.classList.remove('active');}); }
 
@@ -1049,6 +1065,11 @@ function limpiarRangoUI() {
 }
 
 async function cargar() {
+    countDown(document.getElementById('k-ventas-periodo'), _kpiDash.periodo, true);
+    countDown(document.getElementById('k-ticket-prom'),    _kpiDash.ticket || 0, true);
+    countDown(document.getElementById('k-beneficio'),      Math.abs(_kpiDash.benef || 0), true);
+    _kpiDash = { hoy:0, semana:0, periodo:0, ticket:0, benef:0 };
+
     var tbProd = document.getElementById('tb-productos');
     if (tbProd) tbProd.innerHTML='<tr><td colspan="4" class="ana-loading">Cargando...</td></tr>';
 
@@ -1078,47 +1099,46 @@ async function cargar() {
 
 // ── KPIs ──────────────────────────────────────────────────────────────
 function renderKPIs(k, c, re) {
-    function animAmt(id, val) {
-        var el=document.getElementById(id);
-        if (el) countUp(el, parseFloat(val||0), true, 0);
-    }
-    function animCnt(id, val, suffix) {
-        var el=document.getElementById(id);
-        if (el) el.textContent = val + (suffix||'');
-    }
+    var peds   = parseInt(k.pedidos_periodo)  || 0;
+    var ing    = parseFloat(k.ventas_periodo) || 0;
+    var costo  = parseFloat(c.costo_periodo)  || 0;
+    var ticket = peds > 0 ? ing / peds : 0;
+    var benef  = ing - costo;
 
-    animAmt('k-ventas-hoy', k.ventas_hoy);
-    animCnt('k-pedidos-hoy', k.pedidos_hoy, ' pedido'+(k.pedidos_hoy!=1?'s':''));
-    animAmt('k-ventas-semana', k.ventas_semana);
-    animCnt('k-pedidos-semana', k.pedidos_semana, ' pedido'+(k.pedidos_semana!=1?'s':''));
-    animAmt('k-ventas-periodo', k.ventas_periodo);
-    animCnt('k-pedidos-periodo', k.pedidos_periodo, ' pedido'+(k.pedidos_periodo!=1?'s':''));
-    var elCosto = document.getElementById('k-costo-periodo');
-    if (elCosto) countUp(elCosto, parseFloat(c.costo_periodo||0), true, 0);
+    countUp(document.getElementById('k-ventas-periodo'), ing,    true, _DASH_BAJAR_DUR);
+    countUp(document.getElementById('k-ticket-prom'),    ticket, true, _DASH_BAJAR_DUR);
 
-    var benef = parseFloat(k.ventas_periodo) - parseFloat(c.costo_periodo);
-    var el   = document.getElementById('k-beneficio');
+    var elB  = document.getElementById('k-beneficio');
     var card = document.getElementById('kpi-beneficio-card');
     var ico  = document.getElementById('k-benef-ico');
-    if (el)   countUp(el, Math.abs(benef), true, 0);
-    if (el && card && ico) {
-        if (benef>=0) {
-            el.style.color='#1a7a4a'; card.style.borderLeftColor='#1a7a4a'; card.style.background='#f0faf4';
-            ico.innerHTML='<i class="fa-solid fa-arrow-trend-up" style="color:#1a7a4a"></i>';
-        } else {
-            el.style.color='#c0392b'; card.style.borderLeftColor='#c0392b'; card.style.background='#fff8f7';
-            ico.innerHTML='<i class="fa-solid fa-arrow-trend-down" style="color:#c0392b"></i>';
+    countUp(elB, Math.abs(benef), true, _DASH_BAJAR_DUR);
+    setTimeout(function() {
+        var d = _DASH_BAJAR_DUR;
+        document.getElementById('k-pedidos-periodo').textContent =
+            peds + ' pedido'+(peds!==1?'s':'') + ' entregado'+(peds!==1?'s':'');
+        if (elB && card && ico) {
+            if (benef>=0) {
+                elB.style.color='#1a7a4a'; card.style.borderTopColor='#1a7a4a'; card.style.background='#f0faf4';
+                ico.innerHTML='<i class="fa-solid fa-arrow-trend-up" style="color:#1a7a4a"></i>';
+            } else {
+                elB.style.color='#c0392b'; card.style.borderTopColor='#c0392b'; card.style.background='#fff8f7';
+                ico.innerHTML='<i class="fa-solid fa-arrow-trend-down" style="color:#c0392b"></i>';
+            }
         }
-    }
+    }, _DASH_BAJAR_DUR);
 
     // Retiro / Envío
     if (re && re.retiro !== undefined) {
         var r=re.retiro, env=re.envio||{cantidad:0,total:0};
-        document.getElementById('k-retiro-cant').textContent = r.cantidad + ' pedido'+(r.cantidad!=1?'s':'');
-        document.getElementById('k-retiro-total').textContent = fmt(r.total);
-        document.getElementById('k-envio-cant').textContent = env.cantidad + ' pedido'+(env.cantidad!=1?'s':'');
-        document.getElementById('k-envio-total').textContent = fmt(env.total);
+        setTimeout(function() {
+            document.getElementById('k-retiro-cant').textContent = r.cantidad + ' pedido'+(r.cantidad!=1?'s':'');
+            document.getElementById('k-retiro-total').textContent = fmt(r.total);
+            document.getElementById('k-envio-cant').textContent = env.cantidad + ' pedido'+(env.cantidad!=1?'s':'');
+            document.getElementById('k-envio-total').textContent = fmt(env.total);
+        }, _DASH_BAJAR_DUR);
     }
+
+    _kpiDash = { hoy: 0, semana: 0, periodo: ing };
 }
 
 // ── GRÁFICO INGRESOS ─────────────────────────────────────────────────
@@ -1266,21 +1286,6 @@ function abrirModal(titulo,html){
 }
 function cerrarModal(){ document.getElementById('anaModal').classList.remove('open'); }
 
-function abrirDetalle(tipo){
-    if (!_lastData) return;
-    var k=_lastData.kpis, c=_lastData.costos;
-    var datos=tipo==='hoy'?{lbl:'Hoy',ventas:k.ventas_hoy,peds:k.pedidos_hoy,costo:c.costo_hoy}
-        :tipo==='semana'?{lbl:'Esta semana',ventas:k.ventas_semana,peds:k.pedidos_semana,costo:c.costo_semana}
-        :{lbl:'Período: '+(_lastData.periodo||''),ventas:k.ventas_periodo,peds:k.pedidos_periodo,costo:c.costo_periodo};
-    var benef=parseFloat(datos.ventas)-parseFloat(datos.costo);
-    abrirModal('Resumen — '+datos.lbl,
-        '<table class="ana-table">'
-        +'<tr><td>Ventas (entregadas)</td><td class="text-right"><strong>'+fmt(datos.ventas)+'</strong></td></tr>'
-        +'<tr><td>Pedidos</td><td class="text-right">'+datos.peds+'</td></tr>'
-        +'<tr><td>Inversión materiales</td><td class="text-right" style="color:#c88e99">'+fmt(datos.costo)+'</td></tr>'
-        +'<tr><td><strong>Beneficio estimado</strong></td><td class="text-right"><strong style="color:'+(benef>=0?'#1a7a4a':'#c0392b')+'">'+fmt(benef)+'</strong></td></tr>'
-        +'</table>');
-}
 
 function abrirDetalleDia(label,monto){
     abrirModal('Ingresos del '+label,
@@ -1338,56 +1343,66 @@ function showToast(msg,type){
 }
 
 // ── SUB-FILTROS POR TARJETA ───────────────────────────────────────────
-var CARDS = ['ingresos','productos','pago','materiales','heatmap'];
+var CARDS = ['ingresos','productos','pago'];
 
 function _dateStr(d) {
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-function generarSubOpciones() {
-    if (!_lastData) return [];
-    var inicio = new Date(_lastData.inicio+'T00:00:00');
-    var fin    = new Date(_lastData.fin+'T00:00:00');
-    var diffDays = Math.round((fin - inicio)/86400000) + 1;
-
-    if (diffDays <= 1) return [];       // día exacto: sin sub-filtro
-
-    if (diffDays <= 14) {               // semana o dos semanas: días individuales
-        var ops=[], cur=new Date(inicio);
-        var DIAS_CRT=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-        while (cur<=fin) {
-            var ds=_dateStr(cur);
-            var d2=String(cur.getDate()).padStart(2,'0'), m2=String(cur.getMonth()+1).padStart(2,'0');
-            ops.push({label: DIAS_CRT[cur.getDay()]+' '+d2+'/'+m2, desde:ds, hasta:ds});
-            cur.setDate(cur.getDate()+1);
-        }
-        return ops;
+function _subDias(inicio, fin) {
+    var ops=[], cur=new Date(inicio);
+    var DN=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    while (cur<=fin) {
+        var ds=_dateStr(cur);
+        ops.push({label: DN[cur.getDay()]+' '+String(cur.getDate()).padStart(2,'0')+'/'+String(cur.getMonth()+1).padStart(2,'0'), desde:ds, hasta:ds});
+        cur.setDate(cur.getDate()+1);
     }
-
-    if (diffDays <= 62) {               // mes o dos meses: semanas
-        var ops=[], cur=new Date(inicio), sem=1;
-        while (cur<=fin) {
-            var semIni=new Date(cur);
-            var semFin=new Date(cur); semFin.setDate(semFin.getDate()+6);
-            if (semFin>fin) semFin=new Date(fin);
-            var f=function(dd){return String(dd.getDate()).padStart(2,'0')+'/'+String(dd.getMonth()+1).padStart(2,'0');};
-            ops.push({label:'Sem '+sem+' ('+f(semIni)+'–'+f(semFin)+')', desde:_dateStr(semIni), hasta:_dateStr(semFin)});
-            cur.setDate(cur.getDate()+7); sem++;
-        }
-        return ops;
+    return ops;
+}
+function _subSemanas(inicio, fin) {
+    var ops=[], cur=new Date(inicio), sem=1;
+    var f=function(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');};
+    while (cur<=fin) {
+        var sI=new Date(cur), sF=new Date(cur); sF.setDate(sF.getDate()+6);
+        if (sF>fin) sF=new Date(fin);
+        ops.push({label:'Sem '+sem+' ('+f(sI)+'–'+f(sF)+')', desde:_dateStr(sI), hasta:_dateStr(sF)});
+        cur.setDate(cur.getDate()+7); sem++;
     }
-
-    // año o rango largo: meses
-    var ops=[], MESES_C=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return ops;
+}
+function _subMeses(inicio, fin) {
+    var ops=[], MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var cur=new Date(inicio.getFullYear(), inicio.getMonth(), 1);
     while (cur<=fin) {
-        var mIni=new Date(cur);
-        var mFin=new Date(cur.getFullYear(), cur.getMonth()+1, 0);
-        if (mFin>fin) mFin=new Date(fin);
-        ops.push({label: MESES_C[cur.getMonth()]+' '+cur.getFullYear(), desde:_dateStr(mIni), hasta:_dateStr(mFin)});
+        var mI=new Date(cur), mF=new Date(cur.getFullYear(), cur.getMonth()+1, 0);
+        if (mF>fin) mF=new Date(fin);
+        ops.push({label: MN[cur.getMonth()]+' '+cur.getFullYear(), desde:_dateStr(mI), hasta:_dateStr(mF)});
         cur.setMonth(cur.getMonth()+1);
     }
     return ops;
+}
+
+function generarSubOpciones() {
+    if (!_lastData) return [];
+    var inicio   = new Date(_lastData.inicio+'T00:00:00');
+    var fin      = new Date(_lastData.fin+'T00:00:00');
+    var diffDays = Math.round((fin - inicio) / 86400000) + 1;
+
+    if (diffDays <= 1) return []; // día exacto: sin sub-filtro
+
+    // Semanas → días individuales
+    if (_modo === 'semana_actual' || _modo === 'semana_anterior') return _subDias(inicio, fin);
+
+    // Mes (cualquier variante) → semanas
+    if (_modo === 'mes_actual' || _modo === 'mes_anterior' || _modo === 'mes_especifico') return _subSemanas(inicio, fin);
+
+    // Año completo → meses
+    if (_modo === 'anio_completo') return _subMeses(inicio, fin);
+
+    // Rango custom → por tamaño
+    if (diffDays <= 14)  return _subDias(inicio, fin);
+    if (diffDays <= 62)  return _subSemanas(inicio, fin);
+    return _subMeses(inicio, fin);
 }
 
 function actualizarSubfiltros() {
@@ -1534,7 +1549,7 @@ function buildParamsFin() {
 
 function renderFinKPIs(data) {
     var k = data.kpis || {}, c = data.costos || {};
-    var ingresos  = parseFloat(k.periodo || 0);
+    var ingresos  = parseFloat(k.ventas_periodo || 0);
     var costo     = parseFloat(c.costo_periodo || 0);
     var beneficio = ingresos - costo;
     var margen    = ingresos > 0 ? ((beneficio / ingresos) * 100).toFixed(1) : 0;
@@ -1581,7 +1596,7 @@ function renderDebeHaber(dh, kpis, costos) {
     var resDiv = document.getElementById('fin-dh-resumen');
     if (!tb) return;
 
-    var totalHaber = parseFloat((kpis||{}).periodo || 0);
+    var totalHaber = parseFloat((kpis||{}).ventas_periodo || 0);
     var totalDebe  = parseFloat((costos||{}).costo_periodo || 0);
     var saldoFinal = totalHaber - totalDebe;
 

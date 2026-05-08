@@ -24,7 +24,8 @@
       "Bash(python3 -c ' *)",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT * FROM unidad_medida;')",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e ' *)",
-      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT idunidad_medida FROM unidad_medida WHERE abreviatura='\\\\''cm'\\\\'';')"
+      "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT idunidad_medida FROM unidad_medida WHERE abreviatura='\\\\''cm'\\\\'';')",
+      "PowerShell(cmd /c \"dir C:\\\\wamp64\")"
     ]
   }
 }
