@@ -23,6 +23,10 @@ $unidades = $pdo->query("SELECT * FROM unidad_medida")->fetchAll();
 
 <div class="content-body">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
     <div class="mp-header">
         <div>
             <div class="mp-title"><?= htmlspecialchars($receta['nombre']) ?></div>

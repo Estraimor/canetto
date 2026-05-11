@@ -28,6 +28,10 @@ $unidades = $pdo->query("
 
 <div class="content-body">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
     <div class="receta-crear">
 
         <!-- HEADER -->

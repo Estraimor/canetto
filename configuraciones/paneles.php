@@ -260,11 +260,16 @@ $TIPOS_CON_PRECIO_PHP = ['promo', 'descuento', 'temporada'];
     </div>
   </div>
 
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-    <button class="cfg-filter-tag on" data-tp="" onclick="filtrarTipo(this,'')">Todos</button>
-    <?php foreach($TIPOS_PANEL as $key=>$tp): ?>
-    <button class="cfg-filter-tag" data-tp="<?= $key ?>" onclick="filtrarTipo(this,'<?= $key ?>')"><?= $tp['label'] ?></button>
-    <?php endforeach; ?>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <button onclick="scrollFiltros(-1)" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;transition:all .15s" onmouseover="this.style.borderColor='#111'" onmouseout="this.style.borderColor='#e0e0e0'">‹</button>
+    <div id="filtrosScroll" style="display:flex;gap:8px;overflow:hidden;flex:1;scroll-behavior:smooth">
+      <button class="cfg-filter-tag on" data-tp="" onclick="filtrarTipo(this,'')">Todos</button>
+      <?php foreach($TIPOS_PANEL as $key=>$tp): ?>
+      <button class="cfg-filter-tag" data-tp="<?= $key ?>" onclick="filtrarTipo(this,'<?= $key ?>')"
+              style="border-left:3px solid <?= $tp['color'] ?>;flex-shrink:0"><?= $tp['label'] ?></button>
+      <?php endforeach; ?>
+    </div>
+    <button onclick="scrollFiltros(1)" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;transition:all .15s" onmouseover="this.style.borderColor='#111'" onmouseout="this.style.borderColor='#e0e0e0'">›</button>
   </div>
 
   <div class="table-wrap">
@@ -412,6 +417,9 @@ $TIPOS_CON_PRECIO_PHP = ['promo', 'descuento', 'temporada'];
         <!-- ⑥ Imagen -->
         <div class="pnl-sec">
           <div class="pnl-sec-hd">⑥ Imagen del slide <span style="text-transform:none;letter-spacing:0;font-size:10px;color:#ccc">(JPG/PNG/WebP, máx 2MB)</span></div>
+          <div style="font-size:11px;color:#f97316;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-weight:600">
+            📐 Tamaño recomendado: <strong>1200 × 480 px</strong> — relación 5:2. Evitá imágenes más grandes para que carguen rápido en la app.
+          </div>
           <input type="file" id="oImagen" accept="image/jpeg,image/png,image/webp" onchange="previewImage(this)">
           <input type="hidden" id="oImagenActual">
           <div id="previewWrap">
@@ -649,8 +657,21 @@ function openModal(){
   document.getElementById('modalOferta').classList.add('open');
   updatePreview();
 }
+function closeModalAnimate(overlayId, fn) {
+  const overlay = document.getElementById(overlayId);
+  const modal   = overlay.querySelector('.modal');
+  if (!modal) { overlay.classList.remove('open'); if(fn) fn(); return; }
+  modal.style.transition = 'opacity .2s, transform .2s';
+  modal.style.opacity    = '0';
+  modal.style.transform  = 'translateY(16px) scale(.97)';
+  setTimeout(() => {
+    overlay.classList.remove('open');
+    modal.style.opacity = modal.style.transform = modal.style.transition = '';
+    if (fn) fn();
+  }, 200);
+}
 function closeModal(){
-  document.getElementById('modalOferta').classList.remove('open');
+  closeModalAnimate('modalOferta', () => {
   editId = null;
   document.getElementById('modalTitle').textContent = 'Nuevo panel';
   ['oTitulo','oDesc','oValor','oEmoji','oFechaIni','oFechaFin','oLink','oBtnTxt'].forEach(id => {
@@ -668,6 +689,7 @@ function closeModal(){
   document.getElementById('oEnviarNotif').checked = false;
   document.querySelectorAll('input[name="tipoPanelRadio"]').forEach(r=>r.checked=(r.value==='promo'));
   onTipoPanelChange('promo', false);
+  }); // fin closeModalAnimate
 }
 
 document.getElementById('oActivo').addEventListener('change', function(){
@@ -1015,7 +1037,28 @@ function renderVistaTodos(){
 
 // ── Gestión de tipos de panel ──────────────────────────────────────────────
 function openTiposModal(){ cargarTiposLista(); document.getElementById('modalTipos').classList.add('open'); }
-function closeTiposModal(){ document.getElementById('modalTipos').classList.remove('open'); }
+
+function closeTiposModal(){ closeModalAnimate('modalTipos'); }
+
+// Cerrar cualquier modal al click en el overlay
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) {
+      const id = overlay.id;
+      if      (id === 'modalOferta')     closeModal();
+      else if (id === 'modalTipos')      closeTiposModal();
+      else if (id === 'modalVistaPanel') document.getElementById('modalVistaPanel').classList.remove('open');
+      else if (id === 'modalVistaTodos') document.getElementById('modalVistaTodos').classList.remove('open');
+      else closeModalAnimate(id);
+    }
+  });
+});
+
+// Scroll de filtros
+function scrollFiltros(dir) {
+  const el = document.getElementById('filtrosScroll');
+  el.scrollLeft += dir * 160;
+}
 
 async function cargarTiposLista() {
   const tipos     = await fetch('ajax/tipos_panel.php?accion=listar').then(r=>r.json());

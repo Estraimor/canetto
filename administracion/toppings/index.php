@@ -47,6 +47,10 @@ $inactivos = $total - $activos;
   <main class="main-content">
   <div class="content-body">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
     <!-- Header -->
     <div class="tp-header">
       <div>

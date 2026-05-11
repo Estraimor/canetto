@@ -86,32 +86,32 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
   flex:1;background:rgba(255,255,255,.07);border-radius:12px;padding:10px 12px;
 }
 .uber-route-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:3px}
-.uber-route-label.pickup-lbl{color:#f59e0b}
-.uber-route-label.delivery-lbl{color:#10b981}
+.uber-route-label.pickup-lbl{color:#c88e99}
+.uber-route-label.delivery-lbl{color:#c88e99}
 .uber-route-val{font-size:12px;color:#fff;font-weight:600;line-height:1.3}
 
 /* Botones acción */
-.uber-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.uber-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .uber-btn{
   display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:10px 6px;border-radius:14px;border:none;cursor:pointer;
-  font-family:'Inter',sans-serif;font-size:11px;font-weight:700;transition:.15s;
+  font-family:inherit;font-size:11px;font-weight:700;transition:.15s;
 }
 .uber-btn i{font-size:18px}
-.uber-btn-tel{background:rgba(99,102,241,.2);color:#818cf8}
-.uber-btn-nav{background:rgba(16,185,129,.2);color:#34d399}
-.uber-btn-ok{background:#10b981;color:#fff;font-size:13px;grid-column:span 3;
-  flex-direction:row;justify-content:center;gap:8px;padding:13px}
-.uber-btn-ok:active{background:#059669}
+.uber-btn-tel{background:rgba(200,142,153,.15);color:#c88e99;border:1px solid rgba(200,142,153,.3)}
+.uber-btn-nav{background:rgba(200,142,153,.15);color:#c88e99;border:1px solid rgba(200,142,153,.3)}
+.uber-btn-ok{background:#c88e99;color:#fff;font-size:14px;font-weight:800;grid-column:span 2;
+  flex-direction:row;justify-content:center;gap:8px;padding:14px;border-radius:16px}
+.uber-btn-ok:active{background:#a46678}
 
 /* Badge cobro efectivo */
 .uber-cobro{
-  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);
+  background:rgba(200,142,153,.12);border:1px solid rgba(200,142,153,.35);
   border-radius:10px;padding:10px 12px;margin-bottom:12px;
-  display:flex;align-items:center;gap:8px;font-size:13px;color:#fbbf24;
+  display:flex;align-items:center;gap:8px;font-size:13px;color:#c88e99;
 }
 .uber-cobro i{flex-shrink:0}
-.uber-cobro strong{color:#fff}
+.uber-cobro strong{color:#fff;font-size:15px}
 
 /* Sin pedidos → mapa normal chico */
 #repMapWrap{display:none}
@@ -211,40 +211,55 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
   <div class="uber-status-badge delivery" id="uberStatusBadge">En camino</div>
 
   <div class="uber-card" id="uberCard">
-    <div class="uber-card-handle"></div>
-
-    <div class="uber-order-num" id="uberOrderNum">#—</div>
-    <div class="uber-order-name" id="uberOrderName">—</div>
-
-    <!-- Banner cobro efectivo -->
-    <div class="uber-cobro" id="uberCobro" style="display:none">
-      <i class="fa-solid fa-coins"></i>
-      <div>Cobrar en efectivo: <strong id="uberCobroTotal">—</strong></div>
+    <!-- Handle: tap o swipe para colapsar/expandir -->
+    <div id="uberCardHandle" onclick="toggleUberCard()"
+         style="cursor:pointer;padding:12px 0 10px;margin:-16px -20px 8px;display:flex;align-items:center;justify-content:center">
+      <div class="uber-card-handle" style="margin:0"></div>
     </div>
 
-    <div class="uber-route-info">
-      <div class="uber-route-point">
-        <div class="uber-route-label pickup-lbl"><i class="fa-solid fa-store"></i> Retiro</div>
-        <div class="uber-route-val" id="uberPickup">Canetto</div>
+    <!-- Contenido colapsable -->
+    <div id="uberCardBody">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div class="uber-order-num" id="uberOrderNum">#—</div>
+          <div class="uber-order-name" id="uberOrderName">—</div>
+        </div>
+        <button onclick="toggleUberCard()" style="background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.5);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit">
+          <i class="fa-solid fa-chevron-down" id="uberCollapseIc"></i>
+        </button>
       </div>
-      <div class="uber-route-point">
-        <div class="uber-route-label delivery-lbl"><i class="fa-solid fa-location-dot"></i> Entrega</div>
-        <div class="uber-route-val" id="uberDelivery">—</div>
+
+      <!-- Solo lo que se cobra -->
+      <div class="uber-cobro" id="uberCobro" style="display:none">
+        <i class="fa-solid fa-coins"></i>
+        <div>Cobrar en efectivo: <strong id="uberCobroTotal">—</strong></div>
       </div>
-    </div>
 
-    <div class="uber-order-prods"><i class="fa-solid fa-box"></i><span id="uberProds">—</span></div>
+      <div class="uber-route-info">
+        <div class="uber-route-point">
+          <div class="uber-route-label pickup-lbl"><i class="fa-solid fa-store"></i> Retiro</div>
+          <div class="uber-route-val" id="uberPickup">Canetto</div>
+        </div>
+        <div class="uber-route-point">
+          <div class="uber-route-label delivery-lbl"><i class="fa-solid fa-location-dot"></i> Entrega</div>
+          <div class="uber-route-val" id="uberDelivery">—</div>
+        </div>
+      </div>
 
-    <div class="uber-actions">
-      <button class="uber-btn uber-btn-tel" id="uberBtnTel" onclick="uberLlamar()">
-        <i class="fa-solid fa-phone"></i>Llamar
-      </button>
-      <button class="uber-btn uber-btn-nav" onclick="uberNavegar()">
-        <i class="fa-solid fa-diamond-turn-right"></i>Navegar
-      </button>
-      <button class="uber-btn uber-btn-ok" id="uberBtnOk" onclick="uberEntregar()">
-        <i class="fa-solid fa-circle-check"></i> Marcar entregado
-      </button>
+      <!-- Productos ocultos (solo internamente) -->
+      <span id="uberProds" style="display:none">—</span>
+
+      <div class="uber-actions">
+        <button class="uber-btn uber-btn-tel" id="uberBtnTel" onclick="uberLlamar()">
+          <i class="fa-solid fa-phone"></i>Llamar
+        </button>
+        <button class="uber-btn uber-btn-nav" onclick="uberNavegar()">
+          <i class="fa-solid fa-diamond-turn-right"></i>Navegar
+        </button>
+        <button class="uber-btn uber-btn-ok" id="uberBtnOk" onclick="uberEntregar()">
+          <i class="fa-solid fa-circle-check"></i> Marcar entregado
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -268,21 +283,6 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
     </button>
   </div>
 
-  <!-- Tabs -->
-  <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('pedidos',this)">
-      <i class="fa-solid fa-motorcycle"></i><span>Pedidos</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('historial',this)">
-      <i class="fa-solid fa-clock-rotate-left"></i><span>Historial</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('perfil',this)">
-      <i class="fa-solid fa-user-gear"></i><span>Perfil</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('soporte',this)">
-      <i class="fa-solid fa-headset"></i><span>Soporte</span>
-    </button>
-  </div>
 
   <!-- Tab Pedidos -->
   <div id="tabPedidos" class="tab-content active">
@@ -444,6 +444,22 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 
     </div>
   </div>
+
+  <!-- Footer nav (fixed bottom) -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('pedidos',this)">
+      <i class="fa-solid fa-motorcycle"></i><span>Pedidos</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('historial',this)">
+      <i class="fa-solid fa-clock-rotate-left"></i><span>Historial</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('perfil',this)">
+      <i class="fa-solid fa-user-gear"></i><span>Perfil</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('soporte',this)">
+      <i class="fa-solid fa-headset"></i><span>Soporte</span>
+    </button>
+  </nav>
 
 </div>
 
@@ -1206,6 +1222,9 @@ async function abrirUberMap(pedido) {
   screen.classList.add('active');
   document.body.style.overflow = 'hidden';
 
+  // Asegurar que la card empiece expandida
+  if (_uberCardCollapsed) toggleUberCard();
+
   // Poblar card
   document.getElementById('uberOrderNum').textContent  = '#' + pedido.idventas;
   document.getElementById('uberOrderName').textContent = pedido.cliente_nombre || 'Cliente';
@@ -1238,6 +1257,53 @@ async function abrirUberMap(pedido) {
   // Seguir posición del repartidor
   iniciarGeolocalizacion();
 }
+
+let _uberCardCollapsed = false;
+function toggleUberCard() {
+  _uberCardCollapsed = !_uberCardCollapsed;
+  const body = document.getElementById('uberCardBody');
+  const ic   = document.getElementById('uberCollapseIc');
+  if (_uberCardCollapsed) {
+    body.style.cssText = 'overflow:hidden;max-height:0;opacity:0;transition:max-height .3s ease,opacity .2s ease';
+    ic.className = 'fa-solid fa-chevron-up';
+  } else {
+    body.style.cssText = 'overflow:visible;max-height:600px;opacity:1;transition:max-height .4s ease,opacity .25s ease';
+    ic.className = 'fa-solid fa-chevron-down';
+  }
+}
+
+// Drag-to-collapse en la uber-card
+(function() {
+  let startY = 0, startH = 0, dragging = false;
+  const getCard = () => document.getElementById('uberCard');
+  const getHandle = () => document.getElementById('uberCardHandle');
+
+  function onTouchStart(e) {
+    startY = e.touches[0].clientY;
+    startH = getCard().getBoundingClientRect().height;
+    dragging = true;
+  }
+  function onTouchMove(e) {
+    if (!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 10) e.preventDefault(); // evita scroll mientras arrastra
+  }
+  function onTouchEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 60 && !_uberCardCollapsed)  toggleUberCard(); // swipe ↓ colapsa
+    if (dy < -60 && _uberCardCollapsed)  toggleUberCard(); // swipe ↑ expande
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const h = document.getElementById('uberCardHandle');
+    if (!h) return;
+    h.addEventListener('touchstart', onTouchStart, { passive: true });
+    h.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    h.addEventListener('touchend',   onTouchEnd,   { passive: true });
+  });
+})();
 
 function cerrarUberMap() {
   document.getElementById('uberMapScreen').classList.remove('active');

@@ -19,6 +19,10 @@ $allPkg   = $pdo->query("
 
 <div class="content-body">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
   <!-- HEADER -->
   <div class="pkg-header">
     <div>
@@ -604,8 +608,8 @@ function renderSplit(){
           </div>
           <div class="asig-item-controls">
             <label class="asig-cant-label">Cant.</label>
-            <input type="number" step="0.01" min="0.01" class="asig-inp-cant" data-idx="${idx}"
-                   value="${fila.cantidad}" title="Cantidad">
+            <input type="number" step="1" min="1" class="asig-inp-cant" data-idx="${idx}"
+                   value="${Math.round(fila.cantidad)}" title="Cantidad">
             <button class="btn-del-asig" data-idx="${idx}" title="Quitar">
               <i class="fa fa-xmark"></i>
             </button>
@@ -615,7 +619,7 @@ function renderSplit(){
 
     leftEl.querySelectorAll('.asig-inp-cant').forEach(inp => {
       inp.addEventListener('input', function(){
-        asigFilas[this.dataset.idx].cantidad = parseFloat(this.value) || 0;
+        asigFilas[this.dataset.idx].cantidad = parseInt(this.value) || 1;
         updateCountBadge();
       });
     });
@@ -738,5 +742,21 @@ btnCancelarAsig.addEventListener('click', () => {
   toast('Cambios descartados');
 });
 
+})();
+
+// Auto-abrir packaging si viene ?open=ID
+(function() {
+    const openId = new URLSearchParams(location.search).get('open');
+    if (!openId) return;
+    setTimeout(() => {
+        // Simular click en el botón editar de esa fila
+        const btn = document.querySelector(`.editar-pkg[data-id="${openId}"]`);
+        if (btn) {
+            btn.click();
+        } else {
+            // Si DataTable no lo renderizó aún, buscar via jQuery
+            jQuery(`.editar-pkg[data-id="${openId}"]`).trigger('click');
+        }
+    }, 600);
 })();
 </script>

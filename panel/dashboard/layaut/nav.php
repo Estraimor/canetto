@@ -90,15 +90,8 @@ $current = $_SERVER['PHP_SELF'];
 
     <div class="nav-section">Producción</div>
 
-    <!-- RECETAS -->
-    <a href="<?= URL_ADMIN ?>/recetas/index.php" data-tip="Recetas"
-       class="<?= str_contains($current,'recetas') ? 'active' : '' ?>">
-        <i class="fa-solid fa-book-open"></i>
-        <span class="nav-label">Recetas</span>
-    </a>
-
     <!-- PRODUCTOS -->
-    <div class="menu-group <?= str_contains($current,'productos') || str_contains($current,'toppings') ? 'open' : '' ?>">
+    <div class="menu-group <?= str_contains($current,'productos') || str_contains($current,'toppings') || str_contains($current,'recetas') ? 'open' : '' ?>">
         <span class="menu-title" data-tip="Productos">
             <i class="fa-solid fa-cookie-bite"></i>
             <span class="menu-label">Productos</span>
@@ -113,6 +106,11 @@ $current = $_SERVER['PHP_SELF'];
                class="<?= str_contains($current,'crear_producto') ? 'active' : '' ?>">
                 <i class="fa-solid fa-plus"></i>
                 Crear producto
+            </a>
+            <a href="<?= URL_ADMIN ?>/recetas/index.php"
+               class="<?= str_contains($current,'recetas') ? 'active' : '' ?>">
+                <i class="fa-solid fa-book-open"></i>
+                Recetas
             </a>
             <a href="<?= URL_ADMIN ?>/toppings/index.php"
                class="<?= str_contains($current,'toppings') ? 'active' : '' ?>">
@@ -188,18 +186,18 @@ $current = $_SERVER['PHP_SELF'];
         </div>
     </div>
 
-    <!-- ANALÍTICA -->
-    <a href="<?= URL_ADMIN ?>/analitica/index.php" data-tip="Analítica"
-       class="<?= str_contains($current,'analitica') ? 'active' : '' ?>">
-        <i class="fa-solid fa-chart-column"></i>
-        <span class="nav-label">Analítica</span>
-    </a>
-
     <!-- PROVEEDORES -->
     <a href="<?= URL_ADMIN ?>/proveedor/index.php" data-tip="Proveedores"
        class="<?= str_contains($current,'proveedor') ? 'active' : '' ?>">
         <i class="fa-solid fa-handshake"></i>
         <span class="nav-label">Proveedores</span>
+    </a>
+
+    <!-- CLIENTES -->
+    <a href="<?= URL_ADMIN ?>/clientes/index.php" data-tip="Clientes"
+       class="<?= str_contains($current,'clientes') ? 'active' : '' ?>">
+        <i class="fa-solid fa-users"></i>
+        <span class="nav-label">Clientes</span>
     </a>
 
     <div class="nav-section">Sistema</div>

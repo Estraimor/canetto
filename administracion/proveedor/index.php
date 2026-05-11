@@ -5,7 +5,7 @@ include '../../panel/dashboard/layaut/nav.php';
 ?>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+  /* Usa la fuente Speedee del sistema — sin imports externos */
 
   :root {
     --ink: #0a0a0a;
@@ -25,6 +25,10 @@ include '../../panel/dashboard/layaut/nav.php';
     --transition: .22s cubic-bezier(.4, 0, .2, 1);
   }
 
+  .prov-module .btn-back {
+    margin-bottom: 22px !important;
+  }
+
   .prov-module * {
     box-sizing: border-box;
     margin: 0;
@@ -32,7 +36,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .prov-module {
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     color: var(--ink);
     background: var(--paper);
     min-height: 100vh;
@@ -50,7 +54,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .prov-header__title {
-    font-family: 'Playfair Display', serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: 2.4rem;
     font-weight: 700;
     letter-spacing: -.5px;
@@ -59,7 +63,7 @@ include '../../panel/dashboard/layaut/nav.php';
 
   .prov-header__title span {
     display: block;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .72rem;
     font-weight: 500;
     letter-spacing: .2em;
@@ -78,7 +82,7 @@ include '../../panel/dashboard/layaut/nav.php';
     border: none;
     padding: .7rem 1.5rem;
     border-radius: var(--radius);
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .85rem;
     font-weight: 600;
     letter-spacing: .03em;
@@ -148,7 +152,7 @@ include '../../panel/dashboard/layaut/nav.php';
     background: none;
     border: none;
     padding: .75rem 1.4rem;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .875rem;
     font-weight: 500;
     color: var(--ink-soft);
@@ -264,7 +268,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .prov-card__name {
-    font-family: 'Playfair Display', serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: 1.1rem;
     font-weight: 600;
   }
@@ -333,7 +337,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .empty-state h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: 1.3rem;
     color: var(--ink);
     margin-bottom: .4rem;
@@ -389,7 +393,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .modal-header h2 {
-    font-family: 'Playfair Display', serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: 1.3rem;
     font-weight: 700;
   }
@@ -453,7 +457,7 @@ include '../../panel/dashboard/layaut/nav.php';
     padding: .65rem .9rem;
     border: 1px solid var(--rule-dark);
     border-radius: var(--radius);
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .875rem;
     color: var(--ink);
     background: var(--paper);
@@ -474,7 +478,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .form-section-title {
-    font-family: 'Playfair Display', serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .95rem;
     font-weight: 600;
     color: var(--ink);
@@ -508,7 +512,7 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   .compra-form-card h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: 1.15rem;
     margin-bottom: 1.2rem;
     padding-bottom: .7rem;
@@ -706,7 +710,7 @@ include '../../panel/dashboard/layaut/nav.php';
     padding: .6rem 1rem;
     border: 1px solid var(--rule-dark);
     border-radius: var(--radius);
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .875rem;
     outline: none;
     background: var(--white);
@@ -737,7 +741,7 @@ include '../../panel/dashboard/layaut/nav.php';
     border: 1px solid var(--rule-dark);
     border-radius: var(--radius);
     padding: .4rem .7rem;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .82rem;
     outline: none;
   }
@@ -750,7 +754,7 @@ include '../../panel/dashboard/layaut/nav.php';
     border: 1px solid var(--rule-dark);
     border-radius: var(--radius);
     padding: .3rem .5rem;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .82rem;
   }
 
@@ -766,7 +770,7 @@ include '../../panel/dashboard/layaut/nav.php';
 
   div.dataTables_wrapper div.dataTables_paginate .paginate_button {
     border-radius: var(--radius) !important;
-    font-family: 'DM Sans', sans-serif;
+    font-family: "Speedee", system-ui, sans-serif;
     font-size: .78rem !important;
   }
 
@@ -788,6 +792,10 @@ include '../../panel/dashboard/layaut/nav.php';
 </style>
 
 <div class="prov-module">
+
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
 
   <!-- Header -->
   <div class="prov-header">
@@ -926,9 +934,15 @@ include '../../panel/dashboard/layaut/nav.php';
             <div id="conversionNote" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f8f0;border:1px solid #b8e0c0;border-radius:6px;font-size:.8rem;color:#1a5c30;line-height:1.5;"></div>
           </div>
           <div class="form-group">
-            <label id="labelCosto">Costo unitario (opcional)</label>
-            <input type="number" id="inputCosto" placeholder="0.00" min="0" step="0.01">
-            <div style="margin-top:4px;font-size:.75rem;color:var(--ink-soft)" id="costoHint">Ingresá el precio que pagás por cada unidad de compra.</div>
+            <label>Costo (opcional)</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="number" id="inputCosto" placeholder="0.00" min="0" step="0.01" style="flex:1" oninput="actualizarConversion()">
+              <select id="selectUnidadCosto" style="width:110px;padding:10px 8px;border:1.5px solid var(--rule);border-radius:var(--radius);font-family:inherit;font-size:.85rem;background:#fff;color:var(--ink);outline:none;" onchange="actualizarConversion()">
+                <option value="">—</option>
+              </select>
+            </div>
+            <div style="margin-top:4px;font-size:.75rem;color:var(--ink-soft)" id="costoHint">Precio por la unidad seleccionada.</div>
+            <div id="costoResumen" style="display:none;margin-top:8px;padding:10px 14px;background:#fff8e1;border:1px solid #f0c040;border-radius:8px;font-size:.82rem;color:#7a5700;line-height:1.6;"></div>
           </div>
           <div class="form-group">
             <label>Observaciones</label>
@@ -1464,18 +1478,34 @@ include '../../panel/dashboard/layaut/nav.php';
   // Mapa de conversiones entre unidades compatibles
   // Formato: { 'desde_abrev|hasta_abrev': factor }
   const CONV = {
-    'Kg|G': 1000, 'G|Kg': 0.001,
-    'L|ml': 1000, 'ml|L': 0.001,
+    'Kg|G':     1000,   'G|Kg':    0.001,
+    '100G|G':   100,    'G|100G':  0.01,
+    'Kg|100G':  10,     '100G|Kg': 0.1,
+    'L|ml':     1000,   'ml|L':    0.001,
+    '100ml|ml': 100,    'ml|100ml':0.01,
+    'L|100ml':  10,     '100ml|L': 0.1,
   };
 
-  // Unidades de compra disponibles según la unidad base del insumo
-  const UNIDADES_COMPATIBLES = {
-    'G':  [{ abrev:'G',  nombre:'Gramos (G)' }, { abrev:'Kg', nombre:'Kilogramos (Kg)' }],
-    'Kg': [{ abrev:'Kg', nombre:'Kilogramos (Kg)' }, { abrev:'G', nombre:'Gramos (G)' }],
-    'ml': [{ abrev:'ml', nombre:'Mililitros (ml)' }, { abrev:'L', nombre:'Litros (L)' }],
-    'L':  [{ abrev:'L',  nombre:'Litros (L)' }, { abrev:'ml', nombre:'Mililitros (ml)' }],
-    'U':  [{ abrev:'U',  nombre:'Unidades (U)' }],
+  // Unidades de cantidad según la unidad base
+  const UNIDADES_CANTIDAD = {
+    'G':  [{ abrev:'G', label:'G' }, { abrev:'Kg', label:'Kg' }],
+    'Kg': [{ abrev:'Kg', label:'Kg' }, { abrev:'G', label:'G' }],
+    'ml': [{ abrev:'ml', label:'ml' }, { abrev:'L', label:'L' }],
+    'L':  [{ abrev:'L', label:'L' }, { abrev:'ml', label:'ml' }],
+    'U':  [{ abrev:'U', label:'U' }],
   };
+
+  // Unidades de precio (incluye c/100G para peso)
+  const UNIDADES_PRECIO = {
+    'G':  [{ abrev:'G', label:'por G' }, { abrev:'Kg', label:'por Kg' }, { abrev:'100G', label:'c/100G' }],
+    'Kg': [{ abrev:'Kg', label:'por Kg' }, { abrev:'G', label:'por G' }, { abrev:'100G', label:'c/100G' }],
+    'ml': [{ abrev:'ml', label:'por ml' }, { abrev:'L', label:'por L' }, { abrev:'100ml', label:'c/100ml' }],
+    'L':  [{ abrev:'L', label:'por L' }, { abrev:'ml', label:'por ml' }, { abrev:'100ml', label:'c/100ml' }],
+    'U':  [{ abrev:'U', label:'por U' }],
+  };
+
+  // Compatibilidad legacy
+  const UNIDADES_COMPATIBLES = UNIDADES_CANTIDAD;
 
   async function cargarMateriasPorProveedor() {
     const idProv = document.getElementById('selectProvCompra').value;
@@ -1508,11 +1538,11 @@ include '../../panel/dashboard/layaut/nav.php';
   }
 
   function resetUnidadSelector() {
-    const sel = document.getElementById('selectUnidadCompra');
-    sel.innerHTML = '<option value="">—</option>';
+    document.getElementById('selectUnidadCompra').innerHTML = '<option value="">—</option>';
+    document.getElementById('selectUnidadCosto').innerHTML  = '<option value="">—</option>';
     document.getElementById('conversionNote').style.display = 'none';
-    document.getElementById('labelCosto').textContent = 'Costo unitario (opcional)';
-    document.getElementById('costoHint').textContent  = 'Ingresá el precio que pagás por cada unidad de compra.';
+    document.getElementById('costoResumen').style.display   = 'none';
+    document.getElementById('costoHint').textContent = 'Ingresá el precio que pagás por cada unidad de compra.';
   }
 
   function mostrarStockInfo() {
@@ -1554,63 +1584,140 @@ include '../../panel/dashboard/layaut/nav.php';
 
     if (opt.dataset.costo) document.getElementById('inputCosto').value = parseFloat(opt.dataset.costo).toFixed(2);
 
-    // Poblar selector de unidades de compra
-    const sel = document.getElementById('selectUnidadCompra');
-    const compatibles = UNIDADES_COMPATIBLES[unidAbrev] || [{ abrev: unidAbrev, nombre: unidAbrev }];
-    sel.innerHTML = compatibles.map(u =>
-      `<option value="${u.abrev}" ${u.abrev === unidAbrev ? 'selected' : ''}>${u.abrev}</option>`
+    // Poblar selector de unidades de cantidad
+    const selCant = document.getElementById('selectUnidadCompra');
+    const opcCant = UNIDADES_CANTIDAD[unidAbrev] || [{ abrev: unidAbrev, label: unidAbrev }];
+    selCant.innerHTML = opcCant.map(u =>
+      `<option value="${u.abrev}" ${u.abrev === unidAbrev ? 'selected' : ''}>${u.label}</option>`
     ).join('');
+
+    // Poblar selector de unidades de precio
+    const selPrecio = document.getElementById('selectUnidadCosto');
+    const opcPrecio = UNIDADES_PRECIO[unidAbrev] || [{ abrev: unidAbrev, label: `por ${unidAbrev}` }];
+    selPrecio.innerHTML = opcPrecio.map(u =>
+      `<option value="${u.abrev}" ${u.abrev === unidAbrev ? 'selected' : ''}>${u.label}</option>`
+    ).join('');
+
     actualizarConversion();
   }
 
   function actualizarConversion() {
-    const opt     = document.getElementById('selectMateriaCompra').selectedOptions[0];
-    const unidBase= opt?.dataset?.unidadAbrev || '';
-    const unidComp= document.getElementById('selectUnidadCompra').value;
-    const cantStr = document.getElementById('inputCantidad').value;
-    const cant    = parseFloat(cantStr);
-    const note    = document.getElementById('conversionNote');
-    const label   = document.getElementById('labelCosto');
-    const hint    = document.getElementById('costoHint');
+    const opt      = document.getElementById('selectMateriaCompra').selectedOptions[0];
+    const unidBase = opt?.dataset?.unidadAbrev || '';
+    const unidCant = document.getElementById('selectUnidadCompra').value;
+    const unidPrecio = document.getElementById('selectUnidadCosto').value;
+    const cant     = parseFloat(document.getElementById('inputCantidad').value);
+    const costoVal = parseFloat(document.getElementById('inputCosto').value);
+    const note     = document.getElementById('conversionNote');
+    const hint     = document.getElementById('costoHint');
+    const resumen  = document.getElementById('costoResumen');
 
-    if (!unidComp) { note.style.display = 'none'; return; }
+    if (!unidCant) { note.style.display = 'none'; resumen.style.display = 'none'; return; }
 
-    // Actualizar etiqueta del costo
-    label.textContent = `Costo por ${unidComp} (opcional)`;
-    hint.textContent  = `Precio que pagás por cada ${unidComp}. El sistema convierte al stock en ${unidBase}.`;
+    hint.textContent = unidPrecio === '100G' || unidPrecio === '100ml'
+      ? `Precio que pagás por cada ${unidPrecio}. Común en quesos, fiambres, etc.`
+      : `Precio que pagás por cada ${unidPrecio}.`;
 
-    if (!cant || isNaN(cant) || !unidBase) { note.style.display = 'none'; return; }
+    const fmtN = n => n % 1 === 0
+      ? n.toLocaleString('es-AR')
+      : n.toLocaleString('es-AR', { maximumFractionDigits: 3 });
+    const fmtP = n => '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    const factor = CONV[`${unidComp}|${unidBase}`] ?? 1;
-    const cantBase = cant * factor;
+    // Conversión de cantidad a unidad base
+    const factorCant = CONV[`${unidCant}|${unidBase}`] ?? 1;
+    const cantBase   = !isNaN(cant) ? cant * factorCant : null;
 
-    if (factor === 1) {
-      note.style.display = 'none';
-    } else {
+    if (!isNaN(cant) && cant > 0 && factorCant !== 1 && unidBase) {
       note.style.display = 'block';
-      const fmtN = n => n % 1 === 0 ? n.toLocaleString('es-AR') : n.toLocaleString('es-AR', {maximumFractionDigits:3});
-      note.innerHTML = `📦 <strong>${fmtN(cant)} ${unidComp}</strong> → se agregarán <strong>${fmtN(cantBase)} ${unidBase}</strong> al stock`;
+      note.innerHTML = `📦 <strong>${fmtN(cant)} ${unidCant}</strong> = <strong>${fmtN(cantBase)} ${unidBase}</strong> que se suman al stock`;
+    } else {
+      note.style.display = 'none';
+    }
+
+    // Resumen de costo total
+    if (!isNaN(cant) && cant > 0 && !isNaN(costoVal) && costoVal > 0 && unidPrecio) {
+      const factorPrecio   = CONV[`${unidBase}|${unidPrecio}`] ?? (1 / (CONV[`${unidPrecio}|${unidBase}`] ?? 1));
+      const unidadesPrecio = cantBase * factorPrecio; // cuántas "unidades de precio" entran
+      const totalCompra    = unidadesPrecio * costoVal;
+      const costoPorBase   = costoVal * factorPrecio; // precio por 1 unidad base
+
+      resumen.style.display = 'block';
+      // Normalizar costo a la unidad más pequeña (G o ml) para derivar equivalencias
+      const esPeso    = ['G','Kg','100G'].includes(unidBase) || ['G','Kg','100G'].includes(unidPrecio);
+      const esVolumen = ['ml','L','100ml'].includes(unidBase) || ['ml','L','100ml'].includes(unidPrecio);
+
+      // costoVal es por unidPrecio → convertir a costo por unidad mínima (G o ml)
+      let costoPerMin = costoVal; // por G o ml
+      if (esPeso) {
+        if      (unidPrecio === 'Kg')  costoPerMin = costoVal / 1000;
+        else if (unidPrecio === '100G') costoPerMin = costoVal / 100;
+        // si ya es 'G', queda igual
+      } else if (esVolumen) {
+        if      (unidPrecio === 'L')    costoPerMin = costoVal / 1000;
+        else if (unidPrecio === '100ml') costoPerMin = costoVal / 100;
+      }
+
+      const extrasHtml = (() => {
+        const ext = [];
+        if (esPeso) {
+          if (unidPrecio !== 'G')    ext.push({ label: 'por G',    val: costoPerMin });
+          if (unidPrecio !== '100G') ext.push({ label: 'c/100G',   val: costoPerMin * 100 });
+          if (unidPrecio !== 'Kg')   ext.push({ label: 'por Kg',   val: costoPerMin * 1000 });
+        } else if (esVolumen) {
+          if (unidPrecio !== 'ml')    ext.push({ label: 'por ml',   val: costoPerMin });
+          if (unidPrecio !== '100ml') ext.push({ label: 'c/100ml',  val: costoPerMin * 100 });
+          if (unidPrecio !== 'L')     ext.push({ label: 'por L',    val: costoPerMin * 1000 });
+        }
+        if (!ext.length) return '';
+        return `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">` +
+          ext.map(e => `<div style="background:rgba(0,0,0,.06);border-radius:6px;padding:5px 10px;text-align:center">
+            <div style="font-size:.68rem;color:#7a5700;text-transform:uppercase;letter-spacing:.04em">${e.label}</div>
+            <div style="font-size:1rem;font-weight:700;color:#3a2800">${fmtP(e.val)}</div>
+          </div>`).join('') + `</div>`;
+      })();
+
+      // Primera línea: solo mostrar conversión si cambia la unidad
+      const convLinea = (unidCant !== unidBase)
+        ? `<div>📐 <strong>${fmtN(cant)} ${unidCant}</strong> = <strong>${fmtN(cantBase)} ${unidBase}</strong></div>`
+        : '';
+
+      resumen.innerHTML = `
+        <div style="display:grid;gap:5px;">
+          ${convLinea}
+          <div>💰 ${fmtP(costoVal)} ${unidPrecio === '100G' || unidPrecio === '100ml' ? `c/${unidPrecio}` : `/${unidPrecio}`} × ${fmtN(unidadesPrecio)} unidades</div>
+          ${extrasHtml}
+          <div style="margin-top:4px;padding-top:6px;border-top:1px solid #f0c040;font-weight:700;color:#5a3e00;">
+            💵 Total compra: <strong>${fmtP(totalCompra)}</strong>
+          </div>
+        </div>`;
+    } else {
+      resumen.style.display = 'none';
     }
   }
 
   async function registrarCompra() {
-    const idProv    = document.getElementById('selectProvCompra').value;
-    const idMateria = document.getElementById('selectMateriaCompra').value;
-    const cantOrig  = parseFloat(document.getElementById('inputCantidad').value);
-    const unidComp  = document.getElementById('selectUnidadCompra').value;
-    const costo     = document.getElementById('inputCosto').value;
-    const obs       = document.getElementById('inputObsCompra').value;
-    const opt       = document.getElementById('selectMateriaCompra').selectedOptions[0];
-    const unidBase  = opt?.dataset?.unidadAbrev || '';
+    const idProv     = document.getElementById('selectProvCompra').value;
+    const idMateria  = document.getElementById('selectMateriaCompra').value;
+    const cantOrig   = parseFloat(document.getElementById('inputCantidad').value);
+    const unidComp   = document.getElementById('selectUnidadCompra').value;
+    const unidPrecio = document.getElementById('selectUnidadCosto').value;
+    const costoStr   = document.getElementById('inputCosto').value;
+    const obs        = document.getElementById('inputObsCompra').value;
+    const opt        = document.getElementById('selectMateriaCompra').selectedOptions[0];
+    const unidBase   = opt?.dataset?.unidadAbrev || '';
 
     if (!idProv)              { toast('Seleccioná un proveedor', 'error'); return; }
     if (!idMateria)           { toast('Seleccioná una materia prima', 'error'); return; }
     if (!cantOrig || cantOrig <= 0) { toast('Ingresá una cantidad válida', 'error'); return; }
     if (!unidComp)            { toast('Seleccioná la unidad de compra', 'error'); return; }
 
-    // Convertir a unidad base para el stock
-    const factor   = CONV[`${unidComp}|${unidBase}`] ?? 1;
-    const cantBase = cantOrig * factor;
+    // Cantidad en unidad base para el stock
+    const factorCant = CONV[`${unidComp}|${unidBase}`] ?? 1;
+    const cantBase   = cantOrig * factorCant;
+
+    // Costo: normalizar a precio por unidad base (para analítica consistente)
+    let costoEnviar = costoStr ? parseFloat(costoStr) : null;
+    const unidCompraLabel = unidPrecio || unidComp;
 
     const btn = document.getElementById('btnRegistrar');
     btn.innerHTML = '<span class="loader"></span> Procesando…';
@@ -1619,10 +1726,10 @@ include '../../panel/dashboard/layaut/nav.php';
       const res = await ajax('ajax/registrar_compra.php', {
         idproveedor:       idProv,
         idmateria_prima:   idMateria,
-        cantidad:          cantBase,        // en unidad BASE → para el stock
-        cantidad_original: cantOrig,        // en unidad de compra → para historial
-        unidad_compra:     unidComp,        // abreviatura ej. "Kg"
-        costo:             costo || null,   // precio por unidad de compra
+        cantidad:          cantBase,          // en unidad BASE → para el stock
+        cantidad_original: cantOrig,          // en unidad de cantidad → para historial
+        unidad_compra:     unidCompraLabel,   // unidad del precio ingresado (ej: "100G")
+        costo:             costoEnviar,       // precio por unidCompraLabel
         observaciones:     obs,
       });
       if (res.ok) {

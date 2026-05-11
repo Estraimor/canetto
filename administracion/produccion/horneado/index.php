@@ -45,6 +45,10 @@ $todosProductos = $stmtTodos->fetchAll(PDO::FETCH_ASSOC);
 
 <div class="horneado-container">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
   <!-- Header -->
   <div class="horneado-header">
     <div class="titulo-horneado">🔥 Producción - Horneado</div>

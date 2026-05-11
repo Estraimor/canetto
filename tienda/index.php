@@ -106,17 +106,20 @@ try {
         )");
         $allToppings = $pdo->query("
             SELECT t.idtoppings, t.nombre, t.precio,
-                   COALESCE(ts.stock_actual, -1) AS stock
+                   COALESCE(ts.stock_actual, -1) AS stock,
+                   COALESCE(ts.stock_minimo, 0)  AS stock_minimo
             FROM toppings t
             LEFT JOIN toppings_stock ts ON ts.toppings_idtoppings = t.idtoppings
             WHERE t.activo = 1
             ORDER BY t.nombre
         ")->fetchAll(PDO::FETCH_ASSOC);
-        $allToppings = array_map(fn($r) => [
+        // Mostrar todos los toppings activos; stock=-1 = sin registro = ilimitado; stock=0 = sin stock (se muestra deshabilitado)
+        $allToppings = array_values(array_map(fn($r) => [
             'id'     => (int)$r['idtoppings'],
             'nombre' => $r['nombre'],
             'precio' => (float)$r['precio'],
-        ], $allToppings);
+            'stock'  => (float)$r['stock'],
+        ], $allToppings));
         // Compatibilidad: todos los productos reciben los mismos toppings
         $toppingsByProducto = [];
         foreach (($productos ?? []) as $prod) {
@@ -235,6 +238,11 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   border-color:#eee !important;background:#fafafa !important;
 }
 .tp-sel-sin-stock .tp-sel-ic{background:#f1f1f1;color:#ccc}
+.tp-sel-price-row{display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap}
+.tp-stock-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;line-height:1.4}
+.tp-stock-ok  {background:#dcfce7;color:#15803d}
+.tp-stock-low {background:#fef9c3;color:#a16207}
+.tp-stock-empty{background:#fee2e2;color:#dc2626}
 /* Cart toppings tags */
 .cart-toppings{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px}
 .cart-topping-tag{
@@ -357,10 +365,10 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
             </button>
           <?php else: ?>
             <a class="slide-cart-btn btn-ver-producto"
-              href="producto.php?id=<?= $pid ?>"
+              href="producto.php?id=<?= $pid ?>&oferta=<?= (int)$o['idoferta'] ?>"
               style="display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">
               <i class="fa-solid fa-eye" style="font-size:13px"></i>
-              <?= $pStock <= 0 ? 'Sin stock' : 'Ver producto' ?>
+              <?= $pStock <= 0 ? 'Sin stock' : ($esDescuento ? "Ver oferta -{$ofValor}%" : 'Ver producto') ?>
             </a>
           <?php endif; ?>
         <?php endif; ?>
@@ -615,11 +623,10 @@ HTML;
         <i class="fa-solid fa-chevron-right sn-chev" id="chevSN"></i>
       </div>
       <div id="sobreNosTxt" style="display:none;padding:0 20px 18px;font-size:14px;color:#475569;line-height:1.7;border-top:1px solid #f1e8ea;">
-        Somos Canetto, una marca artesanal nacida del amor por las galletitas. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.
+        Somos Canetto, una marca artesanal nacida del amor por las Cookies. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.
       </div>
 
-      <?php $waPhone = preg_replace('/\D/', '', $sucursales[0]['telefono'] ?? ''); ?>
-      <a href="https://wa.me/<?= $waPhone ?: '3764820012' ?>" target="_blank" class="sn-row" style="text-decoration:none;" onclick="event.stopPropagation()">
+      <a href="https://wa.me/5493765123808" target="_blank" class="sn-row" style="text-decoration:none;" onclick="event.stopPropagation()">
         <span class="sn-ic" style="background:#dcfce7;color:#16a34a;"><i class="fa-brands fa-whatsapp"></i></span>
         <div class="sn-txt">
           <div class="sn-title">Contacto por WhatsApp</div>
@@ -628,11 +635,11 @@ HTML;
         <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
       </a>
 
-      <a href="https://instagram.com/canettocookies" target="_blank" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
+      <a href="https://www.instagram.com/canetto__/" target="_blank" class="sn-row" style="text-decoration:none;border-top:1px solid #f1e8ea;">
         <span class="sn-ic" style="background:#fdf0f3;color:#c88e99;"><i class="fa-brands fa-instagram"></i></span>
         <div class="sn-txt">
           <div class="sn-title">Seguinos en Instagram</div>
-          <div class="sn-sub">@canettocookies</div>
+          <div class="sn-sub">@canetto__</div>
         </div>
         <i class="fa-solid fa-arrow-up-right-from-square" style="color:#94a3b8;font-size:13px;"></i>
       </a>
@@ -894,6 +901,9 @@ HTML;
           <input type="hidden" id="ckLat">
           <input type="hidden" id="ckLng">
           <div id="geoStatus"></div>
+          <button type="button" id="btnAbrirMapa" onclick="toggleMapa()" style="display:none;margin-top:8px;width:100%;padding:9px 14px;background:#f0f4ff;border:1.5px solid #bfdbfe;border-radius:10px;font-size:13px;font-weight:600;color:#3b82f6;cursor:pointer;text-align:center;transition:background .15s">
+            🗺️ Ver ubicación en el mapa
+          </button>
           <div id="ckMapaWrap">
             <div id="ckMapa"></div>
           </div>
@@ -1330,19 +1340,24 @@ function openCheckout(){
     )
   ).sort((a,b)=>a.nombre.localeCompare(b.nombre));
 
-  if(todosLosToppings.length){
-    // Armar la lista de toppings
-    document.getElementById('ckToppingsList').innerHTML=todosLosToppings.map(t=>`
+  const toppingsDisponibles = todosLosToppings.filter(t => t.stock === undefined || t.stock < 0 || t.stock > 0);
+  if(toppingsDisponibles.length){
+    // Armar la lista de toppings (solo con stock > 0 o ilimitados)
+    document.getElementById('ckToppingsList').innerHTML=toppingsDisponibles.map(t=>{
+      const bajStock = t.stock !== undefined && t.stock > 0 && t.stock <= 5;
+      const stockTag = bajStock ? `<span class="tp-stock-badge tp-stock-low" style="font-size:10px">Últimas ${t.stock} uds.</span>` : '';
+      return `
       <label class="ck-topping-row" onclick="recalcToppingsOrden()">
         <input type="checkbox" class="ck-tp-chk" value="${t.id}"
                data-nombre="${t.nombre.replace(/"/g,'&quot;')}" data-precio="${t.precio}">
         <div class="ck-tp-ic"><i class="fa-solid fa-candy-cane"></i></div>
         <div class="ck-tp-info">
           <div class="ck-tp-name">${t.nombre}</div>
-          <div class="ck-tp-price">+ $${Number(t.precio).toLocaleString('es-AR')}</div>
+          <div class="ck-tp-price">+ $${Number(t.precio).toLocaleString('es-AR')} ${stockTag}</div>
         </div>
         <div class="ck-tp-chkmark"><i class="fa-solid fa-check"></i></div>
-      </label>`).join('');
+      </label>`;
+    }).join('');
     showCkStep('ckToppings');
   } else {
     // No hay toppings — saltar al flujo normal
@@ -1511,6 +1526,7 @@ function setEntrega(tipo){
   document.getElementById('btnEnvio').classList.toggle('on',tipo==='envio');
   document.getElementById('wrapSucursal').style.display=tipo==='retiro'?'':'none';
   document.getElementById('wrapEnvio').style.display   =tipo==='envio'?'':'none';
+  if(tipo==='envio') document.getElementById('btnAbrirMapa').style.display='block';
   if(tipo==='retiro'){
     _costoEnvio=0;
     buildSummary();
@@ -1874,9 +1890,57 @@ async function _moverPin(lat,lng){
   actualizarCostoEnvio(lat,lng);
 }
 
+function toggleMapa(){
+  const wrap=document.getElementById('ckMapaWrap');
+  const btn=document.getElementById('btnAbrirMapa');
+  const visible=wrap.style.display==='block';
+  if(visible){
+    wrap.style.display='none';
+    btn.textContent='🗺️ Ver ubicación en el mapa';
+    return;
+  }
+  // Si todavía no hay coordenadas, mostrar placeholder en lugar de mapa en blanco
+  if(!_ckMap){
+    const lat=document.getElementById('ckLat').value;
+    const lng=document.getElementById('ckLng').value;
+    if(!lat||!lng){
+      wrap.style.display='block';
+      document.getElementById('ckMapa').style.display='none';
+      let ph=document.getElementById('ckMapaPlaceholder');
+      if(!ph){
+        ph=document.createElement('div');
+        ph.id='ckMapaPlaceholder';
+        ph.style.cssText='padding:28px 16px;text-align:center;color:#94a3b8;font-size:13px;line-height:1.6';
+        ph.innerHTML='<div style="font-size:28px;margin-bottom:8px">📍</div>Ingresá tu dirección o usá <strong>"Usar mi ubicación actual"</strong><br>para ver el mapa aquí';
+        document.getElementById('ckMapa').insertAdjacentElement('afterend',ph);
+      }
+      btn.textContent='🗺️ Ocultar mapa';
+      return;
+    }
+    _initMapa(+lat,+lng);
+  } else {
+    // Ocultar placeholder si existe
+    const ph=document.getElementById('ckMapaPlaceholder');
+    if(ph) ph.style.display='none';
+    document.getElementById('ckMapa').style.display='';
+    wrap.style.display='block';
+    setTimeout(()=>_ckMap.invalidateSize(),150);
+  }
+  btn.textContent='🗺️ Ocultar mapa';
+}
+
 function _initMapa(lat,lng){
   const wrap=document.getElementById('ckMapaWrap');
+  const btn=document.getElementById('btnAbrirMapa');
+
+  // Mostrar botón y abrir mapa automáticamente
+  btn.style.display='block';
   wrap.style.display='block';
+  btn.textContent='🗺️ Ocultar mapa';
+  // Ocultar placeholder si existe
+  const ph=document.getElementById('ckMapaPlaceholder');
+  if(ph) ph.style.display='none';
+  document.getElementById('ckMapa').style.display='';
 
   // Hint debajo del mapa
   let hint=document.getElementById('ckMapaHint');
@@ -2398,7 +2462,17 @@ function abrirSelectorToppings(idProducto, nombre, precioBase, stock, qty, callb
   document.getElementById('tpSelAlert').style.display = 'none';
 
   document.getElementById('tpSelLista').innerHTML = _tpToppingsDisp.map(t => {
-    const sinStock = t.stock !== undefined && t.stock >= 0 && t.stock <= 0;
+    const sinStock  = t.stock !== undefined && t.stock >= 0 && t.stock === 0;
+    const bajStock  = t.stock !== undefined && t.stock > 0 && t.stock <= 5;
+    const ilimitado = t.stock === undefined || t.stock < 0;
+    let stockTag = '';
+    if (sinStock) {
+      stockTag = `<span class="tp-stock-badge tp-stock-empty">Sin stock</span>`;
+    } else if (bajStock) {
+      stockTag = `<span class="tp-stock-badge tp-stock-low">Últimas ${t.stock} uds.</span>`;
+    } else if (!ilimitado) {
+      stockTag = `<span class="tp-stock-badge tp-stock-ok">${t.stock} disponibles</span>`;
+    }
     return `
     <label class="tp-sel-row${sinStock ? ' tp-sel-sin-stock' : ''}">
       <input type="checkbox" class="tp-sel-chk" value="${t.id}"
@@ -2407,7 +2481,10 @@ function abrirSelectorToppings(idProducto, nombre, precioBase, stock, qty, callb
       <div class="tp-sel-ic"><i class="fa-solid fa-candy-cane"></i></div>
       <div class="tp-sel-info">
         <div class="tp-sel-name">${t.nombre}</div>
-        <div class="tp-sel-price">${sinStock ? '<span style="color:#e74c3c;font-size:11px">Sin stock</span>' : '+ $' + Number(t.precio).toLocaleString('es-AR')}</div>
+        <div class="tp-sel-price-row">
+          <span class="tp-sel-price">${sinStock ? '' : '+ $' + Number(t.precio).toLocaleString('es-AR')}</span>
+          ${stockTag}
+        </div>
       </div>
       <div class="tp-sel-chkmark"><i class="fa-solid fa-check"></i></div>
     </label>`;

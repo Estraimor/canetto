@@ -10,6 +10,10 @@ $pdo = Conexion::conectar();
 
 <div class="content-body">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
   <!-- =========================
         HEADER
   ========================== -->

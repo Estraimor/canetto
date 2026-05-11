@@ -10,6 +10,10 @@ include '../../../panel/dashboard/layaut/nav.php';
 
 <div class="pedidos-wrapper">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
   <div class="pedidos-header">
     <div>
       <h1>🧾 Pedidos activos</h1>

@@ -66,10 +66,12 @@ foreach ($pedidos as &$p) {
 unset($p);
 
 $eMap = [
-    1 => ['lbl'=>'Recibido',        'cls'=>'ped-e1','ic'=>'clock',        'color'=>'#6366f1','light'=>'#eef2ff','border'=>'#818cf8'],
-    2 => ['lbl'=>'En preparación',  'cls'=>'ped-e2','ic'=>'fire',         'color'=>'#d97706','light'=>'#fffbeb','border'=>'#fbbf24'],
-    3 => ['lbl'=>'En camino',       'cls'=>'ped-e3','ic'=>'motorcycle',   'color'=>'#2563eb','light'=>'#eff6ff','border'=>'#60a5fa'],
-    4 => ['lbl'=>'Entregado',       'cls'=>'ped-e4','ic'=>'circle-check', 'color'=>'#16a34a','light'=>'#f0fdf4','border'=>'#4ade80'],
+    1 => ['lbl'=>'Recibido',          'cls'=>'ped-e1','ic'=>'clock',        'color'=>'#6366f1','light'=>'#eef2ff','border'=>'#818cf8'],
+    2 => ['lbl'=>'En preparación',    'cls'=>'ped-e2','ic'=>'fire',         'color'=>'#d97706','light'=>'#fffbeb','border'=>'#fbbf24'],
+    3 => ['lbl'=>'En camino',         'cls'=>'ped-e3','ic'=>'motorcycle',   'color'=>'#2563eb','light'=>'#eff6ff','border'=>'#60a5fa'],
+    4 => ['lbl'=>'Entregado',         'cls'=>'ped-e4','ic'=>'circle-check', 'color'=>'#16a34a','light'=>'#f0fdf4','border'=>'#4ade80'],
+    5 => ['lbl'=>'Verificando pago…', 'cls'=>'ped-e5','ic'=>'spinner fa-spin', 'color'=>'#c88e99','light'=>'#fdf0f3','border'=>'#e8b4c0'],
+    6 => ['lbl'=>'Pago no aprobado',  'cls'=>'ped-e6','ic'=>'circle-xmark','color'=>'#dc2626','light'=>'#fef2f2','border'=>'#fca5a5'],
 ];
 $tl = [
     ['ic'=>'clock',       'lbl'=>'Recibido'],
@@ -104,6 +106,10 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
 /* ══════════════════════════════════════════
    MIS PEDIDOS — Estilos
 ══════════════════════════════════════════ */
+
+/* Fondo sólido para evitar bleed del carousel/index */
+html, body { background: #fff !important; }
+
 
 /* ── Botón de notificaciones ── */
 .notif-toggle-btn {
@@ -729,27 +735,6 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
 
 </div>
 
-<?php if (!empty($pedidos)): ?>
-<!-- Stats strip (mobile) -->
-<div class="ped-stats-strip">
-  <div class="ped-stat-pill">
-    <span class="ped-stat-pill-val"><?= $totalPedidos ?></span>
-    <span class="ped-stat-pill-lbl">Pedidos</span>
-  </div>
-  <div class="ped-stat-pill accent">
-    <span class="ped-stat-pill-val"><?= $enCurso ?></span>
-    <span class="ped-stat-pill-lbl">En curso</span>
-  </div>
-  <div class="ped-stat-pill green">
-    <span class="ped-stat-pill-val"><?= $entregados ?></span>
-    <span class="ped-stat-pill-lbl">Entregados</span>
-  </div>
-  <div class="ped-stat-pill">
-    <span class="ped-stat-pill-val sm">$<?= number_format($totalGastado, 0, ',', '.') ?></span>
-    <span class="ped-stat-pill-lbl">Total gastado</span>
-  </div>
-</div>
-<?php endif; ?>
 
 <!-- Layout principal -->
 <div class="ped-outer">
@@ -789,7 +774,7 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
   $ts       = strtotime($p['created_at'] ?? $p['fecha']);
   $fechaFmt = date('j', $ts) . ' ' . $meses[date('n', $ts) - 1] . ' · ' . date('H:i', $ts);
 ?>
-<div class="ped-card" data-filtro="<?= $filtroVal ?>" data-ec="<?= $eid ?>">
+<div class="ped-card" data-filtro="<?= $filtroVal ?>" data-ec="<?= $eid ?>" data-pedido-id="<?= $p['idventas'] ?>">
 
   <!-- Cabecera de la card -->
   <div class="ped-card-hd">
@@ -807,6 +792,17 @@ $vapidPublic = PUSH_VAPID_PUBLIC;
       </span>
     <?php endif; ?>
   </div>
+
+  <!-- Aviso pago MP pendiente -->
+  <?php if ($eid === 5): ?>
+  <div class="mp-verificando-banner" style="display:flex;align-items:center;gap:10px;background:#fdf0f3;border:1.5px solid #e8b4c0;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#8a3550">
+    <i class="fa-solid fa-spinner fa-spin" style="font-size:16px;color:#c88e99"></i>
+    <div>
+      <strong>Verificando tu pago con Mercado Pago…</strong><br>
+      <span style="color:#b06080;font-size:12px">Esto se actualiza solo, no hace falta que recargues la página.</span>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <!-- Aviso pago en efectivo -->
   <?php if ($pagAlRec): ?>
@@ -1135,6 +1131,66 @@ async function toggleNotificaciones() {
 
 // Verificar estado al cargar
 checkNotifStatus();
+
+// ── Polling para pedidos MP pendientes de pago ──────────────────────
+(function() {
+  // Recopilar IDs de pedidos en estado 5 (Verificando pago MP)
+  const pendientesMP = <?php
+    $ids = array_values(array_map(fn($p) => (int)$p['idventas'],
+      array_filter($pedidos, fn($p) => (int)($p['estado_id'] ?? 0) === 5)
+    ));
+    echo json_encode($ids);
+  ?>;
+
+  if (!pendientesMP.length) return;
+
+  const LABELS = {
+    1: { txt: 'Recibido',        ic: 'clock',         col: '#6366f1', bg: '#eef2ff', bd: '#818cf8' },
+    2: { txt: 'En preparación',  ic: 'fire',          col: '#d97706', bg: '#fffbeb', bd: '#fbbf24' },
+    3: { txt: 'En camino',       ic: 'motorcycle',    col: '#2563eb', bg: '#eff6ff', bd: '#60a5fa' },
+    4: { txt: 'Entregado',       ic: 'circle-check',  col: '#16a34a', bg: '#f0fdf4', bd: '#4ade80' },
+    5: { txt: 'Verificando pago…', ic: 'spinner fa-spin', col: '#c88e99', bg: '#fdf0f3', bd: '#e8b4c0' },
+    6: { txt: 'Pago no aprobado', ic: 'circle-xmark', col: '#dc2626', bg: '#fef2f2', bd: '#fca5a5' },
+  };
+
+  let activos = [...pendientesMP];
+  let intentos = 0;
+  const MAX_INTENTOS = 20; // ~1 min de polling
+
+  async function verificar() {
+    if (!activos.length || intentos >= MAX_INTENTOS) return;
+    intentos++;
+
+    const resueltos = [];
+    for (const id of activos) {
+      try {
+        const r = await fetch(`api/check_pedido_estado.php?id=${id}`);
+        const d = await r.json();
+        if (!d.ok) continue;
+
+        if (d.estado_id !== 5) {
+          // Estado cambió — actualizar badge en pantalla
+          const card  = document.querySelector(`.ped-card[data-pedido-id="${id}"]`);
+          const badge = card?.querySelector('.ped-card-badge');
+          const lbl   = LABELS[d.estado_id];
+          if (badge && lbl) {
+            badge.innerHTML = `<i class="fa-solid fa-${lbl.ic}"></i> ${lbl.txt}`;
+            badge.style.cssText = `background:${lbl.bg};color:${lbl.col};border-color:${lbl.bd}`;
+          }
+          // Quitar banner "verificando pago"
+          card?.querySelector('.mp-verificando-banner')?.remove();
+          resueltos.push(id);
+        }
+      } catch(e) {}
+    }
+
+    activos = activos.filter(id => !resueltos.includes(id));
+    if (activos.length) setTimeout(verificar, 3000); // cada 3 seg
+  }
+
+  // Empezar polling a los 2 seg (tiempo para que el webhook de MP llegue)
+  setTimeout(verificar, 2000);
+})();
 // ──────────────────────────────────────────────────────────────────
 
 async function confirmarEntrega(idVenta, btn) {

@@ -8,8 +8,75 @@ $totalProductos    = $pdo->query("SELECT COUNT(*) FROM productos WHERE tipo='pro
 $totalMP           = $pdo->query("SELECT COUNT(*) FROM materia_prima")->fetchColumn();
 $produccionHoy     = $pdo->query("SELECT COUNT(*) FROM produccion WHERE DATE(fecha)=CURDATE()")->fetchColumn();
 
-try { $pedidosPendientes = $pdo->query("SELECT COUNT(*) FROM pedidos WHERE estado IN ('pendiente','en_proceso')")->fetchColumn(); }
+// Stock de toppings — tabla: toppings + toppings_stock
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS toppings_stock (
+        idtoppings_stock INT AUTO_INCREMENT PRIMARY KEY,
+        toppings_idtoppings INT NOT NULL,
+        stock_actual DECIMAL(10,2) NOT NULL DEFAULT 0,
+        stock_minimo DECIMAL(10,2) NOT NULL DEFAULT 0,
+        UNIQUE KEY uq_tp (toppings_idtoppings)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $stockToppings = $pdo->query("
+        SELECT t.idtoppings, t.nombre, COALESCE(ts.stock_actual,0) AS stock_actual, COALESCE(ts.stock_minimo,0) AS stock_minimo
+        FROM toppings t
+        LEFT JOIN toppings_stock ts ON ts.toppings_idtoppings = t.idtoppings
+        WHERE t.activo = 1
+        ORDER BY COALESCE(ts.stock_actual,0) ASC LIMIT 20
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { $stockToppings = []; }
+
+// Stock de packaging/cajas
+try {
+    $stockPackaging = $pdo->query("
+        SELECT idpackaging, nombre, stock_actual, stock_minimo
+        FROM packaging
+        ORDER BY stock_actual ASC LIMIT 20
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { $stockPackaging = []; }
+
+// Stock de materias primas — JOIN con unidad_medida para obtener abreviatura
+try {
+    $mpCols    = array_column($pdo->query("DESCRIBE materia_prima")->fetchAll(PDO::FETCH_ASSOC), 'Field');
+    $colActual = in_array('stock_actual', $mpCols) ? 'stock_actual' : (in_array('cantidad', $mpCols) ? 'cantidad' : 'stock');
+    $colMinimo = in_array('stock_minimo', $mpCols) ? 'stock_minimo' : (in_array('minimo', $mpCols)   ? 'minimo'   : '0');
+    $hasUmJoin = in_array('unidad_medida_idunidad_medida', $mpCols);
+    if ($hasUmJoin) {
+        $stockMP = $pdo->query("
+            SELECT mp.nombre, mp.$colActual AS stock_actual, mp.$colMinimo AS stock_minimo,
+                   COALESCE(um.abreviatura, '') AS unidad
+            FROM materia_prima mp
+            LEFT JOIN unidad_medida um ON um.idunidad_medida = mp.unidad_medida_idunidad_medida
+            ORDER BY mp.$colActual ASC LIMIT 20
+        ")->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $colUnidad = in_array('unidad', $mpCols) ? 'unidad' : (in_array('unidad_medida', $mpCols) ? 'unidad_medida' : null);
+        $selectU   = $colUnidad ? ", $colUnidad AS unidad" : ", '' AS unidad";
+        $stockMP   = $pdo->query("
+            SELECT nombre, $colActual AS stock_actual, $colMinimo AS stock_minimo $selectU
+            FROM materia_prima ORDER BY $colActual ASC LIMIT 20
+        ")->fetchAll(PDO::FETCH_ASSOC);
+    }
+} catch (Throwable $e) { $stockMP = []; }
+
+// Pedidos activos = ventas no entregadas ni canceladas (sin filtro de fecha)
+try { $pedidosPendientes = $pdo->query("
+    SELECT COUNT(*) FROM ventas
+    WHERE estado_venta_idestado_venta NOT IN (4,6)
+")->fetchColumn(); }
 catch (Throwable $e) { $pedidosPendientes = 0; }
+
+// KPIs de ventas
+try {
+    $ventasHoy = $pdo->query("
+        SELECT COALESCE(SUM(total),0) AS ingresos, COUNT(*) AS cantidad
+        FROM ventas WHERE estado_venta_idestado_venta != 6 AND DATE(fecha) = CURDATE()
+    ")->fetch(PDO::FETCH_ASSOC);
+    $ventasAyer = $pdo->query("
+        SELECT COALESCE(SUM(total),0) AS ingresos
+        FROM ventas WHERE estado_venta_idestado_venta = 4 AND DATE(fecha) = CURDATE() - INTERVAL 1 DAY
+    ")->fetchColumn();
+} catch (Throwable $e) { $ventasHoy = ['ingresos'=>0,'cantidad'=>0]; $ventasAyer = 0; }
 
 $productosBajos = $pdo->query("
     SELECT p.nombre, sp.stock_actual, sp.stock_minimo, sp.tipo_stock
@@ -74,14 +141,32 @@ try {
 try { $incidenciasAbiertas = $pdo->query("SELECT COUNT(*) FROM incidencias WHERE estado='abierta'")->fetchColumn(); }
 catch (Throwable $e) { $incidenciasAbiertas = 0; }
 
+// Materias primas con stock bajo o sin stock
+try {
+    $mpBajas = $pdo->query("
+        SELECT nombre, stock_actual, stock_minimo
+        FROM materia_prima
+        WHERE stock_actual > 0 AND stock_actual <= stock_minimo
+        ORDER BY stock_actual ASC LIMIT 10
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { $mpBajas = []; }
+
+try {
+    $mpSinStock = $pdo->query("
+        SELECT nombre FROM materia_prima WHERE stock_actual <= 0 LIMIT 10
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { $mpSinStock = []; }
+
 $diasSemana = ['Sunday'=>'Domingo','Monday'=>'Lunes','Tuesday'=>'Martes',
                'Wednesday'=>'Miércoles','Thursday'=>'Jueves','Friday'=>'Viernes','Saturday'=>'Sábado'];
-$diaNombre  = $diasSemana[(new DateTime())->format('l')] ?? '';
-$fechaHoy   = (new DateTime())->format('d/m/Y');
+$hoy        = new DateTime();
+$diaNombre  = $diasSemana[$hoy->format('l')] ?? '';
+$fechaHoy   = $hoy->format('d/m/Y');
 
-$stockOk     = empty($productosBajos) && empty($productosSinStock);
-$topbarStats = "Hoy: {$produccionHoy} prod. · Stock: " . ($stockOk ? 'saludable ✓' : 'revisar ⚠');
-$pageTitle   = "Dashboard — Canetto";
+$stockOk      = empty($productosBajos) && empty($productosSinStock);
+$totalAlertas = count($productosSinStock) + count($productosBajos) + count($mpSinStock) + count($mpBajas);
+$topbarStats  = "Hoy: {$produccionHoy} prod. · Stock: " . ($stockOk ? 'saludable ✓' : 'revisar ⚠');
+$pageTitle    = "Dashboard — Canetto";
 
 include '../panel/dashboard/layaut/nav.php';
 ?>
@@ -349,6 +434,95 @@ include '../panel/dashboard/layaut/nav.php';
 .dh-saldo.neg { color: #c0392b; }
 .dh-ingreso td { background: rgba(22,163,74,.025); }
 .dh-costo   td { background: rgba(192,57,43,.025); }
+
+/* ── ATAJOS RÁPIDOS MEJORADOS ─────────────────────────────── */
+.db-qa--primary {
+    background: #0f0f0f !important;
+    color: #fff !important;
+    border-color: #0f0f0f !important;
+}
+.db-qa--primary i, .db-qa--primary span { color: #fff !important; }
+.db-qa--alert {
+    border-color: #fecaca !important;
+    background: #fff5f5 !important;
+}
+.db-qa--alert i { color: #dc2626 !important; }
+.db-qa-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    min-width: 16px; height: 16px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+    border: 2px solid #fff;
+}
+.db-qa { position: relative; }
+
+/* ── ALERTAS ACCIONABLES ─────────────────────────────────── */
+.db-alerta-seccion {
+    display: block;
+    text-decoration: none;
+    padding: 12px 18px;
+    border-bottom: 1px solid #f0eeeb;
+    transition: background .15s;
+    cursor: pointer;
+}
+.db-alerta-seccion:last-child { border-bottom: none; }
+.db-alerta-seccion--red   { border-left: 3px solid #dc2626; }
+.db-alerta-seccion--amber { border-left: 3px solid #d97706; }
+.db-alerta-seccion--red:hover   { background: #fff5f5; }
+.db-alerta-seccion--amber:hover { background: #fffbeb; }
+
+.db-alerta-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: .83rem;
+    color: #0f0f0f;
+}
+.db-alerta-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.db-alerta-dot--red   { background: #dc2626; }
+.db-alerta-dot--amber { background: #d97706; }
+.db-alerta-cta {
+    margin-left: auto;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #888;
+}
+.db-alerta-seccion:hover .db-alerta-cta { color: #0f0f0f; }
+
+.db-alerta-items { display: flex; flex-direction: column; gap: 4px; }
+.db-alerta-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: .78rem;
+    color: #3a3a3a;
+    padding: 2px 0;
+}
+.db-alerta-item-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.db-alerta-item-tag {
+    margin-left: auto;
+    font-size: .68rem;
+    font-weight: 600;
+    color: #888;
+    background: #f4f3f0;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
 </style>
 
 <!-- SELECTOR DE VISTA -->
@@ -391,148 +565,324 @@ include '../panel/dashboard/layaut/nav.php';
     </div>
 
     <div class="db-quick-actions">
-        <a href="<?= URL_ADMIN ?>/produccion/congelado/index.php" class="db-qa"><i class="fa-solid fa-snowflake"></i><span>Masa congelada</span></a>
-        <a href="<?= URL_ADMIN ?>/produccion/horneado/index.php" class="db-qa"><i class="fa-solid fa-fire"></i><span>Horneado</span></a>
-        <a href="<?= URL_ADMIN ?>/stock/index.php" class="db-qa"><i class="fa-solid fa-boxes-stacked"></i><span>Stock</span></a>
-        <a href="<?= URL_ADMIN ?>/recetas/index.php" class="db-qa"><i class="fa-solid fa-book-open"></i><span>Recetas</span></a>
-        <a href="<?= URL_ADMIN ?>/Ventas/Ventas/index.php" class="db-qa"><i class="fa-solid fa-cart-shopping"></i><span>Nueva venta</span></a>
-        <a href="<?= URL_ADMIN ?>/materias_primas/index.php" class="db-qa"><i class="fa-solid fa-seedling"></i><span>Materias primas</span></a>
+        <a href="<?= URL_ADMIN ?>/Ventas/Ventas/index.php"        class="db-qa db-qa--primary"><i class="fa-solid fa-cart-plus"></i><span>Nueva venta</span></a>
+        <a href="<?= URL_ADMIN ?>/Ventas/Pedidos/index.php"       class="db-qa"><i class="fa-solid fa-clock"></i><span>Pedidos</span><?php if($pedidosPendientes > 0): ?><span class="db-qa-badge"><?= (int)$pedidosPendientes ?></span><?php endif; ?></a>
+        <a href="<?= URL_ADMIN ?>/stock/index.php"                class="db-qa <?= $totalAlertas > 0 ? 'db-qa--alert' : '' ?>"><i class="fa-solid fa-boxes-stacked"></i><span>Stock</span><?php if($totalAlertas > 0): ?><span class="db-qa-badge"><?= $totalAlertas ?></span><?php endif; ?></a>
+        <a href="<?= URL_ADMIN ?>/produccion/congelado/index.php" class="db-qa"><i class="fa-solid fa-snowflake"></i><span>Producción</span></a>
+        <a href="<?= URL_ADMIN ?>/analitica/index.php"            class="db-qa"><i class="fa-solid fa-chart-line"></i><span>Analítica</span></a>
     </div>
 
+    <?php
+    $ingresosHoy  = (float)$ventasHoy['ingresos'];
+    $cantidadHoy  = (int)$ventasHoy['cantidad'];
+    $ingresosAyer = (float)$ventasAyer;
+    $diffPct      = $ingresosAyer > 0 ? round(($ingresosHoy - $ingresosAyer) / $ingresosAyer * 100) : null;
+    $alertasSinStock = count($productosSinStock);
+    $alertasBajo     = count($productosBajos);
+    ?>
     <div class="db-kpi-row">
+
+        <!-- Ingresos hoy -->
         <div class="db-kpi">
-            <div class="db-kpi-icon"><i class="fa-solid fa-cookie-bite"></i></div>
-            <div class="db-kpi-label">Productos activos</div>
-            <div class="db-kpi-val" data-val="<?= (int)$totalProductos ?>">0</div>
-            <div class="db-kpi-sub">en sistema</div>
+            <div class="db-kpi-icon" style="background:#dcfce7;color:#16a34a"><i class="fa-solid fa-dollar-sign"></i></div>
+            <div class="db-kpi-label">Ingresos hoy</div>
+            <div class="db-kpi-val" style="font-size:1.5rem" data-val="<?= (int)$ingresosHoy ?>" data-money="1">$0</div>
+            <div class="db-kpi-sub">
+                <?= $cantidadHoy ?> pedido<?= $cantidadHoy !== 1 ? 's' : '' ?>
+                <?php if ($diffPct !== null): ?>
+                    · <span style="color:<?= $diffPct >= 0 ? '#16a34a' : '#dc2626' ?>;font-weight:700"><?= $diffPct >= 0 ? '+' : '' ?><?= $diffPct ?>% vs ayer</span>
+                <?php endif; ?>
+            </div>
         </div>
-        <div class="db-kpi">
-            <div class="db-kpi-icon"><i class="fa-solid fa-calendar-day"></i></div>
-            <div class="db-kpi-label">Producidas hoy</div>
-            <div class="db-kpi-val" data-val="<?= (int)$produccionHoy ?>">0</div>
-            <div class="db-kpi-sub"><?= $produccionHoy > 0 ? 'lotes registrados' : 'sin actividad aún' ?></div>
-        </div>
-        <div class="db-kpi">
-            <div class="db-kpi-icon"><i class="fa-solid fa-clock"></i></div>
+
+        <!-- Pedidos activos -->
+        <a href="<?= URL_ADMIN ?>/Ventas/Pedidos/index.php" class="db-kpi" style="text-decoration:none;color:inherit;cursor:pointer">
+            <div class="db-kpi-icon" style="<?= $pedidosPendientes > 0 ? 'background:#fffbeb;color:#d97706' : 'background:#f4f3f0;color:#888' ?>"><i class="fa-solid fa-clock"></i></div>
             <div class="db-kpi-label">Pedidos activos</div>
             <div class="db-kpi-val" data-val="<?= (int)$pedidosPendientes ?>">0</div>
-            <div class="db-kpi-sub">pendientes / en proceso</div>
-        </div>
-        <div class="db-kpi">
-            <div class="db-kpi-icon"><i class="fa-solid fa-seedling"></i></div>
-            <div class="db-kpi-label">Materias primas</div>
-            <div class="db-kpi-val" data-val="<?= (int)$totalMP ?>">0</div>
-            <div class="db-kpi-sub">registradas</div>
-        </div>
+            <div class="db-kpi-sub"><?= $pedidosPendientes > 0 ? 'requieren atención' : 'sin pendientes' ?></div>
+        </a>
+
+        <!-- Alertas de stock -->
+        <a href="<?= URL_ADMIN ?>/stock/index.php" class="db-kpi" style="text-decoration:none;color:inherit;cursor:pointer">
+            <div class="db-kpi-icon" style="<?= $totalAlertas > 0 ? 'background:#fef2f2;color:#dc2626' : 'background:#dcfce7;color:#16a34a' ?>"><i class="fa-solid fa-<?= $totalAlertas > 0 ? 'triangle-exclamation' : 'check' ?>"></i></div>
+            <div class="db-kpi-label">Alertas de stock</div>
+            <div class="db-kpi-val" data-val="<?= $totalAlertas ?>">0</div>
+            <div class="db-kpi-sub">
+                <?php if ($totalAlertas === 0): ?>
+                    todo en rango
+                <?php else: ?>
+                    <?php if ($alertasSinStock): ?><?= $alertasSinStock ?> sin stock<?php endif; ?>
+                    <?php if ($alertasSinStock && $alertasBajo): ?> · <?php endif; ?>
+                    <?php if ($alertasBajo): ?><?= $alertasBajo ?> bajo mínimo<?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </a>
+
     </div>
 
     <div class="db-layout">
         <div class="db-col-main">
 
-            <div class="db-card">
-                <div class="db-card-title">
-                    <i class="fa-solid fa-chart-simple"></i>
-                    Niveles de stock
-                    <span class="db-card-badge"><?= count($stockAgrupado) ?> productos</span>
-                </div>
-                <?php if (empty($stockAgrupado)): ?>
-                    <p class="db-empty">Sin datos de stock.</p>
-                <?php else: ?>
-                    <?php foreach ($stockAgrupado as $nombre => $tipos): ?>
-                    <div class="db-producto-grupo">
-                        <div class="db-producto-nombre"><?= htmlspecialchars($nombre) ?></div>
-                        <div class="db-producto-tipos">
-                        <?php foreach (['congelado'=>'Congelado','hecho'=>'Hecho'] as $tipoKey=>$tipoLabel):
-                            if (!isset($tipos[$tipoKey])) continue;
-                            $r = $tipos[$tipoKey];
-                            $actual   = (float)$r['stock_actual'];
-                            $minimo   = (float)$r['stock_minimo'];
-                            $sinStock = $actual <= 0;
-                            $bajMin   = !$sinStock && $actual <= $minimo;
-                        ?>
-                            <div class="db-stock-row">
-                                <span class="db-stock-tipo"><?= $tipoLabel ?></span>
-                                <span class="db-stock-nums"><?= number_format($actual,0) ?> uds · mín <?= number_format($minimo,0) ?></span>
-                                <?php if ($sinStock): ?>
-                                    <span class="db-stock-badge db-stock-badge--sinstock">Sin Stock</span>
-                                <?php elseif ($bajMin): ?>
-                                    <span class="db-stock-badge db-stock-badge--bajo">Bajo mínimo</span>
-                                <?php else: ?>
-                                    <span class="db-stock-badge db-stock-badge--ok">OK</span>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
+            <!-- STOCK COMPACTO CON ACCIONES -->
+            <div class="db-card" style="padding:0;overflow:hidden">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--border,#e8e7e4)">
+                    <span style="font-size:.88rem;font-weight:700;color:#0f0f0f">Stock de productos</span>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div style="display:flex;gap:5px">
+                            <button class="sf-pill active" data-sf="todos"     onclick="sfStock(this)">Todos</button>
+                            <button class="sf-pill" data-sf="sin-stock"        onclick="sfStock(this)" style="color:#dc2626;border-color:#fecaca">Sin stock</button>
+                            <button class="sf-pill" data-sf="bajo"             onclick="sfStock(this)" style="color:#d97706;border-color:#fde68a">Bajo</button>
+                            <button class="sf-pill" data-sf="ok"               onclick="sfStock(this)" style="color:#16a34a;border-color:#bbf7d0">OK</button>
                         </div>
+                        <a href="<?= URL_ADMIN ?>/stock/index.php" style="font-size:.75rem;font-weight:600;color:var(--brand,#c88e99);text-decoration:none;white-space:nowrap">Ver todo →</a>
                     </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-
-            <div class="db-chart-card">
-                <div class="db-chart-head">
-                    <div class="db-card-title" style="margin:0">
-                        <i class="fa-solid fa-chart-bar"></i>
-                        Producción — últimos 7 días
-                    </div>
-                    <span class="db-count">lotes por día</span>
                 </div>
-                <div class="db-chart-wrap">
-                    <canvas id="chartProd" height="90"></canvas>
-                </div>
-            </div>
-
-            <div class="db-table-card">
-                <div class="db-table-head">
-                    <span>Últimas producciones</span>
-                    <span class="db-count"><?= count($ultimasProducciones) ?> registros</span>
-                </div>
-                <?php if (empty($ultimasProducciones)): ?>
-                    <p class="db-empty db-empty--padded">Sin producciones registradas.</p>
-                <?php else: ?>
-                <table>
-                    <thead><tr><th>Producto</th><th>Cantidad</th><th>Fecha</th><th>Estado</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($ultimasProducciones as $i => $p): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($p['nombre']) ?></td>
-                            <td class="db-mono"><?= number_format($p['cantidad'], 2) ?></td>
-                            <td class="db-muted db-mono"><?= date('d/m/Y H:i', strtotime($p['fecha'])) ?></td>
-                            <td><?php if ($i === 0): ?><span class="db-pill db-pill--green">reciente</span><?php else: ?><span class="db-pill db-pill--gray">registrado</span><?php endif; ?></td>
+                <div style="overflow-x:auto">
+                <table id="dtStock" style="width:100%;border-collapse:collapse;font-size:.82rem">
+                    <thead>
+                        <tr style="background:#fafaf9;border-bottom:1px solid #e8e7e4">
+                            <th style="padding:9px 16px;text-align:left;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#888">Producto</th>
+                            <th style="padding:9px 12px;text-align:center;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#2563eb">Congelado</th>
+                            <th style="padding:9px 12px;text-align:center;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#ea580c">Horneado</th>
+                            <th style="padding:9px 16px;text-align:center;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#888"></th>
                         </tr>
+                    </thead>
+                    <tbody>
+                    <?php
+                    // Necesitamos idproductos y receta para las acciones
+                    $stockConAcciones = $pdo->query("
+                        SELECT p.idproductos, p.nombre, p.recetas_idrecetas,
+                            COALESCE(MAX(CASE WHEN sp.tipo_stock='CONGELADO' THEN sp.stock_actual END),0) AS cong_actual,
+                            COALESCE(MAX(CASE WHEN sp.tipo_stock='HECHO'     THEN sp.stock_actual END),0) AS hech_actual,
+                            COALESCE(MAX(CASE WHEN sp.tipo_stock='CONGELADO' THEN sp.stock_minimo END),0) AS cong_min,
+                            COALESCE(MAX(CASE WHEN sp.tipo_stock='HECHO'     THEN sp.stock_minimo END),0) AS hech_min
+                        FROM productos p
+                        LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos
+                        WHERE p.tipo = 'producto'
+                        GROUP BY p.idproductos ORDER BY p.nombre ASC
+                    ")->fetchAll(PDO::FETCH_ASSOC);
+
+                    foreach ($stockConAcciones as $p):
+                        $ca = (float)$p['cong_actual']; $cm = (float)$p['cong_min'];
+                        $ha = (float)$p['hech_actual']; $hm = (float)$p['hech_min'];
+                        $congSS   = $ca <= 0; $congBajo = !$congSS && $ca <= $cm;
+                        $hechSS   = $ha <= 0; $hechBajo = !$hechSS && $ha <= $hm;
+                        $sfVal    = ($congSS || $hechSS) ? 'sin-stock' : (($congBajo || $hechBajo) ? 'bajo' : 'ok');
+                        $congColor = $congSS ? '#dc2626' : ($congBajo ? '#d97706' : '#16a34a');
+                        $hechColor = $hechSS ? '#dc2626' : ($hechBajo ? '#d97706' : '#16a34a');
+                    ?>
+                    <tr data-sf="<?= $sfVal ?>" style="border-bottom:1px solid #f0eeeb;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background=''">
+                        <td style="padding:10px 16px;font-weight:600;font-size:.84rem"><?= htmlspecialchars($p['nombre']) ?></td>
+
+                        <!-- Congelado -->
+                        <td style="padding:8px 12px;text-align:center">
+                            <span style="font-weight:700;color:<?= $congColor ?>;font-size:.88rem"><?= number_format($ca,0) ?></span>
+                            <span style="font-size:.68rem;color:#aaa;margin-left:3px">/ <?= (int)$cm ?></span>
+                        </td>
+
+                        <!-- Horneado -->
+                        <td style="padding:8px 12px;text-align:center">
+                            <span style="font-weight:700;color:<?= $hechColor ?>;font-size:.88rem"><?= number_format($ha,0) ?></span>
+                            <span style="font-size:.68rem;color:#aaa;margin-left:3px">/ <?= (int)$hm ?></span>
+                        </td>
+
+                        <td style="padding:8px 16px;text-align:center">
+                            <a href="<?= URL_ADMIN ?>/stock/index.php?open=<?= $p['idproductos'] ?>"
+                               style="padding:5px 14px;border-radius:6px;border:1.5px solid #e8e7e4;background:#fff;color:#3a3a3a;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block;transition:all .15s"
+                               onmouseover="this.style.borderColor='#0f0f0f';this.style.color='#0f0f0f'"
+                               onmouseout="this.style.borderColor='#e8e7e4';this.style.color='#3a3a3a'">
+                                Accionar →
+                            </a>
+                        </td>
+                    </tr>
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
+            </div>
+
+
+            <?php
+            // Helper para renderizar mini-tabla de stock
+            // $linkAccionar: destino del botón "Accionar →", $campoId: campo ID para ?open=
+            function miniStockWidget($titulo, $link, $items, $campoNombre, $campoActual, $campoMinimo, $campoUnidad = null, $linkAccionar = null, $campoId = null) {
+                if (!$linkAccionar) $linkAccionar = $link;
+                $sinStock = 0; $bajo = 0; $ok = 0;
+                foreach ($items as $r) {
+                    $a = (float)$r[$campoActual]; $m = (float)$r[$campoMinimo];
+                    if ($a <= 0)      $sinStock++;
+                    elseif ($a <= $m) $bajo++;
+                    else              $ok++;
+                }
+                // ID único para los filtros de esta tabla
+                static $widgetIdx = 0; $widgetIdx++;
+                $tid = 'msw'.$widgetIdx;
+            ?>
+            <div class="db-card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+                <!-- Header -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border,#e8e7e4);flex-wrap:wrap;gap:6px;flex-shrink:0">
+                    <span style="font-size:.82rem;font-weight:700;color:#0f0f0f"><?= $titulo ?></span>
+                    <a href="<?= $link ?>" style="font-size:.75rem;font-weight:600;color:var(--brand,#c88e99);text-decoration:none;white-space:nowrap;margin-left:auto">Ver todo →</a>
+                </div>
+                <!-- Filtros -->
+                <div style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:#fafaf9;border-bottom:1px solid #f0eeeb;flex-wrap:wrap;flex-shrink:0">
+                    <button class="sf-pill active" data-sf="todos"     onclick="mswFiltrar('<?= $tid ?>',this)" style="font-size:.7rem;padding:3px 10px">Todos</button>
+                    <button class="sf-pill" data-sf="sin-stock"        onclick="mswFiltrar('<?= $tid ?>',this)" style="font-size:.7rem;padding:3px 10px;color:#dc2626;border-color:#fecaca">Sin stock <?php if($sinStock):?><strong>(<?= $sinStock ?>)</strong><?php endif?></button>
+                    <button class="sf-pill" data-sf="bajo"             onclick="mswFiltrar('<?= $tid ?>',this)" style="font-size:.7rem;padding:3px 10px;color:#d97706;border-color:#fde68a">Bajo <?php if($bajo):?><strong>(<?= $bajo ?>)</strong><?php endif?></button>
+                    <button class="sf-pill" data-sf="ok"               onclick="mswFiltrar('<?= $tid ?>',this)" style="font-size:.7rem;padding:3px 10px;color:#16a34a;border-color:#bbf7d0">OK <?php if($ok):?><strong>(<?= $ok ?>)</strong><?php endif?></button>
+                </div>
+                <?php if (empty($items)): ?>
+                    <p style="padding:14px 16px;font-size:.8rem;color:#888">Sin datos.</p>
+                <?php else: ?>
+                <div style="overflow:auto;flex:1">
+                <table id="<?= $tid ?>" style="width:100%;border-collapse:collapse;font-size:.78rem">
+                    <thead style="position:sticky;top:0;z-index:1">
+                        <tr style="background:#fafaf9;border-bottom:1px solid #f0eeeb">
+                            <th style="padding:5px 16px;text-align:left;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#aaa;background:#fafaf9">Nombre</th>
+                            <th style="padding:5px 12px;text-align:right;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#aaa;background:#fafaf9">Stock</th>
+                            <th style="padding:5px 12px;text-align:center;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#aaa;background:#fafaf9"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($items as $r):
+                        $a = (float)$r[$campoActual]; $m = (float)$r[$campoMinimo];
+                        $u = $campoUnidad ? ($r[$campoUnidad] ?? '') : '';
+                        if ($a <= 0)      { $color = '#dc2626'; $sfv = 'sin-stock'; }
+                        elseif ($a <= $m) { $color = '#d97706'; $sfv = 'bajo'; }
+                        else              { $color = '#16a34a'; $sfv = 'ok'; }
+                        $ref = max($m * 2, $a, 1);
+                        $pct = min(100, round($a / $ref * 100));
+                    ?>
+                    <tr data-sf="<?= $sfv ?>" style="border-bottom:1px solid #f0eeeb" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background=''">
+                        <td style="padding:5px 16px;font-weight:600;color:#0f0f0f;font-size:.76rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px"><?= htmlspecialchars($r[$campoNombre]) ?></td>
+                        <td style="padding:5px 12px;text-align:right">
+                            <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+                                <div style="width:40px;height:3px;border-radius:4px;background:#e8e7e4;overflow:hidden">
+                                    <div style="height:100%;width:<?= $pct ?>%;border-radius:4px;background:<?= $color ?>"></div>
+                                </div>
+                                <span style="font-weight:700;color:<?= $color ?>;font-size:.76rem"><?= number_format($a, 0, ',', '.') ?><?= $u ? ' '.strtoupper($u) : '' ?></span>
+                            </div>
+                        </td>
+                        <td style="padding:5px 12px;text-align:center">
+                            <?php
+                        $itemId  = ($campoId && isset($r[$campoId])) ? (int)$r[$campoId] : 0;
+                        $href    = $itemId ? $linkAccionar.'?open='.$itemId : $linkAccionar;
+                        ?>
+                        <a href="<?= $href ?>"
+                               style="padding:3px 8px;border-radius:4px;border:1.5px solid #e8e7e4;background:#fff;color:#3a3a3a;font-size:.65rem;font-weight:600;text-decoration:none;display:inline-block;transition:all .15s;white-space:nowrap"
+                               onmouseover="this.style.borderColor='#0f0f0f';this.style.color='#0f0f0f'"
+                               onmouseout="this.style.borderColor='#e8e7e4';this.style.color='#3a3a3a'">
+                                Accionar →
+                            </a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                </div>
                 <?php endif; ?>
             </div>
+            <?php } // fin miniStockWidget ?>
 
         </div>
 
         <div class="db-col-side">
 
-            <div class="db-card">
-                <div class="db-card-title"><i class="fa-solid fa-bell"></i> Alertas del sistema</div>
-                <?php if (empty($productosBajos) && empty($productosSinStock)): ?>
-                    <div class="db-alert db-alert--ok">
-                        <span class="db-dot db-dot--ok"></span>Stock saludable — todo en rango
+            <!-- ALERTAS ACCIONABLES -->
+            <div class="db-card" style="padding:0;overflow:hidden">
+                <div class="db-card-title" style="padding:14px 18px 12px;border-bottom:1px solid var(--border,#e8e7e4);margin:0">
+                    Alertas del sistema
+                </div>
+
+                <?php
+                $totalAlertas = count($productosSinStock) + count($productosBajos) + count($mpSinStock) + count($mpBajas);
+                if ($totalAlertas === 0): ?>
+                    <div style="padding:20px 18px;display:flex;align-items:center;gap:10px;color:#16a34a;font-size:.84rem;font-weight:600">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0"></span>
+                        Todo en orden — sin alertas activas
                     </div>
                 <?php else: ?>
-                    <?php if ($productosSinStock): ?>
-                    <div class="db-alert db-alert--danger">
-                        <span class="db-dot db-dot--danger"></span>
-                        <?= count($productosSinStock) ?> producto<?= count($productosSinStock) > 1 ? 's' : '' ?> <strong>Sin Stock</strong>
-                    </div>
-                    <?php foreach ($productosSinStock as $ps): ?>
-                        <div class="db-alert-detail">⛔ <?= htmlspecialchars($ps['nombre']) ?> (<?= strtolower($ps['tipo_stock']) ?>)</div>
-                    <?php endforeach; ?>
+
+                    <?php if (!empty($productosSinStock)): ?>
+                    <!-- SECCIÓN: Sin stock → link a stock -->
+                    <a href="<?= URL_ADMIN ?>/stock/index.php" class="db-alerta-seccion db-alerta-seccion--red">
+                        <div class="db-alerta-header">
+                            <span class="db-alerta-dot db-alerta-dot--red"></span>
+                            <strong><?= count($productosSinStock) ?> producto<?= count($productosSinStock)>1?'s':'' ?> sin stock</strong>
+                            <span class="db-alerta-cta">Ir a stock →</span>
+                        </div>
+                        <div class="db-alerta-items">
+                        <?php foreach ($productosSinStock as $ps): ?>
+                            <div class="db-alerta-item">
+                                <span class="db-alerta-item-dot" style="background:#dc2626"></span>
+                                <?= htmlspecialchars($ps['nombre']) ?>
+                                <span class="db-alerta-item-tag"><?= strtolower($ps['tipo_stock']) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                        </div>
+                    </a>
                     <?php endif; ?>
-                    <?php if ($productosBajos): ?>
-                    <div class="db-alert db-alert--warn">
-                        <span class="db-dot db-dot--warn"></span><?= count($productosBajos) ?> bajo mínimo
-                    </div>
-                    <?php foreach ($productosBajos as $pb): ?>
-                        <div class="db-alert-detail">⚠ <?= htmlspecialchars($pb['nombre']) ?> — <?= number_format($pb['stock_actual'],0) ?>/<?= number_format($pb['stock_minimo'],0) ?> uds</div>
-                    <?php endforeach; ?>
+
+                    <?php if (!empty($productosBajos)): ?>
+                    <!-- SECCIÓN: Bajo mínimo → link a stock -->
+                    <a href="<?= URL_ADMIN ?>/stock/index.php" class="db-alerta-seccion db-alerta-seccion--amber">
+                        <div class="db-alerta-header">
+                            <span class="db-alerta-dot db-alerta-dot--amber"></span>
+                            <strong><?= count($productosBajos) ?> bajo el mínimo</strong>
+                            <span class="db-alerta-cta">Ir a stock →</span>
+                        </div>
+                        <div class="db-alerta-items">
+                        <?php foreach ($productosBajos as $pb): ?>
+                            <div class="db-alerta-item">
+                                <span class="db-alerta-item-dot" style="background:#d97706"></span>
+                                <?= htmlspecialchars($pb['nombre']) ?>
+                                <span class="db-alerta-item-tag"><?= number_format($pb['stock_actual'],0) ?>/<?= number_format($pb['stock_minimo'],0) ?> uds</span>
+                            </div>
+                        <?php endforeach; ?>
+                        </div>
+                    </a>
                     <?php endif; ?>
+
+                    <?php if (!empty($mpSinStock)): ?>
+                    <!-- SECCIÓN: MP sin stock → link a materias primas -->
+                    <a href="<?= URL_ADMIN ?>/materias_primas/index.php" class="db-alerta-seccion db-alerta-seccion--red">
+                        <div class="db-alerta-header">
+                            <span class="db-alerta-dot db-alerta-dot--red"></span>
+                            <strong><?= count($mpSinStock) ?> materia<?= count($mpSinStock)>1?'s':'' ?> prima sin stock</strong>
+                            <span class="db-alerta-cta">Ver MP →</span>
+                        </div>
+                        <div class="db-alerta-items">
+                        <?php foreach ($mpSinStock as $mp): ?>
+                            <div class="db-alerta-item">
+                                <span class="db-alerta-item-dot" style="background:#dc2626"></span>
+                                <?= htmlspecialchars($mp['nombre']) ?>
+                            </div>
+                        <?php endforeach; ?>
+                        </div>
+                    </a>
+                    <?php endif; ?>
+
+                    <?php if (!empty($mpBajas)): ?>
+                    <!-- SECCIÓN: MP baja → link a proveedores -->
+                    <a href="<?= URL_ADMIN ?>/proveedor/index.php" class="db-alerta-seccion db-alerta-seccion--amber">
+                        <div class="db-alerta-header">
+                            <span class="db-alerta-dot db-alerta-dot--amber"></span>
+                            <strong><?= count($mpBajas) ?> materia prima baja — comprar</strong>
+                            <span class="db-alerta-cta">Ver proveedores →</span>
+                        </div>
+                        <div class="db-alerta-items">
+                        <?php foreach ($mpBajas as $mp): ?>
+                            <div class="db-alerta-item">
+                                <span class="db-alerta-item-dot" style="background:#d97706"></span>
+                                <?= htmlspecialchars($mp['nombre']) ?>
+                                <span class="db-alerta-item-tag"><?= number_format($mp['stock_actual'],2) ?>/<?= number_format($mp['stock_minimo'],2) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                        </div>
+                    </a>
+                    <?php endif; ?>
+
                 <?php endif; ?>
             </div>
 
@@ -584,6 +934,28 @@ include '../panel/dashboard/layaut/nav.php';
             </div>
 
         </div>
+    </div>
+
+    <!-- ── GRID STOCKS SECUNDARIOS ─────────────────────────────────── -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px;grid-auto-rows:460px;align-items:stretch">
+        <?php miniStockWidget(
+            'Stock de Toppings',
+            URL_ADMIN.'/stock/toppings/index.php',
+            $stockToppings, 'nombre', 'stock_actual', 'stock_minimo',
+            null, null, 'idtoppings'
+        ); ?>
+        <?php miniStockWidget(
+            'Packaging / Cajas',
+            URL_ADMIN.'/packaging/index.php',
+            $stockPackaging, 'nombre', 'stock_actual', 'stock_minimo',
+            null, null, 'idpackaging'
+        ); ?>
+        <?php miniStockWidget(
+            'Materias Primas',
+            URL_ADMIN.'/materias_primas/index.php',
+            $stockMP, 'nombre', 'stock_actual', 'stock_minimo', 'unidad',
+            URL_ADMIN.'/proveedor/index.php'  // Accionar → va a proveedores (sin open)
+        ); ?>
     </div>
 
 </div></div>
@@ -762,6 +1134,11 @@ include '../panel/dashboard/layaut/nav.php';
     <div class="ana-section-header">
       <h2>Concentración de pedidos por día y hora</h2>
       <span class="chart-note">Pedidos entregados del período</span>
+    </div>
+    <div class="sf-wrap" id="sf-heatmap" style="display:none">
+      <span class="sf-label">SUB-PERÍODO:</span>
+      <div class="sf-pills" id="sfp-heatmap"></div>
+      <button class="sf-reset" id="sfr-heatmap" onclick="resetSubfiltro('heatmap')" style="display:none">← Todo el período</button>
     </div>
     <div class="hm-wrap" id="hmWrap"><div class="ana-loading">Cargando...</div></div>
   </div>
@@ -946,8 +1323,9 @@ function initChartProd() {
     if (chartProd) { chartProd.resize(); return; }
     // Animar KPIs del dashboard
     document.querySelectorAll('.db-kpi-val[data-val]').forEach(function(el, i) {
-        var v = parseInt(el.dataset.val, 10) || 0;
-        countUp(el, v, false, i * 80);
+        var v    = parseFloat(el.dataset.val) || 0;
+        var isMoney = el.dataset.money === '1';
+        countUp(el, v, isMoney, i * 80);
     });
     var canvas = document.getElementById('chartProd');
     if (!canvas) return;
@@ -1069,6 +1447,11 @@ async function cargar() {
     countDown(document.getElementById('k-ticket-prom'),    _kpiDash.ticket || 0, true);
     countDown(document.getElementById('k-beneficio'),      Math.abs(_kpiDash.benef || 0), true);
     _kpiDash = { hoy:0, semana:0, periodo:0, ticket:0, benef:0 };
+    // Resetear contadores de retiro/envío
+    document.getElementById('k-retiro-cant').textContent  = '—';
+    document.getElementById('k-retiro-total').textContent = '—';
+    document.getElementById('k-envio-cant').textContent   = '—';
+    document.getElementById('k-envio-total').textContent  = '—';
 
     var tbProd = document.getElementById('tb-productos');
     if (tbProd) tbProd.innerHTML='<tr><td colspan="4" class="ana-loading">Cargando...</td></tr>';
@@ -1114,8 +1497,11 @@ function renderKPIs(k, c, re) {
     countUp(elB, Math.abs(benef), true, _DASH_BAJAR_DUR);
     setTimeout(function() {
         var d = _DASH_BAJAR_DUR;
-        document.getElementById('k-pedidos-periodo').textContent =
-            peds + ' pedido'+(peds!==1?'s':'') + ' entregado'+(peds!==1?'s':'');
+        var entregados = parseInt(k.pedidos_entregados) || 0;
+        document.getElementById('k-pedidos-periodo').innerHTML =
+            '<strong>' + peds + '</strong> pedido'+(peds!==1?'s':'') +
+            ' &nbsp;·&nbsp; <span style="color:#16a34a;font-weight:700">' +
+            entregados + ' entregado'+(entregados!==1?'s':'') + '</span>';
         if (elB && card && ico) {
             if (benef>=0) {
                 elB.style.color='#1a7a4a'; card.style.borderTopColor='#1a7a4a'; card.style.background='#f0faf4';
@@ -1127,7 +1513,7 @@ function renderKPIs(k, c, re) {
         }
     }, _DASH_BAJAR_DUR);
 
-    // Retiro / Envío
+    // Retiro / Envío del período seleccionado
     if (re && re.retiro !== undefined) {
         var r=re.retiro, env=re.envio||{cantidad:0,total:0};
         setTimeout(function() {
@@ -1251,25 +1637,31 @@ function hmNivel(val,max) {
     if (max>=5&&val===max) return 2;
     return 1;
 }
-function renderHeatmap(heatmap) {
+function jsDay2Dow(jsDay){ return (jsDay+6)%7; }
+function renderHeatmap(heatmap, startDow, numDias) {
+    if (startDow === undefined) startDow = 0;
+    if (numDias  === undefined) numDias  = 7;
     var wrap=document.getElementById('hmWrap');
     var DIAS=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
     var HORAS=Array.from({length:24},function(_,i){return String(i).padStart(2,'0');});
+    // Construir orden de días rotado desde startDow
+    var diasOrden=[];
+    for(var i=0;i<numDias;i++) diasOrden.push((startDow+i)%7);
     var maxVal=0;
-    for (var d=0;d<7;d++) for (var h=0;h<24;h++) maxVal=Math.max(maxVal,(heatmap[d]&&heatmap[d][h])||0);
+    for(var di=0;di<diasOrden.length;di++) for(var h=0;h<24;h++) maxVal=Math.max(maxVal,(heatmap[diasOrden[di]]&&heatmap[diasOrden[di]][h])||0);
     if (!maxVal) { wrap.innerHTML='<div class="ana-loading">Sin pedidos en el período</div>'; return; }
     var html='<div class="hm-grid"><div class="hm-label-corner"></div>';
     HORAS.forEach(function(h){ html+='<div class="hm-hour-lbl">'+h+'</div>'; });
-    for (var dd=0;dd<7;dd++) {
+    diasOrden.forEach(function(dd){
         html+='<div class="hm-day-lbl">'+DIAS[dd]+'</div>';
-        for (var hh=0;hh<24;hh++) {
+        for(var hh=0;hh<24;hh++){
             var val=(heatmap[dd]&&heatmap[dd][hh])||0;
             var niv=hmNivel(val,maxVal), col=HM_COLORS[niv];
             var tip=val?DIAS[dd]+' '+HORAS[hh]+':00 — '+val+' pedido'+(val!==1?'s':''):DIAS[dd]+' '+HORAS[hh]+':00 — sin pedidos';
             var bold=niv>=4?'border:2px solid rgba(255,255,255,.4);':'';
             html+='<div class="hm-cell" style="background:'+col+';'+bold+'" title="'+tip+'"></div>';
         }
-    }
+    });
     html+='</div><div class="hm-legend">';
     ['Sin pedidos','Muy pocos','Pocos','Moderado','Muchos','Pico'].forEach(function(lbl,i){
         html+='<div class="hm-leg-item"><div class="hm-leg-box" style="background:'+HM_COLORS[i]+';'+(i>=4?'border:1.5px solid rgba(0,0,0,.1)':'')+'"></div><span>'+lbl+'</span></div>';
@@ -1343,7 +1735,7 @@ function showToast(msg,type){
 }
 
 // ── SUB-FILTROS POR TARJETA ───────────────────────────────────────────
-var CARDS = ['ingresos','productos','pago'];
+var CARDS = ['ingresos','productos','pago','heatmap'];
 
 function _dateStr(d) {
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1455,7 +1847,13 @@ async function cargarCard(cardId, desde, hasta) {
             case 'productos':  renderTopProductos(data.top_productos, false); break;
             case 'pago':       renderPago(data.por_pago); break;
             case 'materiales': renderCostosMP(data.costos_mp, data.costos); break;
-            case 'heatmap':    renderHeatmap(data.heatmap||{}); break;
+            case 'heatmap': {
+                var dI=new Date(desde+'T00:00:00'), dF=new Date(hasta+'T00:00:00');
+                var startDow=jsDay2Dow(dI.getDay());
+                var numDias=Math.min(Math.round((dF-dI)/86400000)+1, 7);
+                renderHeatmap(data.heatmap||{}, startDow, numDias);
+                break;
+            }
         }
     } catch(e){ console.error('cargarCard error:', cardId, e); }
 }
@@ -1518,18 +1916,46 @@ function toggleVista(v) {
 var _finModo = 'mes_actual', _finLastData = null;
 
 function cargarFinanzas() {
+    // Resetear KPIs a estado de carga
+    ['fin-k-costo','fin-k-ingresos','fin-k-beneficio'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) { el.textContent = '—'; el.style.color = ''; }
+    });
+    var elM = document.getElementById('fin-k-margen');
+    if (elM) { elM.textContent = '—'; elM.style.color = ''; }
+    var elIS = document.getElementById('fin-k-ingresos-sub');
+    if (elIS) elIS.textContent = 'cargando...';
+    var bars = document.getElementById('fin-mp-bars');
+    if (bars) bars.innerHTML = '<div class="ana-loading">Cargando...</div>';
+    var tb = document.getElementById('fin-tb-debe-haber');
+    if (tb) tb.innerHTML = '<tr><td colspan="6" class="ana-loading">Cargando...</td></tr>';
+
     var params = buildParamsFin();
     fetch('analitica/api/get_analitica.php?' + params)
-        .then(function(r){ return r.json(); })
-        .then(function(data){
+        .then(function(r){ return r.text(); })
+        .then(function(txt){
+            var data;
+            try { data = JSON.parse(txt); } catch(e) {
+                console.error('Finanzas JSON error:', txt.substring(0,200));
+                ['fin-k-costo','fin-k-ingresos','fin-k-beneficio','fin-k-margen'].forEach(function(id){
+                    var el = document.getElementById(id); if (el) el.textContent = 'Error';
+                });
+                return;
+            }
+            if (data.error) { console.error('Finanzas API error:', data.error); return; }
             _finLastData = data;
             renderFinKPIs(data);
             renderFinMateriales(data.costos_mp, data.costos);
             renderDebeHaber(data.debe_haber, data.kpis, data.costos);
             var lbl = document.getElementById('fin-lblPeriodo');
-            if (lbl) lbl.textContent = data.periodo_label || '—';
+            if (lbl) lbl.textContent = data.periodo_label || data.periodo || '—';
         })
-        .catch(function(e){ console.error('Finanzas error:', e); });
+        .catch(function(e){
+            console.error('Finanzas fetch error:', e);
+            ['fin-k-costo','fin-k-ingresos','fin-k-beneficio','fin-k-margen'].forEach(function(id){
+                var el = document.getElementById(id); if (el) el.textContent = 'Error';
+            });
+        });
 }
 
 function buildParamsFin() {
@@ -1549,27 +1975,33 @@ function buildParamsFin() {
 
 function renderFinKPIs(data) {
     var k = data.kpis || {}, c = data.costos || {};
-    var ingresos  = parseFloat(k.ventas_periodo || 0);
-    var costo     = parseFloat(c.costo_periodo || 0);
-    var beneficio = ingresos - costo;
-    var margen    = ingresos > 0 ? ((beneficio / ingresos) * 100).toFixed(1) : 0;
+    var ingresos    = parseFloat(k.ventas_periodo   || 0);
+    var costo       = parseFloat(c.costo_periodo    || 0);
+    var pedidos     = parseInt(k.pedidos_periodo    || 0);
+    var entregados  = parseInt(k.pedidos_entregados || 0);
+    var beneficio   = ingresos - costo;
+    var margen      = ingresos > 0 ? ((beneficio / ingresos) * 100).toFixed(1) : 0;
 
-    var elC = document.getElementById('fin-k-costo');
-    var elI = document.getElementById('fin-k-ingresos');
-    var elB = document.getElementById('fin-k-beneficio');
-    var elM = document.getElementById('fin-k-margen');
+    var elC  = document.getElementById('fin-k-costo');
+    var elI  = document.getElementById('fin-k-ingresos');
+    var elB  = document.getElementById('fin-k-beneficio');
+    var elM  = document.getElementById('fin-k-margen');
     var elIS = document.getElementById('fin-k-ingresos-sub');
 
-    if (elC) elC.textContent = fmt(costo);
-    if (elI) elI.textContent = fmt(ingresos);
-    if (elIS) elIS.textContent = (k.pedidos_periodo || 0) + ' pedidos';
+    if (elC)  elC.textContent = fmt(costo);
+    if (elI)  elI.textContent = fmt(ingresos);
+    if (elIS) {
+        var subTxt = pedidos + ' pedido' + (pedidos !== 1 ? 's' : '');
+        if (entregados !== pedidos) subTxt += ' · <span style="color:#16a34a;font-weight:700">' + entregados + ' entregado' + (entregados !== 1 ? 's' : '') + '</span>';
+        elIS.innerHTML = subTxt;
+    }
     if (elB) {
         elB.textContent = fmt(beneficio);
         elB.style.color = beneficio >= 0 ? '#16a34a' : '#c0392b';
     }
     if (elM) {
         elM.textContent = margen + '%';
-        elM.style.color = margen >= 0 ? '#c88e99' : '#c0392b';
+        elM.style.color = parseFloat(margen) >= 0 ? '#c88e99' : '#c0392b';
     }
     var card = document.getElementById('fin-kpi-beneficio-card');
     if (card) card.style.borderLeftColor = beneficio >= 0 ? '#16a34a' : '#c0392b';
@@ -1690,15 +2122,177 @@ function limpiarRangoUIFin() {
     document.getElementById('fin-btnDiaReset').style.display = 'none';
 }
 
+// Instancias DataTables
+let dtStockMain = null;
+const dtMsw = {};
+
+// DOMContentLoaded: jQuery ya está cargado (footer lo carga sincrónicamente antes de este evento)
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle de vista primero — no depende de nada externo
+    // Toggle de vista
     var saved = localStorage.getItem('canetto_vista') || 'dashboard';
     var sel = document.getElementById('viewSelect');
     if (sel) sel.value = saved;
     toggleVista(saved);
-    // Chart del dashboard — después, con guard por si falla
-    try { initChartProd(); } catch(e) { console.error('Dashboard chart error:', e); }
+    try { initChartProd(); } catch(e) {}
+
+    // Config base DataTables
+    var dtBase = {
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
+        pageLength: 15,
+        lengthMenu: [10,15,25,50],
+        dom: "<'db-dt-top'lf>t<'db-dt-bottom'ip>",
+    };
+
+    // Stock principal
+    if ($.fn.DataTable && document.getElementById('dtStock')) {
+        dtStockMain = $('#dtStock').DataTable(Object.assign({}, dtBase, {
+            order: [[0,'asc']],
+            columnDefs: [
+                { targets: 0, className: 'dt-left' },
+                { targets: [1,2], orderable: false },
+                { targets: 3, orderable: false, className: 'dt-center' },
+            ],
+        }));
+    }
+
+    // Mini widgets
+    ['msw1','msw2','msw3'].forEach(function(id) {
+        if (!document.getElementById(id)) return;
+        dtMsw[id] = $('#'+id).DataTable(Object.assign({}, dtBase, {
+            pageLength: 10,
+            order: [[1,'asc']],
+            columnDefs: [
+                { targets: 0, className: 'dt-left' },
+                { targets: 1, className: 'dt-right' },
+                { targets: 2, orderable: false, className: 'dt-center' },
+            ],
+        }));
+    });
+
+    // Aplicar filtro inicial
+    var sfBtn = document.querySelector('.sf-pill[data-sf="todos"]');
+    if (sfBtn) sfStock(sfBtn);
 });
+
+// Filtros sf-pill — fuera de DOMContentLoaded para que los onclick del HTML puedan llamarlos
+function sfStock(btn) {
+    btn.closest('div').querySelectorAll('.sf-pill[data-sf]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    var filtro = btn.dataset.sf;
+    if (dtStockMain) {
+        $.fn.dataTable.ext.search.push(function(s, d, i) {
+            if (s.nTable.id !== 'dtStock') return true;
+            if (filtro === 'todos') return true;
+            var tr = s.nTable.tBodies[0].rows[i];
+            return tr && tr.dataset.sf === filtro;
+        });
+        dtStockMain.draw();
+        $.fn.dataTable.ext.search.pop();
+    } else {
+        document.querySelectorAll('#dtStock tbody tr').forEach(tr => {
+            tr.style.display = filtro === 'todos' || tr.dataset.sf === filtro ? '' : 'none';
+        });
+    }
+}
+
+function mswFiltrar(tableId, btn) {
+    btn.closest('div').querySelectorAll('.sf-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    var filtro = btn.dataset.sf;
+    if (dtMsw[tableId]) {
+        $.fn.dataTable.ext.search.push(function(s, d, i) {
+            if (s.nTable.id !== tableId) return true;
+            if (filtro === 'todos') return true;
+            var tr = s.nTable.tBodies[0].rows[i];
+            return tr && tr.dataset.sf === filtro;
+        });
+        dtMsw[tableId].draw();
+        $.fn.dataTable.ext.search.pop();
+    } else {
+        document.querySelectorAll('#'+tableId+' tbody tr').forEach(tr => {
+            tr.style.display = filtro === 'todos' || tr.dataset.sf === filtro ? '' : 'none';
+        });
+    }
+}
+
+/* ── Producir desde dashboard ─────────────────────────── */
+function dbProducir(productoId, recetaId, nombre) {
+    Swal.fire({
+        title: `Producir — ${nombre}`,
+        input: 'number',
+        inputLabel: 'Cantidad a producir (uds)',
+        inputAttributes: { min: 1, step: 1 },
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#999',
+        confirmButtonText: 'Producir',
+        cancelButtonText: 'Cancelar',
+        inputValidator: v => !v || v <= 0 ? 'Ingresá una cantidad válida' : null
+    }).then(r => {
+        if (!r.isConfirmed) return;
+        const cant = parseFloat(r.value);
+        Swal.fire({ title: 'Calculando…', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        fetch('produccion/congelado/api/preview_receta.php', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ receta: recetaId, cantidad: cant })
+        }).then(r=>r.json()).then(preview => {
+            if (preview.status !== 'ok') { Swal.fire('Error', preview.mensaje||'Error', 'error'); return; }
+            const filas = preview.ingredientes.map(i => {
+                const c = i.faltante ? 'color:#dc2626;font-weight:700' : 'color:#16a34a';
+                return `<tr><td style="text-align:left;padding:3px 8px">${i.faltante?'✗':'✓'} ${i.nombre}</td><td style="padding:3px 8px;${c}">${i.cantidad} ${i.unidad}</td><td style="padding:3px 8px;color:#888;font-size:.78rem">Stock: ${i.stock}</td></tr>`;
+            }).join('');
+            const puede = preview.puede_producir;
+            Swal.fire({
+                title: `¿Producir ${cant} uds?`,
+                html: `<table style="width:100%;border-collapse:collapse;font-size:.82rem">${filas}</table>${!puede?'<p style="color:#dc2626;font-weight:600;margin-top:8px">Stock insuficiente en algunos ingredientes</p>':''}`,
+                icon: puede ? 'question' : 'warning',
+                showCancelButton: true,
+                confirmButtonColor: puede ? '#2563eb' : '#d97706',
+                cancelButtonColor: '#999',
+                confirmButtonText: 'Producir',
+                cancelButtonText: 'Cancelar'
+            }).then(r2 => {
+                if (!r2.isConfirmed) return;
+                fetch('produccion/congelado/api/producir.php', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ receta: recetaId, producto: productoId, cantidad: cant })
+                }).then(r=>r.json()).then(r => {
+                    if (r.status === 'ok') Swal.fire({title:'Producción realizada',text:r.mensaje,icon:'success',confirmButtonColor:'#c88e99'}).then(()=>location.reload());
+                    else Swal.fire('Error', r.mensaje||'Error', 'error');
+                });
+            });
+        }).catch(()=>Swal.fire('Error','No se pudo conectar','error'));
+    });
+}
+
+/* ── Hornear desde dashboard ──────────────────────────── */
+function dbHornear(productoId, disponible, nombre) {
+    Swal.fire({
+        title: `Hornear — ${nombre}`,
+        html: `<p style="margin-bottom:10px;color:#666;font-size:.85rem">Disponible para hornear: <strong>${disponible} uds</strong></p>`,
+        input: 'number',
+        inputLabel: 'Cantidad a hornear',
+        inputAttributes: { min: 1, step: 1, max: disponible },
+        showCancelButton: true,
+        confirmButtonColor: '#ea580c',
+        cancelButtonColor: '#999',
+        confirmButtonText: 'Hornear',
+        cancelButtonText: 'Cancelar',
+        inputValidator: v => {
+            if (!v || v <= 0) return 'Ingresá una cantidad válida';
+            if (parseFloat(v) > disponible) return `Máximo disponible: ${disponible} uds`;
+        }
+    }).then(r => {
+        if (!r.isConfirmed) return;
+        fetch('produccion/horneado/api/procesar_horneado.php', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ producto_id: productoId, cantidad: parseFloat(r.value) })
+        }).then(r=>r.json()).then(r => {
+            if (r.status === 'ok') Swal.fire({title:'Horneado realizado',text:r.mensaje,icon:'success',confirmButtonColor:'#c88e99'}).then(()=>location.reload());
+            else Swal.fire('Error', r.mensaje||'Error', 'error');
+        });
+    });
+}
 </script>
 
 <?php include __DIR__ . '/../panel/dashboard/layaut/footer.php'; ?>

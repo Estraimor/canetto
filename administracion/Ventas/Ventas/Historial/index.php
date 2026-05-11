@@ -9,6 +9,10 @@ include '../../../../panel/dashboard/layaut/nav.php';
 
 <div class="historial-wrapper">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
   <div class="historial-header">
     <div>
       <h1>📋 Historial de Ventas</h1>

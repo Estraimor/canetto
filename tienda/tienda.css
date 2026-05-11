@@ -1767,14 +1767,14 @@ body.has-bottom-nav .fab {
   position: fixed;
   bottom: 0; left: 0; right: 0;
   z-index: 200;
-  background: #0f172a;
-  border-top: none;
+  background: #ffffff;
+  border-top: 1.5px solid #f0e8eb;
   display: flex;
   align-items: stretch;
   height: 66px;
   padding: 0 6px;
   padding-bottom: env(safe-area-inset-bottom, 0);
-  box-shadow: 0 -2px 24px rgba(0,0,0,.35);
+  box-shadow: 0 -4px 20px rgba(200,142,153,.12);
   gap: 2px;
 }
 .bn-item {
@@ -1785,7 +1785,7 @@ body.has-bottom-nav .fab {
   justify-content: center;
   gap: 3px;
   text-decoration: none;
-  color: #64748b;
+  color: #b0a0a5;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .04em;
@@ -1801,8 +1801,8 @@ body.has-bottom-nav .fab {
   transition: transform .2s cubic-bezier(.34,1.56,.64,1), color .18s;
 }
 .bn-item.active {
-  color: #fff;
-  background: rgba(255,255,255,.07);
+  color: var(--pk);
+  background: rgba(200,142,153,.07);
 }
 .bn-item.active i {
   color: var(--pk);

@@ -8,6 +8,10 @@ include '../../panel/dashboard/layaut/nav.php';
 
 <div class="inc-wrapper">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
   <!-- HEADER -->
   <div class="inc-header">
     <div>

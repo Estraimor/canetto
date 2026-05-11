@@ -53,7 +53,7 @@ try {
         case 'mes_actual':
         default:
             $inicio = date('Y-m-01');
-            $fin    = date('Y-m-d');
+            $fin    = date('Y-m-t');  // fin del mes completo
             break;
     }
 
@@ -70,18 +70,21 @@ try {
     };
 
     // ── KPIs del período ─────────────────────────────────────
+    // ingresos = solo entregados (estado 4)
+    // pedidos  = todos excepto cancelados (estado 6)
     $kpiStmt = $pdo->prepare("
         SELECT
-            COALESCE(SUM(CASE WHEN DATE(fecha) = CURDATE() THEN total END), 0)           AS ventas_hoy,
-            COUNT(CASE  WHEN DATE(fecha) = CURDATE() THEN 1 END)                          AS pedidos_hoy,
-            COALESCE(SUM(CASE WHEN YEARWEEK(fecha,1)=YEARWEEK(CURDATE(),1) THEN total END), 0) AS ventas_semana,
-            COUNT(CASE  WHEN YEARWEEK(fecha,1)=YEARWEEK(CURDATE(),1) THEN 1 END)          AS pedidos_semana,
-            COALESCE(SUM(CASE WHEN DATE(fecha) BETWEEN :ini AND :fin THEN total END), 0)  AS ventas_periodo,
-            COUNT(CASE  WHEN DATE(fecha) BETWEEN :ini2 AND :fin2 THEN 1 END)              AS pedidos_periodo,
-            COALESCE(SUM(total), 0)                                                        AS ventas_total
-        FROM ventas WHERE estado_venta_idestado_venta = 4
+            COALESCE(SUM(CASE WHEN estado_venta_idestado_venta=4 AND DATE(fecha)=CURDATE() THEN total END),0)                              AS ventas_hoy,
+            COUNT(CASE  WHEN estado_venta_idestado_venta!=6 AND DATE(fecha)=CURDATE() THEN 1 END)                                          AS pedidos_hoy,
+            COALESCE(SUM(CASE WHEN estado_venta_idestado_venta=4 AND YEARWEEK(fecha,1)=YEARWEEK(CURDATE(),1) THEN total END),0)            AS ventas_semana,
+            COUNT(CASE  WHEN estado_venta_idestado_venta!=6 AND YEARWEEK(fecha,1)=YEARWEEK(CURDATE(),1) THEN 1 END)                        AS pedidos_semana,
+            COALESCE(SUM(CASE WHEN estado_venta_idestado_venta=4 AND DATE(fecha) BETWEEN :ini AND :fin THEN total END),0)                  AS ventas_periodo,
+            COUNT(CASE  WHEN estado_venta_idestado_venta!=6 AND DATE(fecha) BETWEEN :ini2 AND :fin2 THEN 1 END)                            AS pedidos_periodo,
+            COUNT(CASE  WHEN estado_venta_idestado_venta=4  AND DATE(fecha) BETWEEN :ini3 AND :fin3 THEN 1 END)                            AS pedidos_entregados,
+            COALESCE(SUM(CASE WHEN estado_venta_idestado_venta=4 THEN total END),0)                                                        AS ventas_total
+        FROM ventas
     ");
-    $kpiStmt->execute([':ini'=>$inicio,':fin'=>$fin,':ini2'=>$inicio,':fin2'=>$fin]);
+    $kpiStmt->execute([':ini'=>$inicio,':fin'=>$fin,':ini2'=>$inicio,':fin2'=>$fin,':ini3'=>$inicio,':fin3'=>$fin]);
     $kpis = $kpiStmt->fetch();
 
     // ── Costos del período ────────────────────────────────────
@@ -183,15 +186,15 @@ try {
         $porOrigen = $origStmt->fetchAll();
     } catch (Throwable $e) {}
 
-    // ── Retiro vs Envío ───────────────────────────────────────
+    // ── Retiro vs Envío del período ───────────────────────────
     $retiroEnvio = ['retiro' => ['cantidad' => 0, 'total' => 0.0], 'envio' => ['cantidad' => 0, 'total' => 0.0]];
     try {
         $reStmt = $pdo->prepare("
             SELECT COALESCE(tipo_entrega,'retiro') AS tipo,
                    COUNT(*) AS cantidad,
-                   COALESCE(SUM(total),0) AS total
+                   COALESCE(SUM(CASE WHEN estado_venta_idestado_venta=4 THEN total ELSE 0 END),0) AS total
             FROM ventas
-            WHERE estado_venta_idestado_venta = 4
+            WHERE estado_venta_idestado_venta != 6
               AND DATE(fecha) BETWEEN :ini AND :fin
             GROUP BY COALESCE(tipo_entrega,'retiro')
         ");
@@ -265,7 +268,7 @@ try {
     $heatStmt = $pdo->prepare("
         SELECT WEEKDAY(fecha) AS dow, HOUR(fecha) AS hora, COUNT(*) AS cantidad
         FROM ventas
-        WHERE estado_venta_idestado_venta = 4
+        WHERE estado_venta_idestado_venta != 6
           AND DATE(fecha) BETWEEN :ini AND :fin
         GROUP BY WEEKDAY(fecha), HOUR(fecha)
     ");

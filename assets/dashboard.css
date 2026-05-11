@@ -18,6 +18,42 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ---------------------------------------------------------
+   BOTÓN VOLVER ATRÁS — global
+--------------------------------------------------------- */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 20px 8px 16px;
+    background: var(--brand, #c88e99);
+    color: #fff;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 22px;
+    box-shadow: 0 2px 10px rgba(200,142,153,.35);
+    transition: background .18s, transform .15s, box-shadow .18s;
+}
+.btn-back i {
+    font-size: 11px;
+    transition: transform .18s;
+}
+.btn-back:hover {
+    background: #b87585;
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(200,142,153,.50);
+    transform: translateX(-3px);
+}
+.btn-back:hover i {
+    transform: translateX(-2px);
+}
+
 :root {
     --sidebar-w:        240px;
     --sidebar-w-mini:   68px;
@@ -38,7 +74,7 @@
     --shadow:           0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.05);
 }
 
-html, body { height: 100%; font-family: "Speedee", system-ui, sans-serif; background: var(--bg-page); color: var(--text); font-size: 15px; }
+html, body { height: 100%; font-family: "Speedee", system-ui, sans-serif; background: var(--bg-page); color: var(--text); font-size: 16px; }
 
 /* ── Layout ─────────────────────────────────────────────── */
 .app {
@@ -296,7 +332,7 @@ html, body { height: 100%; font-family: "Speedee", system-ui, sans-serif; backgr
     display: flex; align-items: center;
     justify-content: space-between;
     padding: 0 28px;
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; top: 0; z-index: 500;
     flex-shrink: 0;
     box-shadow: 0 1px 0 var(--border);
 }

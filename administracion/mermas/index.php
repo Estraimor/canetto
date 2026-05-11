@@ -79,6 +79,11 @@ include '../../panel/dashboard/layaut/nav.php';
 </style>
 
 <div class="mrm-wrap">
+
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
   <div class="mrm-header">
     <div>
       <div class="mrm-title"><i class="fa-solid fa-triangle-exclamation"></i> Mermas</div>

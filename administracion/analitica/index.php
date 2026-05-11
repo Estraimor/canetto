@@ -11,6 +11,10 @@ include '../../panel/dashboard/layaut/nav.php';
 
 <div class="ana-wrap">
 
+  <a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+  </a>
+
   <!-- HEADER -->
   <div class="ana-header">
     <div>
@@ -186,6 +190,11 @@ include '../../panel/dashboard/layaut/nav.php';
     <div class="ana-section-header">
       <h2>Concentración de pedidos por día y hora</h2>
       <span class="chart-note">Pedidos entregados del período</span>
+    </div>
+    <div class="sf-wrap" id="sf-heatmap" style="display:none">
+      <span class="sf-label">SUB-PERÍODO:</span>
+      <div class="sf-pills" id="sfp-heatmap"></div>
+      <button class="sf-reset" id="sfr-heatmap" onclick="resetSubfiltroHM()" style="display:none">← Todo el período</button>
     </div>
     <div class="hm-wrap" id="hmWrap">
       <div class="ana-loading">Cargando...</div>
@@ -429,6 +438,7 @@ async function cargar(){
     renderCostosMP(data.costos_mp, data.costos);
     renderDebeHaber(data.debe_haber);
     renderHeatmap(data.heatmap || {});
+    actualizarSubfiltrosHM();
 
     // Restaurar secciones con fade-in
     requestAnimationFrame(() => {
@@ -462,8 +472,11 @@ function renderKPIs(k, c) {
   }
 
   animarKPIsSubir(ing, ticket, costo, benef);
-  document.getElementById('k-pedidos-periodo').textContent =
-    peds + ' pedido' + (peds !== 1 ? 's' : '') + ' entregado' + (peds !== 1 ? 's' : '');
+  const entregados = parseInt(k.pedidos_entregados) || 0;
+  document.getElementById('k-pedidos-periodo').innerHTML =
+    '<strong>' + peds + '</strong> pedido' + (peds !== 1 ? 's' : '') +
+    ' &nbsp;·&nbsp; <span style="color:#16a34a;font-weight:700">' +
+    entregados + ' entregado' + (entregados !== 1 ? 's' : '') + '</span>';
 }
 
 // ── GRÁFICO INGRESOS ─────────────────────────────────────────────────
@@ -721,13 +734,19 @@ function hmNivel(val, max) {
   return 1;
 }
 
-function renderHeatmap(heatmap) {
+// startDow: día de inicio del período en formato MySQL WEEKDAY (0=Lun … 6=Dom)
+// Si no se pasa, empieza desde Lun (0) — vista completa del período
+function renderHeatmap(heatmap, startDow = 0, numDias = 7) {
   const wrap = document.getElementById('hmWrap');
-  const DIAS  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const DIAS_BASE = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const HORAS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
 
+  // Construir el orden de filas comenzando desde startDow, limitado a numDias
+  const diasOrden = [];
+  for (let i = 0; i < numDias; i++) diasOrden.push((startDow + i) % 7);
+
   let maxVal = 0;
-  for (let d = 0; d < 7; d++)
+  for (const d of diasOrden)
     for (let h = 0; h < 24; h++)
       maxVal = Math.max(maxVal, heatmap[d]?.[h] || 0);
 
@@ -740,13 +759,13 @@ function renderHeatmap(heatmap) {
   html += `<div class="hm-label-corner"></div>`;
   HORAS.forEach(h => { html += `<div class="hm-hour-lbl">${h}</div>`; });
 
-  for (let d = 0; d < 7; d++) {
-    html += `<div class="hm-day-lbl">${DIAS[d]}</div>`;
+  for (const d of diasOrden) {
+    html += `<div class="hm-day-lbl">${DIAS_BASE[d]}</div>`;
     for (let h = 0; h < 24; h++) {
       const val  = heatmap[d]?.[h] || 0;
       const niv  = hmNivel(val, maxVal);
       const col  = HM_COLORS[niv];
-      const tip  = val ? `${DIAS[d]} ${HORAS[h]}:00 — ${val} pedido${val!==1?'s':''}` : `${DIAS[d]} ${HORAS[h]}:00 — sin pedidos`;
+      const tip  = val ? `${DIAS_BASE[d]} ${HORAS[h]}:00 — ${val} pedido${val!==1?'s':''}` : `${DIAS_BASE[d]} ${HORAS[h]}:00 — sin pedidos`;
       const bold = niv >= 4 ? 'border:2px solid rgba(255,255,255,.4);' : '';
       html += `<div class="hm-cell" style="background:${col};${bold}" title="${tip}"></div>`;
     }
@@ -805,5 +824,93 @@ function showToast(msg,type=''){
 }
 
 document.addEventListener('DOMContentLoaded', cargar);
+
+// ── SUBFILTROS HEATMAP ────────────────────────────────────────────────
+function _dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _subDias(inicio,fin){
+  const ops=[],cur=new Date(inicio),DN=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  while(cur<=fin){
+    const ds=_dateStr(cur);
+    ops.push({label:DN[cur.getDay()]+' '+String(cur.getDate()).padStart(2,'0')+'/'+String(cur.getMonth()+1).padStart(2,'0'),desde:ds,hasta:ds});
+    cur.setDate(cur.getDate()+1);
+  }
+  return ops;
+}
+function _subSemanas(inicio,fin){
+  const ops=[],f=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  let cur=new Date(inicio),sem=1;
+  while(cur<=fin){
+    const sI=new Date(cur),sF=new Date(cur); sF.setDate(sF.getDate()+6);
+    if(sF>fin) sF.setTime(fin.getTime());
+    ops.push({label:'Sem '+sem+' ('+f(sI)+'–'+f(sF)+')',desde:_dateStr(sI),hasta:_dateStr(sF)});
+    cur.setDate(cur.getDate()+7); sem++;
+  }
+  return ops;
+}
+function _subMeses(inicio,fin){
+  const ops=[],MN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  let cur=new Date(inicio.getFullYear(),inicio.getMonth(),1);
+  while(cur<=fin){
+    const mI=new Date(cur),mF=new Date(cur.getFullYear(),cur.getMonth()+1,0);
+    if(mF>fin) mF.setTime(fin.getTime());
+    ops.push({label:MN[cur.getMonth()]+' '+cur.getFullYear(),desde:_dateStr(mI),hasta:_dateStr(mF)});
+    cur.setMonth(cur.getMonth()+1);
+  }
+  return ops;
+}
+
+function generarSubOpcionesHM(){
+  if(!_lastData) return [];
+  const inicio=new Date(_lastData.inicio+'T00:00:00');
+  const fin   =new Date(_lastData.fin+'T00:00:00');
+  const dias  =Math.round((fin-inicio)/86400000)+1;
+  if(dias<=1) return [];
+  if(_modo==='semana_actual'||_modo==='semana_anterior') return _subDias(inicio,fin);
+  if(_modo==='mes_actual'||_modo==='mes_anterior'||_modo==='mes_especifico') return _subSemanas(inicio,fin);
+  if(_modo==='anio_completo') return _subMeses(inicio,fin);
+  if(dias<=14) return _subDias(inicio,fin);
+  if(dias<=90) return _subSemanas(inicio,fin);
+  return _subMeses(inicio,fin);
+}
+
+function actualizarSubfiltrosHM(){
+  const wrap=document.getElementById('sf-heatmap');
+  const container=document.getElementById('sfp-heatmap');
+  const ops=generarSubOpcionesHM();
+  if(!ops.length){ wrap.style.display='none'; return; }
+  wrap.style.display='';
+  container.innerHTML=ops.map(op=>
+    `<button class="sf-pill" data-desde="${op.desde}" data-hasta="${op.hasta}" onclick="aplicarSubfiltroHM(this)">${op.label}</button>`
+  ).join('');
+  document.getElementById('sfr-heatmap').style.display='none';
+}
+
+// JS getDay(): 0=Dom,1=Lun...6=Sáb → MySQL WEEKDAY: 0=Lun...6=Dom
+function jsDay2Dow(jsDay){ return (jsDay + 6) % 7; }
+
+async function aplicarSubfiltroHM(btn){
+  document.querySelectorAll('#sfp-heatmap .sf-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sfr-heatmap').style.display='';
+  const desde=btn.dataset.desde, hasta=btn.dataset.hasta;
+  const params=desde===hasta
+    ?`modo=dia_especifico&dia=${desde}`
+    :`modo=rango_custom&desde=${desde}&hasta=${hasta}`;
+  try{
+    const data=await fetch(`api/get_analitica.php?${params}`).then(r=>r.json());
+    // Calcular día de inicio y cantidad de días del sub-período
+    const dInicio = new Date(desde+'T00:00:00');
+    const dFin    = new Date(hasta+'T00:00:00');
+    const startDow = jsDay2Dow(dInicio.getDay());
+    const numDias  = Math.round((dFin - dInicio) / 86400000) + 1;
+    renderHeatmap(data.heatmap||{}, startDow, Math.min(numDias, 7));
+  }catch(e){}
+}
+
+function resetSubfiltroHM(){
+  document.querySelectorAll('#sfp-heatmap .sf-pill').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sfr-heatmap').style.display='none';
+  if(_lastData) renderHeatmap(_lastData.heatmap||{});
+}
 </script>
 <?php include '../../panel/dashboard/layaut/footer.php'; ?>

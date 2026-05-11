@@ -19,10 +19,10 @@
 
 :root {
   /* Brand */
-  --pink:       #e91e8c;
-  --pink-dark:  #c2185b;
-  --pink-light: #fce4ec;
-  --pink-mid:   #f8bbd0;
+  --pink:       #c88e99;
+  --pink-dark:  #a46678;
+  --pink-light: #fdf0f3;
+  --pink-mid:   #e8b4c0;
 
   /* Negros y grises */
   --black:      #0a0a0a;
@@ -379,11 +379,14 @@ body {
 .tab-nav {
   display: flex;
   background: var(--black);
-  padding: 0 8px 8px;
+  padding: 8px 8px 8px;
   gap: 3px;
-  position: sticky;
-  top: 64px;
-  z-index: 49;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  box-shadow: 0 -2px 0 var(--pink), 0 -4px 20px rgba(0,0,0,.25);
 }
 
 .tab-btn {
@@ -454,7 +457,7 @@ body {
 }
 
 .pedidos-list {
-  padding: 14px 13px 100px;
+  padding: 14px 13px 90px;
   display: flex;
   flex-direction: column;
   gap: 11px;

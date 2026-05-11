@@ -56,6 +56,10 @@ if (!empty($productos)) {
 <div id="modulo-congelado">
   <div class="congelado-container">
 
+    <a href="javascript:history.back()" class="btn-back">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+    </a>
+
     <div class="congelado-header">
       <h2 class="titulo-seccion">❄️ Producción - Congelado</h2>
       <div id="seleccionBadge" class="seleccion-badge" style="display:none">

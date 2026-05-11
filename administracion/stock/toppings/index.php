@@ -44,6 +44,10 @@ $bajos = count(array_filter($toppings, fn($t) => $t['activo'] && ($t['stock_actu
 
 <div class="tp-wrap">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
     <div class="tp-page-header">
         <div>
             <h1>✨ Toppings</h1>
@@ -298,6 +302,17 @@ async function eliminar(id, nombre) {
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+
+// Auto-abrir topping si viene ?open=ID
+(function() {
+    const openId = new URLSearchParams(location.search).get('open');
+    if (!openId) return;
+    // Buscar el botón editar de ese ID y dispararlo
+    const btn = document.querySelector(`.tp-icon-btn.edit[onclick*="abrirModal(${openId},"]`);
+    if (btn) {
+        setTimeout(() => { btn.click(); }, 400);
+    }
+})();
 </script>
 
 <?php include '../../../panel/dashboard/layaut/footer.php'; ?>

@@ -121,6 +121,10 @@ foreach ($boxRows as $row) {
 
 <div class="content-body">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
     <!-- HEADER -->
 
     <div class="editor-header fade-up">
@@ -350,21 +354,6 @@ MODAL CREAR / EDITAR
                     </button>
                 </div>
 
-                <!-- Toppings (solo producto) -->
-                <div id="grupoToppings" style="display:none">
-                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin:16px 0 10px;display:flex;align-items:center;gap:8px">
-                        <i class="fa-solid fa-candy-cane" style="color:#c88e99"></i> Toppings disponibles
-                        <span style="flex:1;height:1px;background:#ebebeb;display:block"></span>
-                    </div>
-                    <p style="font-size:12px;color:#888;margin:0 0 10px">Extras que el cliente podrá elegir al pedir este producto</p>
-                    <div id="toppingsCheckList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                        <div style="color:#aaa;font-size:13px;grid-column:1/-1">Cargando...</div>
-                    </div>
-                    <div style="margin-top:8px;font-size:11px;color:#bbb">
-                        Sin selección = sin toppings en la tienda ·
-                        <a href="../../administracion/toppings/" style="color:#c88e99;font-weight:600" target="_blank">Crear toppings →</a>
-                    </div>
-                </div>
 
             </div><!-- /fields-col -->
 
@@ -524,10 +513,9 @@ async function abrirModalProducto(idProductoEditar = 0) {
     modal.classList.add("open");
 
     try{
-        const [resRecetas, resProductos, resToppings] = await Promise.all([
+        const [resRecetas, resProductos] = await Promise.all([
             fetch("api/obtener_recetas.php").then(r=>r.json()),
             fetch("api/obtener_productos.php").then(r=>r.json()),
-            fetch("../../administracion/toppings/api/listar.php").then(r=>r.json()),
         ]);
 
         /* RECETAS */
@@ -538,41 +526,11 @@ async function abrirModalProducto(idProductoEditar = 0) {
         /* PRODUCTOS PARA BOX */
         window.productosDisponibles = resProductos;
 
-        /* TOPPINGS */
-        window._todosLosToppings = resToppings;
-        let asignadosIds = new Set();
-        if (idProductoEditar) {
-            const rAsig = await fetch(`../../administracion/toppings/api/toppings_producto.php?id=${idProductoEditar}`).then(r=>r.json());
-            asignadosIds = new Set(rAsig.map(Number));
-        }
-        renderToppingsCheck(resToppings, asignadosIds);
-
     }catch(e){
         Swal.fire("Error","No se pudieron cargar los datos","error");
     }
 }
 
-function renderToppingsCheck(toppings, asignadosIds = new Set()) {
-    const wrap = document.getElementById("toppingsCheckList");
-    if (!toppings || !toppings.length) {
-        wrap.innerHTML = `<div style="color:#aaa;font-size:13px;grid-column:1/-1">No hay toppings creados aún.
-            <a href="../../administracion/toppings/" style="color:#c88e99;font-weight:600" target="_blank">Crear toppings →</a></div>`;
-        return;
-    }
-    wrap.innerHTML = toppings.map(t => `
-        <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1.5px solid ${asignadosIds.has(+t.idtoppings)?'#c88e99':'#e8e8e8'};
-               border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:#333;
-               background:${asignadosIds.has(+t.idtoppings)?'#fdf0f3':'#fff'};transition:all .15s;"
-               onmouseenter="this.style.borderColor='#c88e99'"
-               onmouseleave="if(!this.querySelector('input').checked){this.style.borderColor='#e8e8e8';this.style.background='#fff';}">
-          <input type="checkbox" name="toppings[]" value="${t.idtoppings}"
-                 ${asignadosIds.has(+t.idtoppings)?'checked':''}
-                 style="accent-color:#c88e99;width:15px;height:15px"
-                 onchange="this.closest('label').style.borderColor=this.checked?'#c88e99':'#e8e8e8';this.closest('label').style.background=this.checked?'#fdf0f3':'#fff'">
-          <span style="flex:1">${t.nombre}</span>
-          <span style="font-size:12px;color:#c88e99;font-weight:700">+$${Number(t.precio).toLocaleString('es-AR')}</span>
-        </label>`).join('');
-}
 
 
 /* =========================
@@ -634,14 +592,12 @@ function activarModoBox(){
     document.getElementById("grupoReceta").style.display = "none";
     document.getElementById("builderBox").style.display = "block";
     document.getElementById("grupoStock").style.display = "none";
-    document.getElementById("grupoToppings").style.display = "none";
 }
 
 function activarModoProducto(){
     document.getElementById("grupoReceta").style.display = "block";
     document.getElementById("builderBox").style.display = "none";
     document.getElementById("grupoStock").style.display = "block";
-    document.getElementById("grupoToppings").style.display = "block";
 }
 
 
@@ -797,23 +753,6 @@ document
     const data = await res.json();
 
     if(data.status === "ok"){
-
-        // Guardar toppings si es producto (no box)
-        const tipo = document.getElementById("tipoProducto").value;
-        if (tipo !== 'box') {
-            const idGuardado = data.id || document.getElementById("idproducto").value;
-            if (idGuardado) {
-                const tpIds = [...document.querySelectorAll('#toppingsCheckList input[type="checkbox"]:checked')]
-                    .map(c => +c.value);
-                try {
-                    await fetch('../../administracion/toppings/api/asignar.php', {
-                        method: 'POST',
-                        body: JSON.stringify({ productos_idproductos: +idGuardado, toppings: tpIds }),
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                } catch {}
-            }
-        }
 
         Swal.fire({
             icon:"success",

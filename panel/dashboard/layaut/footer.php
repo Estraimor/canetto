@@ -87,7 +87,7 @@ window.addEventListener("load", function() {
     font-size:10px; font-weight:800;
     min-width:17px; height:17px; border-radius:10px;
     display:flex; align-items:center; justify-content:center;
-    padding:0 4px; border:2px solid #1e1e1e;
+    padding:0 4px; border:2px solid #ffffff;
     animation:badgePop .3s cubic-bezier(.36,.07,.19,.97);
 }
 @keyframes badgePop { 0%{transform:scale(0)}60%{transform:scale(1.25)}100%{transform:scale(1)} }
@@ -99,7 +99,7 @@ window.addEventListener("load", function() {
     box-shadow:0 8px 40px rgba(0,0,0,.22);
     border:1px solid #e5e7eb;
     display:flex; flex-direction:column;
-    z-index:9999; animation:panelSlide .2s ease;
+    z-index:10000; animation:panelSlide .2s ease;
     overflow:hidden;
 }
 @keyframes panelSlide { from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)} }
@@ -234,8 +234,9 @@ window.addEventListener("load", function() {
 
 <script>
 const NotifApp = (() => {
-    let _open     = false;
-    let _interval = null;
+    let _open       = false;
+    let _es         = null;   // EventSource
+    let _lastNotifs = [];
     const ICONS = {
         pedido_nuevo:  '🛍️',
         sin_stock:     '⛔',
@@ -253,28 +254,55 @@ const NotifApp = (() => {
         return 'hace ' + Math.floor(diff/3600) + 'h';
     }
 
+    function updateBadge(total) {
+        const badge = document.getElementById('notifBadge');
+        const bell  = document.getElementById('notifBell');
+        if (!badge) return;
+        if (total > 0) {
+            badge.textContent   = total > 99 ? '99+' : total;
+            badge.style.display = 'flex';
+            if (bell) bell.style.color = '#fbbf24';
+        } else {
+            badge.style.display = 'none';
+            if (bell) bell.style.color = '';
+        }
+    }
+
+    function startSSE() {
+        if (_es) { _es.close(); _es = null; }
+
+        const url = '<?= URL_ADMIN ?>/api/sse_notificaciones.php';
+        _es = new EventSource(url);
+
+        // SSE solo actualiza la lista y dispara toasts — el badge lo maneja poll()
+        _es.addEventListener('notificaciones', e => {
+            const d = JSON.parse(e.data);
+            _lastNotifs = d.notificaciones || [];
+            // Si el SSE dice que hay más notificaciones, actualizar el badge
+            if ((d.total || 0) > 0) updateBadge(d.total);
+            if (_open) renderList(_lastNotifs);
+        });
+
+        _es.addEventListener('nuevo_pedido', e => {
+            const n = JSON.parse(e.data);
+            showToastNotif(n);
+            poll(); // refrescar badge inmediato ante pedido nuevo
+        });
+
+        _es.onerror = () => {
+            setTimeout(() => {
+                if (_es && _es.readyState === EventSource.CLOSED) startSSE();
+            }, 5000);
+        };
+    }
+
+    // Poll: fuente de verdad del badge — corre al cargar y cada 30 s
     async function poll() {
         try {
             const data = await fetch('<?= URL_ADMIN ?>/api/notificaciones.php').then(r => r.json());
-            const total = data.total || 0;
-            const badge = document.getElementById('notifBadge');
-            const bell  = document.getElementById('notifBell');
-
-            if (badge) {
-                badge.textContent = total > 99 ? '99+' : total;
-                badge.style.display = total > 0 ? 'flex' : 'none';
-                bell.style.color = total > 0 ? '#fbbf24' : '';
-            }
-
-            if (_open) renderList(data.notificaciones || []);
-
-            // Mostrar toast solo para pedidos_nuevo muy recientes (< 30s)
-            (data.notificaciones || []).forEach(n => {
-                if (n.tipo === 'pedido_nuevo') {
-                    const age = (Date.now() - new Date(n.created_at)) / 1000;
-                    if (age < 35) showToastNotif(n);
-                }
-            });
+            _lastNotifs = data.notificaciones || [];
+            updateBadge(data.total || 0);
+            if (_open) renderList(_lastNotifs);
         } catch (e) {}
     }
 
@@ -361,7 +389,11 @@ const NotifApp = (() => {
         const panel = document.getElementById('notifPanel');
         if (!panel) return;
         panel.style.display = _open ? 'flex' : 'none';
-        if (_open) poll();
+        if (_open) {
+            // Datos frescos al abrir el panel
+            if (_lastNotifs.length) renderList(_lastNotifs);
+            poll();
+        }
     }
 
     function marcar(id, e) {
@@ -383,10 +415,15 @@ const NotifApp = (() => {
         }
     });
 
-    // Arrancar polling cada 30s
-    document.addEventListener('DOMContentLoaded', () => {
-        poll();
-        _interval = setInterval(poll, 30000);
+    // El script está al final del body — DOM ya está listo
+    poll();                        // badge inmediato al cargar
+    setInterval(poll, 30_000);     // mantener badge activo cada 30 s
+    startSSE();                    // SSE para toasts en tiempo real
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            poll(); // refrescar al volver a la pestaña
+            if (!_es || _es.readyState === EventSource.CLOSED) startSSE();
+        }
     });
 
     return { toggle, marcar, marcarTodas };

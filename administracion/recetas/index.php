@@ -52,6 +52,10 @@ $recetas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <div class="content-body">
 
+<a href="javascript:history.back()" class="btn-back">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
 <!-- HEADER -->
 <div class="recetas-header">
 

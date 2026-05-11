@@ -48,9 +48,52 @@ if ($prod['tipo'] === 'box') {
 $stock      = (float)$prod['stock_hecho'];
 $esBox      = $prod['tipo'] === 'box';
 $nombre     = htmlspecialchars($prod['nombre']);
-$precio     = number_format((float)$prod['precio'], 0, ',', '.');
 $precioNum  = (float)$prod['precio'];
 $cliente_id = $_SESSION['tienda_cliente_id'] ?? null;
+
+// Oferta desde carrusel (?oferta=ID) o buscar oferta activa del producto
+$ofertaActiva = null;
+$ofertaFromCarrusel = false;
+
+$ofId = (int)($_GET['oferta'] ?? 0);
+if ($ofId) {
+    try {
+        $stmtOf = $pdo->prepare("
+            SELECT * FROM oferta
+            WHERE idoferta = ? AND activo = 1 AND productos_idproductos = ?
+              AND (fecha_inicio IS NULL OR fecha_inicio <= CURDATE())
+              AND (fecha_fin   IS NULL OR fecha_fin   >= CURDATE())
+        ");
+        $stmtOf->execute([$ofId, $id]);
+        $ofertaActiva = $stmtOf->fetch() ?: null;
+        $ofertaFromCarrusel = !empty($ofertaActiva);
+    } catch (Throwable $e) {}
+}
+if (!$ofertaActiva) {
+    // Buscar oferta activa del producto aunque no venga del carrusel
+    try {
+        $stmtOf2 = $pdo->prepare("
+            SELECT * FROM oferta
+            WHERE activo = 1 AND productos_idproductos = ?
+              AND tipo_panel IN ('descuento','temporada','promo')
+              AND (fecha_inicio IS NULL OR fecha_inicio <= CURDATE())
+              AND (fecha_fin   IS NULL OR fecha_fin   >= CURDATE())
+            ORDER BY idoferta DESC LIMIT 1
+        ");
+        $stmtOf2->execute([$id]);
+        $ofertaActiva = $stmtOf2->fetch() ?: null;
+    } catch (Throwable $e) {}
+}
+
+// Calcular precio final
+$precioFinal = $precioNum;
+$descuentoPct = 0;
+if ($ofertaActiva && (float)$ofertaActiva['valor'] > 0 && $ofertaActiva['tipo_panel'] === 'descuento') {
+    $descuentoPct = (float)$ofertaActiva['valor'];
+    $precioFinal  = round($precioNum * (1 - $descuentoPct / 100));
+}
+
+$precio = number_format($precioFinal, 0, ',', '.');
 
 if ($stock <= 0)      { $pillCls='sp-out'; $pillTxt='Sin stock'; }
 elseif ($stock <= 10) { $pillCls='sp-low'; $pillTxt='Pocas unidades'; }
@@ -616,8 +659,19 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
       <div class="det-handle"></div>
 
       <div class="det-tipo-tag"><?= $esBox ? 'Box' : 'Cookie artesanal' ?></div>
+      <?php if ($ofertaActiva && !empty($ofertaActiva['titulo'])): ?>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#fef2f2;color:#dc2626;border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;margin-bottom:8px">
+        <?php if ($ofertaFromCarrusel): ?>⚡ Oferta especial<?php else: ?>🏷 Oferta activa<?php endif; ?> — <?= htmlspecialchars($ofertaActiva['titulo']) ?>
+      </div>
+      <?php endif; ?>
       <div class="det-nombre"><?= $nombre ?></div>
-      <div class="det-precio">$<?= $precio ?></div>
+      <div class="det-precio">
+        $<?= $precio ?>
+        <?php if ($descuentoPct > 0): ?>
+          <span style="font-size:.55em;font-weight:600;text-decoration:line-through;color:#aaa;margin-left:8px">$<?= number_format($precioNum,0,',','.') ?></span>
+          <span style="font-size:.45em;font-weight:800;background:#dc2626;color:#fff;border-radius:20px;padding:3px 10px;margin-left:6px;vertical-align:middle">-<?= $descuentoPct ?>%</span>
+        <?php endif; ?>
+      </div>
 
       <div class="det-stock-row">
         <span class="det-pill <?= $pillCls ?>" style="position:static"><?= $pillTxt ?></span>
@@ -741,7 +795,9 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
 <script>
 const PROD_ID    = <?= (int)$prod['idproductos'] ?>;
 const PROD_NOMBRE= <?= json_encode($prod['nombre']) ?>;
-const PROD_PRECIO= <?= $precioNum ?>;
+const PROD_PRECIO= <?= $precioFinal ?>; // precio final con descuento si aplica
+const PROD_PRECIO_ORIGINAL = <?= $precioNum ?>;
+const PROD_DESCUENTO = <?= $descuentoPct ?>;
 const PROD_TIPO  = <?= json_encode($prod['tipo']) ?>;
 const PROD_STOCK = <?= (int)$stock ?>;
 const CLIENTE_PHP= <?= json_encode($cliente_id ? ['id'=>$cliente_id] : null) ?>;

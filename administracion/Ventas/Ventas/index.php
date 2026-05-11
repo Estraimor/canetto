@@ -6,6 +6,10 @@ include '../../../panel/dashboard/layaut/nav.php';
 
 <link rel="stylesheet" href="ventas.css?v=<?=filemtime(__DIR__.'/ventas.css')?>">
 
+<a href="javascript:history.back()" class="btn-back" style="margin: 12px 0 0 12px; display:inline-flex;">
+    <i class="fa-solid fa-arrow-left"></i> Volver
+</a>
+
 <div class="ventas-wrapper">
 
   <!-- LEFT: Catálogo de productos -->
