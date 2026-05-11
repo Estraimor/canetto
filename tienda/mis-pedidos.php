@@ -782,15 +782,9 @@ html, body { background: #fff !important; }
       <div class="ped-card-num">Pedido #<?= $p['idventas'] ?></div>
       <div class="ped-card-date"><?= $fechaFmt ?></div>
     </div>
-    <?php if ($pagAlRec): ?>
-      <span class="ped-card-badge" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">
-        <i class="fa-solid fa-handshake"></i> Pago al recibir
-      </span>
-    <?php else: ?>
-      <span class="ped-card-badge" style="background:<?= $e['light'] ?>;color:<?= $e['color'] ?>;border-color:<?= $e['border'] ?>">
-        <i class="fa-solid fa-<?= $e['ic'] ?>"></i> <?= htmlspecialchars($p['estado_nombre'] ?? $e['lbl']) ?>
-      </span>
-    <?php endif; ?>
+    <span class="ped-card-badge" style="background:<?= $e['light'] ?>;color:<?= $e['color'] ?>;border-color:<?= $e['border'] ?>">
+      <i class="fa-solid fa-<?= $e['ic'] ?>"></i> <?= htmlspecialchars($p['estado_nombre'] ?? $e['lbl']) ?>
+    </span>
   </div>
 
   <!-- Aviso pago MP pendiente -->
@@ -801,14 +795,6 @@ html, body { background: #fff !important; }
       <strong>Verificando tu pago con Mercado Pago…</strong><br>
       <span style="color:#b06080;font-size:12px">Esto se actualiza solo, no hace falta que recargues la página.</span>
     </div>
-  </div>
-  <?php endif; ?>
-
-  <!-- Aviso pago en efectivo -->
-  <?php if ($pagAlRec): ?>
-  <div class="ped-pago-recibir">
-    <i class="fa-solid fa-circle-info"></i>
-    <div>Abonás <strong>$<?= number_format($p['total'], 0, ',', '.') ?></strong> en efectivo al momento de recibir. No necesitás pagar nada ahora.</div>
   </div>
   <?php endif; ?>
 
@@ -858,26 +844,25 @@ html, body { background: #fff !important; }
   </div>
   <?php endif; ?>
 
-  <!-- Desglose o total simple -->
-  <?php if ($costoEnvio > 0): ?>
+  <!-- Total (+ envío si aplica) -->
   <div class="ped-breakdown">
-    <div class="ped-breakdown-row">
-      <span><i class="fa-solid fa-cookie-bite" style="color:#c88e99;margin-right:5px"></i>Productos</span>
-      <span>$<?= number_format($subtotal, 0, ',', '.') ?></span>
-    </div>
+    <?php if ($costoEnvio > 0): ?>
     <div class="ped-breakdown-row">
       <span><i class="fa-solid fa-motorcycle" style="color:#6b7280;margin-right:5px"></i>Envío</span>
       <span>$<?= number_format($costoEnvio, 0, ',', '.') ?></span>
     </div>
+    <?php endif; ?>
     <div class="ped-breakdown-row bdr-total">
       <span>Total</span>
       <span>$<?= number_format($p['total'], 0, ',', '.') ?></span>
     </div>
   </div>
-  <?php else: ?>
-  <div class="ped-total-row">
-    <span class="ped-total-label"><?= htmlspecialchars($p['metodo_pago'] ?? 'Efectivo') ?></span>
-    <span class="ped-total-val">$<?= number_format($p['total'], 0, ',', '.') ?></span>
+
+  <!-- Aviso pago en efectivo (al pie, después del total) -->
+  <?php if ($pagAlRec): ?>
+  <div class="ped-pago-recibir">
+    <i class="fa-solid fa-coins"></i>
+    <div>Pagás <strong>$<?= number_format($p['total'], 0, ',', '.') ?> en efectivo</strong> cuando lo recibas. No necesitás pagar nada ahora.</div>
   </div>
   <?php endif; ?>
 

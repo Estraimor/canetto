@@ -499,6 +499,10 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
         <div class="pedido-row-icon icon-indigo"><i class="fa-solid fa-user"></i></div>
         <span class="pedido-nombre"></span>
       </div>
+      <div class="pedido-row pedido-row-sucursal" style="display:none">
+        <div class="pedido-row-icon" style="background:rgba(200,142,153,.15);color:#c88e99"><i class="fa-solid fa-store"></i></div>
+        <span class="pedido-suc-txt" style="font-weight:700;color:#c88e99"></span>
+      </div>
       <div class="pedido-row">
         <div class="pedido-row-icon icon-amber"><i class="fa-solid fa-location-dot"></i></div>
         <span class="pedido-dir-txt"></span>
@@ -660,6 +664,7 @@ async function doLogin() {
       document.getElementById('appDash').classList.remove('hidden');
       cargarPedidos();
       startAutoRefresh();
+      pedirPermisoUbicacion();
     } else {
       showLoginAlert(data.message || 'Datos incorrectos');
     }
@@ -745,6 +750,15 @@ async function cargarPedidos() {
       clone.querySelector('.pedido-nombre').textContent    = p.cliente_nombre || 'Cliente';
       clone.querySelector('.pedido-dir-txt').textContent   = p.direccion_entrega || 'Sin dirección';
       clone.querySelector('.pedido-prods-txt').textContent = p.productos || '—';
+
+      // Sucursal de despacho (solo para envíos)
+      if (p.sucursal_nombre && p.tipo_entrega === 'envio') {
+        const rowSuc = clone.querySelector('.pedido-row-sucursal');
+        if (rowSuc) {
+          rowSuc.style.display = 'flex';
+          rowSuc.querySelector('.pedido-suc-txt').textContent = 'Retirar en: ' + p.sucursal_nombre;
+        }
+      }
 
       // Banner "Pendiente de Cobro" para pedidos efectivo + envío
       const metodoNombre = (p.metodo_pago || '').toLowerCase();
@@ -1176,8 +1190,36 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
   document.getElementById('dashAvatar').textContent = initials(n);
   cargarPedidos();
   startAutoRefresh();
+  pedirPermisoUbicacion();
 }
 </script>
+
+<!-- Modal permiso ubicación -->
+<div id="modalPermisoUbicacion" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:24px">
+  <div style="background:#1e293b;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;
+              border:1px solid rgba(200,142,153,.3);text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">📍</div>
+    <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:10px">
+      Compartí tu ubicación
+    </div>
+    <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:24px">
+      Para que el equipo de Canetto pueda ver dónde estás mientras estás de turno,
+      necesitamos acceder a tu ubicación en tiempo real.
+    </div>
+    <button onclick="aceptarPermisoUbicacion()"
+      style="width:100%;padding:14px;background:#c88e99;color:#fff;border:none;
+             border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
+             font-family:inherit;margin-bottom:10px">
+      <i class="fa-solid fa-location-dot"></i> Activar ubicación
+    </button>
+    <button onclick="rechazarPermisoUbicacion()"
+      style="width:100%;padding:12px;background:transparent;color:#64748b;border:none;
+             font-size:13px;cursor:pointer;font-family:inherit">
+      Ahora no
+    </button>
+  </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1229,6 +1271,7 @@ async function abrirUberMap(pedido) {
   document.getElementById('uberOrderNum').textContent  = '#' + pedido.idventas;
   document.getElementById('uberOrderName').textContent = pedido.cliente_nombre || 'Cliente';
   document.getElementById('uberDelivery').textContent  = pedido.direccion_entrega || 'Sin dirección';
+  document.getElementById('uberPickup').textContent    = pedido.sucursal_nombre  || 'Canetto';
   document.getElementById('uberProds').textContent     = pedido.productos || '—';
   document.getElementById('uberBtnOk').dataset.id      = pedido.idventas;
 
@@ -1431,9 +1474,9 @@ function iniciarGeolocalizacion() {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     const iconDriver = iconDiv(`
-      <div style="background:#0f172a;width:44px;height:44px;border-radius:50%;
-        border:3px solid #c88e99;display:flex;align-items:center;justify-content:center;
-        font-size:20px;box-shadow:0 3px 12px rgba(0,0,0,.5)">🏍</div>`, 44);
+      <div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.7))">
+        <i class="fa-solid fa-motorcycle" style="font-size:26px;color:#c88e99"></i>
+      </div>`, 38);
     if (_uberDriver) _uberMap.removeLayer(_uberDriver);
     _uberDriver = L.marker([lat, lng], { icon: iconDriver, zIndexOffset: 1000 })
       .bindPopup('<strong>Tu posición</strong>')
@@ -1443,6 +1486,66 @@ function iniciarGeolocalizacion() {
   _uberWatcher = navigator.geolocation.watchPosition(updateDriver, () => {}, {
     enableHighAccuracy: true, maximumAge: 10000, timeout: 15000,
   });
+}
+
+/* ════════════════════════════════════════
+   TRACKING DE UBICACIÓN (para el admin)
+════════════════════════════════════════ */
+let _trackingTimer = null;
+
+function enviarUbicacion(lat, lng) {
+  fetch('api/update_ubicacion.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lat, lng }),
+  }).catch(() => {});
+}
+
+function iniciarTracking() {
+  if (!navigator.geolocation) return;
+
+  const onPos = pos => {
+    enviarUbicacion(pos.coords.latitude, pos.coords.longitude);
+  };
+
+  // Enviar inmediatamente
+  navigator.geolocation.getCurrentPosition(onPos, () => {}, { enableHighAccuracy: true });
+
+  // Repetir cada 30 segundos
+  if (_trackingTimer) clearInterval(_trackingTimer);
+  _trackingTimer = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(onPos, () => {}, { enableHighAccuracy: true, timeout: 10000 });
+  }, 30000);
+}
+
+function detenerTracking() {
+  if (_trackingTimer) { clearInterval(_trackingTimer); _trackingTimer = null; }
+}
+
+async function pedirPermisoUbicacion() {
+  if (!navigator.geolocation) return;
+
+  // Si ya tenemos permiso, arrancar directo sin modal
+  if (navigator.permissions) {
+    const status = await navigator.permissions.query({ name: 'geolocation' }).catch(() => null);
+    if (status?.state === 'granted') { iniciarTracking(); return; }
+    if (status?.state === 'denied')  return;
+  }
+
+  // Mostrar modal de permiso
+  const modal = document.getElementById('modalPermisoUbicacion');
+  if (modal) modal.style.display = 'flex';
+}
+
+function aceptarPermisoUbicacion() {
+  const modal = document.getElementById('modalPermisoUbicacion');
+  if (modal) modal.style.display = 'none';
+  iniciarTracking();
+}
+
+function rechazarPermisoUbicacion() {
+  const modal = document.getElementById('modalPermisoUbicacion');
+  if (modal) modal.style.display = 'none';
 }
 </script>
 </body>

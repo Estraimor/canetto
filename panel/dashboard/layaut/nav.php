@@ -193,6 +193,13 @@ $current = $_SERVER['PHP_SELF'];
         <span class="nav-label">Proveedores</span>
     </a>
 
+    <!-- MAPA REPARTIDORES -->
+    <a href="<?= URL_ADMIN ?>/repartidores/index.php" data-tip="Mapa repartidores"
+       class="<?= str_contains($current,'repartidores/index') ? 'active' : '' ?>">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span class="nav-label">Mapa repartidores</span>
+    </a>
+
     <!-- CLIENTES -->
     <a href="<?= URL_ADMIN ?>/clientes/index.php" data-tip="Clientes"
        class="<?= str_contains($current,'clientes') ? 'active' : '' ?>">

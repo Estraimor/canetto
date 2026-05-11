@@ -31,10 +31,13 @@ try {
             mp.nombre  AS metodo_pago,
             u.nombre   AS cliente_nombre,
             u.apellido AS cliente_apellido,
-            u.celular  AS cliente_celular
+            u.celular  AS cliente_celular,
+            s.nombre   AS sucursal_nombre,
+            s.direccion AS sucursal_direccion
         FROM ventas v
-        LEFT JOIN usuario     u  ON u.idusuario     = v.usuario_idusuario
-        LEFT JOIN metodo_pago mp ON mp.idmetodo_pago = v.metodo_pago_idmetodo_pago
+        LEFT JOIN usuario     u  ON u.idusuario      = v.usuario_idusuario
+        LEFT JOIN metodo_pago mp ON mp.idmetodo_pago  = v.metodo_pago_idmetodo_pago
+        LEFT JOIN sucursal    s  ON s.idsucursal      = v.sucursal_retiro_idsucursal
         WHERE v.repartidor_idusuario = :rep
           AND v.estado_venta_idestado_venta = 3
         ORDER BY v.idventas DESC

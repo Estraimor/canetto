@@ -55,12 +55,37 @@ try {
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
     /* ── Costo de envío: se usa el valor que confirmó el cliente ── */
-    // El front calcula el envío via calcular_envio.php y lo muestra al usuario.
-    // Aquí confiamos en ese valor para que el total guardado coincida con lo que vio el cliente.
     $costo_envio = 0.0;
     if ($tipo_entrega === 'envio') {
         $costo_envio = $costo_envio_cli > 0 ? $costo_envio_cli : 0.0;
         $total += $costo_envio;
+    }
+
+    /* ── Sucursal de despacho para envíos: la activa más cercana ── */
+    $sucursal_envio_id = null;
+    if ($tipo_entrega === 'envio') {
+        $suc_rows = $pdo->query("
+            SELECT idsucursal, latitud, longitud
+            FROM sucursal
+            WHERE activo = 1
+            ORDER BY idsucursal ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($suc_rows) === 1) {
+            $sucursal_envio_id = (int)$suc_rows[0]['idsucursal'];
+        } elseif (count($suc_rows) > 1) {
+            if ($lat_entrega !== null && $lng_entrega !== null) {
+                $minDist = PHP_FLOAT_MAX;
+                foreach ($suc_rows as $s) {
+                    if ($s['latitud'] === null) continue;
+                    $d = haversineKm((float)$s['latitud'], (float)$s['longitud'], $lat_entrega, $lng_entrega);
+                    if ($d < $minDist) { $minDist = $d; $sucursal_envio_id = (int)$s['idsucursal']; }
+                }
+            }
+            if ($sucursal_envio_id === null) {
+                $sucursal_envio_id = (int)$suc_rows[0]['idsucursal'];
+            }
+        }
     }
 
     $pdo->beginTransaction();
@@ -104,7 +129,7 @@ try {
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
     ")->execute([
         $idusuario, $total, $es_mp ? 5 : 1, $metodo_pago,
-        $tipo_entrega === 'retiro' ? $sucursal_id : null,
+        $tipo_entrega === 'retiro' ? $sucursal_id : $sucursal_envio_id,
         $observacion ?: null,
         $tipo_entrega,
         $direccion_entrega ?: null,
