@@ -121,6 +121,17 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <?php endif; ?>
 <style>
+/* ── Filtros historial ── */
+.hist-filtro-btn{
+  display:inline-flex;align-items:center;padding:7px 16px;
+  border-radius:20px;border:1.5px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);
+  font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+  white-space:nowrap;transition:.15s;flex-shrink:0;
+}
+.hist-filtro-btn:hover{border-color:#c88e99;color:#c88e99}
+.hist-filtro-btn.active{background:#c88e99;border-color:#c88e99;color:#fff}
+
 .or-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:#475569;font-size:12px}
 .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.12)}
 .btn-google-rep{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;color:#3c4043;font-size:14px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;transition:.2s;margin-top:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -303,6 +314,13 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 
   <!-- Tab Historial -->
   <div id="tabHistorial" class="tab-content">
+    <!-- Filtros -->
+    <div id="histFiltros" style="display:flex;gap:8px;padding:14px 16px 4px;overflow-x:auto;scrollbar-width:none">
+      <button class="hist-filtro-btn active" data-filtro="todo"   onclick="filtrarHistorial(this)">Todo</button>
+      <button class="hist-filtro-btn"        data-filtro="hoy"    onclick="filtrarHistorial(this)">Hoy</button>
+      <button class="hist-filtro-btn"        data-filtro="semana" onclick="filtrarHistorial(this)">Esta semana</button>
+      <button class="hist-filtro-btn"        data-filtro="mes"    onclick="filtrarHistorial(this)">Este mes</button>
+    </div>
     <div id="historialList" class="pedidos-list"></div>
   </div>
 
@@ -430,7 +448,7 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
               <div style="font-size:12px;opacity:.65;">soporte@canettocookies.com</div>
             </div>
           </a>
-          <a href="https://wa.me/5491100000000" target="_blank"
+          <a href="https://wa.me/5493765123808" target="_blank"
              style="display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;">
             <div style="width:42px;height:42px;border-radius:12px;background:rgba(37,211,102,.2);
               display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</div>
@@ -955,6 +973,9 @@ async function cargarHistorial() {
     list.innerHTML = '';
     data.pedidos.forEach(p => {
       const clone = tpl.content.cloneNode(true);
+      // Guardar fecha en el elemento raíz para filtrar después
+      const card = clone.querySelector('.hist-card');
+      if (card) card.dataset.fecha = (p.updated_at || p.fecha || '').substring(0, 10);
       clone.querySelector('.hist-num').textContent     = '#' + p.idventas;
       clone.querySelector('.hist-total').textContent   = fmt(p.total);
       clone.querySelector('.hist-cliente').textContent = p.cliente_nombre || 'Cliente';
@@ -987,6 +1008,48 @@ async function cargarHistorial() {
       <h3>Sin conexión</h3><p>Verificá tu internet</p>
     </div>`;
   }
+}
+
+/* ════════════════════════════════════════
+   FILTROS HISTORIAL
+════════════════════════════════════════ */
+function filtrarHistorial(btn) {
+  document.querySelectorAll('.hist-filtro-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const filtro = btn.dataset.filtro;
+  const hoy    = new Date();
+  const dHoy   = hoy.toISOString().substring(0, 10);
+
+  const lunesDiff = (hoy.getDay() + 6) % 7; // 0=lun
+  const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - lunesDiff);
+  const dLunes = lunes.toISOString().substring(0, 10);
+
+  const primeroMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const dMes = primeroMes.toISOString().substring(0, 10);
+
+  let visible = 0;
+  document.querySelectorAll('#historialList .hist-card').forEach(card => {
+    const fecha = card.dataset.fecha || '';
+    let show = true;
+    if (filtro === 'hoy')    show = fecha === dHoy;
+    if (filtro === 'semana') show = fecha >= dLunes;
+    if (filtro === 'mes')    show = fecha >= dMes;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  // Mostrar mensaje si no hay resultados
+  let emptyEl = document.getElementById('histFiltroEmpty');
+  if (!emptyEl) {
+    emptyEl = document.createElement('div');
+    emptyEl.id = 'histFiltroEmpty';
+    emptyEl.className = 'empty-state';
+    emptyEl.innerHTML = `<div class="empty-state-icon slate"><i class="fa-solid fa-calendar-xmark"></i></div>
+      <h3>Sin entregas</h3><p>No hay pedidos para este período.</p>`;
+    document.getElementById('historialList').after(emptyEl);
+  }
+  emptyEl.style.display = visible === 0 ? '' : 'none';
 }
 
 /* ════════════════════════════════════════

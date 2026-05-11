@@ -25,7 +25,10 @@
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT * FROM unidad_medida;')",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e ' *)",
       "Bash(/c/wamp64/bin/mysql/mysql9.1.0/bin/mysql.exe -u root u966473590_canetto -e 'SELECT idunidad_medida FROM unidad_medida WHERE abreviatura='\\\\''cm'\\\\'';')",
-      "PowerShell(cmd /c \"dir C:\\\\wamp64\")"
+      "PowerShell(cmd /c \"dir C:\\\\wamp64\")",
+      "Bash(Remove-Item \"c:\\\\wamp64\\\\www\\\\canetto\\\\administracion\\\\.htaccess\" -Force)",
+      "Bash(Remove-Item \"c:\\\\wamp64\\\\www\\\\canetto\\\\repartidor\\\\.htaccess\" -Force)",
+      "Bash(Remove-Item \"c:\\\\wamp64\\\\www\\\\canetto\\\\tienda\\\\.htaccess\" -Force)"
     ]
   }
 }
