@@ -536,6 +536,8 @@ $TIPOS_CON_PRECIO_PHP = ['promo', 'descuento', 'temporada'];
         <div class="swiper" id="vistaTodosSwiper">
           <div class="swiper-wrapper" id="vistaTodosSwiperInner"></div>
           <div class="swiper-pagination"></div>
+          <div class="swiper-button-prev" id="vistaTodosPrev"></div>
+          <div class="swiper-button-next" id="vistaTodosNext"></div>
         </div>
       </div>
       <!-- Lista de todos los paneles debajo -->
@@ -1010,6 +1012,7 @@ function renderVistaTodos(){
     fadeEffect: { crossFade: true },
     autoplay: lista.length > 1 ? { delay: 3500, disableOnInteraction: false, pauseOnMouseEnter: true } : false,
     pagination: { el: '#vistaTodosSwiper .swiper-pagination', clickable: true },
+    navigation: { nextEl: '#vistaTodosNext', prevEl: '#vistaTodosPrev' },
     grabCursor: true,
   });
 

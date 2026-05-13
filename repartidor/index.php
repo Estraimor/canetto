@@ -1554,7 +1554,10 @@ function iniciarGeolocalizacion() {
 /* ════════════════════════════════════════
    TRACKING DE UBICACIÓN (para el admin)
 ════════════════════════════════════════ */
-let _trackingTimer = null;
+let _trackingWatcher = null;
+let _trackingTimer   = null;
+let _lastSentAt      = 0;
+const TRACKING_MIN_MS = 2000; // mínimo 2s entre envíos al servidor
 
 function enviarUbicacion(lat, lng) {
   fetch('api/update_ubicacion.php', {
@@ -1566,22 +1569,28 @@ function enviarUbicacion(lat, lng) {
 
 function iniciarTracking() {
   if (!navigator.geolocation) return;
+  detenerTracking();
 
   const onPos = pos => {
+    const ahora = Date.now();
+    if (ahora - _lastSentAt < TRACKING_MIN_MS) return;
+    _lastSentAt = ahora;
     enviarUbicacion(pos.coords.latitude, pos.coords.longitude);
   };
 
-  // Enviar inmediatamente
-  navigator.geolocation.getCurrentPosition(onPos, () => {}, { enableHighAccuracy: true });
-
-  // Repetir cada 30 segundos
-  if (_trackingTimer) clearInterval(_trackingTimer);
-  _trackingTimer = setInterval(() => {
-    navigator.geolocation.getCurrentPosition(onPos, () => {}, { enableHighAccuracy: true, timeout: 10000 });
-  }, 30000);
+  // watchPosition: dispara automáticamente en cada cambio de posición
+  _trackingWatcher = navigator.geolocation.watchPosition(
+    onPos,
+    () => {},
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+  );
 }
 
 function detenerTracking() {
+  if (_trackingWatcher !== null) {
+    navigator.geolocation.clearWatch(_trackingWatcher);
+    _trackingWatcher = null;
+  }
   if (_trackingTimer) { clearInterval(_trackingTimer); _trackingTimer = null; }
 }
 

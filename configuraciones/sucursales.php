@@ -95,7 +95,7 @@ $activas = (int)$pdo->query("SELECT COUNT(*) FROM sucursal WHERE activo=1")->fet
     📍 Usar mi ubicación actual
 </button>
                 <div class="form-group full" id="mapPreviewWrap" style="display:none">
-                    <p style="font-size:11px;color:#666;margin-bottom:6px">🖱️ Arrastrá el marcador para ajustar la posición exacta</p>
+                    <p style="font-size:11px;color:#666;margin-bottom:6px">🖱️ Hacé clic en el mapa o arrastrá el marcador para ajustar la posición exacta</p>
                     <div id="mapPreview" style="width:100%;height:200px;border-radius:8px;z-index:0"></div>
                     <p style="font-size:11px;color:#888;margin-top:5px" id="coordsDisplay"></p>
                 </div>
@@ -381,16 +381,44 @@ function showMapPreview(lat, lng) {
                 attribution: '© <a href="https://www.openstreetmap.org">OpenStreetMap</a>'
             }).addTo(_adminMap);
             _adminMarker = L.marker([lat, lng], { draggable: true }).addTo(_adminMap);
-            _adminMarker.on('dragend', function(e) {
-                const p = e.target.getLatLng();
+
+            function actualizarCoordsMarker(p, reverseGeocode = false) {
+                _adminMarker.setLatLng(p);
                 document.getElementById('sLat').value  = p.lat.toFixed(7);
                 document.getElementById('sLng').value  = p.lng.toFixed(7);
                 document.getElementById('coordsDisplay').textContent =
                     'Coordenadas: ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
-            });
+                if (reverseGeocode) reverseGeocodePunto(p.lat, p.lng);
+            }
+
+            _adminMarker.on('dragend', e => actualizarCoordsMarker(e.target.getLatLng(), true));
+            _adminMap.on('click', e => actualizarCoordsMarker(e.latlng, true));
             document.getElementById('coordsDisplay').textContent =
                 'Coordenadas: ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
         }, 80);
+    }
+}
+
+async function reverseGeocodePunto(lat, lng) {
+    const coords = document.getElementById('coordsDisplay');
+    const orig = coords.textContent;
+    coords.textContent = orig + '  · Buscando dirección...';
+    try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=es`;
+        const data = await (await fetch(url, { headers: { 'Accept-Language': 'es' } })).json();
+        const addr = data.address || {};
+
+        const calle = [addr.road, addr.house_number].filter(Boolean).join(' ');
+        const ciudad = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || '';
+        const provincia = addr.state || '';
+
+        if (calle) document.getElementById('sDireccion').value = calle;
+        if (ciudad) document.getElementById('sCiudad').value   = ciudad;
+        if (provincia) document.getElementById('sProvincia').value = provincia;
+
+        coords.textContent = 'Coordenadas: ' + parseFloat(lat).toFixed(6) + ', ' + parseFloat(lng).toFixed(6);
+    } catch {
+        coords.textContent = orig;
     }
 }
 

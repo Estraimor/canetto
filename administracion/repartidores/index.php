@@ -94,6 +94,26 @@ include '../../panel/dashboard/layaut/nav.php';
 }
 .rep-refresh-btn:hover { border-color: #c88e99; color: #c88e99; }
 
+/* ── Sucursales section ── */
+.suc-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.suc-section-title {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .06em; color: #aaa;
+  display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
+}
+#sucSelect {
+  width: 100%; padding: 7px 10px;
+  border: 1.5px solid #e5e7eb; border-radius: 8px;
+  font-size: 12px; font-weight: 600; color: #333;
+  background: #fff; cursor: pointer;
+  font-family: inherit;
+}
+#sucSelect:focus { outline: none; border-color: #c88e99; }
+#sucSelect option.opt-inactiva { color: #9ca3af; }
+
 /* ── Mapa ── */
 #repAdminMap { width: 100%; height: 100%; }
 
@@ -130,6 +150,18 @@ include '../../panel/dashboard/layaut/nav.php';
       </div>
       <div class="rep-sidebar-sub" id="repSubtitle">Cargando...</div>
     </div>
+
+    <!-- Sucursales -->
+    <div class="suc-section">
+      <div class="suc-section-title">
+        <i class="fa-solid fa-store" style="font-size:9px"></i>
+        Sucursales
+      </div>
+      <select id="sucSelect" onchange="irASucursalSelect(this.value)">
+        <option value="">— Ir a una sucursal —</option>
+      </select>
+    </div>
+
     <div class="rep-list" id="repList">
       <div style="padding:24px;text-align:center;color:#ccc;font-size:13px">
         <i class="fa-solid fa-spinner fa-spin" style="font-size:24px;margin-bottom:8px;display:block"></i>
@@ -151,26 +183,69 @@ include '../../panel/dashboard/layaut/nav.php';
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const CANETTO_LAT = -34.6037;
-const CANETTO_LNG = -58.3816;
-
 const initials = n => (n||'?').trim().split(/\s+/).map(w=>w[0]).join('').substring(0,2).toUpperCase();
 
 const map = L.map('repAdminMap', { zoomControl: true, attributionControl: false });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-map.setView([CANETTO_LAT, CANETTO_LNG], 13);
+map.setView([-34.6037, -58.3816], 13);
 
-// Marcador de la tienda
-const iconTienda = L.divIcon({
-  className: '',
-  html: `<div style="background:#f59e0b;width:36px;height:36px;border-radius:50%;
-           display:flex;align-items:center;justify-content:center;
-           border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.3);font-size:17px">🏪</div>`,
-  iconSize: [36,36], iconAnchor: [18,18],
-});
-L.marker([CANETTO_LAT, CANETTO_LNG], { icon: iconTienda })
-  .bindPopup('<strong>Canetto Cookies</strong>')
-  .addTo(map);
+// Sucursales
+let _sucursales = {};
+
+function iconTiendaColor(activa) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="background:${activa ? '#f59e0b' : '#9ca3af'};width:36px;height:36px;border-radius:50%;
+             display:flex;align-items:center;justify-content:center;
+             border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.3);font-size:17px">🏪</div>`,
+    iconSize: [36,36], iconAnchor: [18,18],
+  });
+}
+
+async function cargarSucursales() {
+  try {
+    const data = await fetch('<?= URL_ASSETS ?>/configuraciones/ajax/listar_sucursales.php').then(r => r.json());
+    const sel = document.getElementById('sucSelect');
+    const conCoords = data.filter(s => s.latitud && s.longitud);
+
+    sel.innerHTML = '<option value="">— Ir a una sucursal —</option>' +
+      data.map(s => {
+        const inactiva = !parseInt(s.activo);
+        const sinCoords = !s.latitud || !s.longitud;
+        const label = s.nombre + (inactiva ? ' (inactiva)' : '') + (sinCoords ? ' — sin coords' : '');
+        return `<option value="${s.idsucursal}" class="${inactiva ? 'opt-inactiva' : ''}"
+                  style="${inactiva ? 'color:#9ca3af' : ''}"
+                  ${sinCoords ? 'disabled' : ''}>${label}</option>`;
+      }).join('');
+
+    conCoords.forEach(s => {
+      const lat = parseFloat(s.latitud);
+      const lng = parseFloat(s.longitud);
+      const activa = parseInt(s.activo);
+      const marker = L.marker([lat, lng], { icon: iconTiendaColor(activa) })
+        .bindPopup(`<strong>${s.nombre}</strong>` +
+          (s.direccion ? `<br><span style="font-size:11px;color:#888">${s.direccion}</span>` : '') +
+          (!activa ? `<br><span style="font-size:11px;color:#9ca3af;font-weight:700">Inactiva</span>` : ''))
+        .addTo(map);
+      _sucursales[s.idsucursal] = { marker, lat, lng };
+    });
+
+    // Centrar mapa en la primera sucursal activa con coords
+    const primera = conCoords.find(s => parseInt(s.activo));
+    if (primera) map.setView([parseFloat(primera.latitud), parseFloat(primera.longitud)], 13);
+
+  } catch(e) {
+    console.error('Error cargando sucursales', e);
+  }
+}
+
+function irASucursalSelect(id) {
+  if (!id) return;
+  const s = _sucursales[parseInt(id)];
+  if (!s) return;
+  map.setView([s.lat, s.lng], 16);
+  s.marker.openPopup();
+}
 
 // Icono repartidor
 function iconRep() {
@@ -194,115 +269,134 @@ function fmtAgo(dateStr) {
   return 'hace ' + Math.floor(diff/3600) + 'h';
 }
 
-async function cargarUbicaciones() {
-  try {
-    const res  = await fetch('api/get_ubicaciones.php');
-    const data = await res.json();
-    if (!data.ok) return;
-
-    const activos = data.activos;
-    const todos   = data.todos;
-
-    // Actualizar contador y subtítulo
-    document.getElementById('repCounter').textContent  = activos.length;
-    document.getElementById('repSubtitle').textContent =
-      activos.length === 0
-        ? 'Ningún repartidor activo ahora'
-        : activos.length + ' en línea · ' + (todos.length - activos.length) + ' sin ubicación';
-
-    // Actualizar hora
-    document.getElementById('repLastUpdate').textContent =
-      'Actualizado ' + new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-
-    // IDs activos para saber cuáles tienen marker
-    const activosIds = new Set(activos.map(r => r.idusuario));
-
-    // Actualizar / agregar markers en el mapa
-    activos.forEach(rep => {
-      const lat = parseFloat(rep.lat);
-      const lng = parseFloat(rep.lng);
-      const nombre = rep.nombre + ' ' + (rep.apellido || '');
-
-      if (_markers[rep.idusuario]) {
-        _markers[rep.idusuario].setLatLng([lat, lng]);
-      } else {
-        _markers[rep.idusuario] = L.marker([lat, lng], { icon: iconRep() })
-          .addTo(map);
-      }
-
-      _markers[rep.idusuario].bindPopup(`
-        <div class="rep-popup">
-          <div class="rep-popup-name"><i class="fa-solid fa-motorcycle" style="color:#c88e99"></i> ${nombre.trim()}</div>
-          <div class="rep-popup-time">Actualizado ${fmtAgo(rep.actualizado_at)}</div>
-        </div>
-      `);
-    });
-
-    // Quitar markers de repartidores que ya no están activos
-    Object.keys(_markers).forEach(id => {
-      if (!activosIds.has(parseInt(id))) {
-        map.removeLayer(_markers[id]);
-        delete _markers[id];
-      }
-    });
-
-    // Render lista lateral
-    const list = document.getElementById('repList');
-    if (todos.length === 0) {
-      list.innerHTML = `<div style="padding:24px;text-align:center;color:#ccc;font-size:13px">
-        <i class="fa-solid fa-user-slash" style="font-size:24px;margin-bottom:8px;display:block"></i>
-        No hay repartidores registrados
-      </div>`;
-      return;
-    }
-
-    list.innerHTML = '';
-    todos.forEach(rep => {
-      const isOnline = activosIds.has(rep.idusuario);
-      const nombre   = (rep.nombre + ' ' + (rep.apellido || '')).trim();
-      const ago      = rep.lat ? fmtAgo(rep.actualizado_at) : 'Sin ubicación';
-
-      const item = document.createElement('div');
-      item.className = 'rep-item' + (isOnline ? ' online' : '');
-      item.innerHTML = `
-        <div class="rep-avatar">${initials(nombre)}</div>
-        <div class="rep-info">
-          <div class="rep-name">${nombre}</div>
-          <div class="rep-status">
-            <span class="rep-dot"></span>
-            ${isOnline ? 'En línea · ' + ago : ago}
-          </div>
-        </div>
-        <button class="rep-go-btn" title="Centrar en mapa">
-          <i class="fa-solid fa-crosshairs"></i>
-        </button>
-      `;
-
-      if (isOnline) {
-        item.querySelector('.rep-go-btn').addEventListener('click', e => {
-          e.stopPropagation();
-          const lat = parseFloat(rep.lat);
-          const lng = parseFloat(rep.lng);
-          map.setView([lat, lng], 16);
-          _markers[rep.idusuario]?.openPopup();
-        });
-        item.addEventListener('click', () => {
-          const lat = parseFloat(rep.lat);
-          const lng = parseFloat(rep.lng);
-          map.setView([lat, lng], 16);
-          _markers[rep.idusuario]?.openPopup();
-        });
-      }
-
-      list.appendChild(item);
-    });
-
-  } catch(e) {
-    console.error('Error cargando ubicaciones', e);
+// ── Animación suave de marcador (estilo Uber) ────────────────────────────────
+function animarMarcador(marker, toLat, toLng, ms = 1500) {
+  const desde = marker.getLatLng();
+  if (desde.lat === toLat && desde.lng === toLng) return;
+  const inicio = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - inicio) / ms);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // ease-in-out
+    marker.setLatLng([
+      desde.lat + (toLat - desde.lat) * ease,
+      desde.lng + (toLng - desde.lng) * ease,
+    ]);
+    if (t < 1) requestAnimationFrame(step);
   }
+  requestAnimationFrame(step);
 }
 
-// Cargar al inicio y cada 30 segundos
-cargarUbicaciones();
-setInterval(cargarUbicaciones, 30000);
+// ── Procesar datos de ubicación (actualiza mapa + lista lateral) ─────────────
+function procesarUbicaciones(data) {
+  if (!data.ok) return;
+  const activos = data.activos;
+  const todos   = data.todos;
+
+  document.getElementById('repCounter').textContent  = activos.length;
+  document.getElementById('repSubtitle').textContent =
+    activos.length === 0
+      ? 'Ningún repartidor activo ahora'
+      : activos.length + ' en línea · ' + (todos.length - activos.length) + ' sin ubicación';
+  document.getElementById('repLastUpdate').textContent =
+    'Actualizado ' + new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+  const activosIds = new Set(activos.map(r => r.idusuario));
+
+  activos.forEach(rep => {
+    const lat    = parseFloat(rep.lat);
+    const lng    = parseFloat(rep.lng);
+    const nombre = rep.nombre + ' ' + (rep.apellido || '');
+    const popup  = `<div class="rep-popup">
+      <div class="rep-popup-name"><i class="fa-solid fa-motorcycle" style="color:#c88e99"></i> ${nombre.trim()}</div>
+      <div class="rep-popup-time">Actualizado ${fmtAgo(rep.actualizado_at)}</div>
+    </div>`;
+
+    if (_markers[rep.idusuario]) {
+      animarMarcador(_markers[rep.idusuario], lat, lng);
+    } else {
+      _markers[rep.idusuario] = L.marker([lat, lng], { icon: iconRep() }).addTo(map);
+    }
+    _markers[rep.idusuario].bindPopup(popup);
+  });
+
+  Object.keys(_markers).forEach(id => {
+    if (!activosIds.has(parseInt(id))) {
+      map.removeLayer(_markers[id]);
+      delete _markers[id];
+    }
+  });
+
+  const list = document.getElementById('repList');
+  if (todos.length === 0) {
+    list.innerHTML = `<div style="padding:24px;text-align:center;color:#ccc;font-size:13px">
+      <i class="fa-solid fa-user-slash" style="font-size:24px;margin-bottom:8px;display:block"></i>
+      No hay repartidores registrados
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  todos.forEach(rep => {
+    const isOnline = activosIds.has(rep.idusuario);
+    const nombre   = (rep.nombre + ' ' + (rep.apellido || '')).trim();
+    const ago      = rep.lat ? fmtAgo(rep.actualizado_at) : 'Sin ubicación';
+    const item     = document.createElement('div');
+    item.className = 'rep-item' + (isOnline ? ' online' : '');
+    item.innerHTML = `
+      <div class="rep-avatar">${initials(nombre)}</div>
+      <div class="rep-info">
+        <div class="rep-name">${nombre}</div>
+        <div class="rep-status">
+          <span class="rep-dot"></span>
+          ${isOnline ? 'En línea · ' + ago : ago}
+        </div>
+      </div>
+      <button class="rep-go-btn" title="Centrar en mapa">
+        <i class="fa-solid fa-crosshairs"></i>
+      </button>`;
+    if (isOnline) {
+      const centrar = () => {
+        map.setView([parseFloat(rep.lat), parseFloat(rep.lng)], 16);
+        _markers[rep.idusuario]?.openPopup();
+      };
+      item.querySelector('.rep-go-btn').addEventListener('click', e => { e.stopPropagation(); centrar(); });
+      item.addEventListener('click', centrar);
+    }
+    list.appendChild(item);
+  });
+}
+
+// ── Carga inicial (fallback HTTP) ────────────────────────────────────────────
+async function cargarUbicaciones() {
+  try {
+    const data = await fetch('api/get_ubicaciones.php').then(r => r.json());
+    procesarUbicaciones(data);
+  } catch(e) { console.error('Error cargando ubicaciones', e); }
+}
+
+// ── SSE tiempo real ───────────────────────────────────────────────────────────
+let _sse = null;
+
+function conectarSSE() {
+  if (_sse) { _sse.close(); _sse = null; }
+  _sse = new EventSource('api/sse_ubicaciones.php');
+
+  _sse.addEventListener('ubicaciones', e => {
+    try { procesarUbicaciones(JSON.parse(e.data)); } catch {}
+  });
+
+  _sse.onerror = () => {
+    if (_sse.readyState === EventSource.CLOSED) {
+      _sse = null;
+      setTimeout(conectarSSE, 5000); // reconectar en 5s si se cae
+    }
+  };
+}
+
+// Cargar al inicio
+cargarSucursales();
+cargarUbicaciones(); // carga inicial inmediata
+conectarSSE();       // luego mantiene tiempo real por SSE
 </script>
+
+<?php include '../../panel/dashboard/layaut/footer.php'; ?>
