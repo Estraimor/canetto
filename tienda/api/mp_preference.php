@@ -37,20 +37,20 @@ $mpItems[] = [
 // Detectamos el entorno igual que helpers.php.
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $isProd = !in_array($host, ['localhost', '127.0.0.1'], true);
-$base   = $isProd ? 'https://canettocookies.com' : 'http://localhost/canetto';
+$base   = $isProd ? 'https://tienda.canettocookies.com' : 'http://localhost/canetto/tienda';
 
 $preference = [
     'items'              => $mpItems,
     'external_reference' => 'canetto_' . $pedidoId,
     'marketplace'        => 'NONE',
     'back_urls'          => [
-        'success' => $base . '/tienda/mp_retorno.php?status=success&pedido=' . $pedidoId,
-        'failure' => $base . '/tienda/mp_retorno.php?status=failure&pedido=' . $pedidoId,
-        'pending' => $base . '/tienda/mp_retorno.php?status=pending&pedido=' . $pedidoId,
+        'success' => $base . '/mp_retorno.php?status=success&pedido=' . $pedidoId,
+        'failure' => $base . '/mp_retorno.php?status=failure&pedido=' . $pedidoId,
+        'pending' => $base . '/mp_retorno.php?status=pending&pedido=' . $pedidoId,
     ],
     'auto_return'          => 'approved',
-    'statement_descriptor' => 'CANETTO COOKIES',   // aparece en el resumen de tarjeta
-    'notification_url'     => $base . '/tienda/api/mp_webhook.php',
+    'statement_descriptor' => 'CANETTO COOKIES',
+    'notification_url'     => $base . '/api/mp_webhook.php',
     'payment_methods'      => ['installments' => 1],
 ];
 

@@ -279,7 +279,7 @@ body::before {
   <div class="actions">
 
     <!-- Ir a la tienda web (principal) -->
-    <a href="<?= URL_ASSETS ?>/tienda/" class="btn-main btn-web" id="btnWeb">
+    <a href="<?= URL_TIENDA ?>/" class="btn-main btn-web" id="btnWeb">
       <div class="btn-icon">🛒</div>
       <div class="btn-text-wrap">
         <span>Ir a la tienda web</span>
@@ -327,7 +327,7 @@ body::before {
 
 <script>
 const APP_SCHEME = 'canetto://';
-const WEB_URL    = '<?= URL_ASSETS ?>/tienda/';
+const WEB_URL    = '<?= URL_TIENDA ?>/';
 
 // Cuando la app esté disponible, cambiar APP_ACTIVE a true
 const APP_ACTIVE = false;

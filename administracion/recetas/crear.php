@@ -3,6 +3,7 @@
 define('APP_BOOT', true);
 
 require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../config/tron.php';
 include '../../panel/dashboard/layaut/nav.php';
 
 $pdo = Conexion::conectar();

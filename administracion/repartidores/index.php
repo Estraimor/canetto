@@ -1,6 +1,7 @@
 <?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../config/tron.php';
 $pageTitle = 'Mapa de repartidores — Canetto';
 include '../../panel/dashboard/layaut/nav.php';
 ?>

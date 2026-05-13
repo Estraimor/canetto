@@ -2,6 +2,7 @@
 define('APP_BOOT', true);
 header('Cache-Control: no-store, no-cache, must-revalidate');
 require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../config/tron.php';
 $pageTitle = "Clientes";
 include '../../panel/dashboard/layaut/nav.php';
 ?>

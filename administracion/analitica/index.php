@@ -3,6 +3,7 @@ define('APP_BOOT', true);
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../config/tron.php';
 $pageTitle = "Analítica de Ventas";
 include '../../panel/dashboard/layaut/nav.php';
 ?>

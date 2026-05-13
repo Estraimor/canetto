@@ -1,6 +1,7 @@
 <?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../config/tron.php';
 $pageTitle = "Stock de Productos";
 include '../../panel/dashboard/layaut/nav.php';
 
