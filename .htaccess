@@ -2,11 +2,11 @@ Options -Indexes
 
 RewriteEngine On
 
-# HTTPS — solo en producción (no en localhost)
-# RewriteCond %{HTTPS} off
-# RewriteCond %{HTTP_HOST} !^localhost [NC]
-# RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
-# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# HTTPS — forzar en producción, ignorar en localhost
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # ─── Proteger archivos sensibles ───────────────────────────────────────────
 <FilesMatch "\.(env|log|sql|sh|bak|git|json|lock|md)$">
