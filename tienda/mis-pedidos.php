@@ -1070,6 +1070,9 @@ async function toggleNotificaciones() {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) {
     alert('Tu navegador no soporta notificaciones push.'); return;
   }
+  if (localStorage.getItem('canetto_cookie_consent') !== 'all') {
+    alert('Para activar notificaciones necesitamos que aceptes todas las cookies.'); return;
+  }
 
   const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
   await navigator.serviceWorker.ready;
@@ -1214,6 +1217,41 @@ async function confirmarEntrega(idVenta, btn) {
   }
 }
 </script>
+
+<!-- ── Banner notificaciones ─────────────────────────────────────── -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+     background:#fff;border-top:2px solid #f0d0d8;padding:14px 20px;
+     box-shadow:0 -4px 24px rgba(200,142,153,.18)">
+  <div style="max-width:720px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+    <span style="font-size:20px">🍪</span>
+    <p style="flex:1;min-width:200px;font-size:13px;color:#555;margin:0;line-height:1.5">
+      Queremos avisarte cuando tu pedido esté listo o en camino.
+    </p>
+    <div style="display:flex;gap:10px;flex-shrink:0">
+      <button onclick="notifBannerChoice(false)" style="padding:9px 18px;border-radius:20px;border:1.5px solid #ddd;
+              background:#fff;font-size:13px;color:#888;cursor:pointer;font-weight:600">
+        Ahora no
+      </button>
+      <button onclick="notifBannerChoice(true)" style="padding:9px 22px;border-radius:20px;border:none;
+              background:#c88e99;color:#fff;font-size:13px;font-weight:700;cursor:pointer">
+        Activar notificaciones ✓
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  if (!localStorage.getItem('canetto_cookie_consent')) {
+    document.getElementById('cookieBanner').style.display = 'block';
+  }
+})();
+async function notifBannerChoice(accepted) {
+  localStorage.setItem('canetto_cookie_consent', accepted ? 'all' : 'essential');
+  document.getElementById('cookieBanner').style.display = 'none';
+  if (accepted) toggleNotificaciones();
+}
+</script>
+<!-- ─────────────────────────────────────────────────────────────── -->
 <script src="transitions.js"></script>
 </body>
 </html>

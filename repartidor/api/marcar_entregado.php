@@ -34,6 +34,15 @@ try {
     $pdo->prepare("UPDATE ventas SET estado_venta_idestado_venta = 4, updated_at = NOW() WHERE idventas = ?")
         ->execute([$idVenta]);
 
+    // Notificar al cliente que su pedido fue entregado
+    $row = $pdo->prepare("SELECT usuario_idusuario FROM ventas WHERE idventas = ?");
+    $row->execute([$idVenta]);
+    $clienteUid = (int)$row->fetchColumn();
+    if ($clienteUid) {
+        require_once __DIR__ . '/../../config/web_push.php';
+        push_enviar_a_usuario($pdo, $clienteUid, $idVenta, 4);
+    }
+
     ob_end_clean();
     echo json_encode(['success' => true]);
 

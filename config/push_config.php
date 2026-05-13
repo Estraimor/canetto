@@ -5,16 +5,16 @@
  * Luego pega aquí los valores y elimina ese script.
  */
 
-// ── Reemplazá esto con los valores de generar_vapid.php ──────────
-define('PUSH_VAPID_PUBLIC',  'PEGAR_AQUI_LA_CLAVE_PUBLICA_BASE64URL');
+define('PUSH_VAPID_PUBLIC',  'BOHfZtCMwcBtOqLU9HdwNrRfs-A7u434RmpJWg3hAnzJZITA2KefpNGhwbFSfl6MTTDJRdGIVFikdIGF4_CKHbk');
 
 define('PUSH_VAPID_PRIVATE_PEM', <<<'EOT'
------BEGIN EC PRIVATE KEY-----
-PEGAR AQUI LA CLAVE PRIVADA PEM
------END EC PRIVATE KEY-----
+-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgRL94sKg5M/Rlhwx2
+oGOpt4QiP2nA9fSe1fXjs0lYrcuhRANCAATh32bQjMHAbTqi1PR3cDa0X7PgO7uN
++EZqSVoN4QJ8yWSEwNinn6TRocGxUn5ejE0wyUXRiFRYpHSBhePwih25
+-----END PRIVATE KEY-----
 EOT
 );
-// ─────────────────────────────────────────────────────────────────
 
 // Remitente (puede ser un mailto: o una URL del sitio)
 define('PUSH_SUBJECT', 'mailto:admin@canetto.ar');
