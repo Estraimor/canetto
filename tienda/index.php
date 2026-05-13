@@ -3,6 +3,69 @@ define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+// ── Verificar si la tienda está abierta ─────────────────────────────
+try {
+    $_pdo_check = Conexion::conectar();
+    $_est = $_pdo_check->query("SELECT valor FROM configuracion_tienda WHERE clave='tienda_abierta'")->fetch();
+    $_msg = $_pdo_check->query("SELECT valor FROM configuracion_tienda WHERE clave='tienda_mensaje_cierre'")->fetch();
+    $_tiendaAbierta  = !$_est || $_est['valor'] === '1';
+    $_tiendaMensaje  = $_msg['valor'] ?? 'La tienda está temporalmente cerrada. ¡Volvemos pronto!';
+} catch (Throwable $e) {
+    $_tiendaAbierta = true;
+    $_tiendaMensaje = '';
+}
+
+if (!$_tiendaAbierta) {
+    ?><!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Canetto — Tienda cerrada</title>
+<link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@font-face{font-family:"Speedee";src:url("/canetto/assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100dvh;display:flex;align-items:center;justify-content:center;
+     background:linear-gradient(135deg,#fff8f9 0%,#fdf0f3 60%,#fce4ec 100%);
+     font-family:system-ui,sans-serif;padding:24px}
+.cerrada-card{background:#fff;border-radius:28px;padding:48px 36px;max-width:420px;width:100%;
+              text-align:center;box-shadow:0 20px 60px rgba(200,142,153,.18)}
+.cerrada-ic{font-size:64px;margin-bottom:20px;line-height:1}
+.cerrada-titulo{font-size:26px;font-weight:900;color:#1a1a1a;margin-bottom:14px;line-height:1.2}
+.cerrada-msg{font-size:15px;color:#666;line-height:1.65;margin-bottom:32px;
+             background:#fdf0f3;border-radius:14px;padding:16px 20px;border:1.5px solid #e8b4c0}
+.cerrada-footer{font-size:12px;color:#aaa;margin-top:24px}
+.cerrada-ig{display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+            color:#c88e99;font-weight:700;font-size:13px;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="cerrada-card">
+  <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px;gap:12px">
+    <div style="width:90px;height:90px;border-radius:22px;background:#0a0a0a;box-shadow:0 4px 24px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;padding:10px">
+      <img src="/canetto/img/Logo_Canetto_Cookie.png"
+           onerror="this.style.display='none'"
+           alt="Canetto" style="width:100%;height:100%;object-fit:contain">
+    </div>
+    <div style="font-family:'Speedee',system-ui,sans-serif;font-size:28px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:#c88e99">Canetto</div>
+  </div>
+  <h1 class="cerrada-titulo">Tienda fuera de línea</h1>
+  <div class="cerrada-msg">
+    <i class="fa-solid fa-circle-info" style="color:#c88e99;margin-right:6px"></i>
+    <?= htmlspecialchars($_tiendaMensaje) ?>
+  </div>
+  <a href="https://www.instagram.com/canetto__?igsh=ZjlidDM0MHdkamx0" target="_blank" class="cerrada-ig">
+    <i class="fa-brands fa-instagram"></i> @canetto__
+  </a>
+  <div class="cerrada-footer">Seguinos para enterarte cuando volvamos.</div>
+</div>
+</body>
+</html><?php
+    exit;
+}
+
 try {
     $pdo = Conexion::conectar();
 

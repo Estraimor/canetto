@@ -301,6 +301,15 @@ $current = $_SERVER['PHP_SELF'];
     </div>
 
     <div class="right">
+        <!-- ── TOGGLE TIENDA ── -->
+        <div id="tiendaToggleWrap" style="display:flex;align-items:center;gap:8px">
+            <button id="btnTiendaToggle" onclick="tiendaToggle()"
+                style="display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;border:2px solid #e5e7eb;background:#fff;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:all .2s;letter-spacing:.02em">
+                <span id="tiendaDot" style="width:9px;height:9px;border-radius:50%;background:#ccc;flex-shrink:0;transition:background .2s"></span>
+                <span id="tiendaLabel">Cargando…</span>
+            </button>
+        </div>
+
         <div class="topbar-clock">
             <i class="fa-regular fa-clock"></i>
             <span id="navClock">--:--:--</span>
@@ -330,4 +339,101 @@ $current = $_SERVER['PHP_SELF'];
         </a>
     </div>
 </header>
+
+<script>
+/* ── Toggle Tienda ───────────────────────────── */
+let _tiendaAbierta = true;
+let _tiendaMensaje = '';
+
+function tiendaRenderBtn() {
+    const btn  = document.getElementById('btnTiendaToggle');
+    const dot  = document.getElementById('tiendaDot');
+    const lbl  = document.getElementById('tiendaLabel');
+    if (!btn) return;
+    if (_tiendaAbierta) {
+        btn.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;border:2px solid #c88e99;background:#fdf0f3;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:all .2s;color:#c88e99';
+        dot.style.background = '#c88e99';
+        lbl.textContent = 'Tienda abierta';
+    } else {
+        btn.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;border:2px solid #dc2626;background:#fef2f2;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:all .2s;color:#dc2626';
+        dot.style.background = '#dc2626';
+        lbl.textContent = '⛔ Tienda cerrada';
+    }
+}
+
+async function tiendaCargarEstado() {
+    try {
+        const r = await fetch('<?= URL_ASSETS ?>/api/tienda_estado.php');
+        const d = await r.json();
+        _tiendaAbierta = d.abierta;
+        _tiendaMensaje = d.mensaje;
+        tiendaRenderBtn();
+    } catch(e) {}
+}
+
+async function tiendaToggle() {
+    // Usar Swal si está disponible, sino confirm nativo
+    const usaSwal = typeof Swal !== 'undefined';
+
+    let confirmado = false;
+    let mensajeCierre = _tiendaMensaje;
+
+    if (usaSwal) {
+        const result = await Swal.fire({
+            title: _tiendaAbierta ? '⛔ Cerrar tienda' : '✅ Abrir tienda',
+            html: `<p style="color:#555;margin-bottom:12px">${_tiendaAbierta ? '¿Cerrar la tienda? Los clientes verán un cartel de fuera de línea.' : '¿Abrir la tienda? Los clientes podrán comprar nuevamente.'}</p>` +
+                  (!_tiendaAbierta ? '' :
+                  `<label style="display:block;text-align:left;font-size:12px;font-weight:700;color:#333;margin-bottom:6px">Mensaje para los clientes:</label>
+                   <textarea id="swalMensajeCierre" rows="3" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;resize:none"
+                   placeholder="Ej: Hoy no trabajamos. Volvemos el lunes.">${_tiendaMensaje}</textarea>`),
+            showCancelButton: true,
+            confirmButtonText: _tiendaAbierta ? '⛔ Cerrar tienda' : '✅ Abrir tienda',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: _tiendaAbierta ? '#dc2626' : '#c88e99',
+            cancelButtonColor: '#aaa',
+            preConfirm: () => { const ta = document.getElementById('swalMensajeCierre'); return ta ? ta.value : null; }
+        });
+        if (!result.isConfirmed) return;
+        confirmado = true;
+        if (result.value) mensajeCierre = result.value;
+    } else {
+        const txt = _tiendaAbierta
+            ? '¿Cerrar la tienda?\n\nEscribí el mensaje para los clientes (o dejá en blanco):'
+            : '¿Abrir la tienda? Confirmá con OK.';
+        const resp = _tiendaAbierta ? prompt(txt, _tiendaMensaje) : (confirm(txt) ? '' : null);
+        if (resp === null) return;
+        confirmado = true;
+        if (resp) mensajeCierre = resp;
+    }
+
+    if (!confirmado) return;
+
+    if (_tiendaAbierta && mensajeCierre) {
+        await fetch('<?= URL_ASSETS ?>/api/tienda_estado.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ accion:'mensaje', mensaje: mensajeCierre })
+        });
+    }
+
+    const r = await fetch('<?= URL_ASSETS ?>/api/tienda_estado.php', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ accion:'toggle' })
+    });
+    const d = await r.json();
+    _tiendaAbierta = d.abierta;
+    _tiendaMensaje = d.mensaje;
+    tiendaRenderBtn();
+
+    if (usaSwal) {
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2500,
+            icon: d.abierta ? 'success' : 'warning',
+            title: d.abierta ? 'Tienda abierta ✅' : 'Tienda cerrada ⛔' });
+    } else {
+        alert(d.abierta ? 'Tienda abierta ✅' : 'Tienda cerrada ⛔');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => { try { tiendaCargarEstado(); } catch(e) {} });
+</script>
+
 <div class="main-content">
