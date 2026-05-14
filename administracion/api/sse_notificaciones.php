@@ -15,7 +15,7 @@ header('X-Accel-Buffering: no');
 header('Connection: keep-alive');
 
 // Deshabilitar límite de tiempo y output buffering
-set_time_limit(0);
+set_time_limit(30);
 if (ob_get_level()) ob_end_clean();
 
 $pdo        = Conexion::conectar();

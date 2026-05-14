@@ -1,19 +1,12 @@
 <?php
-/**
- * API para leer y cambiar el estado de la tienda (abierta / cerrada)
- * GET  → devuelve estado actual
- * POST → cambia estado (requiere sesión admin)
- */
 define('APP_BOOT', true);
-require_once __DIR__ . '/../config/conexion.php';
-require_once __DIR__ . '/../config/cors.php';
+require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../config/tron.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
-
 header('Content-Type: application/json');
 
 $pdo = Conexion::conectar();
 
-// Asegurar que la tabla existe
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS configuracion_tienda (
         clave   VARCHAR(60) PRIMARY KEY,
@@ -28,21 +21,13 @@ function getEstado(PDO $pdo): array {
     $abierta = ($row['valor'] ?? '1') === '1';
     $msg     = $pdo->query("SELECT valor FROM configuracion_tienda WHERE clave='tienda_mensaje_cierre'")->fetch();
     return [
-        'abierta'  => $abierta,
-        'mensaje'  => $msg['valor'] ?? 'La tienda está temporalmente cerrada. ¡Volvemos pronto!',
+        'abierta' => $abierta,
+        'mensaje' => $msg['valor'] ?? 'La tienda está temporalmente cerrada. ¡Volvemos pronto!',
     ];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Solo admins
-    $rolesPermitidos = ['admin','administrador','administracion'];
-    if (!in_array(strtolower($_SESSION['rol'] ?? ''), $rolesPermitidos, true)) {
-        http_response_code(403);
-        echo json_encode(['ok'=>false,'msg'=>'Sin permiso']);
-        exit;
-    }
-
-    $body  = json_decode(file_get_contents('php://input'), true) ?? [];
+    $body   = json_decode(file_get_contents('php://input'), true) ?? [];
     $accion = $body['accion'] ?? '';
 
     if ($accion === 'toggle') {
@@ -60,9 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([$msg, $msg]);
     }
 
-    echo json_encode(['ok'=>true] + getEstado($pdo));
+    echo json_encode(['ok' => true] + getEstado($pdo));
     exit;
 }
 
-// GET
-echo json_encode(['ok'=>true] + getEstado($pdo));
+echo json_encode(['ok' => true] + getEstado($pdo));

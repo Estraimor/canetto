@@ -8,8 +8,15 @@ if (!in_array(strtolower($_SESSION['rol'] ?? ''), $rolesPermitidos, true)) {
     http_response_code(403); exit;
 }
 
-set_time_limit(0);
+// Liberar el lock de sesión inmediatamente — sin esto el SSE bloquea
+// cualquier otra request PHP del mismo usuario mientras corre.
+session_write_close();
+
+set_time_limit(30);
 ignore_user_abort(false);
+$startTime = time();
+$maxLoops  = 12; // 12 × 2s = 24s máximo, luego el cliente reconecta
+$loop      = 0;
 
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
@@ -45,7 +52,8 @@ $sqlTodos = "
     WHERE r.nombre = 'Repartidor' AND u.activo = 1
     ORDER BY u.nombre";
 
-while (!connection_aborted()) {
+while (!connection_aborted() && (time() - $startTime) < 25 && $loop < $maxLoops) {
+    $loop++;
     try {
         $activos = $pdo->query($sqlActivos)->fetchAll(PDO::FETCH_ASSOC);
         $todos   = $pdo->query($sqlTodos)->fetchAll(PDO::FETCH_ASSOC);

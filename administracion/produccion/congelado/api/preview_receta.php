@@ -5,7 +5,7 @@ define('APP_BOOT', true);
 /* =========================
 ERRORES (solo debug)
 ========================= */
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 /* =========================
@@ -14,6 +14,8 @@ HEADER JSON
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../../../../config/conexion.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (empty($_SESSION['usuario_id'])) { http_response_code(401); echo json_encode(['error'=>'No autorizado']); exit; }
 
 try {
 

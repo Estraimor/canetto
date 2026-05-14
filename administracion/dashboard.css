@@ -90,7 +90,9 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
 }
 .db-header-eyebrow {
     display: flex;
@@ -98,20 +100,27 @@
     gap: 6px;
     font-size: 11px;
     color: var(--text-3);
-    font-weight: 600;
-    letter-spacing: .1em;
+    font-weight: 700;
+    letter-spacing: .12em;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+}
+.db-header-eyebrow::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--brand);
+    border-radius: 2px;
 }
 .db-title {
-    font-size: 34px;
-    font-weight: 700;
+    font-size: 32px;
+    font-weight: 800;
     color: var(--text);
     line-height: 1.1;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
 }
 .db-title em { font-style: italic; color: var(--brand); }
-.db-subtitle { font-size: 14px; color: var(--text-3); margin-top: 4px; }
+.db-subtitle { font-size: 13px; color: var(--text-3); margin-top: 5px; font-weight: 500; }
 
 .db-header-right {
     display: flex;

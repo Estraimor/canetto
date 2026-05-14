@@ -117,7 +117,7 @@ foreach ($boxRows as $row) {
 
 ?>
 
-<link rel="stylesheet" href="productos.css">
+<link rel="stylesheet" href="productos.css?v=<?= filemtime(__DIR__ . '/productos.css') ?>">
 
 
 <div class="content-body">
@@ -127,21 +127,35 @@ foreach ($boxRows as $row) {
 </a>
 
     <!-- HEADER -->
-
     <div class="editor-header fade-up">
-
         <div>
             <h1>Productos y Box</h1>
             <p>Gestión de cookies y box de Canetto</p>
         </div>
-
         <button class="btn-primary" onclick="abrirModalProducto()">
             <i class="fa-solid fa-plus"></i>
             Nuevo
         </button>
-
     </div>
 
+    <!-- BUSCADOR -->
+    <div class="prod-search-wrap">
+        <div class="prod-search-box">
+            <i class="fa-solid fa-magnifying-glass prod-search-icon"></i>
+            <input type="text" id="buscadorProductos" class="prod-search-input"
+                   placeholder="Buscar producto o box…"
+                   oninput="filtrarProductos(this.value)">
+            <button class="prod-search-clear" id="btnLimpiarBusqueda" onclick="limpiarBusqueda()" style="display:none">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="prod-filter-pills">
+            <button class="prod-pill active" onclick="setPill(this,'todos')">Todos</button>
+            <button class="prod-pill" onclick="setPill(this,'activo')">Activos</button>
+            <button class="prod-pill" onclick="setPill(this,'inactivo')">Inactivos</button>
+        </div>
+        <span class="prod-count" id="prodCount"></span>
+    </div>
 
     <!-- =========================
     PRODUCTOS
@@ -153,7 +167,9 @@ foreach ($boxRows as $row) {
 
         <?php foreach ($productos as $p): ?>
 
-            <div class="producto-card <?= $p['activo'] ? '' : 'inactivo' ?>">
+            <div class="producto-card <?= $p['activo'] ? '' : 'inactivo' ?>"
+                 data-nombre="<?= strtolower(htmlspecialchars($p['nombre'])) ?>"
+                 data-estado="<?= $p['activo'] ? 'activo' : 'inactivo' ?>">
 
                 <div class="prod-thumb-wrap">
                     <?php if (!empty($p['imagen'])): ?>
@@ -210,7 +226,9 @@ foreach ($boxRows as $row) {
 
         <?php foreach ($boxAgrupados as $b): ?>
 
-            <div class="producto-card box-card <?= $b['activo'] ? '' : 'inactivo' ?>">
+            <div class="producto-card box-card <?= $b['activo'] ? '' : 'inactivo' ?>"
+                 data-nombre="<?= strtolower(htmlspecialchars($b['nombre'])) ?>"
+                 data-estado="<?= $b['activo'] ? 'activo' : 'inactivo' ?>">
 
                 <div class="prod-thumb-wrap prod-thumb-wrap--box">
                     <div class="prod-thumb-placeholder prod-thumb-placeholder--box">
@@ -380,51 +398,47 @@ MODAL CREAR / EDITAR
 EDITAR PRODUCTO / BOX
 ========================= */
 
-function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho, imagen) {
+async function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho, imagen) {
 
-    abrirModalProducto(id);
+    // Esperamos que el modal cargue las recetas y productos antes de setear valores
+    await abrirModalProducto(id);
 
-    setTimeout(() => {
+    document.getElementById("idproducto").value = id;
+    document.getElementById("nombreProducto").value = nombre;
+    document.getElementById("precioProducto").value = precio;
+    document.getElementById("tipoProducto").value = tipo;
 
-        document.getElementById("idproducto").value = id;
-        document.getElementById("nombreProducto").value = nombre;
-        document.getElementById("precioProducto").value = precio;
-        document.getElementById("tipoProducto").value = tipo;
+    document.querySelector("[name='min_congelado']").value = minCong || 0;
+    document.querySelector("[name='min_hecho']").value = minHecho || 0;
 
-        document.querySelector("[name='min_congelado']").value = minCong || 0;
-        document.querySelector("[name='min_hecho']").value = minHecho || 0;
+    document.getElementById("tituloModal").innerText = "Editar";
 
-        document.getElementById("tituloModal").innerText = "Editar";
+    const imgEl = document.getElementById("imgPreview");
+    const ph    = document.getElementById("imgPlaceholder");
+    const btnQ  = document.getElementById("btnQuitarImg");
+    document.getElementById("imagenActual").value = imagen || '';
+    if (imagen) {
+        imgEl.src           = '<?= URL_ASSETS ?>/img/productos/' + imagen;
+        imgEl.style.display = 'block';
+        ph.style.display    = 'none';
+        btnQ.style.display  = '';
+    } else {
+        imgEl.src           = '';
+        imgEl.style.display = 'none';
+        ph.style.display    = '';
+        btnQ.style.display  = 'none';
+    }
 
-        // Imagen actual
-        const imgEl  = document.getElementById("imgPreview");
-        const ph     = document.getElementById("imgPlaceholder");
-        const btnQ   = document.getElementById("btnQuitarImg");
-        document.getElementById("imagenActual").value = imagen || '';
-        if (imagen) {
-            imgEl.src          = '<?= URL_ASSETS ?>/img/productos/' + imagen;
-            imgEl.style.display = 'block';
-            ph.style.display    = 'none';
-            btnQ.style.display  = '';
-        } else {
-            imgEl.src          = '';
-            imgEl.style.display = 'none';
-            ph.style.display    = '';
-            btnQ.style.display  = 'none';
-        }
+    if (receta) {
+        document.getElementById("selectRecetas").value = receta;
+    }
 
-        if (receta) {
-            document.getElementById("selectRecetas").value = receta;
-        }
-
-        if (tipo === "box") {
-            activarModoBox();
-            cargarBox(id);
-        } else {
-            activarModoProducto();
-        }
-
-    }, 200);
+    if (tipo === "box") {
+        activarModoBox();
+        cargarBox(id);
+    } else {
+        activarModoProducto();
+    }
 }
 
 function previsualizarImagen(input) {
@@ -733,6 +747,50 @@ X
 
 }
 
+
+/* =========================
+BUSCADOR + FILTRO
+========================= */
+
+let _filtroEstado = 'todos';
+
+function filtrarProductos(q) {
+    const term = q.trim().toLowerCase();
+    document.getElementById('btnLimpiarBusqueda').style.display = term ? '' : 'none';
+    aplicarFiltro(term, _filtroEstado);
+}
+
+function limpiarBusqueda() {
+    const inp = document.getElementById('buscadorProductos');
+    inp.value = '';
+    inp.focus();
+    document.getElementById('btnLimpiarBusqueda').style.display = 'none';
+    aplicarFiltro('', _filtroEstado);
+}
+
+function setPill(btn, estado) {
+    document.querySelectorAll('.prod-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    _filtroEstado = estado;
+    const term = document.getElementById('buscadorProductos').value.trim().toLowerCase();
+    aplicarFiltro(term, estado);
+}
+
+function aplicarFiltro(term, estado) {
+    const cards = document.querySelectorAll('.producto-card');
+    let visible = 0;
+    cards.forEach(card => {
+        const nombre   = card.dataset.nombre || '';
+        const cardEstado = card.dataset.estado || 'activo';
+        const matchNombre = !term || nombre.includes(term);
+        const matchEstado = estado === 'todos' || cardEstado === estado;
+        const show = matchNombre && matchEstado;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    const countEl = document.getElementById('prodCount');
+    countEl.textContent = visible === cards.length ? '' : `${visible} resultado${visible !== 1 ? 's' : ''}`;
+}
 
 /* =========================
 GUARDAR PRODUCTO

@@ -40,7 +40,7 @@ $current = $_SERVER['PHP_SELF'];
 <title><?= $pageTitle ?></title>
 <link rel="icon" type="image/png" href="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png">
 
-<link rel="stylesheet" href="<?= URL_ASSETS ?>/assets/dashboard.css">
+<link rel="stylesheet" href="<?= URL_ASSETS ?>/assets/dashboard.css?v=<?= filemtime(dirname(__DIR__, 3) . '/assets/dashboard.css') ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <!-- DataTables -->
@@ -363,12 +363,17 @@ function tiendaRenderBtn() {
 
 async function tiendaCargarEstado() {
     try {
-        const r = await fetch('<?= URL_ASSETS ?>/api/tienda_estado.php');
+        const r = await fetch('<?= URL_ADMIN ?>/api/tienda_estado.php');
         const d = await r.json();
         _tiendaAbierta = d.abierta;
         _tiendaMensaje = d.mensaje;
+    } catch(e) {
+        // Si falla la API, asumir abierta para no bloquear el panel
+        _tiendaAbierta = true;
+        _tiendaMensaje = '';
+    } finally {
         tiendaRenderBtn();
-    } catch(e) {}
+    }
 }
 
 async function tiendaToggle() {
@@ -409,13 +414,13 @@ async function tiendaToggle() {
     if (!confirmado) return;
 
     if (_tiendaAbierta && mensajeCierre) {
-        await fetch('<?= URL_ASSETS ?>/api/tienda_estado.php', {
+        await fetch('<?= URL_ADMIN ?>/api/tienda_estado.php', {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ accion:'mensaje', mensaje: mensajeCierre })
         });
     }
 
-    const r = await fetch('<?= URL_ASSETS ?>/api/tienda_estado.php', {
+    const r = await fetch('<?= URL_ADMIN ?>/api/tienda_estado.php', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ accion:'toggle' })
     });

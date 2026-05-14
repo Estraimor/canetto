@@ -205,7 +205,7 @@ function iconTiendaColor(activa) {
 
 async function cargarSucursales() {
   try {
-    const data = await fetch('<?= URL_ASSETS ?>/configuraciones/ajax/listar_sucursales.php').then(r => r.json());
+    const data = await fetch('api/listar_sucursales.php').then(r => r.json());
     const sel = document.getElementById('sucSelect');
     const conCoords = data.filter(s => s.latitud && s.longitud);
 
@@ -380,7 +380,7 @@ let _sse = null;
 
 function conectarSSE() {
   if (_sse) { _sse.close(); _sse = null; }
-  _sse = new EventSource('api/sse_ubicaciones.php');
+  _sse = new EventSource('api/sse_ubicaciones.php', { withCredentials: true });
 
   _sse.addEventListener('ubicaciones', e => {
     try { procesarUbicaciones(JSON.parse(e.data)); } catch {}
@@ -393,6 +393,9 @@ function conectarSSE() {
     }
   };
 }
+
+// Cerrar SSE al salir de la página para no bloquear la navegación
+window.addEventListener('pagehide', () => { if (_sse) { _sse.close(); _sse = null; } });
 
 // Cargar al inicio
 cargarSucursales();
