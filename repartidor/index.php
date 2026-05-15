@@ -778,20 +778,31 @@ async function cargarPedidos() {
         }
       }
 
-      // Banner "Pendiente de Cobro" para pedidos efectivo + envío
+      // Banner de cobro según método de pago
       const metodoNombre = (p.metodo_pago || '').toLowerCase();
       const esEfectivo   = metodoNombre.includes('efectivo') || metodoNombre.includes('cash');
       const costoEnvio   = parseFloat(p.costo_envio || 0);
       const cobroBanner  = clone.querySelector('.pedido-cobro-banner');
-      if (esEfectivo && p.tipo_entrega === 'envio') {
-        cobroBanner.style.display = 'flex';
-        const subtotal = costoEnvio > 0 ? p.total - costoEnvio : p.total;
-        clone.querySelector('.cobro-sub').textContent   = fmt(subtotal);
-        clone.querySelector('.cobro-total').textContent = fmt(p.total);
-        if (costoEnvio > 0) {
+      if (p.tipo_entrega === 'envio') {
+        if (esEfectivo) {
+          // Efectivo: cobrar productos + envío (total completo)
+          cobroBanner.style.display = 'flex';
+          const subtotal = costoEnvio > 0 ? p.total - costoEnvio : p.total;
+          clone.querySelector('.cobro-sub').textContent   = fmt(subtotal);
+          clone.querySelector('.cobro-total').textContent = fmt(p.total);
+          if (costoEnvio > 0) {
+            const rowEnvio = clone.querySelector('.row-envio');
+            rowEnvio.style.display = 'flex';
+            clone.querySelector('.cobro-envio').textContent = fmt(costoEnvio);
+          }
+        } else if (costoEnvio > 0) {
+          // Otro método de pago: cobrar solo el envío
+          cobroBanner.style.display = 'flex';
+          clone.querySelector('.pedido-cobro-title').textContent = 'Cobrar envío';
+          clone.querySelector('.cobro-sub').closest('.pedido-cobro-row').style.display = 'none';
+          clone.querySelector('.cobro-total').textContent = fmt(costoEnvio);
           const rowEnvio = clone.querySelector('.row-envio');
-          rowEnvio.style.display = 'flex';
-          clone.querySelector('.cobro-envio').textContent = fmt(costoEnvio);
+          rowEnvio.style.display = 'none';
         }
       }
 
@@ -1346,12 +1357,22 @@ async function abrirUberMap(pedido) {
     btnTel.onclick = null; btnTel.style.opacity = '.4';
   }
 
-  // Banner cobro efectivo
+  // Banner cobro según método de pago
   const cobro = document.getElementById('uberCobro');
+  const uberCobroLbl = cobro.querySelector('div');
   const metodoNombre = (pedido.metodo_pago || '').toLowerCase();
-  if (metodoNombre.includes('efectivo') && pedido.tipo_entrega === 'envio') {
-    cobro.style.display = 'flex';
-    document.getElementById('uberCobroTotal').textContent = '$' + parseFloat(pedido.total || 0).toLocaleString('es-AR');
+  const esEfectivoU  = metodoNombre.includes('efectivo') || metodoNombre.includes('cash');
+  const costoEnvioU  = parseFloat(pedido.costo_envio || 0);
+  if (pedido.tipo_entrega === 'envio') {
+    if (esEfectivoU) {
+      cobro.style.display = 'flex';
+      uberCobroLbl.innerHTML = 'Cobrar en efectivo: <strong id="uberCobroTotal">$' + parseFloat(pedido.total || 0).toLocaleString('es-AR') + '</strong>';
+    } else if (costoEnvioU > 0) {
+      cobro.style.display = 'flex';
+      uberCobroLbl.innerHTML = 'Cobrar envío: <strong id="uberCobroTotal">$' + costoEnvioU.toLocaleString('es-AR') + '</strong>';
+    } else {
+      cobro.style.display = 'none';
+    }
   } else {
     cobro.style.display = 'none';
   }

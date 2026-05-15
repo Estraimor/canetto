@@ -32,6 +32,19 @@ $stmt->execute([$id]);
 $prod = $stmt->fetch();
 if (!$prod) { header('Location: index.php'); exit; }
 
+// Cargar todas las imágenes del producto desde la tabla nueva
+$stmtImg = $pdo->prepare("
+    SELECT archivo FROM productos_imagenes
+    WHERE productos_idproductos = ?
+    ORDER BY orden ASC, id ASC
+");
+$stmtImg->execute([$id]);
+$imagenes = $stmtImg->fetchAll(PDO::FETCH_COLUMN);
+// Fallback a la imagen principal si la tabla está vacía
+if (empty($imagenes) && !empty($prod['imagen'])) {
+    $imagenes = [$prod['imagen']];
+}
+
 $boxItems = [];
 if ($prod['tipo'] === 'box') {
     $stmtB = $pdo->prepare("
@@ -110,17 +123,7 @@ if ($prod['especificaciones']) {
     }
 }
 
-// Imágenes: soporta comma-separated en campo imagen, o tabla producto_imagenes
-$imagenes = [];
-if (!empty($prod['imagen'])) {
-    $imagenes = array_values(array_filter(array_map('trim', explode(',', $prod['imagen']))));
-}
-try {
-    $stmtImgs = $pdo->prepare("SELECT imagen FROM producto_imagenes WHERE idproducto = ? AND activo = 1 ORDER BY orden ASC");
-    $stmtImgs->execute([$id]);
-    $extra = $stmtImgs->fetchAll(PDO::FETCH_COLUMN);
-    if (!empty($extra)) $imagenes = $extra;
-} catch (Exception $e) {}
+// Imágenes desde tabla productos_imagenes (ya cargadas arriba)
 $imgPrincipal = $imagenes[0] ?? '';
 ?>
 <!DOCTYPE html>
@@ -208,7 +211,31 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
   transition: opacity .2s;
 }
 .det-img-emoji { font-size: 110px; color: #c88e99; opacity: .4; line-height: 1; }
-.det-thumbs-strip { display: none; }
+
+/* ── Galería mobile: carrusel deslizable ── */
+.det-thumbs-strip {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 4px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.det-thumbs-strip::-webkit-scrollbar { display: none; }
+.det-thumb {
+  flex-shrink: 0;
+  width: 58px; height: 58px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: border-color .15s, transform .15s;
+}
+.det-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.det-thumb.active { border-color: #c88e99; }
+.det-thumb:hover { border-color: #c88e99; transform: scale(1.05); }
 
 /* ── INFO CARD MOBILE ── */
 .det-info-col { display: block; }
@@ -320,34 +347,44 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
   background: #fff; border-top: 1px solid #f0ece8;
   box-shadow: 0 -2px 16px rgba(0,0,0,.08);
 }
-.det-cta-inner { display: flex; align-items: center; gap: 10px; }
-.det-cta-qty {
-  display: inline-flex; align-items: center;
-  background: #f1f5f9; border-radius: 14px; padding: 0 4px; flex-shrink: 0;
-}
-.det-cta-qty button {
-  width: 40px; height: 50px;
-  background: transparent; border: none; cursor: pointer;
-  font-size: 22px; color: #c88e99; line-height: 1;
-  display: flex; align-items: center; justify-content: center;
-}
-.det-cta-qty span {
-  min-width: 34px; text-align: center;
-  font-size: 18px; font-weight: 800; color: #1e293b;
-}
+.det-cta-inner { display: flex; align-items: center; }
+.det-cta-qty  { display: none; } /* integrado dentro del botón */
 .btn-add-det {
-  flex: 1; padding: 14px 12px; border: none; border-radius: 14px;
-  background: #1e293b; color: #fff;
-  font-size: 15px; font-weight: 700; cursor: pointer;
-  font-family: inherit; letter-spacing: .1px;
-  transition: transform .15s, opacity .15s;
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 2px;
+  width: 100%; padding: 6px; border: none; border-radius: 50px;
+  background: #1a1a1a; color: #fff;
+  font-family: inherit; cursor: default;
+  transition: transform .15s;
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 60px; gap: 4px;
 }
-.btn-add-det:active:not(:disabled) { transform: scale(.97); }
-.btn-add-det:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
-.btn-add-label { font-size: 15px; font-weight: 700; }
-.btn-add-price { font-size: 13px; font-weight: 500; opacity: .8; }
+.btn-add-det:active:not(:disabled) { transform: scale(.98); }
+.btn-add-det:disabled { background: #bbb; cursor: not-allowed; opacity: .7; }
+/* Badge qty izquierdo */
+.det-add-qty-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.13);
+  padding: 10px 16px; border-radius: 50px;
+  font-size: 16px; font-weight: 800; flex-shrink: 0;
+}
+.det-add-qty-btn {
+  cursor: pointer; font-size: 20px; font-weight: 300;
+  line-height: 1; padding: 0 2px;
+  user-select: none; opacity: .85; transition: opacity .15s;
+  background: none; border: none; color: #fff;
+}
+.det-add-qty-btn:hover { opacity: 1; }
+.det-add-qty-num { min-width: 20px; text-align: center; font-size: 17px; font-weight: 800; color: #fff; }
+/* Texto central */
+.btn-add-label {
+  flex: 1; text-align: center;
+  font-size: 16px; font-weight: 700; letter-spacing: .3px; cursor: pointer;
+}
+/* Badge precio derecho */
+.btn-add-price {
+  background: rgba(255,255,255,.13);
+  padding: 10px 16px; border-radius: 50px;
+  font-size: 15px; font-weight: 800; white-space: nowrap; cursor: pointer;
+}
 
 /* ════════════════════════════════
    DESKTOP ≥ 1024px
@@ -701,26 +738,6 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
       </div>
       <?php endif; ?>
 
-      <?php if (!empty($ingredientes)): ?>
-      <div class="det-ingredients">
-        <div class="det-ingredients-title">
-          <i class="fa-solid fa-wheat-awn"></i> Ingredientes
-        </div>
-        <div class="det-ingredients-grid">
-          <?php foreach ($ingredientes as $ing): ?>
-          <div class="det-ing-chip">
-            <i class="fa-solid fa-circle"></i>
-            <?= htmlspecialchars($ing) ?>
-          </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
-      <?php elseif ($prod['especificaciones']): ?>
-      <div class="det-specs">
-        <div class="det-specs-title">Especificaciones</div>
-        <p><?= nl2br(htmlspecialchars($prod['especificaciones'])) ?></p>
-      </div>
-      <?php endif; ?>
 
       <!-- Separador + cantidad (solo desktop) -->
       <?php if ($stock > 0): ?>
@@ -767,24 +784,18 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
 
 </div><!-- /det-wrap -->
 
-<!-- CTA MOBILE (qty + precio al estilo referencia) -->
+<!-- CTA MOBILE — estilo McDonald's -->
 <div class="det-cta">
   <div class="det-cta-inner">
-    <?php if ($stock > 0): ?>
-    <div class="det-cta-qty">
-      <button onclick="cambiarQty(-1)">−</button>
-      <span id="qtyValMob">1</span>
-      <button onclick="cambiarQty(1)">+</button>
-    </div>
-    <?php endif; ?>
-    <button class="btn-add-det" id="btnAddDet"
-      <?= $stock <= 0 ? 'disabled' : '' ?>
-      onclick="agregarAlCarrito()">
+    <button class="btn-add-det" id="btnAddDet" <?= $stock <= 0 ? 'disabled' : '' ?>>
       <?php if ($stock > 0): ?>
-        <span class="btn-add-label">
-          <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+        <span class="det-add-qty-badge">
+          <span class="det-add-qty-btn" onclick="event.stopPropagation();cambiarQty(-1)">−</span>
+          <span class="det-add-qty-num" id="qtyValMob">1</span>
+          <span class="det-add-qty-btn" onclick="event.stopPropagation();cambiarQty(1)">+</span>
         </span>
-        <span class="btn-add-price" id="ctaPrice">$<?= $precio ?></span>
+        <span class="btn-add-label" onclick="agregarAlCarrito()">Agregar</span>
+        <span class="btn-add-price" id="ctaPrice" onclick="agregarAlCarrito()">$<?= number_format($precioFinal, 0, ',', '.') ?></span>
       <?php else: ?>
         <span class="btn-add-label">Sin stock disponible</span>
       <?php endif; ?>
@@ -852,7 +863,7 @@ function agregarAlCarrito(){
     const orig = b.innerHTML;
     b.innerHTML = '<span class="btn-add-label">✓ Agregado</span>';
     b.style.background = '#2d8a4e';
-    setTimeout(() => { b.innerHTML = orig; b.style.background = ''; }, 1400);
+    setTimeout(() => { window.location.href = 'index.php?carrito=1'; }, 1400);
   });
 }
 

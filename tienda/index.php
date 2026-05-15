@@ -271,6 +271,11 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   color:transparent;transition:all .15s;flex-shrink:0;
 }
 .ck-topping-row:has(input:checked) .ck-tp-chkmark{ background:#c88e99;border-color:#c88e99;color:#fff; }
+/* Estado "sin toppings" seleccionado (toggle via JS .on) */
+.ck-no-topping-row.on{ border-color:#94a3b8;background:#f8fafc; }
+.ck-no-topping-row.on .ck-tp-ic{ background:#94a3b8;color:#fff; }
+.ck-no-topping-row.on .ck-tp-chkmark{ background:#94a3b8;border-color:#94a3b8;color:#fff; }
+.ck-no-topping-row .ck-tp-chkmark{ border-color:#e2e8f0; }
 
 /* Toppings selector */
 .tp-sel-row{
@@ -453,10 +458,6 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
       <span class="t-cat-ic"><i class="fa-solid fa-box-open"></i></span>
       <span class="t-cat-lbl">Boxes</span>
     </a>
-    <a href="#sucursales" class="t-cat-item" onclick="setCatActive(this)">
-      <span class="t-cat-ic"><i class="fa-solid fa-location-dot"></i></span>
-      <span class="t-cat-lbl">Sucursales</span>
-    </a>
     <a href="#sobre-nosotros" class="t-cat-item" onclick="setCatActive(this)">
       <span class="t-cat-ic"><i class="fa-solid fa-circle-info"></i></span>
       <span class="t-cat-lbl">Nosotros</span>
@@ -530,78 +531,6 @@ HTML;
 <?php else: foreach ($boxes as $p): renderProductCard($p); endforeach; endif; ?>
 </div>
 
-
-<!-- ── BRANCHES ────────────────── -->
-<?php if (!empty($sucursales)): ?>
-<div class="sec-head" id="sucursales">
-  <div>
-    <div class="sec-title">Nuestras <em>sucursales</em></div>
-    <div class="sec-sub">Retirá tu pedido en la más cercana</div>
-  </div>
-  <button class="btn-nearest" id="btnNearest" onclick="findNearest()">
-    <i class="fa-solid fa-location-crosshairs"></i> La más cercana
-  </button>
-</div>
-
-<!-- Banner "más cercana" -->
-<div id="nearestBanner" style="display:none;margin:0 20px 12px;padding:12px 16px;background:var(--pk-lt);border-left:3px solid var(--pk);border-radius:10px;font-size:13px;color:var(--dk)"></div>
-
-<div class="branch-grid" id="branchGrid">
-  <?php foreach ($sucursales as $i => $s):
-    $addr = implode(', ', array_filter([$s['direccion'], $s['ciudad'], $s['provincia']]));
-    $lat  = !empty($s['latitud'])  ? (float)$s['latitud']  : null;
-    $lng  = !empty($s['longitud']) ? (float)$s['longitud'] : null;
-    $osmDir = ($lat && $lng)
-        ? "https://www.openstreetmap.org/directions?to={$lat},{$lng}"
-        : ($addr ? "https://www.openstreetmap.org/search?query=" . urlencode($addr) : null);
-  ?>
-  <div class="branch-card" id="branch-<?= $i ?>"
-       data-lat="<?= $lat ?? '' ?>" data-lng="<?= $lng ?? '' ?>"
-       data-nombre="<?= htmlspecialchars($s['nombre']) ?>">
-    <div class="branch-head">
-      <div class="branch-ic"><i class="fa-solid fa-location-dot"></i></div>
-      <div class="branch-name"><?= htmlspecialchars($s['nombre']) ?></div>
-      <span class="branch-nearest-badge" id="badge-<?= $i ?>" style="display:none"><i class="fa-solid fa-star"></i> Más cercana</span>
-    </div>
-    <?php if ($addr): ?><div class="branch-addr"><?= htmlspecialchars($addr) ?></div><?php endif; ?>
-    <?php if ($lat && $lng): ?>
-  <iframe
-    width="100%"
-    height="200"
-    style="border:0; border-radius:12px;"
-    loading="lazy"
-    allowfullscreen
-    src="https://www.google.com/maps?q=<?= $lat ?>,<?= $lng ?>&z=15&output=embed">
-  </iframe>
-<?php elseif ($addr): ?>
-  <iframe
-    width="100%"
-    height="200"
-    style="border:0; border-radius:12px;"
-    loading="lazy"
-    allowfullscreen
-    src="https://www.google.com/maps?q=<?= urlencode($addr) ?>&z=15&output=embed">
-  </iframe>
-<?php endif; ?>
-    <div class="branch-chips">
-      <?php if ($s['telefono']): ?><span class="branch-chip">📞 <?= htmlspecialchars($s['telefono']) ?></span><?php endif; ?>
-      <?php if ($s['email']): ?><span class="branch-chip">✉️ <?= htmlspecialchars($s['email']) ?></span><?php endif; ?>
-    </div>
-    <?php if ($osmDir): ?>
-    <?php if ($lat && $lng): ?>
-<div style="text-align:center;margin-top:14px">
-  <a href="https://www.google.com/maps/dir/?api=1&destination=<?= $lat ?>,<?= $lng ?>"
-     target="_blank"
-     class="btn-dir btn-dir-big">
-     🧭 Cómo llegar
-  </a>
-</div>
-<?php endif; ?>
-    <?php endif; ?>
-  </div>
-  <?php endforeach; ?>
-</div>
-<?php endif; ?>
 
 <!-- ── SOBRE NOSOTROS ────────────── -->
 </div><!-- /t-content-col -->
@@ -771,16 +700,14 @@ HTML;
     </div>
     <div class="pd-desc" id="pdDesc" style="display:none"></div>
     <div class="pd-specs" id="pdSpecs" style="display:none"></div>
-    <div class="pd-qty-row">
-      <span class="pd-qty-label">Cantidad:</span>
-      <div class="pd-qty-ctrl">
-        <button class="pd-qty-btn" onclick="pdCambiarQty(-1)">−</button>
-        <span class="pd-qty-num" id="pdQty">1</span>
-        <button class="pd-qty-btn" onclick="pdCambiarQty(1)">+</button>
-      </div>
-    </div>
-    <button class="pd-add-btn" id="pdAddBtn" onclick="pdAgregarAlCarrito()">
-      + Agregar al carrito
+    <button class="pd-add-btn" id="pdAddBtn">
+      <span class="pd-add-qty-badge" id="pdAddQtyBadge">
+        <span class="pd-add-qty-btn" onclick="event.stopPropagation();pdCambiarQty(-1)">−</span>
+        <span class="pd-add-qty-num" id="pdQty">1</span>
+        <span class="pd-add-qty-btn" onclick="event.stopPropagation();pdCambiarQty(1)">+</span>
+      </span>
+      <span class="pd-add-label" onclick="pdAgregarAlCarrito()">Agregar</span>
+      <span class="pd-add-price-badge" id="pdAddPriceBadge" onclick="pdAgregarAlCarrito()">$0</span>
     </button>
   </div>
 </div>
@@ -859,12 +786,22 @@ HTML;
           <div style="font-size:17px;font-weight:800;color:#1e293b;margin-bottom:4px">¿Querés agregarle algo?</div>
           <div style="font-size:13px;color:#94a3b8">Toppings disponibles para tu pedido</div>
         </div>
-        <div id="ckToppingsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
-        <button class="btn-pk" onclick="confirmarToppingsOrden()" style="margin-bottom:10px">
+        <div id="ckToppingsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+        <!-- Opción "sin toppings" como checkbox -->
+        <label class="ck-topping-row ck-no-topping-row" id="ckNoToppingRow" onclick="toggleNoTopping()">
+          <input type="checkbox" id="ckNoToppingChk" style="display:none">
+          <div class="ck-tp-ic" style="background:#f1f5f9"><i class="fa-solid fa-ban" style="color:#94a3b8"></i></div>
+          <div class="ck-tp-info">
+            <div class="ck-tp-name" style="color:#64748b">Sin toppings</div>
+            <div class="ck-tp-price" style="color:#94a3b8">Continuar sin agregar</div>
+          </div>
+          <div class="ck-tp-chkmark" id="ckNoToppingMark"><i class="fa-solid fa-check"></i></div>
+        </label>
+        <div style="font-size:12px;color:#e11d48;margin:8px 0 4px;display:none" id="ckTpAlert">
+          <i class="fa-solid fa-triangle-exclamation"></i> Seleccioná al menos un topping o marcá "Sin toppings"
+        </div>
+        <button class="btn-pk" onclick="confirmarToppingsOrden()" style="margin-top:12px">
           <i class="fa-solid fa-check"></i> Confirmar y continuar
-        </button>
-        <button class="btn-sec" onclick="saltearToppings()" style="background:#f1f5f9;color:#64748b">
-          <i class="fa-solid fa-ban"></i> Continuar sin toppings
         </button>
       </div>
 
@@ -1256,7 +1193,18 @@ function abrirDetalle(id){
 
   const btn = document.getElementById('pdAddBtn');
   btn.disabled = sinStock;
-  btn.textContent = sinStock ? 'Sin stock' : '+ Agregar al carrito';
+  if(sinStock){
+    btn.innerHTML='<span class="pd-add-label">Sin stock</span>';
+  } else {
+    btn.innerHTML=`
+      <span class="pd-add-qty-badge" id="pdAddQtyBadge">
+        <span class="pd-add-qty-btn" onclick="event.stopPropagation();pdCambiarQty(-1)">−</span>
+        <span class="pd-add-qty-num" id="pdQty">${pdQty}</span>
+        <span class="pd-add-qty-btn" onclick="event.stopPropagation();pdCambiarQty(1)">+</span>
+      </span>
+      <span class="pd-add-label" onclick="pdAgregarAlCarrito()">Agregar</span>
+      <span class="pd-add-price-badge" id="pdAddPriceBadge" onclick="pdAgregarAlCarrito()">$${Number(p.precio*pdQty).toLocaleString('es-AR')}</span>`;
+  }
 
   document.getElementById('pdOverlay').classList.add('on');
   document.getElementById('pdSheet').classList.add('on');
@@ -1272,7 +1220,10 @@ function pdCambiarQty(d){
   if(!pdActual) return;
   const stock=parseInt(pdActual.stock_hecho)||0;
   pdQty=Math.max(1,Math.min(pdQty+d,stock));
-  document.getElementById('pdQty').textContent=pdQty;
+  const qn=document.getElementById('pdQty');
+  const pb=document.getElementById('pdAddPriceBadge');
+  if(qn) qn.textContent=pdQty;
+  if(pb) pb.textContent='$'+Number(pdActual.precio*pdQty).toLocaleString('es-AR');
 }
 function pdAgregarAlCarrito(){
   if(!pdActual||requireLogin()) return;
@@ -1284,11 +1235,25 @@ function pdAgregarAlCarrito(){
   if(ex) ex.cantidad+=pdQty;
   else cart.push({id:p.idproductos,nombre:p.nombre,precio:+p.precio,tipo:p.tipo,imagen:p.imagen||'',cantidad:pdQty});
   saveCart(cart);
-  showToast(p.nombre+' agregado ✓','ok');
-  const btn=document.getElementById('pdAddBtn');
-  const orig=btn.textContent; btn.textContent='✓ Listo!'; btn.style.background='#2d8a4e';
-  setTimeout(()=>{btn.textContent=orig;btn.style.background='';cerrarDetalle();},900);
+  cerrarDetalle();
+  mostrarBannerCarrito();
 }
+function mostrarBannerCarrito(){
+  const b=document.getElementById('cartSuccessBanner');
+  if(!b) return;
+  b.style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+  clearTimeout(b._t);
+  b._t=setTimeout(()=>{b.style.display='none';},3000);
+}
+// Mostrar banner si viene redirigido desde producto.php
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  if(p.get('carrito')==='1'){
+    history.replaceState(null,'',window.location.pathname);
+    mostrarBannerCarrito();
+  }
+})();
 
 // ── CART DRAWER ─────────────────────────
 function openCart(){document.getElementById('cartDrawer').classList.add('on');document.getElementById('cartOverlay').classList.add('on');document.body.style.overflow='hidden'}
@@ -1421,6 +1386,11 @@ function openCheckout(){
         <div class="ck-tp-chkmark"><i class="fa-solid fa-check"></i></div>
       </label>`;
     }).join('');
+    // resetear estado "sin toppings"
+    const noChk=document.getElementById('ckNoToppingChk');
+    const noRow=document.getElementById('ckNoToppingRow');
+    if(noChk){noChk.checked=false;noRow?.classList.remove('on');}
+    document.getElementById('ckTpAlert').style.display='none';
     showCkStep('ckToppings');
   } else {
     // No hay toppings — saltar al flujo normal
@@ -1439,15 +1409,43 @@ function recalcToppingsOrden(){
   },10);
 }
 
-function confirmarToppingsOrden(){
-  _toppingsOrden=[...document.querySelectorAll('.ck-tp-chk:checked')]
-    .map(c=>({id:+c.value,nombre:c.dataset.nombre,precio:+c.dataset.precio}));
-  _costoToppings=_toppingsOrden.reduce((s,t)=>s+t.precio,0);
-  _abrirCheckoutPrincipal();
+function toggleNoTopping(){
+  const chk=document.getElementById('ckNoToppingChk');
+  const mark=document.getElementById('ckNoToppingMark');
+  const row=document.getElementById('ckNoToppingRow');
+  chk.checked=!chk.checked;
+  row.classList.toggle('on',chk.checked);
+  if(chk.checked){
+    // deseleccionar todos los toppings
+    document.querySelectorAll('.ck-tp-chk').forEach(c=>{
+      c.checked=false;
+      c.closest('.ck-topping-row')?.classList.remove('on');
+    });
+    recalcToppingsOrden();
+  }
+  document.getElementById('ckTpAlert').style.display='none';
 }
 
-function saltearToppings(){
-  _toppingsOrden=[];_costoToppings=0;
+function recalcToppingsOrden(){
+  // al seleccionar un topping, desmarcar "sin toppings"
+  const noChk=document.getElementById('ckNoToppingChk');
+  const noRow=document.getElementById('ckNoToppingRow');
+  if(noChk&&[...document.querySelectorAll('.ck-tp-chk:checked')].length>0){
+    noChk.checked=false;
+    noRow?.classList.remove('on');
+  }
+}
+
+function confirmarToppingsOrden(){
+  const toppingsSel=[...document.querySelectorAll('.ck-tp-chk:checked')];
+  const sinTopping=document.getElementById('ckNoToppingChk')?.checked;
+  if(!toppingsSel.length&&!sinTopping){
+    document.getElementById('ckTpAlert').style.display='block';
+    return;
+  }
+  document.getElementById('ckTpAlert').style.display='none';
+  _toppingsOrden=toppingsSel.map(c=>({id:+c.value,nombre:c.dataset.nombre,precio:+c.dataset.precio}));
+  _costoToppings=_toppingsOrden.reduce((s,t)=>s+t.precio,0);
   _abrirCheckoutPrincipal();
 }
 
@@ -2608,7 +2606,7 @@ document.getElementById('toppingsModal')?.addEventListener('click', e => {
     <span>Mis pedidos</span>
   </a>
   <?php endif; ?>
-  <a href="#sucursales" class="bn-item">
+  <a href="sucursales.php" class="bn-item">
     <i class="fa-solid fa-location-dot"></i>
     <span>Sucursales</span>
   </a>

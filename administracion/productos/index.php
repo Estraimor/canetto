@@ -294,24 +294,29 @@ MODAL CREAR / EDITAR
             <input type="hidden" name="idproducto" id="idproducto">
             <input type="hidden" name="imagen_actual" id="imagenActual">
 
-            <!-- ── COLUMNA IZQUIERDA: imagen ── -->
+            <!-- ── COLUMNA IZQUIERDA: imágenes ── -->
             <div class="prod-modal-img-col">
+                <!-- Preview imagen principal -->
                 <div class="prod-modal-img-box" id="imgPreviewWrap" onclick="document.getElementById('inputImagen').click()">
                     <img id="imgPreview" src="" alt="preview" style="display:none">
                     <div class="prod-modal-img-placeholder" id="imgPlaceholder">
                         <i class="fa-solid fa-image"></i>
                     </div>
                 </div>
+
+                <!-- Miniaturas de imágenes existentes -->
+                <div id="galeriaExistente" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+
                 <div class="prod-modal-img-actions">
-                    <label for="inputImagen">
-                        <i class="fa-solid fa-arrow-up-from-bracket"></i> Subir imagen
+                    <label for="inputImagen" style="cursor:pointer">
+                        <i class="fa-solid fa-plus"></i> Agregar imagen
                     </label>
-                    <input type="file" name="imagen" id="inputImagen" accept="image/jpeg,image/png,image/webp"
-                           onchange="previsualizarImagen(this)" style="display:none">
-                    <button type="button" class="btn-quitar-img" id="btnQuitarImg" onclick="quitarImagen()" style="display:none">
-                        <i class="fa-solid fa-trash"></i> Quitar imagen
-                    </button>
-                    <small style="color:#bbb;font-size:11px;text-align:center">JPG, PNG o WebP · Máx 2 MB</small>
+                    <input type="file" name="imagenes_nuevas[]" id="inputImagen"
+                           accept="image/jpeg,image/png,image/webp,image/gif"
+                           multiple onchange="agregarImagenes(this)" style="display:none">
+                    <!-- Campo oculto que mantiene imagen principal (compatibilidad) -->
+                    <input type="hidden" name="imagen_actual" id="imagenActual">
+                    <small style="color:#bbb;font-size:11px;text-align:center">JPG, PNG, WebP o GIF · Máx 5 MB c/u · Múltiples</small>
                 </div>
             </div>
 
@@ -399,71 +404,84 @@ EDITAR PRODUCTO / BOX
 ========================= */
 
 async function editarProducto(id, nombre, precio, tipo, receta, minCong, minHecho, imagen) {
-
-    // Esperamos que el modal cargue las recetas y productos antes de setear valores
     await abrirModalProducto(id);
 
     document.getElementById("idproducto").value = id;
     document.getElementById("nombreProducto").value = nombre;
     document.getElementById("precioProducto").value = precio;
     document.getElementById("tipoProducto").value = tipo;
-
     document.querySelector("[name='min_congelado']").value = minCong || 0;
     document.querySelector("[name='min_hecho']").value = minHecho || 0;
-
     document.getElementById("tituloModal").innerText = "Editar";
+    document.getElementById("imagenActual").value = imagen || '';
 
+    // Mostrar imagen principal en preview
     const imgEl = document.getElementById("imgPreview");
     const ph    = document.getElementById("imgPlaceholder");
-    const btnQ  = document.getElementById("btnQuitarImg");
-    document.getElementById("imagenActual").value = imagen || '';
     if (imagen) {
-        imgEl.src           = '<?= URL_ASSETS ?>/img/productos/' + imagen;
+        imgEl.src = '<?= URL_ASSETS ?>/img/productos/' + imagen;
         imgEl.style.display = 'block';
-        ph.style.display    = 'none';
-        btnQ.style.display  = '';
+        ph.style.display = 'none';
     } else {
-        imgEl.src           = '';
-        imgEl.style.display = 'none';
-        ph.style.display    = '';
-        btnQ.style.display  = 'none';
+        imgEl.src = ''; imgEl.style.display = 'none'; ph.style.display = '';
     }
 
-    if (receta) {
-        document.getElementById("selectRecetas").value = receta;
-    }
+    // Cargar galería existente desde DB
+    cargarGaleriaExistente(id);
 
-    if (tipo === "box") {
-        activarModoBox();
-        cargarBox(id);
-    } else {
-        activarModoProducto();
-    }
+    if (receta) document.getElementById("selectRecetas").value = receta;
+    if (tipo === "box") { activarModoBox(); cargarBox(id); }
+    else activarModoProducto();
 }
 
-function previsualizarImagen(input) {
-    const img  = document.getElementById("imgPreview");
-    const ph   = document.getElementById("imgPlaceholder");
-    const btn  = document.getElementById("btnQuitarImg");
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            img.src = e.target.result;
-            img.style.display = 'block';
-            ph.style.display  = 'none';
-            btn.style.display = '';
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
+async function cargarGaleriaExistente(idProducto) {
+    const wrap = document.getElementById('galeriaExistente');
+    wrap.innerHTML = '';
+    try {
+        const res  = await fetch('api/get_imagenes.php?id=' + idProducto);
+        const data = await res.json();
+        if (!data.imagenes || !data.imagenes.length) return;
+        data.imagenes.forEach(img => {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1.5px solid #e5e7eb;flex-shrink:0';
+            div.innerHTML = `
+              <img src="<?= URL_ASSETS ?>/img/productos/${img.archivo}"
+                   style="width:100%;height:100%;object-fit:cover" title="${img.archivo}">
+              <button type="button" onclick="eliminarImagen(${img.id},this.closest('div'))"
+                style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;
+                       border:none;border-radius:50%;width:18px;height:18px;font-size:10px;
+                       cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">
+                ✕
+              </button>`;
+            wrap.appendChild(div);
+        });
+    } catch(_) {}
 }
 
-function quitarImagen() {
-    document.getElementById("inputImagen").value  = '';
-    document.getElementById("imagenActual").value = '';
+async function eliminarImagen(id, el) {
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    const res  = await fetch('api/eliminar_imagen.php', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({id})
+    });
+    const data = await res.json();
+    if (data.ok) el.remove();
+    else alert('Error al eliminar');
+}
+
+function agregarImagenes(input) {
+    if (!input.files || !input.files.length) return;
     const img = document.getElementById("imgPreview");
-    img.src = ''; img.style.display = 'none';
-    document.getElementById("imgPlaceholder").style.display = '';
-    document.getElementById("btnQuitarImg").style.display   = 'none';
+    const ph  = document.getElementById("imgPlaceholder");
+    // Preview de la primera imagen seleccionada
+    const reader = new FileReader();
+    reader.onload = e => {
+        img.src = e.target.result;
+        img.style.display = 'block';
+        ph.style.display  = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
 }
 
 

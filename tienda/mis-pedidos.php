@@ -26,7 +26,8 @@ $stmtP = $pdo->prepare("
            COALESCE(v.toppings_json, '')        AS toppings_json,
            ev.nombre AS estado_nombre, ev.idestado_venta AS estado_id,
            mp.nombre AS metodo_pago,
-           s.nombre  AS sucursal_nombre
+           s.nombre  AS sucursal_nombre,
+           v.lat_entrega, v.lng_entrega, v.cliente_idcliente
     FROM ventas v
     LEFT JOIN estado_venta ev ON ev.idestado_venta = v.estado_venta_idestado_venta
     LEFT JOIN metodo_pago  mp ON mp.idmetodo_pago  = v.metodo_pago_idmetodo_pago
@@ -445,6 +446,36 @@ html, body { background: #fff !important; }
   font-size: 11px;
   color: #888;
   border-top: 1px solid #f5f5f5;
+}
+
+/* ── Tracking en tiempo real ── */
+.ped-tracking {
+  margin: 0 16px 14px;
+  padding: 14px 16px;
+  background: #eff6ff;
+  border: 1.5px solid #60a5fa;
+  border-radius: 14px;
+}
+.ped-tracking-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.ped-tracking-ic {
+  font-size: 20px; color: #2563eb;
+  animation: motorbike 1.2s ease-in-out infinite alternate;
+}
+@keyframes motorbike { from { transform: translateX(0); } to { transform: translateX(6px); } }
+.ped-tracking-title { font-size: 13px; font-weight: 700; color: #1e40af; }
+.ped-tracking-sub   { font-size: 12px; color: #3b82f6; margin-top: 2px; }
+.ped-tracking-dist  {
+  margin-left: auto; font-size: 13px; font-weight: 800; color: #1e40af;
+  background: #dbeafe; padding: 4px 10px; border-radius: 50px; white-space: nowrap;
+}
+.ped-tracking-bar {
+  height: 6px; background: #bfdbfe; border-radius: 6px; overflow: hidden;
+}
+.ped-tracking-bar-fill {
+  height: 100%; width: 0%; background: #2563eb;
+  border-radius: 6px; transition: width 1s ease;
 }
 
 /* ── Confirm button ── */
@@ -874,6 +905,26 @@ html, body { background: #fff !important; }
   </div>
   <?php endif; ?>
 
+  <!-- Tracking en tiempo real (solo envío en camino) -->
+  <?php if ($eid === 3 && $p['tipo_entrega'] === 'envio' && !empty($p['lat_entrega'])): ?>
+  <div class="ped-tracking" id="tracking-<?= $p['idventas'] ?>"
+       data-venta="<?= $p['idventas'] ?>"
+       data-dest-lat="<?= (float)$p['lat_entrega'] ?>"
+       data-dest-lng="<?= (float)$p['lng_entrega'] ?>">
+    <div class="ped-tracking-header">
+      <i class="fa-solid fa-motorcycle ped-tracking-ic"></i>
+      <div>
+        <div class="ped-tracking-title">Tu pedido está en camino</div>
+        <div class="ped-tracking-sub" id="eta-<?= $p['idventas'] ?>">Calculando tiempo estimado…</div>
+      </div>
+      <div class="ped-tracking-dist" id="dist-<?= $p['idventas'] ?>">—</div>
+    </div>
+    <div class="ped-tracking-bar">
+      <div class="ped-tracking-bar-fill" id="bar-<?= $p['idventas'] ?>"></div>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <!-- Confirmar entrega -->
   <?php if ($eid === 3): ?>
   <div>
@@ -1178,6 +1229,96 @@ checkNotifStatus();
 
   // Empezar polling a los 2 seg (tiempo para que el webhook de MP llegue)
   setTimeout(verificar, 2000);
+})();
+// ──────────────────────────────────────────────────────────────────
+
+// ── TRACKING EN TIEMPO REAL ──────────────────────────────────────
+(function initTracking() {
+  const cards = document.querySelectorAll('.ped-tracking');
+  if (!cards.length) return;
+
+  // Pedir permiso para notificaciones
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  const DIST_NOTIF_M = 50; // metros para notificar
+  const notifEnviada = {};
+
+  function haversineM(lat1, lng1, lat2, lng2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function fmtETA(metros) {
+    if (metros < 50)  return '¡Ya está llegando!';
+    const mins = Math.ceil((metros / 1000) / 30 * 60); // 30 km/h promedio moto
+    if (mins <= 1)    return 'Menos de 1 minuto';
+    if (mins < 60)    return 'Aprox. ' + mins + ' min';
+    const h = Math.floor(mins/60), m = mins%60;
+    return h + 'h ' + (m ? m+'min' : '');
+  }
+
+  async function pollTracking(card) {
+    const idVenta  = card.dataset.venta;
+    const destLat  = parseFloat(card.dataset.destLat);
+    const destLng  = parseFloat(card.dataset.destLng);
+
+    try {
+      const res  = await fetch('api/get_repartidor_ubicacion.php?id=' + idVenta);
+      const data = await res.json();
+      if (!data.ok || !data.rep_lat || !data.rep_lng) return;
+
+      const distM = haversineM(data.rep_lat, data.rep_lng, destLat, destLng);
+      const distStr = distM < 1000
+        ? Math.round(distM) + ' m'
+        : (distM/1000).toFixed(1) + ' km';
+
+      const etaEl  = document.getElementById('eta-'  + idVenta);
+      const distEl = document.getElementById('dist-' + idVenta);
+      const barEl  = document.getElementById('bar-'  + idVenta);
+
+      if (etaEl)  etaEl.textContent  = fmtETA(distM);
+      if (distEl) distEl.textContent = distStr;
+
+      // Barra de progreso (0 = lejos, 100% = llegó)
+      if (barEl) {
+        const maxDist = 5000; // 5km = 0%
+        const pct = Math.min(100, Math.max(0, (1 - distM / maxDist) * 100));
+        barEl.style.width = pct + '%';
+      }
+
+      // Notificación de proximidad
+      if (distM <= DIST_NOTIF_M && !notifEnviada[idVenta]) {
+        notifEnviada[idVenta] = true;
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('🛵 Canetto — Tu pedido llegó', {
+            body: '¡Tu pedido #' + idVenta + ' está en tu puerta!',
+            icon: '/canetto/img/Logo_Canetto_Cookie.png',
+          });
+        }
+        // Resaltar visualmente
+        card.style.background = '#dcfce7';
+        card.style.borderColor = '#4ade80';
+        const ti = card.querySelector('.ped-tracking-title');
+        const si = card.querySelector('.ped-tracking-ic');
+        if (ti) ti.textContent = '¡Tu pedido llegó!';
+        if (si) { si.className = 'fa-solid fa-circle-check ped-tracking-ic'; si.style.color='#16a34a'; }
+        const dist2 = card.querySelector('.ped-tracking-dist');
+        if (dist2) { dist2.style.background='#bbf7d0'; dist2.style.color='#15803d'; }
+        if (barEl) { barEl.style.width='100%'; barEl.style.background='#16a34a'; }
+      }
+    } catch(_) {}
+  }
+
+  // Arrancar polling cada 5 segundos para cada card de tracking
+  cards.forEach(card => {
+    pollTracking(card);
+    setInterval(() => pollTracking(card), 5000);
+  });
 })();
 // ──────────────────────────────────────────────────────────────────
 
