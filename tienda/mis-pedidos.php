@@ -27,7 +27,7 @@ $stmtP = $pdo->prepare("
            ev.nombre AS estado_nombre, ev.idestado_venta AS estado_id,
            mp.nombre AS metodo_pago,
            s.nombre  AS sucursal_nombre,
-           v.lat_entrega, v.lng_entrega, v.cliente_idcliente
+           v.lat_entrega, v.lng_entrega
     FROM ventas v
     LEFT JOIN estado_venta ev ON ev.idestado_venta = v.estado_venta_idestado_venta
     LEFT JOIN metodo_pago  mp ON mp.idmetodo_pago  = v.metodo_pago_idmetodo_pago
@@ -683,6 +683,9 @@ html, body { background: #fff !important; }
   }
 }
 </style>
+</head>
+<body>
+<div id="page-wrap">
 
 <!-- Nav principal -->
 <header class="t-nav">
@@ -857,7 +860,6 @@ html, body { background: #fff !important; }
         <span class="ped-item-name"><?= htmlspecialchars($it['nombre'] ?? '—') ?></span>
         <span class="ped-item-qty">×<?= (int)$it['cantidad'] ?></span>
       </span>
-      <span class="ped-item-price">$<?= number_format($it['precio_unitario'] * $it['cantidad'], 0, ',', '.') ?></span>
     </div>
     <?php endforeach; ?>
     <?php foreach ($p['toppings'] as $tp): ?>

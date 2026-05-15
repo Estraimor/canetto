@@ -116,6 +116,65 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 /* Sin pedidos → mapa normal chico */
 #repMapWrap{display:none}
 #repMap{height:180px;border-radius:16px;overflow:hidden}
+
+/* ── Navigation instruction banner ── */
+.uber-nav-banner{
+  position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:610;
+  background:rgba(12,18,30,.96);border-radius:16px;padding:10px 16px;
+  display:flex;align-items:center;gap:12px;min-width:220px;max-width:calc(100vw - 96px);
+  backdrop-filter:blur(14px);box-shadow:0 6px 28px rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.07);transition:opacity .3s;
+}
+.uber-nav-arrow{font-size:24px;color:#fff;flex-shrink:0;width:30px;text-align:center}
+.uber-nav-info{flex:1;min-width:0}
+.uber-nav-step{font-size:13px;font-weight:700;color:#fff;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uber-nav-dist{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* ── Phase badge colors ── */
+.uber-status-badge.phase-pickup   {color:#fbbf24}
+.uber-status-badge.phase-delivery {color:#10b981}
+
+/* ── Pickup confirm button (amber) ── */
+.uber-btn-pkg{
+  background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
+  font-size:14px;font-weight:800;grid-column:span 2;flex-direction:row;
+  justify-content:center;gap:8px;padding:14px;border-radius:16px;border:none;
+  transition:transform .12s;
+}
+.uber-btn-pkg:active{transform:scale(.97)}
+
+/* ── Multi-package queue ── */
+.uber-pkg-queue{
+  background:rgba(255,255,255,.05);border-radius:12px;
+  padding:10px 12px;margin-bottom:10px;border:1px solid rgba(255,255,255,.06);
+}
+.uber-pkg-queue-title{
+  font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);margin-bottom:8px;display:flex;align-items:center;gap:6px
+}
+.uber-pkg-row{
+  display:flex;align-items:center;gap:10px;padding:7px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;transition:opacity .2s;
+}
+.uber-pkg-row:last-child{border-bottom:none}
+.uber-pkg-dot{
+  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;
+}
+.uber-pkg-row.pkg-current{color:#fff;font-weight:700}
+.uber-pkg-row.pkg-current .uber-pkg-dot{background:#c88e99;color:#fff}
+.uber-pkg-row.pkg-done{opacity:.4}
+.uber-pkg-row.pkg-done .uber-pkg-dot{background:#10b981;color:#fff}
+.uber-pkg-row.pkg-pending{color:rgba(255,255,255,.45)}
+.uber-pkg-row.pkg-pending .uber-pkg-dot{background:rgba(255,255,255,.08);color:rgba(255,255,255,.3)}
+
+/* ── Card body: smooth momentum scroll ── */
+#uberCardBody{
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;max-height:56vh;scrollbar-width:none;
+}
+#uberCardBody::-webkit-scrollbar{display:none}
 </style>
 <?php if ($googleClientId): ?>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -191,9 +250,11 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
         <i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar
       </button>
 
-      <div style="text-align:right;margin-top:6px;margin-bottom:2px;">
+      <div style="text-align:center;margin-top:4px;margin-bottom:14px;">
         <a href="<?= URL_LOGIN ?>/recuperar_password.php"
-           style="font-size:12px;color:#c88e99;text-decoration:none;">¿Olvidaste tu contraseña?</a>
+           style="font-size:14px;font-weight:600;color:#c88e99;text-decoration:none;display:inline-flex;align-items:center;gap:5px">
+          <i class="fa-solid fa-lock-open" style="font-size:13px"></i> ¿Olvidaste tu contraseña?
+        </a>
       </div>
 
       <div class="or-divider"><span>o</span></div>
@@ -219,7 +280,16 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
   <button class="uber-back" onclick="cerrarUberMap()">
     <i class="fa-solid fa-arrow-left"></i>
   </button>
-  <div class="uber-status-badge delivery" id="uberStatusBadge">En camino</div>
+  <div class="uber-status-badge phase-pickup" id="uberStatusBadge">Yendo a retirar</div>
+
+  <!-- Banner instrucción de navegación -->
+  <div class="uber-nav-banner" id="uberNavBanner" style="display:none">
+    <div class="uber-nav-arrow" id="uberNavArrow"><i class="fa-solid fa-arrow-up"></i></div>
+    <div class="uber-nav-info">
+      <div class="uber-nav-step" id="uberNavStep">Calculando ruta...</div>
+      <div class="uber-nav-dist" id="uberNavDist"></div>
+    </div>
+  </div>
 
   <div class="uber-card" id="uberCard">
     <!-- Handle: tap o swipe para colapsar/expandir -->
@@ -260,8 +330,25 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
       <!-- Productos ocultos (solo internamente) -->
       <span id="uberProds" style="display:none">—</span>
 
-      <div class="uber-actions">
-        <button class="uber-btn uber-btn-tel" id="uberBtnTel" onclick="uberLlamar()">
+      <!-- Cola multi-paquete (visible solo con 2+ pedidos) -->
+      <div id="uberPkgQueue" style="display:none"></div>
+
+      <!-- Botones FASE RETIRO (ir a buscar el paquete) -->
+      <div class="uber-actions" id="uberActionsPickup">
+        <button class="uber-btn uber-btn-tel" onclick="uberLlamar()">
+          <i class="fa-solid fa-phone"></i>Llamar
+        </button>
+        <button class="uber-btn uber-btn-nav" onclick="uberNavegar()">
+          <i class="fa-solid fa-diamond-turn-right"></i>Navegar
+        </button>
+        <button class="uber-btn uber-btn-pkg" onclick="confirmarPaquete()">
+          <i class="fa-solid fa-box-open"></i> Ya tengo el paquete
+        </button>
+      </div>
+
+      <!-- Botones FASE ENTREGA (ir al cliente) -->
+      <div class="uber-actions" id="uberActionsDelivery" style="display:none">
+        <button class="uber-btn uber-btn-tel" onclick="uberLlamar()">
           <i class="fa-solid fa-phone"></i>Llamar
         </button>
         <button class="uber-btn uber-btn-nav" onclick="uberNavegar()">
@@ -762,6 +849,9 @@ async function cargarPedidos() {
 
     data.pedidos.forEach((p, i) => {
       const clone = tpl.content.cloneNode(true);
+      // Guardar datos del pedido para verRutaOptima
+      const cardRoot = clone.querySelector('.pedido-card');
+      if (cardRoot) cardRoot.dataset.pedido = JSON.stringify(p);
       clone.querySelector('.pedido-accent').style.background = ACCENT_COLORS[i % ACCENT_COLORS.length];
       clone.querySelector('.pedido-num').textContent       = '#' + p.idventas;
       clone.querySelector('.pedido-total').textContent     = fmt(p.total);
@@ -815,10 +905,15 @@ async function cargarPedidos() {
         btnTel.addEventListener('click', e => e.preventDefault());
       }
 
-      // Botón mapa Uber
+      // Botón mapa Uber — pasa todos los pedidos para modo multi
       const btnUberMap = clone.querySelector('.btn-uber-map');
       if (p.lat_entrega && p.lng_entrega || p.direccion_entrega) {
-        btnUberMap.addEventListener('click', () => abrirUberMap(p));
+        btnUberMap.addEventListener('click', () => {
+          const allP = Array.from(document.querySelectorAll('.pedido-card[data-pedido]'))
+            .map(c => { try { return JSON.parse(c.dataset.pedido); } catch(e){} }).filter(Boolean);
+          const multi = allP.length > 1 ? optimizarRuta(allP) : null;
+          abrirUberMap(p, multi);
+        });
       } else {
         btnUberMap.classList.add('disabled');
         btnUberMap.addEventListener('click', e => e.preventDefault());
@@ -1311,6 +1406,11 @@ let _uberRoute    = null;
 let _uberDriver   = null;
 let _uberPedido   = null;
 let _uberWatcher  = null;
+let _uberPhase    = 'pickup'; // 'pickup' | 'delivery'
+let _uberSteps    = [];
+let _uberStepIdx  = 0;
+let _uberMulti    = []; // todos los pedidos en modo multi-entrega
+let _uberMultiIdx = 0;  // índice actual en la cola multi
 
 function actualizarMapa(pedidos) {
   // Se llama desde cargarPedidos — no hace nada visible aquí en modo Uber
@@ -1332,14 +1432,29 @@ function initUberMap() {
   L.control.zoom({ position: 'bottomright' }).addTo(_uberMap);
 }
 
-async function abrirUberMap(pedido) {
-  _uberPedido = pedido;
+async function abrirUberMap(pedido, multiPedidos) {
+  _uberPedido   = pedido;
+  _uberPhase    = 'pickup';
+  _uberSteps    = [];
+  _uberStepIdx  = 0;
+  _uberMulti    = multiPedidos || [];
+  _uberMultiIdx = multiPedidos ? multiPedidos.findIndex(p => p.idventas === pedido.idventas) : 0;
+
   const screen = document.getElementById('uberMapScreen');
   screen.classList.add('active');
   document.body.style.overflow = 'hidden';
 
-  // Asegurar que la card empiece expandida
   if (_uberCardCollapsed) toggleUberCard();
+
+  // Badge fase retiro
+  const badge = document.getElementById('uberStatusBadge');
+  badge.className = 'uber-status-badge phase-pickup';
+  badge.textContent = 'Yendo a retirar';
+
+  // Mostrar botones de retiro
+  document.getElementById('uberActionsPickup').style.display  = '';
+  document.getElementById('uberActionsDelivery').style.display = 'none';
+  document.getElementById('uberNavBanner').style.display       = 'none';
 
   // Poblar card
   document.getElementById('uberOrderNum').textContent  = '#' + pedido.idventas;
@@ -1349,13 +1464,13 @@ async function abrirUberMap(pedido) {
   document.getElementById('uberProds').textContent     = pedido.productos || '—';
   document.getElementById('uberBtnOk').dataset.id      = pedido.idventas;
 
-  // Teléfono
-  const btnTel = document.getElementById('uberBtnTel');
-  if (pedido.cliente_celular) {
-    btnTel.onclick = () => window.location.href = 'tel:' + pedido.cliente_celular.replace(/\D/g, '');
-  } else {
-    btnTel.onclick = null; btnTel.style.opacity = '.4';
-  }
+  // Opacidad teléfono según disponibilidad
+  document.querySelectorAll('.uber-btn-tel').forEach(btn => {
+    btn.style.opacity = pedido.cliente_celular ? '1' : '.4';
+  });
+
+  // Cola multi-paquete
+  renderPkgQueue(_uberMulti, _uberMultiIdx);
 
   // Banner cobro según método de pago
   const cobro = document.getElementById('uberCobro');
@@ -1482,71 +1597,201 @@ async function uberEntregar() {
   }
 }
 
+/* ════════════════════════════════════════
+   FASE: confirmar que tiene el paquete
+════════════════════════════════════════ */
+function confirmarPaquete() {
+  _uberPhase   = 'delivery';
+  _uberSteps   = [];
+  _uberStepIdx = 0;
+
+  const badge = document.getElementById('uberStatusBadge');
+  badge.className  = 'uber-status-badge phase-delivery';
+  badge.textContent = 'En camino';
+
+  document.getElementById('uberActionsPickup').style.display   = 'none';
+  document.getElementById('uberActionsDelivery').style.display = '';
+  document.getElementById('uberNavBanner').style.display        = 'none';
+
+  dibujarRuta(_uberPedido);
+}
+
+/* ════════════════════════════════════════
+   MULTI-PAQUETE
+════════════════════════════════════════ */
+function haversineM(lat1, lng1, lat2, lng2) {
+  const R = 6371000, r = Math.PI / 180;
+  const dLat = (lat2 - lat1) * r, dLng = (lng2 - lng1) * r;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)**2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function optimizarRuta(pedidos) {
+  let cur = { lat: CANETTO_LAT, lng: CANETTO_LNG };
+  const rem = pedidos.filter(p => p.lat_entrega && p.lng_entrega).map(p => ({...p}));
+  const sin = pedidos.filter(p => !p.lat_entrega || !p.lng_entrega);
+  const ord = [];
+  while (rem.length) {
+    let minD = Infinity, nearest = null, ni = -1;
+    rem.forEach((p, i) => {
+      const d = haversineM(cur.lat, cur.lng, parseFloat(p.lat_entrega), parseFloat(p.lng_entrega));
+      if (d < minD) { minD = d; nearest = p; ni = i; }
+    });
+    ord.push(nearest);
+    cur = { lat: parseFloat(nearest.lat_entrega), lng: parseFloat(nearest.lng_entrega) };
+    rem.splice(ni, 1);
+  }
+  return [...ord, ...sin];
+}
+
+function renderPkgQueue(pedidos, currentIdx) {
+  const el = document.getElementById('uberPkgQueue');
+  if (!pedidos || pedidos.length <= 1) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = `<div class="uber-pkg-queue">
+    <div class="uber-pkg-queue-title"><i class="fa-solid fa-route"></i> Ruta óptima · ${pedidos.length} entregas</div>
+    ${pedidos.map((p, i) => {
+      const cls = i < currentIdx ? 'pkg-done' : i === currentIdx ? 'pkg-current' : 'pkg-pending';
+      const dot = i < currentIdx ? '<i class="fa-solid fa-check" style="font-size:9px"></i>' : (i+1);
+      return `<div class="uber-pkg-row ${cls}">
+        <div class="uber-pkg-dot">${dot}</div>
+        <div style="flex:1;min-width:0">
+          <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.cliente_nombre||'Cliente'}</div>
+          <div style="font-size:10px;opacity:.55">#${p.idventas} · ${p.direccion_entrega||'Sin dir.'}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* ════════════════════════════════════════
+   INSTRUCCIONES DE NAVEGACIÓN PASO A PASO
+════════════════════════════════════════ */
+const NAV_ICONS = {
+  'sharp right':'turn-right','right':'turn-right','slight right':'turn-right',
+  'straight':'arrow-up',
+  'sharp left':'turn-left','left':'turn-left','slight left':'turn-left',
+  'uturn':'rotate-left',
+};
+const NAV_LABELS = {
+  'sharp right':'Girá bien a la derecha','right':'Girá a la derecha','slight right':'Mantené derecha',
+  'straight':'Seguí recto',
+  'sharp left':'Girá bien a la izquierda','left':'Girá a la izquierda','slight left':'Mantené izquierda',
+  'uturn':'Doblá en U',
+};
+
+function fmtDistNav(m) {
+  if (m < 50)   return '¡Llegaste!';
+  if (m < 200)  return Math.round(m / 10) * 10 + ' m';
+  if (m < 1000) return Math.round(m / 50) * 50 + ' m';
+  return (m / 1000).toFixed(1) + ' km';
+}
+
+function updateNavBanner(lat, lng) {
+  if (!_uberSteps.length) return;
+  // Avanzar paso si el conductor está cerca del waypoint
+  while (_uberStepIdx < _uberSteps.length - 1) {
+    const [sLng, sLat] = _uberSteps[_uberStepIdx].maneuver.location;
+    if (haversineM(lat, lng, sLat, sLng) < 40) _uberStepIdx++;
+    else break;
+  }
+  const step = _uberSteps[_uberStepIdx];
+  if (!step) return;
+  const [sLng, sLat] = step.maneuver.location;
+  const dist     = haversineM(lat, lng, sLat, sLng);
+  const type     = step.maneuver.type || '';
+  const modifier = step.maneuver.modifier || 'straight';
+  let icon  = type === 'arrive' ? 'flag-checkered' : type === 'roundabout' ? 'rotate-right' : (NAV_ICONS[modifier] || 'arrow-up');
+  let label = type === 'arrive' ? '¡Llegaste al destino!' : (NAV_LABELS[modifier] || 'Continuá');
+  if (step.name) label += ` en ${step.name}`;
+
+  document.getElementById('uberNavArrow').innerHTML = `<i class="fa-solid fa-${icon}"></i>`;
+  document.getElementById('uberNavStep').textContent = label;
+  document.getElementById('uberNavDist').textContent  = fmtDistNav(dist);
+  document.getElementById('uberNavBanner').style.display = 'flex';
+}
+
+/* ════════════════════════════════════════
+   DIBUJAR RUTA (phase-aware + steps OSRM)
+════════════════════════════════════════ */
 async function dibujarRuta(pedido) {
-  // Limpiar mapa
   _uberMarkers.forEach(m => _uberMap.removeLayer(m));
   _uberMarkers = [];
-  if (_uberRoute) { _uberMap.removeLayer(_uberRoute); _uberRoute = null; }
+  if (_uberRoute) {
+    if (Array.isArray(_uberRoute)) { _uberRoute.forEach(r => _uberMap.removeLayer(r)); }
+    else _uberMap.removeLayer(_uberRoute);
+    _uberRoute = null;
+  }
 
-  const tiendaLat = CANETTO_LAT;
-  const tiendaLng = CANETTO_LNG;
+  const tiendaLat = CANETTO_LAT, tiendaLng = CANETTO_LNG;
+  const destLat   = parseFloat(pedido.lat_entrega || 0);
+  const destLng   = parseFloat(pedido.lng_entrega || 0);
 
-  // Determinar coordenadas destino
-  let destLat = parseFloat(pedido.lat_entrega || 0);
-  let destLng = parseFloat(pedido.lng_entrega || 0);
+  const isPickup   = _uberPhase === 'pickup';
+  const routeColor = isPickup ? '#f59e0b' : '#c88e99';
 
-  // Marcador tienda (punto A)
-  const iconTienda = iconDiv(`
-    <div style="background:#f59e0b;width:44px;height:44px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">🏪</div>`, 44);
-  const mTienda = L.marker([tiendaLat, tiendaLng], { icon: iconTienda })
-    .bindPopup(`<strong>${CANETTO_NOMBRE}</strong><br><small>Punto de retiro</small>`)
-    .addTo(_uberMap);
+  // Marcador tienda
+  const mTienda = L.marker([tiendaLat, tiendaLng], { icon: iconDiv(
+    `<div style="background:#f59e0b;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">🏪</div>`, 44)
+  }).bindPopup(`<strong>${CANETTO_NOMBRE}</strong><br><small>Punto de retiro</small>`).addTo(_uberMap);
   _uberMarkers.push(mTienda);
 
   const bounds = [[tiendaLat, tiendaLng]];
 
-  if (destLat && destLng) {
-    // Marcador destino (punto B)
-    const iconDest = iconDiv(`
-      <div style="background:#f43f5e;width:44px;height:44px;border-radius:50%;
-        display:flex;align-items:center;justify-content:center;
-        border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">📍</div>`, 44);
-    const mDest = L.marker([destLat, destLng], { icon: iconDest })
-      .bindPopup(`<strong>${pedido.cliente_nombre || 'Cliente'}</strong><br><small>${pedido.direccion_entrega || ''}</small>`)
-      .addTo(_uberMap);
+  // En fase retiro: ruta driver→tienda. En entrega: ruta driver→cliente (o tienda→cliente si no hay pos)
+  let fromLat = tiendaLat, fromLng = tiendaLng;
+  if (_uberDriver) {
+    const pos = _uberDriver.getLatLng();
+    fromLat = pos.lat; fromLng = pos.lng;
+  }
+
+  if (isPickup) {
+    // Solo marcador tienda, ruta desde posición actual → tienda
+    try {
+      const osrm  = await fetch(`https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${tiendaLng},${tiendaLat}?overview=full&geometries=geojson&steps=true`);
+      const rData = await osrm.json();
+      if (rData.routes?.length) {
+        const route  = rData.routes[0];
+        const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+        const poly1  = L.polyline(coords, { color: routeColor, weight: 5, opacity: .9, lineCap: 'round', lineJoin: 'round' }).addTo(_uberMap);
+        const poly2  = L.polyline(coords, { color: '#fff', weight: 2, opacity: .35, dashArray: '6 12' }).addTo(_uberMap);
+        _uberRoute   = [poly1, poly2];
+        // Guardar steps para la navegación
+        _uberSteps   = route.legs?.[0]?.steps || [];
+        _uberStepIdx = 0;
+        bounds.push(...coords.filter((_, i) => i % 8 === 0));
+      }
+    } catch(e) {
+      _uberRoute = [L.polyline([[fromLat, fromLng], [tiendaLat, tiendaLng]], { color: routeColor, weight: 4, dashArray: '8 10' }).addTo(_uberMap)];
+    }
+    _uberMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+
+  } else if (destLat && destLng) {
+    // Fase entrega: marcador destino + ruta
+    const mDest = L.marker([destLat, destLng], { icon: iconDiv(
+      `<div style="background:#f43f5e;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">📍</div>`, 44)
+    }).bindPopup(`<strong>${pedido.cliente_nombre||'Cliente'}</strong><br><small>${pedido.direccion_entrega||''}</small>`).addTo(_uberMap);
     _uberMarkers.push(mDest);
     bounds.push([destLat, destLng]);
 
-    // Ruta via OSRM (gratuito)
     try {
-      const osrm = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${tiendaLng},${tiendaLat};${destLng},${destLat}?overview=full&geometries=geojson`
-      );
+      const osrm  = await fetch(`https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true`);
       const rData = await osrm.json();
       if (rData.routes?.length) {
-        const coords = rData.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-        _uberRoute = L.polyline(coords, {
-          color: '#c88e99', weight: 5, opacity: .9,
-          dashArray: null, lineCap: 'round', lineJoin: 'round',
-        }).addTo(_uberMap);
-        // Línea animada de progreso (decorativa)
-        L.polyline(coords, {
-          color: '#fff', weight: 2, opacity: .4, dashArray: '6 10',
-        }).addTo(_uberMap);
-        bounds.push(...coords.slice(0, -1).slice(1, -1).filter((_, i) => i % 5 === 0));
+        const route  = rData.routes[0];
+        const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+        const poly1  = L.polyline(coords, { color: routeColor, weight: 5, opacity: .9, lineCap: 'round', lineJoin: 'round' }).addTo(_uberMap);
+        const poly2  = L.polyline(coords, { color: '#fff', weight: 2, opacity: .35, dashArray: '6 12' }).addTo(_uberMap);
+        _uberRoute   = [poly1, poly2];
+        _uberSteps   = route.legs?.[0]?.steps || [];
+        _uberStepIdx = 0;
+        bounds.push(...coords.filter((_, i) => i % 8 === 0));
       }
     } catch(e) {
-      // Sin ruta OSRM — línea recta
-      _uberRoute = L.polyline([[tiendaLat, tiendaLng], [destLat, destLng]], {
-        color: '#c88e99', weight: 4, opacity: .8, dashArray: '8 10',
-      }).addTo(_uberMap);
+      _uberRoute = [L.polyline([[fromLat, fromLng], [destLat, destLng]], { color: routeColor, weight: 4, dashArray: '8 10' }).addTo(_uberMap)];
     }
-
     _uberMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
   } else {
-    // Sin coordenadas — centrar en tienda
     _uberMap.setView([tiendaLat, tiendaLng], 14);
   }
 }
@@ -1557,19 +1802,38 @@ function iniciarGeolocalizacion() {
   const updateDriver = pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
+    const motoColor = _uberPhase === 'pickup' ? '#f59e0b' : '#c88e99';
     const iconDriver = iconDiv(`
-      <div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.7))">
-        <i class="fa-solid fa-motorcycle" style="font-size:26px;color:#c88e99"></i>
+      <div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.7))">
+        <i class="fa-solid fa-motorcycle" style="font-size:26px;color:${motoColor}"></i>
       </div>`, 38);
     if (_uberDriver) _uberMap.removeLayer(_uberDriver);
     _uberDriver = L.marker([lat, lng], { icon: iconDriver, zIndexOffset: 1000 })
       .bindPopup('<strong>Tu posición</strong>')
       .addTo(_uberMap);
+
+    updateNavBanner(lat, lng);
   };
 
   _uberWatcher = navigator.geolocation.watchPosition(updateDriver, () => {}, {
-    enableHighAccuracy: true, maximumAge: 10000, timeout: 15000,
+    enableHighAccuracy: true, maximumAge: 5000, timeout: 15000,
   });
+}
+
+/* ════════════════════════════════════════
+   RUTA ÓPTIMA MULTI-PAQUETE
+════════════════════════════════════════ */
+function verRutaOptima() {
+  // Recoger todos los pedidos actuales del DOM
+  const cards = document.querySelectorAll('.pedido-card[data-pedido]');
+  if (!cards.length) return;
+  try {
+    const pedidos = Array.from(cards).map(c => JSON.parse(c.dataset.pedido)).filter(Boolean);
+    if (!pedidos.length) return;
+    const ordenados = optimizarRuta(pedidos);
+    // Abrir mapa con el primer pedido y la cola completa
+    abrirUberMap(ordenados[0], ordenados);
+  } catch(e) { console.warn('verRutaOptima:', e); }
 }
 
 /* ════════════════════════════════════════

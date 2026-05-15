@@ -11,7 +11,7 @@ $status   = $_GET['status']   ?? 'pending';
 $pedidoId = (int)($_GET['pedido'] ?? 0);
 
 $msgs = [
-    'success' => ['ic' => '', 'titulo' => '¡Pago confirmado!',     'color' => '#2d8a4e', 'sub' => 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!'],
+    'success' => ['ic' => '🎉', 'titulo' => '¡Pago confirmado!',     'color' => '#2d8a4e', 'sub' => 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!'],
     'failure' => ['ic' => '❌', 'titulo' => 'El pago no se completó', 'color' => '#c0392b', 'sub' => 'Hubo un problema con el pago. Podés intentar nuevamente o elegir otro método.'],
     'pending' => ['ic' => '⏳', 'titulo' => 'Pago en proceso',        'color' => '#c88e99', 'sub' => 'Tu pago está siendo procesado. Te avisaremos cuando se confirme.'],
 ];
@@ -61,5 +61,54 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
     <a href="index.php" class="btn btn-sec">← Seguir comprando</a>
   <?php endif; ?>
 </div>
+<?php if ($status === 'pending' && $pedidoId): ?>
+<script>
+(function () {
+    const pedidoId = <?= (int)$pedidoId ?>;
+    let attempts   = 0;
+    const maxTries = 12; // ~24 segundos
+
+    const msgsOk  = { ic: '🎉', titulo: '¡Pago confirmado!',      color: '#2d8a4e', sub: 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!' };
+    const msgsFail = { ic: '❌', titulo: 'El pago no se completó', color: '#c0392b', sub: 'Hubo un problema con el pago. Podés intentar nuevamente.' };
+
+    function applyUI(info) {
+        document.querySelector('.ic').textContent     = info.ic;
+        const tit = document.querySelector('.titulo');
+        tit.style.color    = info.color;
+        tit.textContent    = info.titulo;
+        document.querySelector('.sub').textContent    = info.sub;
+        const card = document.querySelector('.card');
+        card.style.transition = 'box-shadow 0.4s';
+        card.style.boxShadow  = info.color === '#2d8a4e'
+            ? '0 8px 40px rgba(45,138,78,.18)'
+            : '0 8px 40px rgba(192,57,43,.18)';
+    }
+
+    function poll() {
+        fetch('api/check_pedido_estado.php?id=' + pedidoId)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok) { retry(); return; }
+                if (data.estado_id === 1) {
+                    applyUI(msgsOk);
+                } else if (data.estado_id === 6) {
+                    applyUI(msgsFail);
+                } else {
+                    retry();
+                }
+            })
+            .catch(retry);
+    }
+
+    function retry() {
+        attempts++;
+        if (attempts < maxTries) setTimeout(poll, 2000);
+    }
+
+    // Primera consulta luego de 2 segundos (el webhook de MP puede tardar un poco)
+    setTimeout(poll, 2000);
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>

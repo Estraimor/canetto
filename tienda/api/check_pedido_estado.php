@@ -20,7 +20,7 @@ try {
                ev.nombre AS estado_nombre
         FROM ventas v
         LEFT JOIN estado_venta ev ON ev.idestado_venta = v.estado_venta_idestado_venta
-        WHERE v.idventas = ? AND v.cliente_idcliente = ?
+        WHERE v.idventas = ? AND v.usuario_idusuario = ?
     ");
     $stmt->execute([$idVenta, $clienteId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);

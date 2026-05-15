@@ -138,21 +138,159 @@ body {
     border-radius: 10px;
     font-weight: 500;
     cursor: pointer;
-    transition: 0.3s;
+    transition: background 0.25s, border-color 0.25s, transform 0.25s, color 0.25s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
 }
 
-.btn-google:hover {
+.btn-google:hover:not(:disabled) {
     border-color: #E89CA9;
     color: #E89CA9;
     transform: translateY(-2px);
 }
 
-.btn-google img {
+.btn-google img, .btn-google .g-logo {
     width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Spinner dentro del botón Google */
+@keyframes gSpin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-google .g-spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #e0e0e0;
+    border-top-color: #c88e99;
+    border-radius: 50%;
+    animation: gSpin 0.65s linear infinite;
+    flex-shrink: 0;
+}
+
+.btn-google.g-loading {
+    background: #fafafa;
+    color: #999;
+    cursor: not-allowed;
+    border-color: #e8e8e8;
+    transform: none;
+}
+
+.btn-google.g-loading .g-spinner { display: block; }
+.btn-google.g-loading .g-logo   { display: none; }
+
+.btn-google.g-success {
+    background: #e8f5e9;
+    border-color: #27ae60;
+    color: #1d8348;
+    cursor: default;
+}
+
+/* ── Overlay de éxito Google Login ── */
+@keyframes gOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes gCardUp {
+    from { transform: translateY(32px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes gRingDraw {
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes gCheckDraw {
+    to { stroke-dashoffset: 60; }
+}
+
+@keyframes gBrandFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.g-success-overlay {
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    opacity: 0;
+    animation: gOverlayIn 0.25s ease forwards;
+}
+
+.g-success-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    animation: gCardUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+}
+
+.g-success-svg {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 28px;
+}
+
+.g-svg-ring {
+    fill: none;
+    stroke: #c88e99;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 270;
+    stroke-dashoffset: 270;
+    transform-origin: center;
+    transform: rotate(-90deg);
+    animation: gRingDraw 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+.g-svg-check {
+    fill: none;
+    stroke: #c88e99;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    animation: gCheckDraw 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.85s forwards;
+}
+
+.g-welcome-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: -0.3px;
+}
+
+.g-welcome-sub {
+    font-size: 14px;
+    color: #aaa;
+    text-align: center;
+    font-weight: 500;
+}
+
+.g-overlay-brand {
+    position: absolute;
+    bottom: 36px;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #ddd;
+    opacity: 0;
+    animation: gBrandFade 0.4s ease 0.9s forwards;
 }
 
 .register-link {

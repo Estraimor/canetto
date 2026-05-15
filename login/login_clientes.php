@@ -73,8 +73,9 @@ unset($_SESSION['error_cliente']);
     <div class="divider"><span>o continuar con</span></div>
 
     <button class="btn-google" type="button" id="btnGoogleTienda" onclick="iniciarGoogleTienda()">
-      <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
-      Ingresar con Google
+      <span class="g-spinner"></span>
+      <img class="g-logo" src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+      <span class="g-label">Ingresar con Google</span>
     </button>
     <div id="googleAlertTienda" style="display:none;margin-top:10px;padding:9px 13px;border-radius:8px;font-size:13px"></div>
     <!-- Contenedor oculto para el botón renderizado por Google -->
@@ -173,6 +174,42 @@ if (!GOOGLE_CLIENT_ID_TIENDA) {
     if (btn) btn.style.display = 'none';
 }
 
+function _gSetLoading(btn, label) {
+    btn.disabled = true;
+    btn.classList.add('g-loading');
+    btn.classList.remove('g-success');
+    btn.querySelector('.g-label').textContent = label;
+}
+
+function _gSetSuccess(btn) {
+    btn.classList.remove('g-loading');
+    btn.classList.add('g-success');
+    btn.querySelector('.g-label').textContent = '¡Listo!';
+}
+
+function _gReset(btn) {
+    btn.disabled = false;
+    btn.classList.remove('g-loading', 'g-success');
+    btn.querySelector('.g-label').textContent = 'Ingresar con Google';
+}
+
+function _gShowOverlay(nombre) {
+    const ov = document.createElement('div');
+    ov.className = 'g-success-overlay';
+    ov.innerHTML = `
+        <div class="g-success-card">
+            <svg class="g-success-svg" viewBox="0 0 96 96">
+                <circle cx="48" cy="48" r="43" fill="#fdf4f7" stroke="none"/>
+                <circle class="g-svg-ring" cx="48" cy="48" r="43"/>
+                <polyline class="g-svg-check" points="28,50 42,64 68,34"/>
+            </svg>
+            <div class="g-welcome-name">¡Hola, ${nombre}!</div>
+            <div class="g-welcome-sub">Iniciaste sesión correctamente</div>
+        </div>
+        <div class="g-overlay-brand">Canetto</div>`;
+    document.body.appendChild(ov);
+}
+
 function iniciarGoogleTienda() {
     if (!GOOGLE_CLIENT_ID_TIENDA) {
         showGoogleAlertTienda('Google Sign-In no está configurado en este servidor.', '#888'); return;
@@ -182,8 +219,7 @@ function iniciarGoogleTienda() {
     }
 
     const btnEl = document.getElementById('btnGoogleTienda');
-    btnEl.disabled = true;
-    btnEl.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Abriendo Google...';
+    _gSetLoading(btnEl, 'Abriendo Google...');
 
     google.accounts.id.initialize({
         client_id:            GOOGLE_CLIENT_ID_TIENDA,
@@ -192,15 +228,10 @@ function iniciarGoogleTienda() {
         cancel_on_tap_outside: true,
     });
 
-    // Renderizar el botón oficial de Google en el contenedor oculto y hacer click
-    // Esto abre el popup completo con selector de cuentas de Google
     const container = document.getElementById('googleHiddenBtnTienda');
     container.innerHTML = '';
     google.accounts.id.renderButton(container, {
-        type:  'standard',
-        size:  'large',
-        theme: 'outline',
-        text:  'signin_with',
+        type: 'standard', size: 'large', theme: 'outline', text: 'signin_with',
     });
 
     requestAnimationFrame(() => {
@@ -208,11 +239,9 @@ function iniciarGoogleTienda() {
         if (gBtn) {
             gBtn.click();
         } else {
-            // Fallback: si renderButton no está disponible, usar prompt
             google.accounts.id.prompt(notification => {
                 if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
-                    btnEl.disabled = false;
-                    btnEl.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+                    _gReset(btnEl);
                 }
             });
         }
@@ -221,8 +250,7 @@ function iniciarGoogleTienda() {
 
 async function handleGoogleTienda(response) {
     const btn = document.getElementById('btnGoogleTienda');
-    btn.disabled = true;
-    btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Verificando...';
+    _gSetLoading(btn, 'Verificando...');
 
     try {
         const data = await fetch('google_auth_tienda.php', {
@@ -232,27 +260,20 @@ async function handleGoogleTienda(response) {
         }).then(r => r.json());
 
         if (data.success) {
-            showGoogleAlertTienda('¡Bienvenido, ' + data.nombre + '! Redirigiendo...', '#1d8348', '#e8f5e9');
-            setTimeout(() => window.location.href = data.redirect, 900);
+            _gSetSuccess(btn);
+            _gShowOverlay(data.nombre);
+            setTimeout(() => window.location.href = data.redirect, 1200);
         } else {
             showGoogleAlertTienda(data.message || 'No se pudo ingresar.', '#c88e99', '#f9edf0');
-            btn.disabled = false;
-            btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+            _gReset(btn);
         }
     } catch {
         showGoogleAlertTienda('Error de conexión.', '#c88e99', '#f9edf0');
-        btn.disabled = false;
-        btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
+        _gReset(btn);
     }
 }
 
-function resetBtnGoogleTienda() {
-    const btn = document.getElementById('btnGoogleTienda');
-    if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" alt="G" style="width:18px;height:18px"> Ingresar con Google';
-    }
-}
+function resetBtnGoogleTienda() { _gReset(document.getElementById('btnGoogleTienda')); }
 
 function showGoogleAlertTienda(msg, color, bg) {
     const el = document.getElementById('googleAlertTienda');
