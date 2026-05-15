@@ -305,7 +305,7 @@ MODAL CREAR / EDITAR
                 </div>
 
                 <!-- Miniaturas de imágenes existentes -->
-                <div id="galeriaExistente" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+                <div id="galeriaExistente" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;padding-bottom:20px"></div>
 
                 <div class="prod-modal-img-actions">
                     <label for="inputImagen" style="cursor:pointer">
@@ -418,21 +418,16 @@ async function editarProducto(id, nombre, precio, tipo, receta, minCong, minHech
     // Mostrar imagen principal en preview
     const imgEl = document.getElementById("imgPreview");
     const ph    = document.getElementById("imgPlaceholder");
-    if (imagen) {
-        imgEl.src = '<?= URL_ASSETS ?>/img/productos/' + imagen;
-        imgEl.style.display = 'block';
-        ph.style.display = 'none';
-    } else {
-        imgEl.src = ''; imgEl.style.display = 'none'; ph.style.display = '';
-    }
-
-    // Cargar galería existente desde DB
+    // Siempre cargar galería primero — ella actualiza el preview
+    imgEl.src = ''; imgEl.style.display = 'none'; ph.style.display = '';
     cargarGaleriaExistente(id);
 
     if (receta) document.getElementById("selectRecetas").value = receta;
     if (tipo === "box") { activarModoBox(); cargarBox(id); }
     else activarModoProducto();
 }
+
+let _dragSrc = null;
 
 async function cargarGaleriaExistente(idProducto) {
     const wrap = document.getElementById('galeriaExistente');
@@ -441,19 +436,108 @@ async function cargarGaleriaExistente(idProducto) {
         const res  = await fetch('api/get_imagenes.php?id=' + idProducto);
         const data = await res.json();
         if (!data.imagenes || !data.imagenes.length) return;
-        data.imagenes.forEach(img => {
+
+        // Mostrar la primera imagen en el preview grande
+        const primera = data.imagenes[0];
+        const imgEl = document.getElementById('imgPreview');
+        const ph    = document.getElementById('imgPlaceholder');
+        imgEl.src = '<?= URL_ASSETS ?>/img/productos/' + primera.archivo;
+        imgEl.style.display = 'block';
+        ph.style.display    = 'none';
+        document.getElementById('imagenActual').value = primera.archivo;
+
+        data.imagenes.forEach((img, idx) => {
             const div = document.createElement('div');
-            div.style.cssText = 'position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1.5px solid #e5e7eb;flex-shrink:0';
+            div.dataset.imgId = img.id;
+            div.dataset.archivo = img.archivo;
+            div.draggable = true;
+            div.style.cssText = [
+                'position:relative;width:64px;height:64px;border-radius:10px;overflow:visible',
+                'border:2px solid ' + (idx === 0 ? '#c88e99' : '#e5e7eb'),
+                'flex-shrink:0;cursor:grab;transition:opacity .15s,transform .15s',
+                'box-shadow:' + (idx === 0 ? '0 0 0 2px #c88e99' : 'none'),
+            ].join(';');
+
             div.innerHTML = `
               <img src="<?= URL_ASSETS ?>/img/productos/${img.archivo}"
-                   style="width:100%;height:100%;object-fit:cover" title="${img.archivo}">
-              <button type="button" onclick="eliminarImagen(${img.id},this.closest('div'))"
-                style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;
+                   style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block">
+              ${idx === 0 ? '<span style="position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;color:#c88e99;white-space:nowrap">PRINCIPAL</span>' : ''}
+              <button type="button" onclick="eliminarImagen(${img.id},this.closest('[data-img-id]'))"
+                style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;
                        border:none;border-radius:50%;width:18px;height:18px;font-size:10px;
-                       cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">
+                       cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2">
                 ✕
               </button>`;
+
+            // Drag & drop events
+            div.addEventListener('dragstart', e => {
+                _dragSrc = div;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => div.style.opacity = '.4', 0);
+            });
+            div.addEventListener('dragend', () => {
+                div.style.opacity = '1';
+                div.style.transform = '';
+                wrap.querySelectorAll('[data-img-id]').forEach(d => d.style.outline = '');
+            });
+            div.addEventListener('dragover', e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (div !== _dragSrc) div.style.outline = '2px dashed #c88e99';
+            });
+            div.addEventListener('dragleave', () => div.style.outline = '');
+            div.addEventListener('drop', e => {
+                e.preventDefault();
+                if (_dragSrc && _dragSrc !== div) {
+                    // Reordenar en el DOM
+                    const items = [...wrap.querySelectorAll('[data-img-id]')];
+                    const fromI = items.indexOf(_dragSrc);
+                    const toI   = items.indexOf(div);
+                    if (fromI < toI) wrap.insertBefore(_dragSrc, div.nextSibling);
+                    else             wrap.insertBefore(_dragSrc, div);
+                    guardarOrden();
+                }
+                div.style.outline = '';
+            });
+
             wrap.appendChild(div);
+        });
+    } catch(_) {}
+}
+
+async function guardarOrden() {
+    const wrap = document.getElementById('galeriaExistente');
+    const items = [...wrap.querySelectorAll('[data-img-id]')];
+    const ids   = items.map(d => +d.dataset.imgId);
+
+    // Actualizar estilos: primero = destacado
+    items.forEach((d, i) => {
+        d.style.border      = '2px solid ' + (i === 0 ? '#c88e99' : '#e5e7eb');
+        d.style.boxShadow   = i === 0 ? '0 0 0 2px #c88e99' : 'none';
+        const lbl = d.querySelector('span');
+        if (i === 0 && !lbl) {
+            const s = document.createElement('span');
+            s.style.cssText = 'position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;color:#c88e99;white-space:nowrap';
+            s.textContent   = 'PRINCIPAL';
+            d.appendChild(s);
+        } else if (i !== 0 && lbl) lbl.remove();
+    });
+
+    // Preview grande = primera imagen
+    if (items[0]) {
+        const imgEl = document.getElementById('imgPreview');
+        imgEl.src = '<?= URL_ASSETS ?>/img/productos/' + items[0].dataset.archivo;
+        imgEl.style.display = 'block';
+        document.getElementById('imgPlaceholder').style.display = 'none';
+        document.getElementById('imagenActual').value = items[0].dataset.archivo;
+    }
+
+    // Persistir orden en servidor
+    try {
+        await fetch('api/reordenar_imagenes.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ ids })
         });
     } catch(_) {}
 }
@@ -466,8 +550,10 @@ async function eliminarImagen(id, el) {
         body: JSON.stringify({id})
     });
     const data = await res.json();
-    if (data.ok) el.remove();
-    else alert('Error al eliminar');
+    if (data.ok) {
+        el.remove();
+        guardarOrden(); // actualizar preview y badge PRINCIPAL
+    } else alert('Error al eliminar');
 }
 
 function agregarImagenes(input) {
@@ -578,7 +664,9 @@ function resetModalProducto(){
     const imgEl = document.getElementById("imgPreview");
     imgEl.src = ''; imgEl.style.display = 'none';
     document.getElementById("imgPlaceholder").style.display = '';
-    document.getElementById("btnQuitarImg").style.display   = 'none';
+    document.getElementById("galeriaExistente").innerHTML   = '';
+    const btnQ = document.getElementById("btnQuitarImg");
+    if (btnQ) btnQ.style.display = 'none';
 
     document.getElementById("tituloModal").innerText = "Crear Producto";
 

@@ -109,7 +109,11 @@ try {
     try { $pdo->exec("ALTER TABLE productos ADD COLUMN especificaciones TEXT NULL"); } catch (Throwable $e) {}
 
     $productos = $pdo->query("
-        SELECT p.idproductos, p.nombre, p.precio, p.tipo, p.imagen,
+        SELECT p.idproductos, p.nombre, p.precio, p.tipo,
+               COALESCE(
+                 (SELECT pi.archivo FROM productos_imagenes pi WHERE pi.productos_idproductos = p.idproductos ORDER BY pi.orden ASC, pi.id ASC LIMIT 1),
+                 p.imagen
+               ) AS imagen,
                COALESCE(p.descripcion, '') AS descripcion,
                COALESCE(p.especificaciones, '') AS especificaciones,
             CASE
@@ -126,7 +130,7 @@ try {
         FROM productos p
         LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
         WHERE p.activo = 1
-        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen, p.descripcion, p.especificaciones
+        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen, p.descripcion, p.especificaciones, p.activo
         ORDER BY CASE p.tipo WHEN 'box' THEN 1 ELSE 0 END, p.nombre ASC
     ")->fetchAll();
 
@@ -1562,7 +1566,7 @@ async function actualizarCostoEnvio(lat,lng){
   if(tx) tx.textContent='Calculando...';
   if(pr) pr.textContent='';
   try{
-    const res=await fetch(`<?= base() ?>/tienda/api/calcular_envio.php?lat=${lat}&lng=${lng}`);
+    const res=await fetch(`<?= URL_TIENDA ?>/api/calcular_envio.php?lat=${lat}&lng=${lng}`);
     const d=await res.json();
     if(d.ok){
       _costoEnvio=d.costo;

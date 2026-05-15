@@ -7,7 +7,20 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 if ($action === 'logout_redirect') {
-    redirect('/login/logout.php?from=tienda');
+    $uid = $_SESSION['tienda_cliente_id'] ?? null;
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $p = session_get_cookie_params();
+        setcookie(session_name(), '', time()-42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+    }
+    session_destroy();
+    // Limpiar carrito y redirigir al login de la tienda
+    $uidJs = $uid ? (int)$uid : 0;
+    echo "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><script>
+    " . ($uidJs ? "localStorage.removeItem('canetto_cart_{$uidJs}');" : "Object.keys(localStorage).filter(k=>k.startsWith('canetto_cart_')).forEach(k=>localStorage.removeItem(k));") . "
+    window.location.replace('" . URL_TIENDA . "/login.php');
+    </script></body></html>";
+    exit;
 }
 
 header('Content-Type: application/json');

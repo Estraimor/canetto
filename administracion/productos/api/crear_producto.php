@@ -25,7 +25,14 @@ try {
     $imgDir    = __DIR__ . '/../../../img/productos';
     if (!is_dir($imgDir)) mkdir($imgDir, 0755, true);
     $imagenFinal = $imagenActual ?: null;
-    $imagenesNuevas = []; // archivos subidos en esta request
+    $imagenesNuevas = [];
+
+    // Si es edición y no hay imagen explícita, usar la primera de productos_imagenes
+    if (!$imagenFinal && $idProducto) {
+        $fi = $pdo->prepare("SELECT archivo FROM productos_imagenes WHERE productos_idproductos=? ORDER BY orden ASC, id ASC LIMIT 1");
+        $fi->execute([$idProducto]);
+        $imagenFinal = $fi->fetchColumn() ?: null;
+    }
 
     // Múltiples imágenes nuevas
     if (!empty($_FILES['imagenes_nuevas']['name'][0])) {

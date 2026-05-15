@@ -811,6 +811,7 @@ const PROD_PRECIO_ORIGINAL = <?= $precioNum ?>;
 const PROD_DESCUENTO = <?= $descuentoPct ?>;
 const PROD_TIPO  = <?= json_encode($prod['tipo']) ?>;
 const PROD_STOCK = <?= (int)$stock ?>;
+const PROD_IMAGEN= <?= json_encode($imgPrincipal) ?>;
 const CLIENTE_PHP= <?= json_encode($cliente_id ? ['id'=>$cliente_id] : null) ?>;
 
 const CK      = CLIENTE_PHP ? 'canetto_cart_' + CLIENTE_PHP.id : 'canetto_cart_guest';
@@ -853,7 +854,7 @@ function agregarAlCarrito(){
     return;
   }
   if(ex) ex.cantidad += qty;
-  else cart.push({ id:PROD_ID, nombre:PROD_NOMBRE, precio:PROD_PRECIO, tipo:PROD_TIPO, cantidad:qty });
+  else cart.push({ id:PROD_ID, nombre:PROD_NOMBRE, precio:PROD_PRECIO, tipo:PROD_TIPO, imagen:PROD_IMAGEN, cantidad:qty });
   saveCart(cart);
 
   const btn  = document.getElementById('btnAddDet');
