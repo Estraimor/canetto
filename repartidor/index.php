@@ -673,6 +673,74 @@ try {
 </template>
 
 <!-- ══════════════════════════════════════
+     PANTALLA PERMISOS OBLIGATORIOS
+══════════════════════════════════════ -->
+<div id="pantallaPermisos" style="display:none;position:fixed;inset:0;z-index:10000;
+     background:#0f172a;flex-direction:column;align-items:center;justify-content:center;
+     padding:28px 24px;overflow-y:auto">
+
+  <!-- Brand -->
+  <div style="text-align:center;margin-bottom:28px">
+    <div style="font-size:38px;margin-bottom:10px">🛵</div>
+    <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px">Canetto Repartidor</div>
+    <div style="font-size:13px;color:#64748b;margin-top:5px">Antes de continuar necesitamos estos permisos</div>
+  </div>
+
+  <!-- Item Ubicación -->
+  <div id="permItem-ubicacion" style="width:100%;max-width:360px;background:#1e293b;border-radius:16px;
+       padding:18px;margin-bottom:12px;border:2px solid rgba(255,255,255,.08);transition:border-color .2s">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:14px;background:rgba(59,130,246,.15);
+           display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📍</div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:3px">Ubicación</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.4">Para asignarte pedidos cercanos y mostrarte en el mapa en tiempo real</div>
+      </div>
+      <div id="permBadge-ubicacion" style="font-size:20px;flex-shrink:0">⏳</div>
+    </div>
+    <button id="permBtn-ubicacion" onclick="activarUbicacionPerm()"
+      style="width:100%;margin-top:14px;padding:12px;background:#3b82f6;color:#fff;border:none;
+             border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+      📍 Activar ubicación
+    </button>
+    <div id="permMsg-ubicacion" style="display:none;margin-top:10px;font-size:12px;color:#f59e0b;
+         background:rgba(245,158,11,.08);border-radius:8px;padding:8px 10px;line-height:1.5"></div>
+  </div>
+
+  <!-- Item Notificaciones -->
+  <div id="permItem-notif" style="width:100%;max-width:360px;background:#1e293b;border-radius:16px;
+       padding:18px;margin-bottom:24px;border:2px solid rgba(255,255,255,.08);transition:border-color .2s">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="width:48px;height:48px;border-radius:14px;background:rgba(200,142,153,.15);
+           display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔔</div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:3px">Notificaciones</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.4">Para avisarte de nuevos pedidos y verificar que seguís activo en el turno</div>
+      </div>
+      <div id="permBadge-notif" style="font-size:20px;flex-shrink:0">⏳</div>
+    </div>
+    <button id="permBtn-notif" onclick="activarNotifPerm()"
+      style="width:100%;margin-top:14px;padding:12px;background:#c88e99;color:#fff;border:none;
+             border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
+      🔔 Activar notificaciones
+    </button>
+    <div id="permMsg-notif" style="display:none;margin-top:10px;font-size:12px;color:#f59e0b;
+         background:rgba(245,158,11,.08);border-radius:8px;padding:8px 10px;line-height:1.5"></div>
+  </div>
+
+  <!-- Botón continuar -->
+  <button id="btnContinuarApp" onclick="continuarApp()" disabled
+    style="width:100%;max-width:360px;padding:16px;background:#c88e99;color:#fff;border:none;
+           border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;
+           opacity:.35;transition:opacity .2s">
+    Continuar →
+  </button>
+  <div id="continuarHint" style="margin-top:10px;font-size:12px;color:#475569;text-align:center;max-width:300px">
+    Activá los permisos para continuar
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      MODAL CHECK ACTIVIDAD
 ══════════════════════════════════════ -->
 <div id="modalActividad" style="display:none;position:fixed;inset:0;z-index:9997;
@@ -806,9 +874,8 @@ async function doLogin() {
       document.getElementById('appDash').classList.remove('hidden');
       cargarPedidos();
       startAutoRefresh();
-      pedirPermisoUbicacion();
-      pedirPermisoNotificaciones();
-      iniciarSistemaActividad();
+      registrarPushRepartidor();
+      mostrarPantallaPermisos();
     } else {
       showLoginAlert(data.message || 'Datos incorrectos');
     }
@@ -1334,9 +1401,8 @@ async function handleGoogleLogin(response) {
       document.getElementById('appDash').classList.remove('hidden');
       cargarPedidos();
       startAutoRefresh();
-      pedirPermisoUbicacion();
-      pedirPermisoNotificaciones();
-      iniciarSistemaActividad();
+      registrarPushRepartidor();
+      mostrarPantallaPermisos();
     } else {
       showLoginAlert(data.message || 'No se pudo ingresar con Google');
     }
@@ -1402,65 +1468,11 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
   document.getElementById('dashAvatar').textContent = initials(n);
   cargarPedidos();
   startAutoRefresh();
-  pedirPermisoUbicacion();
-  pedirPermisoNotificaciones();
-  iniciarSistemaActividad();
+  // Registrar SW siempre al cargar (para que _swReg esté listo antes de necesitarlo)
+  registrarPushRepartidor();
+  mostrarPantallaPermisos();
 }
 </script>
-
-<!-- Modal permiso notificaciones -->
-<div id="modalPermisoNotif" style="display:none;position:fixed;inset:0;z-index:9999;
-     background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:24px">
-  <div style="background:#1e293b;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;
-              border:1px solid rgba(200,142,153,.3);text-align:center">
-    <div style="font-size:48px;margin-bottom:16px">🔔</div>
-    <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:10px">
-      Activá las notificaciones
-    </div>
-    <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:24px">
-      Necesitamos enviarte una notificación cada 30 minutos para confirmar que seguís activo en el turno.<br><br>
-      <strong style="color:#c88e99">Sin esto no podemos asignarte pedidos.</strong>
-    </div>
-    <button onclick="aceptarPermisoNotif()"
-      style="width:100%;padding:14px;background:#c88e99;color:#fff;border:none;
-             border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
-             font-family:inherit;margin-bottom:10px">
-      🔔 Activar notificaciones
-    </button>
-    <button onclick="rechazarPermisoNotif()"
-      style="width:100%;padding:12px;background:transparent;color:#64748b;border:none;
-             font-size:13px;cursor:pointer;font-family:inherit">
-      Ahora no
-    </button>
-  </div>
-</div>
-
-<!-- Modal permiso ubicación -->
-<div id="modalPermisoUbicacion" style="display:none;position:fixed;inset:0;z-index:9999;
-     background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:24px">
-  <div style="background:#1e293b;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;
-              border:1px solid rgba(200,142,153,.3);text-align:center">
-    <div style="font-size:48px;margin-bottom:16px">📍</div>
-    <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:10px">
-      Compartí tu ubicación
-    </div>
-    <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:24px">
-      Para que el equipo de Canetto pueda ver dónde estás mientras estás de turno,
-      necesitamos acceder a tu ubicación en tiempo real.
-    </div>
-    <button onclick="aceptarPermisoUbicacion()"
-      style="width:100%;padding:14px;background:#c88e99;color:#fff;border:none;
-             border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
-             font-family:inherit;margin-bottom:10px">
-      <i class="fa-solid fa-location-dot"></i> Activar ubicación
-    </button>
-    <button onclick="rechazarPermisoUbicacion()"
-      style="width:100%;padding:12px;background:transparent;color:#64748b;border:none;
-             font-size:13px;cursor:pointer;font-family:inherit">
-      Ahora no
-    </button>
-  </div>
-</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1975,30 +1987,135 @@ function detenerTracking() {
   if (_trackingTimer) { clearInterval(_trackingTimer); _trackingTimer = null; }
 }
 
-async function pedirPermisoUbicacion() {
-  if (!navigator.geolocation) return;
 
-  // Si ya tenemos permiso, arrancar directo sin modal
+/* ════════════════════════════════════════
+   PANTALLA DE PERMISOS OBLIGATORIOS
+════════════════════════════════════════ */
+let _permUbicOk  = false;
+let _permNotifOk = false;
+
+function _setBadge(tipo, estado) {
+  // estado: 'ok' | 'err' | 'warn' | 'pending'
+  const badge = document.getElementById('permBadge-' + tipo);
+  const item  = document.getElementById('permItem-'  + tipo);
+  const btn   = document.getElementById('permBtn-'   + tipo);
+  const icons = { ok: '✅', err: '❌', warn: '⚠️', pending: '⏳' };
+  const borders = { ok: '#10b981', err: '#f43f5e', warn: '#f59e0b', pending: 'rgba(255,255,255,.08)' };
+  if (badge) badge.textContent = icons[estado] || '⏳';
+  if (item)  item.style.borderColor = borders[estado] || 'rgba(255,255,255,.08)';
+  if (estado === 'ok' && btn) { btn.style.display = 'none'; }
+}
+
+function _setMsg(tipo, msg) {
+  const el = document.getElementById('permMsg-' + tipo);
+  if (!el) return;
+  if (msg) { el.textContent = msg; el.style.display = 'block'; }
+  else      { el.style.display = 'none'; }
+}
+
+function _actualizarBotonContinuar() {
+  const btn  = document.getElementById('btnContinuarApp');
+  const hint = document.getElementById('continuarHint');
+  // Puede continuar si al menos intentó los dos (ok o err/warn)
+  const notifIntenada = _permNotifOk || Notification.permission !== 'default';
+  const ubicIntenada  = _permUbicOk  || false;
+  const listo = ubicIntenada && notifIntenada;
+  if (btn) { btn.disabled = !listo; btn.style.opacity = listo ? '1' : '.35'; }
+  if (hint) hint.textContent = listo
+    ? (_permUbicOk && _permNotifOk ? '¡Todo listo! Tocá para entrar' : 'Podés continuar aunque un permiso esté limitado')
+    : 'Activá los permisos para continuar';
+}
+
+async function mostrarPantallaPermisos() {
+  const pantalla = document.getElementById('pantallaPermisos');
+  if (!pantalla) return;
+
+  // Si ya tiene los dos permisos, arrancar directo sin mostrar la pantalla
+  const notifOk = 'Notification' in window && Notification.permission === 'granted';
+  let ubicOk = false;
   if (navigator.permissions) {
-    const status = await navigator.permissions.query({ name: 'geolocation' }).catch(() => null);
-    if (status?.state === 'granted') { iniciarTracking(); return; }
-    if (status?.state === 'denied')  return;
+    const geo = await navigator.permissions.query({ name: 'geolocation' }).catch(() => null);
+    ubicOk = geo?.state === 'granted';
+  }
+  if (notifOk && ubicOk) {
+    _permNotifOk = true;
+    _permUbicOk  = true;
+    iniciarTracking();
+    iniciarSistemaActividad();
+    return; // no mostrar pantalla
   }
 
-  // Mostrar modal de permiso
-  const modal = document.getElementById('modalPermisoUbicacion');
-  if (modal) modal.style.display = 'flex';
+  pantalla.style.display = 'flex';
+
+  // Chequear estado actual de permisos sin pedirlos todavía
+  if ('Notification' in window) {
+    if (Notification.permission === 'granted') {
+      _permNotifOk = true;
+      _setBadge('notif', 'ok');
+    } else if (Notification.permission === 'denied') {
+      _setBadge('notif', 'err');
+      _setMsg('notif', '🚨 Bloqueadas en Chrome. Tocá 🔒 en la barra → Permisos → Notificaciones → Permitir');
+      document.getElementById('permBtn-notif').textContent = '⚙️ Ir a ajustes del navegador';
+      document.getElementById('permBtn-notif').onclick = () => {
+        _setMsg('notif', '1) Tocá 🔒 en la barra de URL\n2) Permisos → Notificaciones → Permitir\n3) Recargá la app');
+      };
+    }
+  }
+
+  if (navigator.permissions) {
+    const geo = await navigator.permissions.query({ name: 'geolocation' }).catch(() => null);
+    if (geo?.state === 'granted') {
+      _permUbicOk = true;
+      _setBadge('ubicacion', 'ok');
+    } else if (geo?.state === 'denied') {
+      _setBadge('ubicacion', 'err');
+      _setMsg('ubicacion', '🚨 Bloqueada. Tocá 🔒 en la barra → Permisos → Ubicación → Permitir');
+    }
+  }
+
+  _actualizarBotonContinuar();
 }
 
-function aceptarPermisoUbicacion() {
-  const modal = document.getElementById('modalPermisoUbicacion');
-  if (modal) modal.style.display = 'none';
-  iniciarTracking();
+async function activarUbicacionPerm() {
+  _setBadge('ubicacion', 'pending');
+  _setMsg('ubicacion', null);
+  try {
+    await new Promise((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 15000 }));
+    _permUbicOk = true;
+    _setBadge('ubicacion', 'ok');
+  } catch (e) {
+    _setBadge('ubicacion', 'err');
+    _setMsg('ubicacion', '🚨 Permiso denegado. Tocá 🔒 en la barra → Permisos → Ubicación → Permitir, y recargá.');
+  }
+  _actualizarBotonContinuar();
 }
 
-function rechazarPermisoUbicacion() {
-  const modal = document.getElementById('modalPermisoUbicacion');
-  if (modal) modal.style.display = 'none';
+async function activarNotifPerm() {
+  if (!('Notification' in window)) {
+    _setBadge('notif', 'err'); _setMsg('notif', 'Este navegador no soporta notificaciones.'); return;
+  }
+  if (Notification.permission === 'denied') {
+    _setMsg('notif', '🚨 Bloqueadas. Tocá 🔒 → Permisos → Notificaciones → Permitir, y recargá.'); return;
+  }
+  _setBadge('notif', 'pending');
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    _permNotifOk = true;
+    _setBadge('notif', 'ok');
+    await registrarPushRepartidor();
+  } else if (perm === 'denied') {
+    _setBadge('notif', 'err');
+    _setMsg('notif', '🚨 Bloqueadas. Tocá 🔒 en la barra → Permisos → Notificaciones → Permitir, y recargá.');
+  }
+  _actualizarBotonContinuar();
+}
+
+function continuarApp() {
+  const pantalla = document.getElementById('pantallaPermisos');
+  if (pantalla) pantalla.style.display = 'none';
+  if (_permUbicOk) iniciarTracking();
+  iniciarSistemaActividad();
 }
 
 /* ════════════════════════════════════════
@@ -2016,11 +2133,11 @@ let _swReg = null; // referencia global al SW registrado
 
 async function registrarPushRepartidor() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (Notification.permission !== 'granted') return;
   try {
-    _swReg = await navigator.serviceWorker.register(
-      '/canetto/repartidor/sw-rep.js',
-      { scope: '/canetto/repartidor/' }
-    );
+    // Reusar registro existente si ya está activo
+    const existing = await navigator.serviceWorker.getRegistration('sw-rep.js').catch(() => null);
+    _swReg = existing || await navigator.serviceWorker.register('sw-rep.js');
     await navigator.serviceWorker.ready;
 
     // Suscribirse al push con VAPID
@@ -2041,28 +2158,6 @@ async function registrarPushRepartidor() {
   }
 }
 
-async function pedirPermisoNotificaciones() {
-  if (!('Notification' in window)) return;
-
-  if (Notification.permission === 'granted') {
-    await registrarPushRepartidor();
-    return;
-  }
-  if (Notification.permission === 'denied') return;
-
-  // Mostrar modal propio antes del prompt nativo del navegador
-  document.getElementById('modalPermisoNotif').style.display = 'flex';
-}
-
-async function aceptarPermisoNotif() {
-  document.getElementById('modalPermisoNotif').style.display = 'none';
-  const perm = await Notification.requestPermission();
-  if (perm === 'granted') await registrarPushRepartidor();
-}
-
-function rechazarPermisoNotif() {
-  document.getElementById('modalPermisoNotif').style.display = 'none';
-}
 
 /* ════════════════════════════════════════
    SISTEMA DE ACTIVIDAD
@@ -2070,7 +2165,11 @@ function rechazarPermisoNotif() {
    Cualquier toque/scroll/cambio de pantalla reinicia los 30s
 ════════════════════════════════════════ */
 const _TEST_ACTIVIDAD = new URLSearchParams(location.search).has('_ta');
-const INACTIVITY_MS   = _TEST_ACTIVIDAD ? 5000  : 1800000; // 5s en test, 30min real
+if (_TEST_ACTIVIDAD) {
+  const b = document.getElementById('bannerTestMode');
+  if (b) b.style.display = 'flex';
+}
+const INACTIVITY_MS   = _TEST_ACTIVIDAD ? 5000  : 2400000; // 5s en test, 40min real
 const RESPONSE_MS     = _TEST_ACTIVIDAD ? 8000  : 15000; // 8s en test, 15s real
 
 let _inactivTimer  = null;
@@ -2106,10 +2205,20 @@ function resetActividadTimer() {
   }
 }
 
+function _sonidoActividad() {
+  try {
+    const audio = new Audio('sounds/akaza_theme.mp3');
+    audio.volume = 0.85;
+    audio.play().catch(() => {});
+  } catch (_) {}
+}
+
 function _dispararCheckActividad() {
   if (!_actSistActivo) return;
+  // Sonido tipo Uber (2 tonos)
+  _sonidoActividad();
   // Vibrar
-  if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+  if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
   // Notificación nativa de Android (barra de notificaciones)
   _mostrarNotifNativa();
   // Popup in-app
@@ -2122,20 +2231,17 @@ function _dispararCheckActividad() {
 
 async function _mostrarNotifNativa() {
   const opts = {
-    body:             'Confirmá que seguís en la app. Tu sesión se cerrará en 15 segundos.',
-    icon:             '/canetto/assets/img/Logo_Canetto_Cookie.png',
-    badge:            '/canetto/assets/img/Logo_Canetto_Cookie.png',
-    vibrate:          [400, 150, 400],
+    body:               '⏱ Tocá aquí para confirmar que seguís en el turno. Si no respondés en 15 seg, se cierra la sesión.',
+    icon:               '/canetto/assets/img/Logo_Canetto_Cookie.png',
+    badge:              '/canetto/assets/img/Logo_Canetto_Cookie.png',
+    vibrate:            [300, 100, 300],
     requireInteraction: true,
-    tag:              'rep-actividad',
-    renotify:         true,
+    tag:                'rep-actividad',
+    renotify:           true,
   };
   try {
-    // Preferir SW (funciona aunque la pestaña esté en segundo plano)
     if (_swReg) {
-      await _swReg.showNotification('👋 ¿Seguís activo?', opts);
-    } else if (Notification.permission === 'granted') {
-      new Notification('👋 ¿Seguís activo?', opts);
+      await _swReg.showNotification('👋 ¿Seguís activo? — Canetto', opts);
     }
   } catch (_) {}
 }
@@ -2161,7 +2267,21 @@ function _ocultarModalActividad() {
 
 function confirmarActivo() {
   clearTimeout(_responseTimer);
+  // Cerrar la notificación de Android si está en la barra
+  if (_swReg) {
+    _swReg.getNotifications({ tag: 'rep-actividad' })
+      .then(notifs => notifs.forEach(n => n.close()))
+      .catch(() => {});
+  }
   resetActividadTimer();
+}
+
+// Escuchar mensajes del SW
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'CONFIRMAR_ACTIVO') confirmarActivo();
+    if (event.data?.type === 'PLAY_SOUND')       _sonidoActividad();
+  });
 }
 
 function _sesionExpirada() {

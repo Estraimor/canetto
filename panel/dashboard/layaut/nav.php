@@ -193,12 +193,25 @@ $current = $_SERVER['PHP_SELF'];
         <span class="nav-label">Proveedores</span>
     </a>
 
-    <!-- MAPA REPARTIDORES -->
-    <a href="<?= URL_ADMIN ?>/repartidores/index.php" data-tip="Mapa repartidores"
-       class="<?= str_contains($current,'repartidores/index') ? 'active' : '' ?>">
-        <i class="fa-solid fa-map-location-dot"></i>
-        <span class="nav-label">Mapa repartidores</span>
-    </a>
+    <!-- REPARTIDORES -->
+    <div class="menu-group <?= str_contains($current,'repartidores/') ? 'open' : '' ?>">
+        <span class="menu-title" data-tip="Repartidores">
+            <i class="fa-solid fa-motorcycle"></i>
+            <span class="menu-label">Repartidores</span>
+        </span>
+        <div class="submenu">
+            <a href="<?= URL_ADMIN ?>/repartidores/index.php"
+               class="<?= str_contains($current,'repartidores/index') ? 'active' : '' ?>">
+                <i class="fa-solid fa-map-location-dot"></i>
+                Mapa en vivo
+            </a>
+            <a href="<?= URL_ADMIN ?>/repartidores/notif_test.php"
+               class="<?= str_contains($current,'notif_test') ? 'active' : '' ?>">
+                <i class="fa-solid fa-bell"></i>
+                Notificaciones
+            </a>
+        </div>
+    </div>
 
     <!-- CLIENTES -->
     <a href="<?= URL_ADMIN ?>/clientes/index.php" data-tip="Clientes"
