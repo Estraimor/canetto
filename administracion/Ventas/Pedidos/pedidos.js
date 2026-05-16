@@ -188,9 +188,9 @@ const PedidosApp = (() => {
     const row         = document.getElementById('row-' + idVenta);
     const tipoEntrega = row?.dataset.tipoEntrega || 'retiro';
 
-    // Para pedidos de envío que van a "En reparto": pedir repartidor
+    // Para pedidos de envío que van a "En reparto": auto-asignar repartidor
     if (tipoEntrega === 'envio' && nuevoEstado === 3) {
-      await abrirModalRepartidor(idVenta);
+      await autoAsignarRepartidor(idVenta, btn);
       return;
     }
     // Para pedidos de envío en CUALQUIER otro estado: ofrecer también cambiar repartidor
@@ -253,6 +253,33 @@ const PedidosApp = (() => {
         cargarPedidos();
       } else {
         showToast('Error: ' + (data.message || 'No se pudo actualizar'), 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+      }
+    } catch (e) {
+      showToast('Error de conexión', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+    }
+  }
+
+  // ─── AUTO-ASIGNACIÓN REPARTIDOR ──────────
+  async function autoAsignarRepartidor(idVenta, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    try {
+      const res  = await fetch('api/auto_asignar_repartidor.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_venta: idVenta })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ Asignado a ${data.repartidor}`, 'success');
+        cargarPedidos();
+      } else if (data.sin_repartidor) {
+        showToast('⚠️ Sin repartidores disponibles, asigná manualmente', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+        await abrirModalRepartidor(idVenta);
+      } else {
+        showToast('Error: ' + (data.message || 'No se pudo asignar'), 'error');
         if (btn) { btn.disabled = false; btn.textContent = '💾'; }
       }
     } catch (e) {
@@ -336,30 +363,42 @@ const PedidosApp = (() => {
     }
   }
 
+  function toggleSeccion(h4) {
+    const content = h4.nextElementSibling;
+    const chevron = h4.querySelector('.toggle-chevron');
+    const isOpen  = content.style.display !== 'none';
+    content.style.display = isOpen ? 'none' : '';
+    if (chevron) chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+  }
+
   function renderDetalle(d) {
     const estadoId = parseInt(d.estado_id);
     const est = ESTADOS[estadoId] || { label: 'Desconocido', cls: 'est-1' };
     const fecha = fmtFecha(d.fecha);
     document.getElementById('detalle-body').innerHTML = `
       <div class="detalle-section">
-        <h4>📦 Estado actual</h4>
+        <h4>📦 ESTADO ACTUAL</h4>
         <span class="estado-pill ${est.cls}"><span class="est-dot"></span>${est.label}</span>
       </div>
       <div class="detalle-section">
-        <h4>👤 Cliente</h4>
-        <div class="detalle-info-grid">
-          <div class="info-item"><label>Nombre</label><span>${d.cliente_nombre || '—'} ${d.cliente_apellido || ''}</span></div>
-          <div class="info-item"><label>Teléfono</label><span>${String(d.cliente_telefono || '—')}</span></div>
-          <div class="info-item"><label>Email</label><span>${d.cliente_email || '—'}</span></div>
-          ${d.tipo_entrega === 'envio' ? `
-          <div class="info-item"><label>Tipo entrega</label><span>🛵 Envío</span></div>
-          <div class="info-item"><label>Dirección</label><span>${d.direccion_entrega || '—'}</span></div>
-          <div class="info-item"><label>Repartidor</label><span>${d.via_uber ? '🚗 Uber' : (d.repartidor_nombre || '— Sin asignar —')}</span></div>
-          ` : `<div class="info-item"><label>Tipo entrega</label><span>🏪 Retiro</span></div>`}
+        <h4 class="section-toggle" onclick="PedidosApp.toggleSeccion(this)">
+          👤 CLIENTE <span class="toggle-chevron" style="transform:rotate(-90deg)">▼</span>
+        </h4>
+        <div class="section-content" style="display:none">
+          <div class="detalle-info-grid">
+            <div class="info-item"><label>Nombre</label><span>${d.cliente_nombre || '—'} ${d.cliente_apellido || ''}</span></div>
+            <div class="info-item"><label>Teléfono</label><span>${String(d.cliente_telefono || '—')}</span></div>
+            <div class="info-item"><label>Email</label><span>${d.cliente_email || '—'}</span></div>
+            ${d.tipo_entrega === 'envio' ? `
+            <div class="info-item"><label>Tipo entrega</label><span>🛵 Envío</span></div>
+            <div class="info-item" style="grid-column:1/-1"><label>Dirección</label><span>${d.direccion_entrega || '—'}</span></div>
+            <div class="info-item"><label>Repartidor</label><span>${d.via_uber ? '🚗 Uber' : (d.repartidor_nombre || '— Sin asignar —')}</span></div>
+            ` : `<div class="info-item"><label>Tipo entrega</label><span>🏪 Retiro</span></div>`}
+          </div>
         </div>
       </div>
       <div class="detalle-section">
-        <h4>💳 Pago & Fecha</h4>
+        <h4>💳 PAGO & FECHA</h4>
         <div class="detalle-info-grid">
           <div class="info-item"><label>Método</label><span>${d.metodo_pago || '—'}</span></div>
           <div class="info-item"><label>Fecha</label><span>${fecha.dia} ${fecha.hora}</span></div>
@@ -420,5 +459,5 @@ const PedidosApp = (() => {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { cargarPedidos, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, cancelarPedido, confirmarRepartidor, cerrarModalRep, reasignarRepartidor };
+  return { cargarPedidos, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, cancelarPedido, confirmarRepartidor, cerrarModalRep, reasignarRepartidor, toggleSeccion };
 })();

@@ -32,8 +32,10 @@ try {
             u.nombre   AS cliente_nombre,
             u.apellido AS cliente_apellido,
             u.celular  AS cliente_celular,
-            s.nombre   AS sucursal_nombre,
-            s.direccion AS sucursal_direccion
+            s.nombre    AS sucursal_nombre,
+            s.direccion AS sucursal_direccion,
+            s.latitud   AS sucursal_lat,
+            s.longitud  AS sucursal_lng
         FROM ventas v
         LEFT JOIN usuario     u  ON u.idusuario      = v.usuario_idusuario
         LEFT JOIN metodo_pago mp ON mp.idmetodo_pago  = v.metodo_pago_idmetodo_pago

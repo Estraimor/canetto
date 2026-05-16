@@ -6,6 +6,14 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 $repId          = $_SESSION['repartidor_id']     ?? null;
 $repNombre      = $_SESSION['repartidor_nombre'] ?? '';
 $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
+
+// Cargar sucursales reales de la BD
+$sucursalesJS = [];
+try {
+    $pdoRep = Conexion::conectar();
+    $stmtSuc = $pdoRep->query("SELECT idsucursal, nombre, direccion, latitud, longitud FROM sucursal WHERE activo = 1 ORDER BY idsucursal ASC");
+    $sucursalesJS = $stmtSuc->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) { $sucursalesJS = []; }
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -665,6 +673,35 @@ $googleClientId = defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : '';
 </template>
 
 <!-- ══════════════════════════════════════
+     MODAL CHECK ACTIVIDAD
+══════════════════════════════════════ -->
+<div id="modalActividad" style="display:none;position:fixed;inset:0;z-index:9997;
+     background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:24px">
+  <div style="background:#1e293b;border-radius:22px;padding:30px 24px;max-width:310px;width:100%;
+              border:1px solid rgba(200,142,153,.5);text-align:center;animation:slideUp .25s ease">
+    <div style="font-size:46px;margin-bottom:14px">👋</div>
+    <div style="font-size:19px;font-weight:800;color:#fff;margin-bottom:8px">¿Seguís activo?</div>
+    <div style="font-size:13px;color:#94a3b8;line-height:1.65;margin-bottom:22px">
+      Tocá el botón para confirmar que seguís en la app.<br>
+      Si no respondés, se cerrará tu sesión.
+    </div>
+    <!-- Barra de countdown -->
+    <div style="background:rgba(255,255,255,.08);border-radius:100px;height:7px;margin-bottom:10px;overflow:hidden">
+      <div id="actividadBar" style="height:100%;background:#c88e99;border-radius:100px;width:100%"></div>
+    </div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:22px">
+      Cierra sesión en <strong style="color:#f87171" id="actividadSecs">15</strong>s
+    </div>
+    <button onclick="confirmarActivo()"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,#c88e99,#a46678);color:#fff;border:none;
+             border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;
+             box-shadow:0 4px 20px rgba(200,142,153,.35);active:transform:scale(.97)">
+      ✅ Sigo activo
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      ANIMACIÓN ENTREGA CONFIRMADA
 ══════════════════════════════════════ -->
 <div id="entregaOverlay" class="entrega-overlay hidden">
@@ -770,6 +807,8 @@ async function doLogin() {
       cargarPedidos();
       startAutoRefresh();
       pedirPermisoUbicacion();
+      pedirPermisoNotificaciones();
+      iniciarSistemaActividad();
     } else {
       showLoginAlert(data.message || 'Datos incorrectos');
     }
@@ -788,6 +827,7 @@ function showLoginAlert(msg) {
 
 async function doLogout() {
   await fetch('api/logout.php', { method: 'POST' });
+  detenerSistemaActividad();
   clearAutoRefresh();
   document.getElementById('appDash').classList.add('hidden');
   document.getElementById('appLogin').classList.remove('hidden');
@@ -1294,6 +1334,9 @@ async function handleGoogleLogin(response) {
       document.getElementById('appDash').classList.remove('hidden');
       cargarPedidos();
       startAutoRefresh();
+      pedirPermisoUbicacion();
+      pedirPermisoNotificaciones();
+      iniciarSistemaActividad();
     } else {
       showLoginAlert(data.message || 'No se pudo ingresar con Google');
     }
@@ -1360,8 +1403,37 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
   cargarPedidos();
   startAutoRefresh();
   pedirPermisoUbicacion();
+  pedirPermisoNotificaciones();
+  iniciarSistemaActividad();
 }
 </script>
+
+<!-- Modal permiso notificaciones -->
+<div id="modalPermisoNotif" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:24px">
+  <div style="background:#1e293b;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;
+              border:1px solid rgba(200,142,153,.3);text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">🔔</div>
+    <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:10px">
+      Activá las notificaciones
+    </div>
+    <div style="font-size:13px;color:#94a3b8;line-height:1.6;margin-bottom:24px">
+      Necesitamos enviarte una notificación cada 30 minutos para confirmar que seguís activo en el turno.<br><br>
+      <strong style="color:#c88e99">Sin esto no podemos asignarte pedidos.</strong>
+    </div>
+    <button onclick="aceptarPermisoNotif()"
+      style="width:100%;padding:14px;background:#c88e99;color:#fff;border:none;
+             border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
+             font-family:inherit;margin-bottom:10px">
+      🔔 Activar notificaciones
+    </button>
+    <button onclick="rechazarPermisoNotif()"
+      style="width:100%;padding:12px;background:transparent;color:#64748b;border:none;
+             font-size:13px;cursor:pointer;font-family:inherit">
+      Ahora no
+    </button>
+  </div>
+</div>
 
 <!-- Modal permiso ubicación -->
 <div id="modalPermisoUbicacion" style="display:none;position:fixed;inset:0;z-index:9999;
@@ -1396,9 +1468,20 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
    MAPA UBER — FULLSCREEN
    Coordenadas de la tienda Canetto
 ════════════════════════════════════════ */
-const CANETTO_LAT = -34.6037;   // <-- ajustar con la dirección real
-const CANETTO_LNG = -58.3816;
-const CANETTO_NOMBRE = 'Canetto Cookies';
+// Sucursales reales desde la BD (inyectadas por PHP)
+const SUCURSALES = <?= json_encode(array_map(fn($s) => [
+    'id'        => (int)$s['idsucursal'],
+    'nombre'    => $s['nombre'],
+    'direccion' => $s['direccion'] ?? '',
+    'lat'       => $s['latitud']  !== null ? (float)$s['latitud']  : null,
+    'lng'       => $s['longitud'] !== null ? (float)$s['longitud'] : null,
+], $sucursalesJS), JSON_UNESCAPED_UNICODE) ?>;
+
+// Sucursal principal (primera con coordenadas)
+const _SUC0 = SUCURSALES.find(s => s.lat && s.lng) || SUCURSALES[0] || {};
+const CANETTO_LAT    = _SUC0.lat    ?? -27.3621;
+const CANETTO_LNG    = _SUC0.lng    ?? -55.9008;
+const CANETTO_NOMBRE = _SUC0.nombre ?? 'Canetto Cookies';
 
 let _uberMap      = null;
 let _uberMarkers  = [];
@@ -1626,8 +1709,15 @@ function haversineM(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+function getSucLatLng(pedido) {
+  if (pedido.sucursal_lat && pedido.sucursal_lng)
+    return { lat: parseFloat(pedido.sucursal_lat), lng: parseFloat(pedido.sucursal_lng) };
+  return { lat: CANETTO_LAT, lng: CANETTO_LNG };
+}
+
 function optimizarRuta(pedidos) {
-  let cur = { lat: CANETTO_LAT, lng: CANETTO_LNG };
+  // Partimos desde la sucursal del primer pedido (o la principal)
+  let cur = pedidos.length ? getSucLatLng(pedidos[0]) : { lat: CANETTO_LAT, lng: CANETTO_LNG };
   const rem = pedidos.filter(p => p.lat_entrega && p.lng_entrega).map(p => ({...p}));
   const sin = pedidos.filter(p => !p.lat_entrega || !p.lng_entrega);
   const ord = [];
@@ -1723,7 +1813,13 @@ async function dibujarRuta(pedido) {
     _uberRoute = null;
   }
 
-  const tiendaLat = CANETTO_LAT, tiendaLng = CANETTO_LNG;
+  // Coordenadas de la sucursal del pedido (o fallback a la principal)
+  const sucPedido = pedido.sucursal_lat && pedido.sucursal_lng
+    ? { lat: parseFloat(pedido.sucursal_lat), lng: parseFloat(pedido.sucursal_lng),
+        nombre: pedido.sucursal_nombre || CANETTO_NOMBRE, direccion: pedido.sucursal_direccion || '' }
+    : { lat: CANETTO_LAT, lng: CANETTO_LNG, nombre: CANETTO_NOMBRE, direccion: '' };
+  const tiendaLat = sucPedido.lat, tiendaLng = sucPedido.lng;
+  const tiendaNombre = sucPedido.nombre;
   const destLat   = parseFloat(pedido.lat_entrega || 0);
   const destLng   = parseFloat(pedido.lng_entrega || 0);
 
@@ -1733,7 +1829,7 @@ async function dibujarRuta(pedido) {
   // Marcador tienda
   const mTienda = L.marker([tiendaLat, tiendaLng], { icon: iconDiv(
     `<div style="background:#f59e0b;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">🏪</div>`, 44)
-  }).bindPopup(`<strong>${CANETTO_NOMBRE}</strong><br><small>Punto de retiro</small>`).addTo(_uberMap);
+  }).bindPopup(`<strong>${tiendaNombre}</strong><br><small>${sucPedido.direccion||'Punto de retiro'}</small>`).addTo(_uberMap);
   _uberMarkers.push(mTienda);
 
   const bounds = [[tiendaLat, tiendaLng]];
@@ -1903,6 +1999,175 @@ function aceptarPermisoUbicacion() {
 function rechazarPermisoUbicacion() {
   const modal = document.getElementById('modalPermisoUbicacion');
   if (modal) modal.style.display = 'none';
+}
+
+/* ════════════════════════════════════════
+   PUSH NOTIFICATIONS — REPARTIDOR
+════════════════════════════════════════ */
+const VAPID_PUB_KEY = 'BOHfZtCMwcBtOqLU9HdwNrRfs-A7u434RmpJWg3hAnzJZITA2KefpNGhwbFSfl6MTTDJRdGIVFikdIGF4_CKHbk';
+
+function _vapidToUint8(b64) {
+  const pad  = '='.repeat((4 - b64.length % 4) % 4);
+  const raw  = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+let _swReg = null; // referencia global al SW registrado
+
+async function registrarPushRepartidor() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    _swReg = await navigator.serviceWorker.register(
+      '/canetto/repartidor/sw-rep.js',
+      { scope: '/canetto/repartidor/' }
+    );
+    await navigator.serviceWorker.ready;
+
+    // Suscribirse al push con VAPID
+    const sub = await _swReg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: _vapidToUint8(VAPID_PUB_KEY),
+    });
+
+    // Guardar suscripción en el servidor
+    const j = sub.toJSON();
+    fetch('api/guardar_push_rep.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
+    }).catch(() => {});
+  } catch (e) {
+    // sin push disponible, el popup in-app igual funciona
+  }
+}
+
+async function pedirPermisoNotificaciones() {
+  if (!('Notification' in window)) return;
+
+  if (Notification.permission === 'granted') {
+    await registrarPushRepartidor();
+    return;
+  }
+  if (Notification.permission === 'denied') return;
+
+  // Mostrar modal propio antes del prompt nativo del navegador
+  document.getElementById('modalPermisoNotif').style.display = 'flex';
+}
+
+async function aceptarPermisoNotif() {
+  document.getElementById('modalPermisoNotif').style.display = 'none';
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') await registrarPushRepartidor();
+}
+
+function rechazarPermisoNotif() {
+  document.getElementById('modalPermisoNotif').style.display = 'none';
+}
+
+/* ════════════════════════════════════════
+   SISTEMA DE ACTIVIDAD
+   30s sin tocar nada → popup vibración → 15s para responder → logout
+   Cualquier toque/scroll/cambio de pantalla reinicia los 30s
+════════════════════════════════════════ */
+const _TEST_ACTIVIDAD = new URLSearchParams(location.search).has('_ta');
+const INACTIVITY_MS   = _TEST_ACTIVIDAD ? 5000  : 1800000; // 5s en test, 30min real
+const RESPONSE_MS     = _TEST_ACTIVIDAD ? 8000  : 15000; // 8s en test, 15s real
+
+let _inactivTimer  = null;
+let _responseTimer = null;
+let _cuentaRaf     = null;
+let _cuentaFin     = 0;
+let _actSistActivo = false;
+
+function _onUserActivity() {
+  if (_actSistActivo) resetActividadTimer();
+}
+
+function iniciarSistemaActividad() {
+  _actSistActivo = true;
+  ['touchstart', 'touchend', 'click', 'scroll', 'keydown'].forEach(ev =>
+    document.addEventListener(ev, _onUserActivity, { passive: true }));
+  resetActividadTimer();
+}
+
+function detenerSistemaActividad() {
+  _actSistActivo = false;
+  clearTimeout(_inactivTimer);
+  clearTimeout(_responseTimer);
+  _ocultarModalActividad();
+}
+
+function resetActividadTimer() {
+  clearTimeout(_inactivTimer);
+  clearTimeout(_responseTimer);
+  _ocultarModalActividad();
+  if (_actSistActivo) {
+    _inactivTimer = setTimeout(_dispararCheckActividad, INACTIVITY_MS);
+  }
+}
+
+function _dispararCheckActividad() {
+  if (!_actSistActivo) return;
+  // Vibrar
+  if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+  // Notificación nativa de Android (barra de notificaciones)
+  _mostrarNotifNativa();
+  // Popup in-app
+  document.getElementById('modalActividad').style.display = 'flex';
+  _cuentaFin = Date.now() + RESPONSE_MS;
+  if (_cuentaRaf) cancelAnimationFrame(_cuentaRaf);
+  _tickCuenta();
+  _responseTimer = setTimeout(_sesionExpirada, RESPONSE_MS);
+}
+
+async function _mostrarNotifNativa() {
+  const opts = {
+    body:             'Confirmá que seguís en la app. Tu sesión se cerrará en 15 segundos.',
+    icon:             '/canetto/assets/img/Logo_Canetto_Cookie.png',
+    badge:            '/canetto/assets/img/Logo_Canetto_Cookie.png',
+    vibrate:          [400, 150, 400],
+    requireInteraction: true,
+    tag:              'rep-actividad',
+    renotify:         true,
+  };
+  try {
+    // Preferir SW (funciona aunque la pestaña esté en segundo plano)
+    if (_swReg) {
+      await _swReg.showNotification('👋 ¿Seguís activo?', opts);
+    } else if (Notification.permission === 'granted') {
+      new Notification('👋 ¿Seguís activo?', opts);
+    }
+  } catch (_) {}
+}
+
+function _tickCuenta() {
+  const rest = Math.max(0, _cuentaFin - Date.now());
+  const pct  = rest / RESPONSE_MS * 100;
+  const bar  = document.getElementById('actividadBar');
+  const num  = document.getElementById('actividadSecs');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.style.background = pct > 50 ? '#c88e99' : pct > 25 ? '#f59e0b' : '#f43f5e';
+  }
+  if (num) num.textContent = Math.ceil(rest / 1000);
+  if (rest > 0) _cuentaRaf = requestAnimationFrame(_tickCuenta);
+}
+
+function _ocultarModalActividad() {
+  const m = document.getElementById('modalActividad');
+  if (m) m.style.display = 'none';
+  if (_cuentaRaf) { cancelAnimationFrame(_cuentaRaf); _cuentaRaf = null; }
+}
+
+function confirmarActivo() {
+  clearTimeout(_responseTimer);
+  resetActividadTimer();
+}
+
+function _sesionExpirada() {
+  _ocultarModalActividad();
+  detenerSistemaActividad();
+  doLogout();
 }
 </script>
 </body>

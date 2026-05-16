@@ -23,8 +23,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 100vh;
     height: 100vh;
     animation: fadeIn 0.8s ease-in-out;
+    /* Garantiza que position:fixed hijos se posicionen respecto al viewport */
+    transform: none;
 }
 
 @keyframes fadeIn {
@@ -217,8 +220,15 @@ body {
 
 .g-success-overlay {
     position: fixed;
-    inset: 0;
-    background: #ffffff;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -226,6 +236,9 @@ body {
     z-index: 99999;
     opacity: 0;
     animation: gOverlayIn 0.25s ease forwards;
+    /* Evita que body flex lo trate como flex item */
+    flex-shrink: 0;
+    margin: 0;
 }
 
 .g-success-card {
