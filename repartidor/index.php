@@ -53,6 +53,20 @@ try {
   backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.4);
 }
 
+/* Ocultar controles automáticos del plugin leaflet-rotate */
+.leaflet-bearing-control,
+.leaflet-control-rotate { display: none !important; }
+
+/* Sin transición CSS en el mapa — tiles, ruta y marcadores rotan en sync instantáneo.
+   La suavidad viene del throttle rAF a 60fps, no de CSS animation. */
+#uberMapFull .leaflet-map-pane,
+#uberMapFull .leaflet-tile-pane,
+#uberMapFull .leaflet-overlay-pane,
+#uberMapFull .leaflet-marker-pane,
+#uberMapFull .leaflet-shadow-pane {
+  transition: none !important;
+}
+
 /* Badge estado arriba al centro */
 .uber-status-badge{
   position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:600;
@@ -347,6 +361,16 @@ try {
                transition:all .2s;-webkit-tap-highlight-color:transparent"
         title="Seguir moto automáticamente">
       <i class="fa-solid fa-location-arrow"></i>
+    </button>
+    <!-- Brújula: rotar mapa según donde mira el celular -->
+    <button id="btnBrujula" onclick="toggleBrujula()"
+        style="width:44px;height:44px;border-radius:50%;background:rgba(15,23,42,.88);
+               border:2px solid transparent;color:#64748b;font-size:17px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;
+               backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(0,0,0,.45);
+               transition:all .2s;-webkit-tap-highlight-color:transparent"
+        title="Rotar mapa según brújula">
+      <i class="fa-solid fa-compass"></i>
     </button>
   </div>
 
@@ -1003,6 +1027,10 @@ async function doLogout() {
   await fetch('api/logout.php', { method: 'POST' });
   detenerSistemaActividad();
   clearAutoRefresh();
+  // Limpiar fases de pedidos guardadas en localStorage
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('uber_phase_'))
+    .forEach(k => localStorage.removeItem(k));
   document.getElementById('appDash').classList.add('hidden');
   document.getElementById('appLogin').classList.remove('hidden');
   document.getElementById('lPassword').value = '';
@@ -1582,6 +1610,7 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 <script>
 /* ════════════════════════════════════════
    MAPA UBER — FULLSCREEN
@@ -1610,6 +1639,9 @@ let _uberPedido   = null;
 let _uberWatcher  = null;
 let _uberPhase    = 'pickup'; // 'pickup' | 'delivery'
 let _seguirMoto   = false;    // seguimiento automático de la moto
+let _brujulaMode  = false;    // rotar mapa según brújula/heading
+let _lastHeading  = 0;        // último heading conocido (grados desde norte)
+let _bearingRaf   = null;     // handle requestAnimationFrame para throttle
 let _uberSteps    = [];
 let _uberStepIdx  = 0;
 let _uberMulti    = []; // todos los pedidos en modo multi-entrega
@@ -1623,16 +1655,37 @@ function iconDiv(html, size = 44) {
   return L.divIcon({ className: '', html, iconSize: [size, size], iconAnchor: [size/2, size/2], popupAnchor: [0, -size/2] });
 }
 
+function createDriverIcon(color) {
+  return iconDiv(`<div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.7))"><i class="fa-solid fa-motorcycle" style="font-size:26px;color:${color}"></i></div>`, 38);
+}
+
+function _setMapBtnStyle(btn, active, activeColor, activeShadow) {
+  if (active) {
+    btn.style.background  = activeColor;
+    btn.style.borderColor = '#fff';
+    btn.style.color       = '#fff';
+    btn.style.boxShadow   = activeShadow;
+  } else {
+    btn.style.background  = 'rgba(15,23,42,.88)';
+    btn.style.borderColor = 'transparent';
+    btn.style.color       = '#64748b';
+    btn.style.boxShadow   = '0 2px 12px rgba(0,0,0,.45)';
+  }
+}
+
 function initUberMap() {
   if (_uberMap) return;
   _uberMap = L.map('uberMapFull', {
-    zoomControl:       false,
+    zoomControl:        false,
     attributionControl: false,
+    rotate:             true,   // leaflet-rotate plugin
+    touchRotate:        true,   // rotar con dos dedos
+    bearing:            0,
   });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
   }).addTo(_uberMap);
-  // Sin botones de zoom — se usa pinch-to-zoom en mobile
+  // Sin botones de zoom — se usa pinch-to-zoom
 }
 
 async function abrirUberMap(pedido, multiPedidos) {
@@ -1643,7 +1696,7 @@ async function abrirUberMap(pedido, multiPedidos) {
   _uberMultiIdx = multiPedidos ? multiPedidos.findIndex(p => p.idventas === pedido.idventas) : 0;
 
   // Restaurar fase: si ya tenía el paquete antes de cerrar el mapa, volver a delivery
-  const faseGuardada = sessionStorage.getItem('uber_phase_' + pedido.idventas);
+  const faseGuardada = localStorage.getItem('uber_phase_' + pedido.idventas);
   _uberPhase = faseGuardada === 'delivery' ? 'delivery' : 'pickup';
 
   const screen = document.getElementById('uberMapScreen');
@@ -1705,7 +1758,23 @@ async function abrirUberMap(pedido, multiPedidos) {
 
   // Init mapa
   initUberMap();
-  setTimeout(() => { _uberMap.invalidateSize(); dibujarRuta(pedido); }, 200);
+  setTimeout(() => {
+    _uberMap.invalidateSize();
+
+    if (!_uberDriver && navigator.geolocation) {
+      // Sin posición aún: obtener y luego dibujar la ruta desde el repartidor real
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat   = pos.coords.latitude;
+        const lng   = pos.coords.longitude;
+        const color = _uberPhase === 'pickup' ? '#f59e0b' : '#c88e99';
+        _uberDriver = L.marker([lat, lng], { icon: createDriverIcon(color), zIndexOffset: 1000 })
+          .bindPopup('<strong>Tu posición</strong>').addTo(_uberMap);
+        dibujarRuta(pedido);
+      }, () => dibujarRuta(pedido), { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    } else {
+      dibujarRuta(pedido);
+    }
+  }, 250);
 
   // Seguir posición del repartidor
   iniciarGeolocalizacion();
@@ -1765,8 +1834,9 @@ function cerrarUberMap() {
     navigator.geolocation.clearWatch(_uberWatcher);
     _uberWatcher = null;
   }
-  // Resetear seguimiento al salir
-  if (_seguirMoto) toggleSeguir();
+  // Resetear controles al salir
+  if (_seguirMoto)  toggleSeguir();
+  if (_brujulaMode) toggleBrujula();
 }
 
 function uberLlamar() {
@@ -1797,7 +1867,7 @@ async function uberEntregar() {
     const data = await res.json();
     if (data.success) {
       // Limpiar fase guardada al entregar el pedido
-      sessionStorage.removeItem('uber_phase_' + id);
+      localStorage.removeItem('uber_phase_' + id);
       cerrarUberMap();
       mostrarEntregaAnimacion(id, _uberPedido?.cliente_nombre);
     } else {
@@ -1822,7 +1892,7 @@ function confirmarPaquete() {
 
   // Persistir fase para que al cerrar y abrir el mapa siga en delivery
   if (_uberPedido?.idventas) {
-    sessionStorage.setItem('uber_phase_' + _uberPedido.idventas, 'delivery');
+    localStorage.setItem('uber_phase_' + _uberPedido.idventas, 'delivery');
   }
 
   const badge = document.getElementById('uberStatusBadge');
@@ -2033,17 +2103,20 @@ function iniciarGeolocalizacion() {
   if (!navigator.geolocation) return;
 
   const updateDriver = pos => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    const motoColor = _uberPhase === 'pickup' ? '#f59e0b' : '#c88e99';
-    const iconDriver = iconDiv(`
-      <div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.7))">
-        <i class="fa-solid fa-motorcycle" style="font-size:26px;color:${motoColor}"></i>
-      </div>`, 38);
+    const lat     = pos.coords.latitude;
+    const lng     = pos.coords.longitude;
+    const heading = pos.coords.heading; // GPS heading cuando se mueve (grados desde norte)
+
+    // Usar heading GPS cuando hay movimiento real (speed > 0.5 m/s)
+    if (heading !== null && !isNaN(heading) && (pos.coords.speed || 0) > 0.5) {
+      _aplicarHeading(heading);
+    }
+
     if (_uberDriver) _uberMap.removeLayer(_uberDriver);
-    _uberDriver = L.marker([lat, lng], { icon: iconDriver, zIndexOffset: 1000 })
-      .bindPopup('<strong>Tu posición</strong>')
-      .addTo(_uberMap);
+    _uberDriver = L.marker([lat, lng], {
+      icon: createDriverIcon(_uberPhase === 'pickup' ? '#f59e0b' : '#c88e99'),
+      zIndexOffset: 1000,
+    }).bindPopup('<strong>Tu posición</strong>').addTo(_uberMap);
 
     // Seguimiento automático
     if (_seguirMoto && _uberMap) {
@@ -2070,23 +2143,53 @@ function centrarEnMoto() {
   _uberMap.setView([pos.lat, pos.lng], 16, { animate: true });
 }
 
-/* Toggle: seguir la moto automáticamente */
 function toggleSeguir() {
   _seguirMoto = !_seguirMoto;
-  const btn = document.getElementById('btnSeguir');
-  if (_seguirMoto) {
-    btn.style.background   = '#c88e99';
-    btn.style.borderColor  = '#fff';
-    btn.style.color        = '#fff';
-    btn.style.boxShadow    = '0 2px 16px rgba(200,142,153,.6)';
-    centrarEnMoto(); // centrar inmediatamente al activar
+  _setMapBtnStyle(document.getElementById('btnSeguir'), _seguirMoto, '#c88e99', '0 2px 16px rgba(200,142,153,.6)');
+  if (_seguirMoto) centrarEnMoto();
+}
+
+function _aplicarHeading(deg) {
+  if (!_uberMap || isNaN(deg)) return;
+  _lastHeading = deg;
+  if (!_brujulaMode) return;
+  // Throttle: máximo 1 setBearing por frame de animación (~60fps)
+  if (_bearingRaf) return;
+  _bearingRaf = requestAnimationFrame(() => {
+    _uberMap.setBearing(_lastHeading);
+    _bearingRaf = null;
+  });
+}
+
+function toggleBrujula() {
+  _brujulaMode = !_brujulaMode;
+  _setMapBtnStyle(document.getElementById('btnBrujula'), _brujulaMode, '#10b981', '0 2px 16px rgba(16,185,129,.5)');
+  if (_brujulaMode) {
+    if (_uberMap) _uberMap.setBearing(_lastHeading);
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then(state => { if (state !== 'granted') toggleBrujula(); })
+        .catch(() => toggleBrujula());
+    }
   } else {
-    btn.style.background   = 'rgba(15,23,42,.88)';
-    btn.style.borderColor  = 'transparent';
-    btn.style.color        = '#64748b';
-    btn.style.boxShadow    = '0 2px 12px rgba(0,0,0,.45)';
+    if (_uberMap) _uberMap.setBearing(0);
   }
 }
+
+/* Listener de brújula del dispositivo */
+window.addEventListener('deviceorientation', e => {
+  if (!_brujulaMode) return;
+  let heading;
+  if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+    // iOS: webkitCompassHeading ya es grados desde norte (0–360)
+    heading = e.webkitCompassHeading;
+  } else if (e.alpha !== null) {
+    // Android: alpha es rotación Z, 0 = apunta al norte magnético
+    heading = (360 - e.alpha) % 360;
+  }
+  _aplicarHeading(heading);
+}, { passive: true });
 
 /* ════════════════════════════════════════
    RUTA ÓPTIMA MULTI-PAQUETE

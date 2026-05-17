@@ -7,15 +7,27 @@ if (empty($_SESSION['usuario_id'])) { http_response_code(401); echo json_encode(
 header('Content-Type: application/json');
 
 try {
-    $pdo  = Conexion::conectar();
+    $pdo = Conexion::conectar();
+
+    // Asegurar que existen todas las columnas necesarias
+    $cols = [
+        "ALTER TABLE packaging ADD COLUMN stock_actual  DECIMAL(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE packaging ADD COLUMN stock_minimo  DECIMAL(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE packaging ADD COLUMN precio_bruto  DECIMAL(12,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE packaging ADD COLUMN updated_at    DATETIME NULL",
+    ];
+    foreach ($cols as $sql) {
+        try { $pdo->exec($sql); } catch (Throwable $e) {}
+    }
+
     $data = $pdo->query("
         SELECT
             pk.idpackaging,
             pk.nombre,
             pk.descripcion,
-            pk.stock_actual,
-            pk.stock_minimo,
-            COALESCE(pk.precio_bruto, 0) AS precio_bruto,
+            COALESCE(pk.stock_actual,  0) AS stock_actual,
+            COALESCE(pk.stock_minimo,  0) AS stock_minimo,
+            COALESCE(pk.precio_bruto,  0) AS precio_bruto,
             pk.activo,
             pk.unidad_medida_idunidad_medida,
             um.abreviatura AS unidad

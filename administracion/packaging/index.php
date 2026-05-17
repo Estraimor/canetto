@@ -99,6 +99,7 @@ $allPkg   = $pdo->query("
             <th>Descripción</th>
             <th>Stock actual</th>
             <th>Stock mínimo</th>
+            <th>Precio bruto</th>
             <th>Estado</th>
             <th>Activo</th>
             <th style="width:110px;text-align:right">Acciones</th>
