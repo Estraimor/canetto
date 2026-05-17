@@ -166,7 +166,7 @@ const PedidosApp = (() => {
                 🔄 Reasignar
               </button>
               <button class="btn-accion btn-whatsapp"
-                      onclick="PedidosApp.mensajeCliente('${String(v.cliente_telefono||'').replace(/\D/g,'')}', ${v.idventas})">
+                      onclick="PedidosApp.mensajeCliente('${String(v.cliente_telefono||'').replace(/\D/g,'')}', '${(v.cliente_nombre||'').split(' ')[0].replace(/'/g,"\\'")}')">
                 💬 Mensaje
               </button>` : ''}
             </div>
@@ -261,9 +261,49 @@ const PedidosApp = (() => {
     }
   }
 
-  // ─── AUTO-ASIGNACIÓN REPARTIDOR ──────────
-  async function autoAsignarRepartidor(idVenta, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  // ─── AUTO-ASIGNACIÓN REPARTIDOR ──────────────────────────────
+  // Mapa de timers de retry activos: idVenta → timeoutId
+  const _retryTimers = {};
+
+  function _cancelarRetry(idVenta) {
+    if (_retryTimers[idVenta]) {
+      clearTimeout(_retryTimers[idVenta]);
+      delete _retryTimers[idVenta];
+    }
+  }
+
+  async function autoAsignarRepartidor(idVenta, btn, intento = 1) {
+    _cancelarRetry(idVenta);
+
+    // Actualizar estado visual del botón
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = intento === 1
+        ? '⏳ Buscando...'
+        : `🔍 Intento ${intento}...`;
+    }
+
+    // Si es el segundo intento, agregar botón "Manual" en la fila
+    if (intento === 2) {
+      const row = document.getElementById('row-' + idVenta);
+      if (row && !row.querySelector('.btn-manual-rep')) {
+        const acciones = row.querySelector('.acciones-cell');
+        if (acciones) {
+          const manualBtn = document.createElement('button');
+          manualBtn.className = 'btn-accion btn-reasignar btn-manual-rep';
+          manualBtn.style.cssText = 'margin-top:4px;font-size:11px';
+          manualBtn.textContent = '👤 Asignar manual';
+          manualBtn.onclick = () => {
+            _cancelarRetry(idVenta);
+            manualBtn.remove();
+            if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+            abrirModalRepartidor(idVenta);
+          };
+          acciones.appendChild(manualBtn);
+        }
+      }
+    }
+
     try {
       const res  = await fetch('api/auto_asignar_repartidor.php', {
         method: 'POST',
@@ -271,20 +311,37 @@ const PedidosApp = (() => {
         body: JSON.stringify({ id_venta: idVenta })
       });
       const data = await res.json();
+
       if (data.success) {
+        // Asignado ✅ — limpiar todo
+        _cancelarRetry(idVenta);
+        const row = document.getElementById('row-' + idVenta);
+        row?.querySelector('.btn-manual-rep')?.remove();
         showToast(`✅ Asignado a ${data.repartidor}`, 'success');
         cargarPedidos();
+
       } else if (data.sin_repartidor) {
-        showToast('⚠️ Sin repartidores disponibles, asigná manualmente', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = '💾'; }
-        await abrirModalRepartidor(idVenta);
+        // Sin repartidor disponible → reintentar en 10 segundos
+        showToast(`⚠️ Sin repartidores libres. Reintentando en 10s... (intento ${intento})`, 'warning');
+        _retryTimers[idVenta] = setTimeout(
+          () => autoAsignarRepartidor(idVenta, btn, intento + 1),
+          10_000
+        );
+
       } else {
+        // Error inesperado → no reintentar
+        _cancelarRetry(idVenta);
         showToast('Error: ' + (data.message || 'No se pudo asignar'), 'error');
         if (btn) { btn.disabled = false; btn.textContent = '💾'; }
       }
+
     } catch (e) {
-      showToast('Error de conexión', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+      // Error de red → reintentar igual
+      showToast(`⚠️ Error de conexión. Reintentando en 10s... (intento ${intento})`, 'warning');
+      _retryTimers[idVenta] = setTimeout(
+        () => autoAsignarRepartidor(idVenta, btn, intento + 1),
+        10_000
+      );
     }
   }
 
@@ -439,12 +496,13 @@ const PedidosApp = (() => {
     document.getElementById('modal-detalle').style.display = 'none';
   }
 
-  function mensajeCliente(telefono, idVenta) {
+  function mensajeCliente(telefono, nombre) {
     if (!telefono) { showToast('Sin número de teléfono registrado', 'error'); return; }
     let num = telefono.replace(/\D/g, '');
     if (num.startsWith('0')) num = num.slice(1);
     if (!num.startsWith('54')) num = '54' + num;
-    const msg = encodeURIComponent(`¡Hola! 👋 Te escribimos desde Canetto. Tu pedido #${idVenta} está en camino. ¡Gracias por elegirnos! 🍪`);
+    const saludo = nombre ? `¡Hola, ${nombre}! 👋` : '¡Hola! 👋';
+    const msg = encodeURIComponent(`${saludo} Tu pedido está en camino. ¡Gracias por elegirnos! 🍪`);
     window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   }
 

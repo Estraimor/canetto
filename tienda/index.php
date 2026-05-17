@@ -383,6 +383,19 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   </div>
 </header>
 
+<!-- ── Barra de ubicación seleccionada ──────────────────────────── -->
+<?php if ($cliente_id): ?>
+<div id="locBar" style="display:none;background:#f0f9ff;border-bottom:1px solid #dbeafe;
+     padding:9px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent"
+     onclick="cambiarUbicacion()">
+  <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:8px">
+    <span id="locBarText" style="font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+    <span style="font-size:12px;color:#93c5fd;flex-shrink:0;font-weight:600;white-space:nowrap">Cambiar <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></span>
+  </div>
+</div>
+<?php endif; ?>
+<!-- ─────────────────────────────────────────────────────────────── -->
+
 <!-- ── CAROUSEL (full bleed) ───── -->
 <div class="swiper" id="mainSwiper">
   <div class="swiper-wrapper">
@@ -1599,13 +1612,8 @@ function setEntrega(tipo){
     if(el) el.style.display='none';
   }
   if(tipo==='envio') {
-    // Si el usuario eligió dirección al entrar, auto-aplicarla
-    const sess = sessionStorage.getItem('canetto_dir_sesion');
-    if (sess && sess !== 'skip' && !_dirSeleccionada) {
-      try { _dirSeleccionada = JSON.parse(sess).id; } catch {}
-    }
     renderDirsGuardadas();
-    // Auto-usar la dirección pre-seleccionada
+    // Auto-aplicar la dirección elegida en el modal de entrada
     if (_dirSeleccionada) usarDirGuardada(_dirSeleccionada);
   }
   const sub=document.querySelector('.ck-success-sub');
@@ -1618,13 +1626,7 @@ function setEntrega(tipo){
 let _dirs = [...(window.DIRS_GUARDADAS||[])];
 let _dirSeleccionada = null;
 
-// Pre-cargar selección de sesión (elegida al entrar a la tienda)
-(function() {
-  const sess = sessionStorage.getItem('canetto_dir_sesion');
-  if (sess && sess !== 'skip') {
-    try { _dirSeleccionada = JSON.parse(sess).id; } catch {}
-  }
-})();
+// _dirSeleccionada se setea en seleccionarDirSesion() cuando el usuario elige en el modal
 
 function renderDirsGuardadas(){
   const wrap = document.getElementById('dirsGuardadasWrap');
@@ -2671,116 +2673,220 @@ document.getElementById('toppingsModal')?.addEventListener('click', e => {
   </div>
 </div>
 
-<!-- ── Modal selección de ubicación ──────────────────────────────── -->
-<div id="locationModalBg" onclick="cerrarLocationModal()" style="display:none;position:fixed;
-     top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:9997"></div>
-<div id="locationModal" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
-     background:#fff;border-radius:20px 20px 0 0;padding:20px 20px 28px;
-     box-shadow:0 -8px 32px rgba(0,0,0,.15);max-height:80vh;overflow-y:auto">
-  <div style="text-align:center;margin-bottom:16px">
-    <div style="width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 16px"></div>
-    <p style="font-size:17px;font-weight:800;color:#111;margin:0 0 4px" id="locationModalTitle">¿Desde dónde pedís?</p>
-    <p style="font-size:13px;color:#888;margin:0" id="locationModalSub">Si elegís envío a domicilio, usaremos esta dirección automáticamente</p>
+<!-- ══ Modal ubicación — wrapper único position:fixed (fix iOS overflow-x:hidden) ══ -->
+<div id="locModalWrap" style="
+     display:none;position:fixed;inset:0;z-index:99990;
+     flex-direction:column;justify-content:flex-end;
+     opacity:0;transition:opacity .2s ease">
+  <!-- Backdrop -->
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.52)"
+       onclick="cerrarLocationModal()"></div>
+  <!-- Bottom sheet -->
+  <div id="locSheet" style="
+       position:relative;z-index:1;width:100%;background:#fff;
+       border-radius:20px 20px 0 0;
+       box-shadow:0 -8px 40px rgba(0,0,0,.18);
+       max-height:86vh;overflow-y:auto;overflow-x:hidden;
+       -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+       transform:translateY(100%);
+       transition:transform .38s cubic-bezier(.32,.72,0,1);
+       padding:20px 20px 0;
+       padding-bottom:max(20px, env(safe-area-inset-bottom))">
+
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 16px"></div>
+      <p style="font-size:17px;font-weight:800;color:#111;margin:0 0 5px" id="locationModalTitle">¿Desde dónde pedís?</p>
+      <p style="font-size:13px;color:#888;margin:0;line-height:1.5" id="locationModalSub">Si elegís envío a domicilio, usaremos esta dirección</p>
+    </div>
+
+    <div id="locationModalDirs"></div>
+
+    <div style="padding-bottom:20px;margin-top:4px">
+      <button onclick="cerrarLocationModal()" id="locationModalSkip"
+              style="width:100%;padding:13px;border-radius:12px;
+              border:1.5px solid #e5e7eb;background:#fff;font-size:14px;
+              color:#aaa;cursor:pointer;font-weight:600;font-family:inherit;
+              -webkit-tap-highlight-color:transparent">
+        Continuar sin seleccionar
+      </button>
+    </div>
   </div>
-  <div id="locationModalDirs"></div>
-  <button onclick="cerrarLocationModal()" id="locationModalSkip"
-          style="width:100%;padding:13px;border-radius:12px;
-          border:1.5px solid #e5e7eb;background:#fff;font-size:14px;color:#888;cursor:pointer;
-          font-weight:600;margin-top:6px;font-family:inherit">
-    Continuar sin seleccionar
-  </button>
 </div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
 
 <script>
-(function() {
+/* ════════════════════════════════════════════════════════════════
+   UBICACIÓN
+   sessionStorage 'canetto_loc':
+     null            → nunca eligió → mostrar modal
+     '{"tipo":"sin"}'→ eligió sin ubicación → barra gris, no preguntar
+     '{"tipo":"dir","dir":{...}}' → eligió dirección → barra azul, no preguntar
+   Se borra en login → vuelve a preguntar en la siguiente visita post-login
+════════════════════════════════════════════════════════════════ */
+
+function _getLoc() {
+  try { return JSON.parse(sessionStorage.getItem('canetto_loc')); } catch { return null; }
+}
+function _setLoc(obj) {
+  sessionStorage.setItem('canetto_loc', JSON.stringify(obj));
+}
+
+/* ── Barra superior ─────────────────────────────────────────── */
+function actualizarLocBar() {
+  const bar = document.getElementById('locBar');
+  const txt = document.getElementById('locBarText');
+  if (!bar) return;
+  const loc = _getLoc();
+
+  if (loc?.tipo === 'dir') {
+    bar.style.background   = '#f0f9ff';
+    bar.style.borderBottom = '1px solid #dbeafe';
+    txt.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#3b82f6;margin-right:5px"></i>`
+                  + `<span style="color:#1e40af">Pedís desde: <strong>${esc2(loc.dir.apodo)}</strong></span>`;
+    bar.style.display = 'block';
+
+  } else if (loc?.tipo === 'sin') {
+    bar.style.background   = '#fafafa';
+    bar.style.borderBottom = '1px solid #e5e7eb';
+    txt.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#bbb;margin-right:5px"></i>`
+                  + `<span style="color:#999">Sin ubicación seleccionada</span>`;
+    bar.style.display = 'block';
+
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+/* Toca "Cambiar" → borrar y volver a preguntar */
+function cambiarUbicacion() {
+  sessionStorage.removeItem('canetto_loc');
+  _dirSeleccionada = null;
+  actualizarLocBar();
+  _abrirModal();
+}
+
+/* ── Cookies ─────────────────────────────────────────────────── */
+(function init() {
+  actualizarLocBar();  // mostrar barra con lo que haya guardado
   if (!localStorage.getItem('canetto_cookie_consent')) {
     document.getElementById('cookieBanner').style.display = 'block';
-  } else {
-    setTimeout(mostrarLocationModal, 600);
+  } else if (!_getLoc()) {
+    // Aún no eligió ubicación esta sesión → preguntar
+    setTimeout(_abrirModal, 700);
   }
+  // Si ya eligió (dir o sin), la barra está visible y no se pregunta
 })();
 
 function aceptarCookies(tipo) {
   localStorage.setItem('canetto_cookie_consent', tipo);
   document.getElementById('cookieBanner').style.display = 'none';
-  setTimeout(mostrarLocationModal, 400);
+  if (!_getLoc()) setTimeout(_abrirModal, 450);
 }
 
-function mostrarLocationModal() {
-  if (!window.CLIENTE_PHP) return; // solo para usuarios logueados
-  if (sessionStorage.getItem('canetto_dir_sesion')) return;
+/* ── Modal ───────────────────────────────────────────────────── */
+function _buildDirsHtml(dirs) {
+  return dirs.map(d => `
+    <button type="button" onclick="seleccionarDirSesion(${d.id})"
+        style="width:100%;display:flex;align-items:center;gap:12px;padding:15px 14px;
+               border-radius:14px;border:1.5px solid #e5e7eb;background:#fafafa;
+               margin-bottom:10px;cursor:pointer;text-align:left;font-family:inherit;
+               -webkit-tap-highlight-color:rgba(200,142,153,.15)">
+      <span style="font-size:22px;flex-shrink:0">📍</span>
+      <div style="min-width:0;flex:1">
+        <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:2px;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc2(d.apodo)}</div>
+        <div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;
+                    text-overflow:ellipsis">${esc2(d.direccion)}</div>
+      </div>
+      <i class="fa-solid fa-chevron-right" style="color:#ddd;font-size:11px;flex-shrink:0"></i>
+    </button>`).join('');
+}
 
-  const dirs = window.DIRS_GUARDADAS || [];
+function _abrirModal() {
+  if (!window.CLIENTE_PHP) return;
+
+  const dirs      = window.DIRS_GUARDADAS || [];
   const container = document.getElementById('locationModalDirs');
+  const skipBtn   = document.getElementById('locationModalSkip');
 
   if (dirs.length > 0) {
-    // Tiene direcciones guardadas → mostrar para elegir
-    document.getElementById('locationModalTitle').textContent = '¿Desde dónde pedís?';
-    document.getElementById('locationModalSub').textContent   = 'Si elegís envío a domicilio, usaremos esta dirección automáticamente';
-    document.getElementById('locationModalSkip').textContent  = 'Continuar sin seleccionar';
-    container.innerHTML = dirs.map(d => `
-      <button type="button" onclick="seleccionarDirSesion(${d.id})"
-          style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;
-                 border-radius:14px;border:1.5px solid #e5e7eb;background:#fafafa;
-                 margin-bottom:10px;cursor:pointer;text-align:left;font-family:inherit;
-                 transition:border-color .15s,background .15s"
-          onmouseover="this.style.borderColor='#c88e99';this.style.background='#fdf0f3'"
-          onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#fafafa'">
-        <span style="font-size:22px;flex-shrink:0">📍</span>
-        <div style="min-width:0">
-          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:2px;
-                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc2(d.apodo)}</div>
-          <div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;
-                      text-overflow:ellipsis">${esc2(d.direccion)}</div>
-        </div>
-        <i class="fa-solid fa-chevron-right" style="color:#ddd;font-size:11px;flex-shrink:0;margin-left:auto"></i>
-      </button>`).join('');
+    document.getElementById('locationModalTitle').textContent = '¿Desde dónde pedís hoy?';
+    document.getElementById('locationModalSub').textContent   = 'Si elegís envío a domicilio, usaremos esta dirección';
+    skipBtn.textContent = 'Continuar sin ubicación';
+    container.innerHTML = _buildDirsHtml(dirs);
   } else {
-    // Sin direcciones guardadas → invitar a agregar una
     document.getElementById('locationModalTitle').textContent = '¿Querés recibir pedidos en casa?';
-    document.getElementById('locationModalSub').textContent   = 'Guardá tu dirección ahora para pedidos a domicilio más rápidos';
-    document.getElementById('locationModalSkip').textContent  = 'Ahora no, continuar';
+    document.getElementById('locationModalSub').textContent   = 'Guardá tu dirección para pedidos a domicilio más rápidos';
+    skipBtn.textContent = 'Continuar sin ubicación';
     container.innerHTML = `
       <div style="background:#fdf4f7;border:1.5px solid #f0d0d8;border-radius:14px;
-                  padding:18px;margin-bottom:14px;text-align:center">
-        <div style="font-size:36px;margin-bottom:10px">🏠</div>
-        <p style="font-size:13px;color:#555;margin:0 0 16px;line-height:1.6">
-          Cuando pedís a domicilio, podemos pre-completar tu dirección automáticamente.
-          <br>¡Hacé tu primer pedido más rápido!
+                  padding:20px;margin-bottom:14px;text-align:center">
+        <div style="font-size:38px;margin-bottom:10px">🏠</div>
+        <p style="font-size:13px;color:#555;margin:0 0 18px;line-height:1.65">
+          Cuando pedís a domicilio podemos pre-completar tu dirección.<br>
+          <strong style="color:#c88e99">¡Hacé tu primer pedido más rápido!</strong>
         </p>
         <a href="mi-cuenta.php"
-           onclick="sessionStorage.setItem('canetto_dir_sesion','skip')"
-           style="display:inline-block;padding:11px 26px;border-radius:12px;
+           style="display:inline-block;padding:12px 28px;border-radius:12px;
                   background:#c88e99;color:#fff;font-size:14px;font-weight:700;
-                  text-decoration:none">
-          <i class="fa-solid fa-plus" style="margin-right:6px"></i>Agregar dirección
+                  text-decoration:none;-webkit-tap-highlight-color:transparent">
+          <i class="fa-solid fa-plus" style="margin-right:7px"></i>Agregar dirección
         </a>
       </div>`;
   }
 
-  document.getElementById('locationModalBg').style.display = 'block';
-  document.getElementById('locationModal').style.display = 'block';
-  document.body.style.overflow = 'hidden';
+  const wrap  = document.getElementById('locModalWrap');
+  const sheet = document.getElementById('locSheet');
+  wrap.style.display    = 'flex';
+  wrap.style.opacity    = '0';
+  sheet.style.transform = 'translateY(100%)';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    wrap.style.opacity    = '1';
+    sheet.style.transform = 'translateY(0)';
+  }));
+  document.body.style.overflow            = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
 }
 
 function seleccionarDirSesion(id) {
-  const dirs = window.DIRS_GUARDADAS || [];
-  const dir = dirs.find(d => d.id == id);
-  if (dir) {
-    sessionStorage.setItem('canetto_dir_sesion', JSON.stringify(dir));
-    _dirSeleccionada = id;
-  }
-  cerrarLocationModal();
+  const dir = (window.DIRS_GUARDADAS || []).find(d => d.id == id);
+  if (!dir) { cerrarLocationModal(); return; }
+
+  document.querySelectorAll('#locationModalDirs button').forEach(b => {
+    if (b.getAttribute('onclick') === `seleccionarDirSesion(${id})`) {
+      b.style.borderColor = '#c88e99';
+      b.style.background  = '#fdf0f3';
+    }
+  });
+
+  _setLoc({ tipo: 'dir', dir });
+  _dirSeleccionada = dir.id;
+  actualizarLocBar();
+  setTimeout(cerrarLocationModal, 200);
 }
 
 function cerrarLocationModal() {
-  document.getElementById('locationModal').style.display = 'none';
-  document.getElementById('locationModalBg').style.display = 'none';
-  document.body.style.overflow = '';
-  if (!sessionStorage.getItem('canetto_dir_sesion')) {
-    sessionStorage.setItem('canetto_dir_sesion', 'skip');
+  // Si cerró sin elegir dirección → guardar "sin ubicación"
+  if (!_getLoc()) {
+    _setLoc({ tipo: 'sin' });
+    actualizarLocBar();
   }
+  const wrap  = document.getElementById('locModalWrap');
+  const sheet = document.getElementById('locSheet');
+  sheet.style.transform = 'translateY(100%)';
+  wrap.style.opacity    = '0';
+  setTimeout(() => {
+    wrap.style.display                      = 'none';
+    document.body.style.overflow            = '';
+    document.documentElement.style.overflow = '';
+  }, 380);
 }
+
+// Pre-cargar _dirSeleccionada si ya eligió en esta sesión
+(function() {
+  const loc = _getLoc();
+  if (loc?.tipo === 'dir' && loc.dir?.id) _dirSeleccionada = loc.dir.id;
+})();
 </script>
 <!-- ─────────────────────────────────────────────────────────────── -->
 <script src="transitions.js"></script>

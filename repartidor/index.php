@@ -217,6 +217,42 @@ try {
 </head>
 <body>
 
+<!-- ══ Overlay éxito login repartidor ══════════════════════════ -->
+<div id="repLoginOverlay" style="
+    display:none;position:fixed;inset:0;z-index:99999;
+    background:linear-gradient(150deg,rgba(15,23,42,0.97) 0%,rgba(26,26,46,0.97) 100%);
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    flex-direction:column;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .22s ease">
+  <div id="repSuccessCard" style="text-align:center;transform:scale(.6) translateY(24px);opacity:0;
+       transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;will-change:transform,opacity">
+    <div style="position:relative;width:110px;height:110px;margin:0 auto 26px">
+      <svg width="110" height="110" viewBox="0 0 110 110" style="position:absolute;inset:0">
+        <circle cx="55" cy="55" r="50" fill="rgba(200,142,153,.15)"/>
+        <circle id="repRing" cx="55" cy="55" r="50" fill="none" stroke="#c88e99" stroke-width="2.5"
+                stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"
+                transform="rotate(-90 55 55)"
+                style="transition:stroke-dashoffset .7s cubic-bezier(.16,1,.3,1) .15s"/>
+        <polyline id="repCheck" points="30,56 47,73 80,36" fill="none" stroke="#c88e99"
+                  stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-dasharray="76" stroke-dashoffset="76"
+                  style="transition:stroke-dashoffset .4s cubic-bezier(.16,1,.3,1) .75s"/>
+      </svg>
+    </div>
+    <div id="repSuccessName" style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.5px;
+         margin-bottom:8px;opacity:0;transform:translateY(12px);
+         transition:opacity .4s ease .9s,transform .4s cubic-bezier(.16,1,.3,1) .9s"></div>
+    <div style="font-size:14px;color:#64748b;font-weight:500;opacity:0;transform:translateY(8px);
+         transition:opacity .35s ease 1.05s,transform .35s ease 1.05s" id="repSuccessSub">
+      ¡Listo para repartir! 🛵
+    </div>
+  </div>
+  <div style="position:absolute;bottom:34px;font-size:11px;letter-spacing:5px;
+       text-transform:uppercase;font-weight:700;color:#334155;
+       opacity:0;transition:opacity .5s ease 1.1s" id="repSuccessBrand">CANETTO</div>
+</div>
+<!-- ════════════════════════════════════════════════════════════ -->
+
 <!-- ══════════════════════════════════════
      LOGIN
 ══════════════════════════════════════ -->
@@ -868,22 +904,69 @@ async function doLogin() {
     const data = await res.json();
     if (data.success) {
       const nombre = data.nombre;
-      document.getElementById('dashNombre').textContent = nombre;
-      document.getElementById('dashAvatar').textContent = initials(nombre);
-      document.getElementById('appLogin').classList.add('hidden');
-      document.getElementById('appDash').classList.remove('hidden');
-      cargarPedidos();
-      startAutoRefresh();
-      registrarPushRepartidor();
-      mostrarPantallaPermisos();
+      // Mostrar animación y luego pasar al dashboard
+      _repShowOverlay(nombre, () => {
+        document.getElementById('dashNombre').textContent = nombre;
+        document.getElementById('dashAvatar').textContent = initials(nombre);
+        document.getElementById('appLogin').classList.add('hidden');
+        document.getElementById('appDash').classList.remove('hidden');
+        cargarPedidos();
+        startAutoRefresh();
+        registrarPushRepartidor();
+        mostrarPantallaPermisos();
+      });
     } else {
       showLoginAlert(data.message || 'Datos incorrectos');
+      btn.disabled  = false;
+      btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar';
     }
   } catch (e) {
     showLoginAlert('Error de conexión');
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar';
   }
-  btn.disabled  = false;
-  btn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar';
+}
+
+function _repShowOverlay(nombre, onDone) {
+  const overlay = document.getElementById('repLoginOverlay');
+  const card    = document.getElementById('repSuccessCard');
+  const ring    = document.getElementById('repRing');
+  const check   = document.getElementById('repCheck');
+  const nameEl  = document.getElementById('repSuccessName');
+  const sub     = document.getElementById('repSuccessSub');
+  const brand   = document.getElementById('repSuccessBrand');
+
+  nameEl.textContent = '¡Hola, ' + nombre.split(' ')[0] + '!';
+
+  const noTrans = el => { el.style.transition = 'none'; };
+  [ring, check, nameEl, sub, brand].forEach(noTrans);
+  card.style.transition = 'none';
+  ring.style.strokeDashoffset  = '314';
+  check.style.strokeDashoffset = '76';
+  nameEl.style.opacity = '0'; nameEl.style.transform = 'translateY(12px)';
+  sub.style.opacity    = '0'; sub.style.transform    = 'translateY(8px)';
+  brand.style.opacity  = '0';
+  card.style.transform = 'scale(.6) translateY(24px)'; card.style.opacity = '0';
+  overlay.style.opacity = '0'; overlay.style.display = 'flex';
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    overlay.style.transition = 'opacity .22s ease'; overlay.style.opacity = '1';
+    card.style.transition = 'transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s ease';
+    card.style.transform  = 'scale(1) translateY(0)'; card.style.opacity = '1';
+    setTimeout(() => { ring.style.transition  = 'stroke-dashoffset .7s cubic-bezier(.16,1,.3,1)'; ring.style.strokeDashoffset  = '0'; }, 150);
+    setTimeout(() => { check.style.transition = 'stroke-dashoffset .4s cubic-bezier(.16,1,.3,1)'; check.style.strokeDashoffset = '0'; }, 750);
+    setTimeout(() => { nameEl.style.transition = 'opacity .4s ease, transform .4s cubic-bezier(.16,1,.3,1)'; nameEl.style.opacity = '1'; nameEl.style.transform = 'translateY(0)'; }, 900);
+    setTimeout(() => {
+      sub.style.transition   = 'opacity .35s ease, transform .35s ease';
+      sub.style.opacity      = '1'; sub.style.transform = 'translateY(0)';
+      brand.style.transition = 'opacity .5s ease'; brand.style.opacity = '1';
+    }, 1050);
+    // Ocultar overlay y continuar
+    setTimeout(() => {
+      overlay.style.opacity = '0';
+      setTimeout(() => { overlay.style.display = 'none'; if (onDone) onDone(); }, 250);
+    }, 1800);
+  }));
 }
 
 function showLoginAlert(msg) {

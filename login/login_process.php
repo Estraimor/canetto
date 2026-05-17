@@ -4,12 +4,18 @@ define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php'; // configura cookie_domain antes de session_start
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+$esAjax   = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 $usuario  = trim($_POST['usuario']  ?? '');
 $password = trim($_POST['password'] ?? '');
 
-if ($usuario === '' || $password === '') {
-    $_SESSION['error'] = 'Completá todos los campos.';
+function errorLoginAdmin(string $msg, bool $esAjax): never {
+    if ($esAjax) { header('Content-Type: application/json'); echo json_encode(['ok' => false, 'mensaje' => $msg]); exit; }
+    $_SESSION['error'] = $msg;
     header('Location: login.php'); exit;
+}
+
+if ($usuario === '' || $password === '') {
+    errorLoginAdmin('Completá todos los campos.', $esAjax);
 }
 
 $pdo = Conexion::conectar();
@@ -26,15 +32,8 @@ if (!$user) {
     $user = $stmt2->fetch();
 }
 
-if (!$user) {
-    $_SESSION['error'] = 'Usuario o celular no encontrado.';
-    header('Location: login.php'); exit;
-}
-
-if ((int)$user['activo'] !== 1) {
-    $_SESSION['error'] = 'Usuario inactivo.';
-    header('Location: login.php'); exit;
-}
+if (!$user) { errorLoginAdmin('Usuario o celular no encontrado.', $esAjax); }
+if ((int)$user['activo'] !== 1) { errorLoginAdmin('Usuario inactivo.', $esAjax); }
 
 // Verificar contraseña (soporta bcrypt y texto plano legado)
 $hash     = $user['password_hash'];
@@ -42,10 +41,7 @@ $esValida = str_starts_with($hash, '$2y$')
     ? password_verify($password, $hash)
     : ($password === $hash);
 
-if (!$esValida) {
-    $_SESSION['error'] = 'Contraseña incorrecta.';
-    header('Location: login.php'); exit;
-}
+if (!$esValida) { errorLoginAdmin('Contraseña incorrecta.', $esAjax); }
 
 // Buscar TODOS los roles del usuario
 $rolStmt = $pdo->prepare("
@@ -65,10 +61,8 @@ foreach ($roles as $r) {
 }
 
 if (!$rolAdmin) {
-    // No tiene rol de admin → acceso denegado en este login
     session_destroy();
-    $_SESSION['error'] = 'No tenés permiso para acceder al panel de administración.';
-    redirect(URL_LOGIN . '/login.php');
+    errorLoginAdmin('No tenés permiso para acceder al panel de administración.', $esAjax);
 }
 
 session_regenerate_id(true);
@@ -79,4 +73,9 @@ $_SESSION['apellido']   = $user['apellido'];
 $_SESSION['rol']        = strtolower($rolAdmin['nombre']);
 $_SESSION['rol_id']     = $rolAdmin['idroles'];
 
+if ($esAjax) {
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => true, 'nombre' => trim($user['nombre'] . ' ' . ($user['apellido'] ?? '')), 'redirect' => URL_ADMIN . '/index.php']);
+    exit;
+}
 redirect(URL_ADMIN . '/index.php');

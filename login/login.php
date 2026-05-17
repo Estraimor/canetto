@@ -41,6 +41,42 @@ unset($_SESSION['error']);
 </head>
 <body>
 
+<!-- ══ Overlay éxito — pre-creado (fix position:fixed en flex body) ══ -->
+<div id="gLoginSuccess" style="
+    position:fixed;inset:0;z-index:99999;
+    background:linear-gradient(150deg,rgba(255,246,249,0.97) 0%,rgba(255,255,255,0.97) 100%);
+    backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .22s ease">
+  <div id="gSuccessCard" style="text-align:center;transform:scale(.6) translateY(24px);opacity:0;
+      transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s ease;will-change:transform,opacity">
+    <div style="position:relative;width:110px;height:110px;margin:0 auto 26px">
+      <svg width="110" height="110" viewBox="0 0 110 110" style="position:absolute;inset:0">
+        <circle cx="55" cy="55" r="50" fill="#fdf4f7"/>
+        <circle id="gRing" cx="55" cy="55" r="50" fill="none" stroke="#c88e99" stroke-width="2.5"
+                stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"
+                transform="rotate(-90 55 55)"
+                style="transition:stroke-dashoffset .7s cubic-bezier(.16,1,.3,1) .15s"/>
+        <polyline id="gCheck" points="30,56 47,73 80,36" fill="none" stroke="#c88e99"
+                  stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-dasharray="76" stroke-dashoffset="76"
+                  style="transition:stroke-dashoffset .4s cubic-bezier(.16,1,.3,1) .75s"/>
+      </svg>
+    </div>
+    <div id="gSuccessName" style="font-size:26px;font-weight:800;color:#111;letter-spacing:-.5px;
+        margin-bottom:8px;opacity:0;transform:translateY(12px);
+        transition:opacity .4s ease .9s,transform .4s cubic-bezier(.16,1,.3,1) .9s"></div>
+    <div id="gSuccessSub" style="font-size:14px;color:#bbb;font-weight:500;opacity:0;
+        transform:translateY(8px);transition:opacity .35s ease 1.05s,transform .35s ease 1.05s">
+      Sesión iniciada correctamente ✓
+    </div>
+  </div>
+  <div id="gSuccessBrand" style="position:absolute;bottom:34px;font-size:11px;letter-spacing:5px;
+       text-transform:uppercase;font-weight:700;color:#e0d0d4;
+       opacity:0;transition:opacity .5s ease 1.1s">CANETTO</div>
+</div>
+<!-- ════════════════════════════════════════════════════════════ -->
+
 <div class="login-container">
 
   <div class="logo">CANETTO</div>
@@ -53,16 +89,17 @@ unset($_SESSION['error']);
       <div class="lc-alert err"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <form action="login_process.php" method="POST">
+    <div id="loginAlertAdmin" style="display:none;background:#f9edf0;color:#c88e99;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+    <form id="loginFormAdmin" onsubmit="doLoginNormalAdmin(event)" method="POST">
       <div class="input-group">
         <label>Usuario o celular</label>
-        <input type="text" name="usuario" required autocomplete="username" placeholder="Tu usuario o número de celular">
+        <input type="text" name="usuario" id="aUsuario" required autocomplete="username" placeholder="Tu usuario o número de celular">
       </div>
       <div class="input-group">
         <label>Contraseña</label>
-        <input type="password" name="password" required autocomplete="current-password">
+        <input type="password" name="password" id="aPassword" required autocomplete="current-password">
       </div>
-      <button type="submit" class="btn-login">Ingresar</button>
+      <button type="submit" class="btn-login" id="btnLoginAdmin">Ingresar</button>
     </form>
 
     <div style="text-align:center;margin-top:4px;margin-bottom:14px;">
@@ -194,21 +231,63 @@ function _gReset(btn) {
     btn.querySelector('.g-label').textContent = 'Ingresar con Google';
 }
 
+// ── Login normal Admin (con animación) ─────────────────────────────────────
+async function doLoginNormalAdmin(e) {
+    e.preventDefault();
+    const btn   = document.getElementById('btnLoginAdmin');
+    const alert = document.getElementById('loginAlertAdmin');
+    alert.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Ingresando...';
+    try {
+        const data = await fetch('login_process.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new FormData(document.getElementById('loginFormAdmin')),
+        }).then(r => r.json());
+        if (data.ok) {
+            btn.textContent = '¡Listo!';
+            _gShowOverlay(data.nombre);
+            setTimeout(() => window.location.href = data.redirect, 1500);
+        } else {
+            alert.textContent = data.mensaje || 'Datos incorrectos';
+            alert.style.display = 'block';
+            btn.disabled = false; btn.textContent = 'Ingresar';
+        }
+    } catch {
+        alert.textContent = 'Error de conexión. Intentá de nuevo.';
+        alert.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Ingresar';
+    }
+}
+
 function _gShowOverlay(nombre) {
-    const ov = document.createElement('div');
-    ov.className = 'g-success-overlay';
-    ov.innerHTML = `
-        <div class="g-success-card">
-            <svg class="g-success-svg" viewBox="0 0 96 96">
-                <circle cx="48" cy="48" r="43" fill="#fdf4f7" stroke="none"/>
-                <circle class="g-svg-ring" cx="48" cy="48" r="43"/>
-                <polyline class="g-svg-check" points="28,50 42,64 68,34"/>
-            </svg>
-            <div class="g-welcome-name">¡Hola, ${nombre}!</div>
-            <div class="g-welcome-sub">Iniciaste sesión correctamente</div>
-        </div>
-        <div class="g-overlay-brand">Canetto</div>`;
-    document.body.appendChild(ov);
+    const overlay = document.getElementById('gLoginSuccess');
+    const card    = document.getElementById('gSuccessCard');
+    const ring    = document.getElementById('gRing');
+    const check   = document.getElementById('gCheck');
+    const nameEl  = document.getElementById('gSuccessName');
+    const sub     = document.getElementById('gSuccessSub');
+    const brand   = document.getElementById('gSuccessBrand');
+    nameEl.textContent = '¡Hola, ' + nombre + '!';
+    const noTrans = el => { el.style.transition = 'none'; };
+    [ring, check, nameEl, sub, brand].forEach(noTrans);
+    card.style.transition = 'none';
+    ring.style.strokeDashoffset  = '314';
+    check.style.strokeDashoffset = '76';
+    nameEl.style.opacity = '0'; nameEl.style.transform = 'translateY(12px)';
+    sub.style.opacity    = '0'; sub.style.transform    = 'translateY(8px)';
+    brand.style.opacity  = '0';
+    card.style.transform = 'scale(.6) translateY(24px)'; card.style.opacity = '0';
+    overlay.style.opacity = '0'; overlay.style.display = 'flex';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        overlay.style.transition = 'opacity .22s ease'; overlay.style.opacity = '1';
+        card.style.transition = 'transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s ease';
+        card.style.transform  = 'scale(1) translateY(0)'; card.style.opacity = '1';
+        setTimeout(() => { ring.style.transition = 'stroke-dashoffset .7s cubic-bezier(.16,1,.3,1)'; ring.style.strokeDashoffset = '0'; }, 150);
+        setTimeout(() => { check.style.transition = 'stroke-dashoffset .4s cubic-bezier(.16,1,.3,1)'; check.style.strokeDashoffset = '0'; }, 750);
+        setTimeout(() => { nameEl.style.transition = 'opacity .4s ease, transform .4s cubic-bezier(.16,1,.3,1)'; nameEl.style.opacity = '1'; nameEl.style.transform = 'translateY(0)'; }, 900);
+        setTimeout(() => { sub.style.transition = 'opacity .35s ease, transform .35s ease'; sub.style.opacity = '1'; sub.style.transform = 'translateY(0)'; brand.style.transition = 'opacity .5s ease'; brand.style.opacity = '1'; }, 1050);
+    }));
 }
 
 function iniciarGoogleAdmin() {
@@ -235,18 +314,14 @@ function iniciarGoogleAdmin() {
         type: 'standard', size: 'large', theme: 'outline', text: 'signin_with',
     });
 
-    requestAnimationFrame(() => {
+    let intentos = 0;
+    const intentarClick = () => {
         const gBtn = container.querySelector('div[role=button], [jsname], iframe');
-        if (gBtn) {
-            gBtn.click();
-        } else {
-            google.accounts.id.prompt(notification => {
-                if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
-                    _gReset(btnEl);
-                }
-            });
-        }
-    });
+        if (gBtn) { gBtn.click(); }
+        else if (intentos < 15) { intentos++; setTimeout(intentarClick, 100); }
+        else { _gReset(btnEl); showGoogleAlertAdmin('No se pudo abrir Google. Intentá de nuevo.', '#c88e99', '#f9edf0'); }
+    };
+    setTimeout(intentarClick, 150);
 }
 
 async function handleGoogleAdmin(response) {

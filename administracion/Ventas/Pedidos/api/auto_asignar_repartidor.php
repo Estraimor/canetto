@@ -73,7 +73,7 @@ try {
             HAVING distancia_km <= :radio
             ORDER BY RAND()
         ");
-        $stmt->execute([':lat' => $lat, ':lng' => $lng, ':lat2' => $lat, ':radio' => RADIO_KM]);
+        $stmt->execute([':lat' => $lat, ':lng' => $lng, ':lat2' => $lat, ':radio' => $radioKm]);
         $candidatos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

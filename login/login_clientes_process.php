@@ -4,12 +4,22 @@ define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php'; // configura cookie_domain antes de session_start
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+$esAjax   = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 $usuario  = trim($_POST['usuario']  ?? '');
 $password = trim($_POST['password'] ?? '');
 
-if ($usuario === '' || $password === '') {
-    $_SESSION['error_cliente'] = 'Completá todos los campos.';
+function errorLogin(string $msg, bool $esAjax): never {
+    if ($esAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => false, 'mensaje' => $msg]);
+        exit;
+    }
+    $_SESSION['error_cliente'] = $msg;
     header('Location: login_clientes.php'); exit;
+}
+
+if ($usuario === '' || $password === '') {
+    errorLogin('Completá todos los campos.', $esAjax);
 }
 
 $pdo = Conexion::conectar();
@@ -26,13 +36,11 @@ if (!$user) {
 }
 
 if (!$user) {
-    $_SESSION['error_cliente'] = 'Celular o usuario no encontrado.';
-    header('Location: login_clientes.php'); exit;
+    errorLogin('Celular o usuario no encontrado.', $esAjax);
 }
 
 if ((int)$user['activo'] !== 1) {
-    $_SESSION['error_cliente'] = 'Usuario inactivo.';
-    header('Location: login_clientes.php'); exit;
+    errorLogin('Usuario inactivo.', $esAjax);
 }
 
 // Verificar contraseña
@@ -42,8 +50,7 @@ $esValida = str_starts_with($hash, '$2y$')
     : ($password === $hash);
 
 if (!$esValida) {
-    $_SESSION['error_cliente'] = 'Contraseña incorrecta.';
-    header('Location: login_clientes.php'); exit;
+    errorLogin('Contraseña incorrecta.', $esAjax);
 }
 
 // Verificar que tenga rol cliente entre TODOS sus roles
@@ -63,8 +70,7 @@ foreach ($roles as $r) {
 }
 
 if (!$rolCliente) {
-    $_SESSION['error_cliente'] = 'Esta área es solo para clientes.';
-    header('Location: login_clientes.php'); exit;
+    errorLogin('Esta área es solo para clientes.', $esAjax);
 }
 
 $rol = $rolCliente;
@@ -79,4 +85,14 @@ $_SESSION['rol_id']                  = $rol['idroles'] ?? null;
 $_SESSION['tienda_cliente_id']       = $user['idusuario'];
 $_SESSION['tienda_cliente_nombre']   = trim($user['nombre'] . ' ' . ($user['apellido'] ?? ''));
 
+// Si viene por fetch (login con animación), devolver JSON
+if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'ok'       => true,
+        'nombre'   => $_SESSION['tienda_cliente_nombre'],
+        'redirect' => URL_TIENDA . '/index.php',
+    ]);
+    exit;
+}
 redirect(URL_TIENDA . '/index.php');
