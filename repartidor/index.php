@@ -1971,12 +1971,28 @@ function iniciarTracking() {
     enviarUbicacion(pos.coords.latitude, pos.coords.longitude);
   };
 
+  // Enviar posición inmediata al arrancar (sin esperar movimiento)
+  navigator.geolocation.getCurrentPosition(
+    pos => { _lastSentAt = Date.now(); enviarUbicacion(pos.coords.latitude, pos.coords.longitude); },
+    () => {},
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+  );
+
   // watchPosition: dispara automáticamente en cada cambio de posición
   _trackingWatcher = navigator.geolocation.watchPosition(
     onPos,
     () => {},
     { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
   );
+
+  // Heartbeat cada 5 minutos para mantenerse activo aunque no haya movimiento
+  _trackingTimer = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(
+      pos => { _lastSentAt = Date.now(); enviarUbicacion(pos.coords.latitude, pos.coords.longitude); },
+      () => {},
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+    );
+  }, 5 * 60 * 1000);
 }
 
 function detenerTracking() {

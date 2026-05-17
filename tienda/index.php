@@ -1598,7 +1598,16 @@ function setEntrega(tipo){
     const el=document.getElementById('envioEstimate');
     if(el) el.style.display='none';
   }
-  if(tipo==='envio') renderDirsGuardadas();
+  if(tipo==='envio') {
+    // Si el usuario eligió dirección al entrar, auto-aplicarla
+    const sess = sessionStorage.getItem('canetto_dir_sesion');
+    if (sess && sess !== 'skip' && !_dirSeleccionada) {
+      try { _dirSeleccionada = JSON.parse(sess).id; } catch {}
+    }
+    renderDirsGuardadas();
+    // Auto-usar la dirección pre-seleccionada
+    if (_dirSeleccionada) usarDirGuardada(_dirSeleccionada);
+  }
   const sub=document.querySelector('.ck-success-sub');
   if(sub) sub.textContent=tipo==='envio'
     ?'Tu pedido fue registrado. Un repartidor lo llevará a tu domicilio.'
@@ -1608,6 +1617,14 @@ function setEntrega(tipo){
 // ── DIRECCIONES GUARDADAS ────────────────────────────────────────────────────
 let _dirs = [...(window.DIRS_GUARDADAS||[])];
 let _dirSeleccionada = null;
+
+// Pre-cargar selección de sesión (elegida al entrar a la tienda)
+(function() {
+  const sess = sessionStorage.getItem('canetto_dir_sesion');
+  if (sess && sess !== 'skip') {
+    try { _dirSeleccionada = JSON.parse(sess).id; } catch {}
+  }
+})();
 
 function renderDirsGuardadas(){
   const wrap = document.getElementById('dirsGuardadasWrap');
@@ -2626,36 +2643,143 @@ document.getElementById('toppingsModal')?.addEventListener('click', e => {
   </a>
   <?php endif; ?>
 </nav>
-<!-- ── Banner notificaciones ─────────────────────────────────────── -->
+<!-- ── Cookie consent banner ─────────────────────────────────────── -->
 <div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
-     background:#fff;border-top:2px solid #f0d0d8;padding:14px 20px;
+     background:#fff;border-top:2px solid #f0d0d8;padding:16px 20px 20px;
      box-shadow:0 -4px 24px rgba(200,142,153,.18)">
-  <div style="max-width:720px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px">
-    <span style="font-size:20px">🍪</span>
-    <p style="flex:1;min-width:200px;font-size:13px;color:#555;margin:0;line-height:1.5">
-      Queremos avisarte cuando tu pedido esté listo o en camino. Podés activar las notificaciones en cualquier momento desde "Mis pedidos".
-    </p>
-    <div style="display:flex;gap:10px;flex-shrink:0">
-      <button onclick="notifBannerChoice(false)" style="padding:9px 18px;border-radius:20px;border:1.5px solid #ddd;
-              background:#fff;font-size:13px;color:#888;cursor:pointer;font-weight:600">
-        Ahora no
+  <div style="max-width:720px;margin:0 auto">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px">
+      <span style="font-size:22px;flex-shrink:0">🍪</span>
+      <div>
+        <p style="font-size:14px;font-weight:700;color:#111;margin:0 0 5px">Usamos cookies</p>
+        <p style="font-size:12px;color:#666;margin:0;line-height:1.55">
+          Usamos una <strong>cookie de sesión</strong> para mantener tu cuenta activa, y <strong>almacenamiento local</strong>
+          para guardar tu carrito y tus preferencias. No compartimos datos con terceros.
+        </p>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="aceptarCookies('essential')" style="padding:9px 18px;border-radius:20px;border:1.5px solid #ddd;
+              background:#fff;font-size:13px;color:#888;cursor:pointer;font-weight:600;font-family:inherit">
+        Solo esenciales
       </button>
-      <button onclick="notifBannerChoice(true)" style="padding:9px 22px;border-radius:20px;border:none;
-              background:#c88e99;color:#fff;font-size:13px;font-weight:700;cursor:pointer">
-        Activar notificaciones ✓
+      <button onclick="aceptarCookies('all')" style="padding:9px 22px;border-radius:20px;border:none;
+              background:#c88e99;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+        Aceptar todo ✓
       </button>
     </div>
   </div>
 </div>
+
+<!-- ── Modal selección de ubicación ──────────────────────────────── -->
+<div id="locationModalBg" onclick="cerrarLocationModal()" style="display:none;position:fixed;
+     top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:9997"></div>
+<div id="locationModal" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
+     background:#fff;border-radius:20px 20px 0 0;padding:20px 20px 28px;
+     box-shadow:0 -8px 32px rgba(0,0,0,.15);max-height:80vh;overflow-y:auto">
+  <div style="text-align:center;margin-bottom:16px">
+    <div style="width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 16px"></div>
+    <p style="font-size:17px;font-weight:800;color:#111;margin:0 0 4px" id="locationModalTitle">¿Desde dónde pedís?</p>
+    <p style="font-size:13px;color:#888;margin:0" id="locationModalSub">Si elegís envío a domicilio, usaremos esta dirección automáticamente</p>
+  </div>
+  <div id="locationModalDirs"></div>
+  <button onclick="cerrarLocationModal()" id="locationModalSkip"
+          style="width:100%;padding:13px;border-radius:12px;
+          border:1.5px solid #e5e7eb;background:#fff;font-size:14px;color:#888;cursor:pointer;
+          font-weight:600;margin-top:6px;font-family:inherit">
+    Continuar sin seleccionar
+  </button>
+</div>
+
 <script>
 (function() {
   if (!localStorage.getItem('canetto_cookie_consent')) {
     document.getElementById('cookieBanner').style.display = 'block';
+  } else {
+    setTimeout(mostrarLocationModal, 600);
   }
 })();
-function notifBannerChoice(accepted) {
-  localStorage.setItem('canetto_cookie_consent', accepted ? 'all' : 'essential');
+
+function aceptarCookies(tipo) {
+  localStorage.setItem('canetto_cookie_consent', tipo);
   document.getElementById('cookieBanner').style.display = 'none';
+  setTimeout(mostrarLocationModal, 400);
+}
+
+function mostrarLocationModal() {
+  if (!window.CLIENTE_PHP) return; // solo para usuarios logueados
+  if (sessionStorage.getItem('canetto_dir_sesion')) return;
+
+  const dirs = window.DIRS_GUARDADAS || [];
+  const container = document.getElementById('locationModalDirs');
+
+  if (dirs.length > 0) {
+    // Tiene direcciones guardadas → mostrar para elegir
+    document.getElementById('locationModalTitle').textContent = '¿Desde dónde pedís?';
+    document.getElementById('locationModalSub').textContent   = 'Si elegís envío a domicilio, usaremos esta dirección automáticamente';
+    document.getElementById('locationModalSkip').textContent  = 'Continuar sin seleccionar';
+    container.innerHTML = dirs.map(d => `
+      <button type="button" onclick="seleccionarDirSesion(${d.id})"
+          style="width:100%;display:flex;align-items:center;gap:12px;padding:14px;
+                 border-radius:14px;border:1.5px solid #e5e7eb;background:#fafafa;
+                 margin-bottom:10px;cursor:pointer;text-align:left;font-family:inherit;
+                 transition:border-color .15s,background .15s"
+          onmouseover="this.style.borderColor='#c88e99';this.style.background='#fdf0f3'"
+          onmouseout="this.style.borderColor='#e5e7eb';this.style.background='#fafafa'">
+        <span style="font-size:22px;flex-shrink:0">📍</span>
+        <div style="min-width:0">
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:2px;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc2(d.apodo)}</div>
+          <div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;
+                      text-overflow:ellipsis">${esc2(d.direccion)}</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:#ddd;font-size:11px;flex-shrink:0;margin-left:auto"></i>
+      </button>`).join('');
+  } else {
+    // Sin direcciones guardadas → invitar a agregar una
+    document.getElementById('locationModalTitle').textContent = '¿Querés recibir pedidos en casa?';
+    document.getElementById('locationModalSub').textContent   = 'Guardá tu dirección ahora para pedidos a domicilio más rápidos';
+    document.getElementById('locationModalSkip').textContent  = 'Ahora no, continuar';
+    container.innerHTML = `
+      <div style="background:#fdf4f7;border:1.5px solid #f0d0d8;border-radius:14px;
+                  padding:18px;margin-bottom:14px;text-align:center">
+        <div style="font-size:36px;margin-bottom:10px">🏠</div>
+        <p style="font-size:13px;color:#555;margin:0 0 16px;line-height:1.6">
+          Cuando pedís a domicilio, podemos pre-completar tu dirección automáticamente.
+          <br>¡Hacé tu primer pedido más rápido!
+        </p>
+        <a href="mi-cuenta.php"
+           onclick="sessionStorage.setItem('canetto_dir_sesion','skip')"
+           style="display:inline-block;padding:11px 26px;border-radius:12px;
+                  background:#c88e99;color:#fff;font-size:14px;font-weight:700;
+                  text-decoration:none">
+          <i class="fa-solid fa-plus" style="margin-right:6px"></i>Agregar dirección
+        </a>
+      </div>`;
+  }
+
+  document.getElementById('locationModalBg').style.display = 'block';
+  document.getElementById('locationModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function seleccionarDirSesion(id) {
+  const dirs = window.DIRS_GUARDADAS || [];
+  const dir = dirs.find(d => d.id == id);
+  if (dir) {
+    sessionStorage.setItem('canetto_dir_sesion', JSON.stringify(dir));
+    _dirSeleccionada = id;
+  }
+  cerrarLocationModal();
+}
+
+function cerrarLocationModal() {
+  document.getElementById('locationModal').style.display = 'none';
+  document.getElementById('locationModalBg').style.display = 'none';
+  document.body.style.overflow = '';
+  if (!sessionStorage.getItem('canetto_dir_sesion')) {
+    sessionStorage.setItem('canetto_dir_sesion', 'skip');
+  }
 }
 </script>
 <!-- ─────────────────────────────────────────────────────────────── -->

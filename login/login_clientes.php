@@ -207,7 +207,9 @@ function _gShowOverlay(nombre) {
             <div class="g-welcome-sub">Iniciaste sesión correctamente</div>
         </div>
         <div class="g-overlay-brand">Canetto</div>`;
-    document.body.appendChild(ov);
+    // Adjuntar al <html> en lugar de <body> para que position:fixed
+    // funcione correctamente aunque body sea un flex container.
+    document.documentElement.appendChild(ov);
 }
 
 function iniciarGoogleTienda() {
@@ -234,18 +236,22 @@ function iniciarGoogleTienda() {
         type: 'standard', size: 'large', theme: 'outline', text: 'signin_with',
     });
 
-    requestAnimationFrame(() => {
+    // Esperar a que Google renderice el botón (hasta 1.5s) y clickearlo
+    let intentos = 0;
+    const intentarClick = () => {
         const gBtn = container.querySelector('div[role=button], [jsname], iframe');
         if (gBtn) {
             gBtn.click();
+        } else if (intentos < 15) {
+            intentos++;
+            setTimeout(intentarClick, 100);
         } else {
-            google.accounts.id.prompt(notification => {
-                if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
-                    _gReset(btnEl);
-                }
-            });
+            // Tiempo agotado: resetear sin mostrar One Tap
+            _gReset(btnEl);
+            showGoogleAlertTienda('No se pudo abrir Google. Intentá de nuevo.', '#c88e99', '#f9edf0');
         }
-    });
+    };
+    setTimeout(intentarClick, 150);
 }
 
 async function handleGoogleTienda(response) {
