@@ -134,6 +134,22 @@ try {
         ORDER BY CASE p.tipo WHEN 'box' THEN 1 ELSE 0 END, p.nombre ASC
     ")->fetchAll();
 
+    // Productos sin packaging disponible → marcar como sin stock
+    // Si el packaging asignado tiene stock_actual <= 0, el producto no se puede vender
+    try {
+        $sinPkg = $pdo->query("
+            SELECT DISTINCT pp.productos_idproductos
+            FROM producto_packaging pp
+            JOIN packaging pk ON pk.idpackaging = pp.packaging_idpackaging
+            WHERE pk.activo = 1 AND pk.stock_actual <= 0
+        ")->fetchAll(PDO::FETCH_COLUMN);
+        $sinPkgSet = array_flip($sinPkg);
+        foreach ($productos as &$p) {
+            if (isset($sinPkgSet[$p['idproductos']])) $p['stock_hecho'] = 0;
+        }
+        unset($p);
+    } catch (Throwable $e) {}
+
     $galletitas = array_filter($productos, fn($p) => $p['tipo'] !== 'box');
     $boxes      = array_filter($productos, fn($p) => $p['tipo'] === 'box');
 
@@ -496,12 +512,16 @@ function renderProductCard($p) {
   $emoji  = $p['tipo'] === 'box' ? '<i class="fa-solid fa-box-open" style="font-size:40px;color:#c88e99"></i>' : '<i class="fa-solid fa-cookie-bite" style="font-size:40px;color:#c88e99"></i>';
   $nombre = htmlspecialchars($p['nombre']);
   $precio = number_format((float)$p['precio'], 0, ',', '.');
+  $onclick = $stock <= 0
+    ? 'sinStockAlert(' . json_encode($nombre) . ')'
+    : "window.location.href='producto.php?id={$p['idproductos']}'";
+  $cardCls = $stock <= 0 ? 'prod-card prod-card--sinstock' : 'prod-card';
   echo <<<HTML
-<div class="prod-card" data-tipo="{$p['tipo']}" onclick="window.location.href='producto.php?id={$p['idproductos']}'">
+<div class="{$cardCls}" data-tipo="{$p['tipo']}" onclick="{$onclick}">
   <div class="prod-thumb">
 HTML;
   if (!empty($p['imagen'])) {
-    echo '<img src="'.URL_ASSETS.'/img/productos/'.htmlspecialchars($p['imagen']).'" alt="'.$nombre.'" class="prod-thumb-img" loading="lazy">';
+    echo '<img src="'.URL_ASSETS.'/img/productos/'.htmlspecialchars($p['imagen']).'" alt="'.$nombre.'" class="prod-thumb-img" loading="lazy"' . ($stock <= 0 ? ' style="filter:grayscale(.7);opacity:.7"' : '') . '>';
   } else {
     echo '<span class="prod-thumb-emoji">'.$emoji.'</span>';
   }
@@ -2174,6 +2194,18 @@ async function confirmOrder(){
 }
 function setAlert(id,msg,type){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='ck-alert on '+(type==='err'?'err':'ok');setTimeout(()=>el.classList.remove('on'),5000)}
 document.getElementById('checkoutModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCheckout()});
+
+// ── SIN STOCK ALERT ──────────────────────
+function sinStockAlert(nombre) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Sin stock',
+    html: `<b>${nombre}</b> no está disponible en este momento.<br><span style="color:#888;font-size:13px">Volvé a revisar más tarde 🍪</span>`,
+    confirmButtonColor: '#c88e99',
+    confirmButtonText: 'Entendido',
+    customClass: { popup: 'swal-canetto' }
+  });
+}
 
 // ── TOAST ────────────────────────────────
 let _tt;

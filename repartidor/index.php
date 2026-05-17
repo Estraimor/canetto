@@ -326,6 +326,30 @@ try {
   </button>
   <div class="uber-status-badge phase-pickup" id="uberStatusBadge">Yendo a retirar</div>
 
+  <!-- Botones derecha: centrar + seguir -->
+  <div style="position:absolute;right:14px;bottom:220px;z-index:600;display:flex;flex-direction:column;gap:10px">
+    <!-- Centrar en la moto -->
+    <button id="btnCentrar" onclick="centrarEnMoto()"
+        style="width:44px;height:44px;border-radius:50%;background:rgba(15,23,42,.88);
+               border:none;color:#fff;font-size:17px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;
+               backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(0,0,0,.45);
+               transition:background .2s;-webkit-tap-highlight-color:transparent"
+        title="Centrar en mi posición">
+      <i class="fa-solid fa-location-crosshairs"></i>
+    </button>
+    <!-- Seguir automáticamente -->
+    <button id="btnSeguir" onclick="toggleSeguir()"
+        style="width:44px;height:44px;border-radius:50%;background:rgba(15,23,42,.88);
+               border:2px solid transparent;color:#64748b;font-size:17px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center;
+               backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(0,0,0,.45);
+               transition:all .2s;-webkit-tap-highlight-color:transparent"
+        title="Seguir moto automáticamente">
+      <i class="fa-solid fa-location-arrow"></i>
+    </button>
+  </div>
+
   <!-- Banner instrucción de navegación -->
   <div class="uber-nav-banner" id="uberNavBanner" style="display:none">
     <div class="uber-nav-arrow" id="uberNavArrow"><i class="fa-solid fa-arrow-up"></i></div>
@@ -1585,6 +1609,7 @@ let _uberDriver   = null;
 let _uberPedido   = null;
 let _uberWatcher  = null;
 let _uberPhase    = 'pickup'; // 'pickup' | 'delivery'
+let _seguirMoto   = false;    // seguimiento automático de la moto
 let _uberSteps    = [];
 let _uberStepIdx  = 0;
 let _uberMulti    = []; // todos los pedidos en modo multi-entrega
@@ -1607,16 +1632,19 @@ function initUberMap() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
   }).addTo(_uberMap);
-  L.control.zoom({ position: 'bottomright' }).addTo(_uberMap);
+  // Sin botones de zoom — se usa pinch-to-zoom en mobile
 }
 
 async function abrirUberMap(pedido, multiPedidos) {
   _uberPedido   = pedido;
-  _uberPhase    = 'pickup';
   _uberSteps    = [];
   _uberStepIdx  = 0;
   _uberMulti    = multiPedidos || [];
   _uberMultiIdx = multiPedidos ? multiPedidos.findIndex(p => p.idventas === pedido.idventas) : 0;
+
+  // Restaurar fase: si ya tenía el paquete antes de cerrar el mapa, volver a delivery
+  const faseGuardada = sessionStorage.getItem('uber_phase_' + pedido.idventas);
+  _uberPhase = faseGuardada === 'delivery' ? 'delivery' : 'pickup';
 
   const screen = document.getElementById('uberMapScreen');
   screen.classList.add('active');
@@ -1624,15 +1652,20 @@ async function abrirUberMap(pedido, multiPedidos) {
 
   if (_uberCardCollapsed) toggleUberCard();
 
-  // Badge fase retiro
+  // Badge y botones según fase restaurada
   const badge = document.getElementById('uberStatusBadge');
-  badge.className = 'uber-status-badge phase-pickup';
-  badge.textContent = 'Yendo a retirar';
-
-  // Mostrar botones de retiro
-  document.getElementById('uberActionsPickup').style.display  = '';
-  document.getElementById('uberActionsDelivery').style.display = 'none';
-  document.getElementById('uberNavBanner').style.display       = 'none';
+  if (_uberPhase === 'delivery') {
+    badge.className  = 'uber-status-badge phase-delivery';
+    badge.textContent = 'En camino';
+    document.getElementById('uberActionsPickup').style.display   = 'none';
+    document.getElementById('uberActionsDelivery').style.display = '';
+  } else {
+    badge.className  = 'uber-status-badge phase-pickup';
+    badge.textContent = 'Yendo a retirar';
+    document.getElementById('uberActionsPickup').style.display   = '';
+    document.getElementById('uberActionsDelivery').style.display = 'none';
+  }
+  document.getElementById('uberNavBanner').style.display = 'none';
 
   // Poblar card
   document.getElementById('uberOrderNum').textContent  = '#' + pedido.idventas;
@@ -1732,6 +1765,8 @@ function cerrarUberMap() {
     navigator.geolocation.clearWatch(_uberWatcher);
     _uberWatcher = null;
   }
+  // Resetear seguimiento al salir
+  if (_seguirMoto) toggleSeguir();
 }
 
 function uberLlamar() {
@@ -1761,6 +1796,8 @@ async function uberEntregar() {
     });
     const data = await res.json();
     if (data.success) {
+      // Limpiar fase guardada al entregar el pedido
+      sessionStorage.removeItem('uber_phase_' + id);
       cerrarUberMap();
       mostrarEntregaAnimacion(id, _uberPedido?.cliente_nombre);
     } else {
@@ -1782,6 +1819,11 @@ function confirmarPaquete() {
   _uberPhase   = 'delivery';
   _uberSteps   = [];
   _uberStepIdx = 0;
+
+  // Persistir fase para que al cerrar y abrir el mapa siga en delivery
+  if (_uberPedido?.idventas) {
+    sessionStorage.setItem('uber_phase_' + _uberPedido.idventas, 'delivery');
+  }
 
   const badge = document.getElementById('uberStatusBadge');
   badge.className  = 'uber-status-badge phase-delivery';
@@ -2003,12 +2045,47 @@ function iniciarGeolocalizacion() {
       .bindPopup('<strong>Tu posición</strong>')
       .addTo(_uberMap);
 
+    // Seguimiento automático
+    if (_seguirMoto && _uberMap) {
+      _uberMap.setView([lat, lng], _uberMap.getZoom(), { animate: true });
+    }
+
     updateNavBanner(lat, lng);
   };
+
+  // Al arrastrar el mapa manualmente → desactivar seguimiento
+  _uberMap.on('dragstart', () => {
+    if (_seguirMoto) toggleSeguir();
+  });
 
   _uberWatcher = navigator.geolocation.watchPosition(updateDriver, () => {}, {
     enableHighAccuracy: true, maximumAge: 5000, timeout: 15000,
   });
+}
+
+/* Centrar el mapa en la posición actual de la moto */
+function centrarEnMoto() {
+  if (!_uberDriver || !_uberMap) return;
+  const pos = _uberDriver.getLatLng();
+  _uberMap.setView([pos.lat, pos.lng], 16, { animate: true });
+}
+
+/* Toggle: seguir la moto automáticamente */
+function toggleSeguir() {
+  _seguirMoto = !_seguirMoto;
+  const btn = document.getElementById('btnSeguir');
+  if (_seguirMoto) {
+    btn.style.background   = '#c88e99';
+    btn.style.borderColor  = '#fff';
+    btn.style.color        = '#fff';
+    btn.style.boxShadow    = '0 2px 16px rgba(200,142,153,.6)';
+    centrarEnMoto(); // centrar inmediatamente al activar
+  } else {
+    btn.style.background   = 'rgba(15,23,42,.88)';
+    btn.style.borderColor  = 'transparent';
+    btn.style.color        = '#64748b';
+    btn.style.boxShadow    = '0 2px 12px rgba(0,0,0,.45)';
+  }
 }
 
 /* ════════════════════════════════════════

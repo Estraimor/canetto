@@ -15,7 +15,11 @@ try {
     $unidad       = filter_input(INPUT_POST, 'unidad', FILTER_VALIDATE_INT);
     $stock_actual = isset($_POST['stock_actual']) ? (float)$_POST['stock_actual'] : 0.0;
     $stock_minimo = isset($_POST['stock_minimo']) ? (float)$_POST['stock_minimo'] : 0.0;
+    $precio_bruto = isset($_POST['precio_bruto']) ? (float)$_POST['precio_bruto'] : 0.0;
     $activo       = isset($_POST['activo']) ? (int)$_POST['activo'] : 1;
+
+    // Agregar columna si no existe aún
+    try { $pdo->exec("ALTER TABLE packaging ADD COLUMN precio_bruto DECIMAL(12,2) NOT NULL DEFAULT 0"); } catch (Throwable $e) {}
 
     if ($nombre === '' || !$unidad) {
         echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
@@ -26,17 +30,17 @@ try {
         $pdo->prepare("
             UPDATE packaging SET
                 nombre = ?, descripcion = ?, unidad_medida_idunidad_medida = ?,
-                stock_actual = ?, stock_minimo = ?, activo = ?, updated_at = NOW()
+                stock_actual = ?, stock_minimo = ?, precio_bruto = ?, activo = ?, updated_at = NOW()
             WHERE idpackaging = ?
-        ")->execute([$nombre, $descripcion ?: null, $unidad, $stock_actual, $stock_minimo, $activo, $id]);
-        audit($pdo, 'editar', 'packaging', "Editó packaging: '{$nombre}' (ID: {$id}) | Stock: {$stock_actual} (mín: {$stock_minimo})");
+        ")->execute([$nombre, $descripcion ?: null, $unidad, $stock_actual, $stock_minimo, $precio_bruto, $activo, $id]);
+        audit($pdo, 'editar', 'packaging', "Editó packaging: '{$nombre}' (ID: {$id}) | Stock: {$stock_actual} (mín: {$stock_minimo}) | Precio: \${$precio_bruto}");
     } else {
         $pdo->prepare("
-            INSERT INTO packaging (nombre, descripcion, unidad_medida_idunidad_medida, stock_actual, stock_minimo, activo)
-            VALUES (?,?,?,?,?,?)
-        ")->execute([$nombre, $descripcion ?: null, $unidad, $stock_actual, $stock_minimo, $activo]);
+            INSERT INTO packaging (nombre, descripcion, unidad_medida_idunidad_medida, stock_actual, stock_minimo, precio_bruto, activo)
+            VALUES (?,?,?,?,?,?,?)
+        ")->execute([$nombre, $descripcion ?: null, $unidad, $stock_actual, $stock_minimo, $precio_bruto, $activo]);
         $newId = $pdo->lastInsertId();
-        audit($pdo, 'crear', 'packaging', "Creó packaging: '{$nombre}' (ID: {$newId}) | Stock: {$stock_actual} (mín: {$stock_minimo})");
+        audit($pdo, 'crear', 'packaging', "Creó packaging: '{$nombre}' (ID: {$newId}) | Stock: {$stock_actual} | Precio: \${$precio_bruto}");
     }
 
     echo json_encode(['success' => true]);

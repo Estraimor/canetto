@@ -89,12 +89,27 @@ try {
         $productosResumen[] = ($item['nombre'] ?? "Prod #{$item['id']}") . " x{$item['cantidad']}" . $tops;
     }
 
-    // 4. Consumir packaging
+    // 4. Validar y consumir packaging
     $stmtGetPkg = $pdo->prepare("
-        SELECT pp.packaging_idpackaging, pp.cantidad AS cant_pkg
+        SELECT pp.packaging_idpackaging, pp.cantidad AS cant_pkg, pk.nombre AS pkg_nombre, pk.stock_actual
         FROM producto_packaging pp
+        JOIN packaging pk ON pk.idpackaging = pp.packaging_idpackaging
         WHERE pp.productos_idproductos = ?
     ");
+    // Primero validar que haya stock suficiente en cada packaging
+    foreach ($carrito as $item) {
+        $stmtGetPkg->execute([intval($item['id'])]);
+        foreach ($stmtGetPkg->fetchAll(PDO::FETCH_ASSOC) as $pkg) {
+            $consumo = $pkg['cant_pkg'] * intval($item['cantidad']);
+            if ((float)$pkg['stock_actual'] < $consumo) {
+                $pdo->rollBack();
+                echo json_encode([
+                    'success' => false,
+                    'message' => "Sin stock de packaging: \"{$pkg['pkg_nombre']}\" (disponible: {$pkg['stock_actual']}, necesario: {$consumo})"
+                ]); exit;
+            }
+        }
+    }
     $stmtDescPkg = $pdo->prepare("
         UPDATE packaging
         SET stock_actual = stock_actual - ?, updated_at = NOW()

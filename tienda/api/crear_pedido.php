@@ -157,13 +157,27 @@ try {
         $resumen[] = $label . " ×{$item['cantidad']}";
     }
 
-    // --- Consumir packaging ---
+    // --- Validar y consumir packaging ---
     $stmtGetPkg = $pdo->prepare("
-        SELECT pp.packaging_idpackaging, pp.cantidad AS cant_pkg, pk.nombre AS pkg_nombre
+        SELECT pp.packaging_idpackaging, pp.cantidad AS cant_pkg, pk.nombre AS pkg_nombre, pk.stock_actual
         FROM producto_packaging pp
         JOIN packaging pk ON pk.idpackaging = pp.packaging_idpackaging
         WHERE pp.productos_idproductos = ?
     ");
+    // Primero validar stock antes de consumir
+    foreach ($carrito as $item) {
+        $stmtGetPkg->execute([(int)$item['id']]);
+        foreach ($stmtGetPkg->fetchAll(PDO::FETCH_ASSOC) as $pkg) {
+            $consumo = $pkg['cant_pkg'] * (int)$item['cantidad'];
+            if ((float)$pkg['stock_actual'] < $consumo) {
+                $pdo->rollBack();
+                echo json_encode([
+                    'success' => false,
+                    'message' => "No hay packaging disponible para completar el pedido ({$pkg['pkg_nombre']}). Contactanos por WhatsApp."
+                ]); exit;
+            }
+        }
+    }
     $stmtDescPkg = $pdo->prepare("
         UPDATE packaging
         SET stock_actual = stock_actual - ?, updated_at = NOW()

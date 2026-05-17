@@ -271,6 +271,11 @@ $allPkg   = $pdo->query("
             <input type="number" step="0.01" min="0" id="pkg_stock_minimo" placeholder="0">
           </div>
 
+          <div class="pkg-field">
+            <label>Precio bruto <span style="color:#9aa1ad;font-size:11px">(costo por unidad)</span></label>
+            <input type="number" step="0.01" min="0" id="pkg_precio_bruto" placeholder="0.00">
+          </div>
+
           <div class="pkg-field" style="justify-content:flex-end;flex-direction:row;align-items:center;gap:10px">
             <label style="margin:0">Activo</label>
             <label class="switch">
@@ -422,6 +427,11 @@ const tablaPkg = jQuery('#tablaPkg').DataTable({
       className: 'td-num',
       render: (d, t, r) => `${parseFloat(d).toLocaleString('es-AR')} <small style="color:#9aa1ad">${r.unidad}</small>`
     },
+    { data: 'precio_bruto', className: 'td-num',
+      render: d => parseFloat(d) > 0
+        ? `$${parseFloat(d).toLocaleString('es-AR',{minimumFractionDigits:2})}`
+        : '<span style="color:#d1d5db">—</span>'
+    },
     { data: 'estado_html', orderable: false },
     {
       data: 'activo',
@@ -503,9 +513,10 @@ jQuery('#tablaPkg').on('click', '.editar-pkg', function(){
     $('#pkg_nombre').value       = data.nombre;
     $('#pkg_descripcion').value  = data.descripcion || '';
     $('#pkg_unidad').value       = data.unidad_medida_idunidad_medida;
-    $('#pkg_stock_actual').value = data.stock_actual;
-    $('#pkg_stock_minimo').value = data.stock_minimo;
-    $('#pkg_activo').checked     = data.activo == 1;
+    $('#pkg_stock_actual').value  = data.stock_actual;
+    $('#pkg_stock_minimo').value  = data.stock_minimo;
+    $('#pkg_precio_bruto').value  = data.precio_bruto || '';
+    $('#pkg_activo').checked      = data.activo == 1;
     $('#modalPkgTitle').textContent = 'Editar packaging';
     $('#modalPkgSub').textContent   = 'Actualizá la información';
     openModal(modalPkg);
@@ -519,9 +530,10 @@ formPkg.addEventListener('submit', function(e){
     nombre:       $('#pkg_nombre').value.trim(),
     descripcion:  $('#pkg_descripcion').value.trim(),
     unidad:       $('#pkg_unidad').value,
-    stock_actual: $('#pkg_stock_actual').value || 0,
-    stock_minimo: $('#pkg_stock_minimo').value || 0,
-    activo:       $('#pkg_activo').checked ? 1 : 0
+    stock_actual:  $('#pkg_stock_actual').value || 0,
+    stock_minimo:  $('#pkg_stock_minimo').value || 0,
+    precio_bruto:  $('#pkg_precio_bruto').value || 0,
+    activo:        $('#pkg_activo').checked ? 1 : 0
   };
   if(!payload.nombre){ toast('El nombre es obligatorio', false); return; }
   jQuery.post('api/guardar.php', payload, function(resp){

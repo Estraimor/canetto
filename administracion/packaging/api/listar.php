@@ -15,6 +15,7 @@ try {
             pk.descripcion,
             pk.stock_actual,
             pk.stock_minimo,
+            COALESCE(pk.precio_bruto, 0) AS precio_bruto,
             pk.activo,
             pk.unidad_medida_idunidad_medida,
             um.abreviatura AS unidad

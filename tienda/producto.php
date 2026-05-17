@@ -32,6 +32,17 @@ $stmt->execute([$id]);
 $prod = $stmt->fetch();
 if (!$prod) { header('Location: index.php'); exit; }
 
+// Si el packaging asignado está agotado, forzar stock = 0
+try {
+    $chkPkg = $pdo->prepare("
+        SELECT COUNT(*) FROM producto_packaging pp
+        JOIN packaging pk ON pk.idpackaging = pp.packaging_idpackaging
+        WHERE pp.productos_idproductos = ? AND pk.activo = 1 AND pk.stock_actual <= 0
+    ");
+    $chkPkg->execute([$id]);
+    if ($chkPkg->fetchColumn() > 0) $prod['stock_hecho'] = 0;
+} catch (Throwable $e) {}
+
 // Cargar todas las imágenes del producto desde la tabla nueva
 $stmtImg = $pdo->prepare("
     SELECT archivo FROM productos_imagenes

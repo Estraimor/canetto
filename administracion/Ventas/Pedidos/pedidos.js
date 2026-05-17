@@ -11,9 +11,12 @@ const PedidosApp = (() => {
     7: { label: 'Listo para retiro',   cls: 'est-7' }
   };
 
-  // Todos los estados disponibles (sin Cancelado, que tiene su propio botón)
+  // Estados disponibles según tipo de entrega
+  // Retiro: no puede pasar a "En reparto" (3) — solo a "Listo para retiro" (7)
+  // Envío:  no puede pasar a "Listo para retiro" (7) — solo a "En reparto" (3)
   function getTransiciones(estadoId, tipoEntrega) {
-    return [1, 2, 5, 7, 3, 4];
+    if (tipoEntrega === 'retiro') return [1, 2, 5, 7, 4]; // sin estado 3
+    return [1, 2, 5, 3, 4];                               // sin estado 7
   }
 
   const fmt = n => '$' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -187,6 +190,22 @@ const PedidosApp = (() => {
     const nuevoEstado = parseInt(select.value);
     const row         = document.getElementById('row-' + idVenta);
     const tipoEntrega = row?.dataset.tipoEntrega || 'retiro';
+
+    // Bloqueo: retiro no puede ir a "En reparto"
+    if (tipoEntrega === 'retiro' && nuevoEstado === 3) {
+      // Revertir selector al estado actual
+      const estadoActual = row?.className.match(/row-estado-(\d+)/)?.[1] || '1';
+      if (select) select.value = estadoActual;
+      if (btn)    btn.disabled = true;
+      await Swal.fire({
+        icon: 'info',
+        title: 'Pedido de retiro en local',
+        html:  'Este pedido <strong>lo viene a buscar el cliente al local</strong>.<br>No se puede asignar reparto a domicilio.',
+        confirmButtonColor: '#c88e99',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
 
     // Para pedidos de envío que van a "En reparto": auto-asignar repartidor
     if (tipoEntrega === 'envio' && nuevoEstado === 3) {
