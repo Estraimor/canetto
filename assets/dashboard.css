@@ -72,6 +72,43 @@
     --text-3:           #9a9a96;
     --radius:           12px;
     --shadow:           0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.05);
+
+    /* Topbar */
+    --topbar-bg:        #ffffff;
+    --topbar-border:    #e8e7e4;
+    --topbar-text:      #111110;
+}
+
+/* ── Modo oscuro ── */
+html.dark {
+    --sidebar-bg:       #13131f;
+    --sidebar-hover:    #1e1e30;
+    --sidebar-active:   #2a1a25;
+    --brand-light:      #2a1a25;
+
+    --bg-page:          #0e0e1a;
+    --bg-card:          #16162a;
+    --border:           #2a2a40;
+    --text:             #e8e8f0;
+    --text-2:           #9090b0;
+    --text-3:           #5a5a78;
+    --shadow:           0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.25);
+
+    --topbar-bg:        #13131f;
+    --topbar-border:    #2a2a40;
+    --topbar-text:      #e8e8f0;
+}
+
+/* ── Transición suave al cambiar tema (no sobreescribe width/transform del sidebar) ── */
+html.dark-transitioning *,
+html.dark-transitioning *::before,
+html.dark-transitioning *::after {
+    transition:
+        background-color .35s ease,
+        border-color .35s ease,
+        color .25s ease,
+        box-shadow .35s ease,
+        fill .35s ease !important;
 }
 
 html, body { height: 100%; font-family: "Speedee", system-ui, sans-serif; background: var(--bg-page); color: var(--text); font-size: 16px; }
@@ -474,3 +511,93 @@ html, body { height: 100%; font-family: "Speedee", system-ui, sans-serif; backgr
     .topbar { padding: 0 16px; }
     .workspace { padding: 18px 16px 40px; }
 }
+
+/* ==========================================================
+   DARK MODE — estilos completos
+   Se activan con html.dark
+   ========================================================== */
+
+/* Hardcoded colors que no usan variables */
+html.dark .submenu a               { color: #6066a0; }
+html.dark .submenu a:hover         { color: var(--text); }
+html.dark .nav-section             { color: #3a3a5a; }
+html.dark .menu-title::after       { border-color: #3a3a5a; }
+html.dark .notif-bell              { color: #cccce0; }
+html.dark .notif-badge             { border-color: var(--bg-card); }
+html.dark .spinner                 { border-color: rgba(255,255,255,.08); border-top-color: var(--brand); }
+html.dark .loader-content p        { color: rgba(255,255,255,.25); }
+
+/* Inputs, textareas, selects globales */
+html.dark input:not([type=checkbox]):not([type=radio]):not([type=range]),
+html.dark textarea,
+html.dark select {
+    background: #1e1e34 !important;
+    border-color: #2a2a45 !important;
+    color: #e0e0f0 !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder   { color: #4a4a68 !important; }
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus             { border-color: var(--brand) !important; }
+
+/* DataTables */
+html.dark .dataTables_wrapper,
+html.dark table.dataTable          { color: var(--text) !important; }
+html.dark table.dataTable thead th,
+html.dark table.dataTable thead td { background: #1e1e34 !important; color: var(--text-2) !important; border-bottom-color: #2a2a45 !important; }
+html.dark table.dataTable tbody tr { background: var(--bg-card) !important; }
+html.dark table.dataTable tbody tr:hover { background: #1e1e34 !important; }
+html.dark table.dataTable tbody td { border-bottom-color: #1e1e34 !important; color: var(--text) !important; }
+html.dark .dataTables_wrapper .dataTables_length select,
+html.dark .dataTables_wrapper .dataTables_filter input { background: #1e1e34 !important; border-color: #2a2a45 !important; color: #e0e0f0 !important; }
+html.dark .dataTables_wrapper .dataTables_info,
+html.dark .dataTables_wrapper .dataTables_length,
+html.dark .dataTables_wrapper .dataTables_filter { color: var(--text-3) !important; }
+html.dark .dataTables_wrapper .dataTables_paginate .paginate_button { color: var(--text-2) !important; }
+html.dark .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: var(--brand) !important; color: #fff !important; border-color: var(--brand) !important; }
+html.dark .dataTables_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) { background: #2a2a45 !important; color: var(--text) !important; }
+
+/* Modales / overlays */
+html.dark .swal2-popup              { background: #1a1a2e !important; color: #e0e0f0 !important; }
+html.dark .swal2-title              { color: #e8e8f0 !important; }
+html.dark .swal2-content,
+html.dark .swal2-html-container     { color: #9090b0 !important; }
+html.dark .swal2-input              { background: #1e1e34 !important; border-color: #2a2a45 !important; color: #e0e0f0 !important; }
+
+/* Badges de estado comunes */
+html.dark .badge-activo   { background: #0f2a1a !important; color: #4ade80 !important; }
+html.dark .badge-inactivo { background: #1e1e34 !important; color: #5a5a78 !important; }
+html.dark .status-ok      { background: #0f2a1a !important; color: #4ade80 !important; }
+html.dark .status-critical,
+html.dark .status-low     { background: #2a0f0f !important; color: #f87171 !important; }
+
+/* Scrollbars en dark */
+html.dark ::-webkit-scrollbar              { width: 6px; height: 6px; }
+html.dark ::-webkit-scrollbar-track       { background: #0e0e1a; }
+html.dark ::-webkit-scrollbar-thumb       { background: #2a2a45; border-radius: 3px; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+
+/* Links en dark */
+html.dark a:not([class])     { color: #c88e99; }
+html.dark a:not([class]):hover { color: #e0a0b0; }
+
+/* Headings en dark */
+html.dark h1, html.dark h2, html.dark h3,
+html.dark h4, html.dark h5               { color: var(--text); }
+
+/* Bordes de separación */
+html.dark hr { border-color: #2a2a45; }
+
+/* Tooltip sidebar */
+html.dark .sidebar.mini [data-tip]:hover::after {
+    background: #1e1e34;
+    border: 1px solid #2a2a45;
+}
+
+/* Menú activo bien visible */
+html.dark .nav-menu > a.active { background: #2a1a25 !important; color: var(--brand) !important; }
+html.dark .nav-menu > a:hover  { background: #1e1e30 !important; color: #e0e0f0 !important; }
+
+/* Content-body genérico */
+html.dark .content-body { background: var(--bg-page); color: var(--text); }

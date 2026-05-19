@@ -1,0 +1,325 @@
+/* ── Layout ── */
+.cup-wrap {
+    padding: 32px 36px 80px;
+    max-width: 1140px;
+}
+
+/* ── Header ── */
+.cup-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px; gap: 16px;
+}
+.cup-header h1 {
+    font-size: 26px; font-weight: 800;
+    color: #1a1a1a; margin: 0 0 4px;
+    display: flex; align-items: center; gap: 10px;
+}
+.cup-header p { font-size: 13px; color: #aaa; margin: 0; }
+
+/* ── Stats ── */
+.cup-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-bottom: 28px;
+}
+.cup-stat {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 22px;
+    border: 1px solid #f0eaf5;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    display: flex; align-items: center; gap: 16px;
+    transition: box-shadow .2s, transform .2s;
+}
+.cup-stat:hover { box-shadow: 0 6px 20px rgba(0,0,0,.09); transform: translateY(-2px); }
+.cup-stat-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+}
+.cup-stat-body { min-width: 0; }
+.cup-stat-num {
+    font-size: 30px; font-weight: 800;
+    color: #1a1a1a; line-height: 1;
+}
+.cup-stat-lbl {
+    font-size: 11px; color: #aaa;
+    text-transform: uppercase; letter-spacing: .06em; margin-top: 3px;
+}
+.cup-stat.s-activos .cup-stat-icon  { background: #ecfdf5; color: #16a34a; }
+.cup-stat.s-activos .cup-stat-num   { color: #16a34a; }
+.cup-stat.s-total   .cup-stat-icon  { background: #f3f0ff; color: #7c3aed; }
+.cup-stat.s-vencidos .cup-stat-icon { background: #fdf2f8; color: #c88e99; }
+.cup-stat.s-vencidos .cup-stat-num  { color: #c88e99; }
+.cup-stat.s-usos    .cup-stat-icon  { background: #eff6ff; color: #2563eb; }
+
+/* ── Table wrap ── */
+.cup-table-wrap {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #f0eaf5;
+    box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    padding: 24px 26px 20px;
+}
+
+/* ── Toolbar ── */
+.cup-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px; flex-wrap: wrap;
+}
+.cup-search-box {
+    position: relative; flex: 1;
+    min-width: 200px; max-width: 340px;
+}
+.cup-search-icon {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: #c88e99; font-size: 13px; pointer-events: none;
+}
+.cup-search-input {
+    width: 100%; height: 42px;
+    padding: 0 14px 0 40px;
+    border: 1.5px solid #ede8f5; border-radius: 12px;
+    font-size: 13.5px; font-family: inherit; color: #1a1a1a;
+    background: #faf8fc; outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.cup-search-input::placeholder { color: #c4b5d4; }
+.cup-search-input:focus {
+    border-color: #c88e99;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(200,142,153,.12);
+}
+
+/* ── DataTables DOM ── */
+.dt-top  {
+    display: flex; align-items: center;
+    justify-content: flex-end; margin-bottom: 16px;
+}
+.dt-foot {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-top: 18px; flex-wrap: wrap; gap: 10px;
+    padding-top: 16px; border-top: 1px solid #f5f0f8;
+}
+.dt-info { font-size: 12px; color: #bbb; }
+.dt-len label {
+    font-size: 13px; color: #999;
+    display: flex; align-items: center; gap: 8px;
+}
+.dt-len select {
+    height: 36px;
+    border: 1.5px solid #ede8f5; border-radius: 10px;
+    padding: 0 30px 0 12px; font-size: 13px; font-family: inherit;
+    color: #1a1a1a; appearance: none; -webkit-appearance: none;
+    outline: none; cursor: pointer;
+    background: #faf8fc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+    transition: border-color .15s;
+}
+.dt-len select:focus { border-color: #c88e99; }
+.dt-paging .dt-paging-button {
+    border: none; background: none; border-radius: 8px;
+    padding: 6px 12px; font-size: 13px; font-weight: 600;
+    color: #888; cursor: pointer; transition: .15s; margin: 0 1px;
+}
+.dt-paging .dt-paging-button:hover:not(.disabled) {
+    background: #f3f0f8; color: #7c3aed;
+}
+.dt-paging .dt-paging-button.current {
+    background: #c88e99; color: #fff;
+    box-shadow: 0 2px 8px rgba(200,142,153,.3);
+}
+.dt-paging .dt-paging-button.disabled { color: #ddd; cursor: default; }
+
+/* ── Table ── */
+.cup-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.cup-table thead th {
+    padding: 10px 16px; text-align: left;
+    font-size: 10.5px; font-weight: 700;
+    color: #b89ab0; text-transform: uppercase;
+    letter-spacing: .07em; border-bottom: 2px solid #f5eff8;
+    white-space: nowrap;
+}
+.cup-table tbody tr {
+    border-bottom: 1px solid #faf6fc;
+    transition: background .12s;
+}
+.cup-table tbody tr:last-child { border-bottom: none; }
+.cup-table tbody tr:hover { background: #fdf8ff; }
+.cup-table td { padding: 14px 16px; vertical-align: middle; }
+
+/* ── Código badge ── */
+.cup-code {
+    font-family: 'Courier New', monospace;
+    font-size: 12.5px; font-weight: 800;
+    background: linear-gradient(135deg, #f3f0ff, #ede9ff);
+    color: #5b21b6;
+    padding: 5px 12px; border-radius: 8px;
+    letter-spacing: 1.5px; display: inline-block;
+    border: 1px solid #ddd6fe;
+}
+
+/* ── Valor ── */
+.cup-valor {
+    font-weight: 800; font-size: 15px; color: #c88e99;
+}
+
+/* ── Estado badges ── */
+.cup-badge {
+    font-size: 11px; font-weight: 700;
+    padding: 4px 11px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+    gap: 5px; white-space: nowrap;
+}
+.cup-badge::before {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: currentColor;
+    opacity: .7;
+}
+.cup-badge-activo    { background: #ecfdf5; color: #16a34a; }
+.cup-badge-vencido   { background: #fef2f2; color: #dc2626; }
+.cup-badge-agotado   { background: #fff7ed; color: #c2410c; }
+.cup-badge-inactivo  { background: #f3f4f6; color: #9ca3af; }
+.cup-badge-pendiente { background: #eff6ff; color: #2563eb; }
+
+/* ── Action buttons ── */
+.cup-icon-btn {
+    border: none; border-radius: 9px;
+    width: 34px; height: 34px;
+    cursor: pointer; font-size: 12px; margin: 0 2px;
+    transition: all .18s;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.cup-icon-btn.wa    { background: #f0fdf4; color: #25d366; }
+.cup-icon-btn.wa:hover    { background: #25d366; color: #fff; transform: scale(1.08); }
+.cup-icon-btn.edit  { background: #f0eaff; color: #7c3aed; }
+.cup-icon-btn.edit:hover  { background: #7c3aed; color: #fff; transform: scale(1.08); }
+.cup-icon-btn.del   { background: #fff0f0; color: #c0392b; }
+.cup-icon-btn.del:hover   { background: #c0392b; color: #fff; transform: scale(1.08); }
+
+/* ── Botones ── */
+.cup-btn-new {
+    background: #c88e99; color: #fff; border: none;
+    padding: 11px 22px; border-radius: 12px;
+    font-size: 13.5px; font-weight: 700; font-family: inherit;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: .2s; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(200,142,153,.35);
+}
+.cup-btn-new:hover { background: #b37a87; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,142,153,.4); }
+.cup-btn-soft {
+    background: #f4f4f6; color: #555; border: none;
+    padding: 11px 20px; border-radius: 12px;
+    font-size: 13px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: .2s;
+}
+.cup-btn-soft:hover { background: #e8e8ec; }
+
+/* ── Modal ── */
+.cup-modal { display: none; position: fixed; inset: 0; z-index: 1000; }
+.cup-modal.open { display: block; }
+.cup-modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(15,10,30,.45); backdrop-filter: blur(4px);
+}
+.cup-modal-dialog {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff; border-radius: 22px;
+    width: 600px; max-width: 95vw;
+    max-height: 92vh; overflow-y: auto;
+    box-shadow: 0 32px 80px rgba(0,0,0,.22);
+}
+.cup-modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 26px 18px; border-bottom: 1px solid #f3eef8;
+    position: sticky; top: 0; background: #fff; z-index: 1;
+    border-radius: 22px 22px 0 0;
+}
+.cup-modal-title { font-size: 18px; font-weight: 800; color: #1a1a1a; }
+.cup-modal-sub   { font-size: 12px; color: #bbb; margin-top: 3px; }
+.cup-x {
+    background: #f5f5f7; border: none;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; cursor: pointer; color: #888; transition: .15s;
+}
+.cup-x:hover { background: #fee2e2; color: #dc2626; }
+.cup-modal-body { padding: 24px 26px; }
+.cup-modal-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 8px; padding-top: 18px; border-top: 1px solid #f3eef8;
+}
+
+/* ── Form fields ── */
+.cup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.cup-field { display: flex; flex-direction: column; gap: 7px; }
+.cup-field.full { grid-column: 1 / -1; }
+.cup-field label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #999;
+}
+.cup-field input, .cup-field select {
+    padding: 11px 14px; border-radius: 11px;
+    border: 1.5px solid #ede8f5;
+    font-size: 14px; font-family: inherit; color: #1a1a1a;
+    background: #faf8fc; outline: none; transition: .2s;
+}
+.cup-field input:focus, .cup-field select:focus {
+    border-color: #c88e99; background: #fff;
+    box-shadow: 0 0 0 3px rgba(200,142,153,.12);
+}
+.cup-hint { font-size: 11px; color: #bbb; }
+
+/* ── Toggle switch ── */
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; inset: 0; background: #ddd;
+    border-radius: 24px; cursor: pointer; transition: .22s;
+}
+.slider::before {
+    content: ''; position: absolute;
+    height: 18px; width: 18px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%;
+    transition: .22s; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+input:checked + .slider { background: #c88e99; }
+input:checked + .slider::before { transform: translateX(18px); }
+
+/* ── Código con botón azar ── */
+.cup-codigo-wrap {
+    display: flex; gap: 8px; align-items: center;
+}
+.cup-codigo-wrap input {
+    flex: 1;
+}
+.btn-azar {
+    flex-shrink: 0;
+    width: 42px; height: 42px; border-radius: 11px;
+    background: #f3f0ff; color: #7c3aed;
+    border: 1.5px solid #ddd6fe;
+    cursor: pointer; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, transform .15s;
+}
+.btn-azar:hover { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+.btn-azar.spin i { animation: spinOnce .35s ease; }
+@keyframes spinOnce {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Toast ── */
+.cup-toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+    background: #1a1a1a; color: #fff;
+    padding: 14px 22px; border-radius: 14px;
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 12px 32px rgba(0,0,0,.25);
+}
+.cup-toast.show { transform: translateY(0); opacity: 1; }

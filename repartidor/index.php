@@ -2415,8 +2415,8 @@ async function registrarPushRepartidor() {
   if (Notification.permission !== 'granted') return;
   try {
     // Reusar registro existente si ya está activo
-    const existing = await navigator.serviceWorker.getRegistration('sw-rep.js').catch(() => null);
-    _swReg = existing || await navigator.serviceWorker.register('sw-rep.js');
+    const existing = await navigator.serviceWorker.getRegistration('sw-rep.php').catch(() => null);
+    _swReg = existing || await navigator.serviceWorker.register('sw-rep.php');
     await navigator.serviceWorker.ready;
 
     // Suscribirse al push con VAPID
@@ -2511,8 +2511,8 @@ function _dispararCheckActividad() {
 async function _mostrarNotifNativa() {
   const opts = {
     body:               '⏱ Tocá aquí para confirmar que seguís en el turno. Si no respondés en 15 seg, se cierra la sesión.',
-    icon:               '/canetto/assets/img/Logo_Canetto_Cookie.png',
-    badge:              '/canetto/assets/img/Logo_Canetto_Cookie.png',
+    icon:               '<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png',
+    badge:              '<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png',
     vibrate:            [300, 100, 300],
     requireInteraction: true,
     tag:                'rep-actividad',

@@ -26,7 +26,7 @@ try {
 
     $titulo = '📢 Nuevo panel: ' . $p['titulo'];
     $cuerpo = $p['descripcion'] ?: ('¡Mirá las novedades en la tienda!');
-    $url    = '/canetto/tienda/';
+    $url    = URL_TIENDA . '/';
 
     $result = push_enviar_a_todos($pdo, $titulo, $cuerpo, $url);
 

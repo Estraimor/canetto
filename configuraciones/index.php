@@ -331,6 +331,22 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
             </div>
         </a>
 
+        <!-- Configuración Tienda -->
+        <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/tienda.php">
+            <div class="hub-card__icon"><i class="fa-solid fa-store"></i></div>
+            <div>
+                <div class="hub-card__title">Tienda Online</div>
+                <div class="hub-card__desc">Pedido mínimo, máximo de cookies y mensajes al cliente.</div>
+            </div>
+            <div class="hub-card__footer">
+                <div>
+                    <div class="hub-card__count"><i class="fa-solid fa-gear" style="font-size:1.2rem"></i></div>
+                    <div class="hub-card__count-label">parámetros</div>
+                </div>
+                <div class="hub-card__btn">Configurar <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i></div>
+            </div>
+        </a>
+
         <!-- Auditoría -->
         <a class="hub-card" href="<?= URL_ASSETS ?>/configuraciones/auditoria.php">
             <div class="hub-card__icon"><i class="fa-solid fa-clipboard-list"></i></div>

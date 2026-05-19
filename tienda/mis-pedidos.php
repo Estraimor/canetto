@@ -1113,7 +1113,7 @@ function setNotifUI(enabled) {
 async function checkNotifStatus() {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
   if (Notification.permission !== 'granted') return;
-  const reg = await navigator.serviceWorker.getRegistration('./sw.js').catch(() => null);
+  const reg = await navigator.serviceWorker.getRegistration('./sw.php').catch(() => null);
   if (!reg) return;
   const sub = await reg.pushManager.getSubscription().catch(() => null);
   if (sub) setNotifUI(true);
@@ -1127,7 +1127,7 @@ async function toggleNotificaciones() {
     alert('Para activar notificaciones necesitamos que aceptes todas las cookies.'); return;
   }
 
-  const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+  const reg = await navigator.serviceWorker.register('./sw.php', { scope: './' });
   await navigator.serviceWorker.ready;
   const existing = await reg.pushManager.getSubscription().catch(() => null);
 
@@ -1299,7 +1299,7 @@ checkNotifStatus();
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('🛵 Canetto — Tu pedido llegó', {
             body: '¡Tu pedido #' + idVenta + ' está en tu puerta!',
-            icon: '/canetto/img/Logo_Canetto_Cookie.png',
+            icon: '<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png',
           });
         }
         // Resaltar visualmente

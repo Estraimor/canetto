@@ -32,8 +32,69 @@ if (empty($carrito) || !$metodo_pago) {
     echo json_encode(['success'=>false,'message'=>'Faltan datos obligatorios']); exit;
 }
 
+// Cupón aplicado
+$cupon_codigo = trim($input['cupon_codigo'] ?? '');
+$cupon_descuento = 0.0; // monto fijo a descontar del total
+
 try {
     $pdo = Conexion::conectar();
+
+    // Validar pedido mínimo
+    try {
+        $minRow = $pdo->query("SELECT valor FROM configuracion_tienda WHERE clave='min_cookies_pedido'")->fetch();
+        $minCookies = $minRow ? (int)$minRow['valor'] : 4;
+        $totalCookies = array_sum(array_column($carrito, 'cantidad'));
+        if ($minCookies > 0 && $totalCookies < $minCookies) {
+            $msgRow = $pdo->query("SELECT valor FROM configuracion_tienda WHERE clave='mensaje_min_pedido'")->fetch();
+            $msg = $msgRow ? str_replace('{min}', $minCookies, $msgRow['valor']) : "El pedido mínimo es de {$minCookies} cookies.";
+            echo json_encode(['success'=>false,'message'=>$msg]); exit;
+        }
+    } catch (Throwable $e) {}
+
+    // Validar y aplicar cupón
+    if ($cupon_codigo !== '') {
+        try {
+            $stmtC = $pdo->prepare("SELECT * FROM cupones WHERE codigo=? AND activo=1");
+            $stmtC->execute([$cupon_codigo]);
+            $cupon = $stmtC->fetch(PDO::FETCH_ASSOC);
+            if (!$cupon) {
+                echo json_encode(['success'=>false,'message'=>'El cupón no es válido o ya no está activo.']); exit;
+            }
+            // Vigencia — cupón válido todo el día de fecha_fin inclusive
+            $hoy = date('Y-m-d');
+            $cIni = $cupon['fecha_inicio'] ? substr((string)$cupon['fecha_inicio'], 0, 10) : null;
+            $cFin = $cupon['fecha_fin']    ? substr((string)$cupon['fecha_fin'],    0, 10) : null;
+            if ($cIni && $hoy < $cIni) {
+                echo json_encode(['success'=>false,'message'=>'El cupón aún no está vigente.']); exit;
+            }
+            if ($cFin && $hoy > $cFin) {
+                echo json_encode(['success'=>false,'message'=>'El cupón está vencido.']); exit;
+            }
+            // Usos totales
+            if ($cupon['max_usos'] && $cupon['usos_actuales'] >= $cupon['max_usos']) {
+                echo json_encode(['success'=>false,'message'=>'El cupón ya alcanzó su límite de usos.']); exit;
+            }
+            // Uso por usuario
+            if ($cupon['un_uso_por_usuario'] && isset($_SESSION['tienda_cliente_id'])) {
+                $usoStmt = $pdo->prepare("SELECT COUNT(*) FROM cupones_usos WHERE cupon_id=? AND usuario_id=?");
+                $usoStmt->execute([$cupon['id'], $_SESSION['tienda_cliente_id']]);
+                if ($usoStmt->fetchColumn() > 0) {
+                    echo json_encode(['success'=>false,'message'=>'Ya usaste este cupón anteriormente.']); exit;
+                }
+            }
+            // Monto mínimo
+            if ($cupon['min_pedido'] > 0 && $total < $cupon['min_pedido']) {
+                echo json_encode(['success'=>false,'message'=>"Este cupón requiere un pedido mínimo de $" . number_format($cupon['min_pedido'],0,',','.') . "."]); exit;
+            }
+            // Calcular descuento
+            if ($cupon['tipo'] === 'porcentaje') {
+                $cupon_descuento = round($total * $cupon['valor'] / 100, 2);
+            } else {
+                $cupon_descuento = min((float)$cupon['valor'], $total);
+            }
+            $total = max(0, $total - $cupon_descuento);
+        } catch (Throwable $e) { $cupon_codigo = ''; }
+    }
 
     // Add tienda columns to ventas if they don't exist yet (idempotent via try/catch)
     foreach ([
@@ -191,6 +252,23 @@ try {
         }
     }
 
+    // --- Registrar uso del cupón ---
+    if (!empty($cupon_codigo) && !empty($cupon)) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS cupones_usos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cupon_id INT NOT NULL,
+                usuario_id INT NULL,
+                venta_id INT NULL,
+                usado_at DATETIME DEFAULT NOW()
+            )");
+            $pdo->prepare("INSERT INTO cupones_usos (cupon_id, usuario_id, venta_id) VALUES (?,?,?)")
+                ->execute([$cupon['id'], $idusuario ?? null, $id_venta]);
+            $pdo->prepare("UPDATE cupones SET usos_actuales = usos_actuales + 1 WHERE id = ?")
+                ->execute([$cupon['id']]);
+        } catch (Throwable $e) {}
+    }
+
     $pdo->commit();
 
     $sucNombre = '';
@@ -200,14 +278,16 @@ try {
         $sucNombre = ' | Retiro: '.($sn->fetchColumn() ?: "Suc #{$sucursal_id}");
     }
 
+    $cuponLabel = $cupon_descuento > 0 ? " | Cupón: {$cupon_codigo} (-$".number_format($cupon_descuento,0,',','.').")" : '';
     audit($pdo, 'crear', 'ventas',
         "Pedido online #{$id_venta} | Cliente: {$cNombre}" .
         " | ".implode(', ', $resumen).
+        $cuponLabel .
         " | Total: $".number_format($total, 2) .
         $sucNombre
     );
 
-    echo json_encode(['success'=>true, 'id_venta'=>$id_venta, 'costo_envio'=>$costo_envio, 'total'=>$total]);
+    echo json_encode(['success'=>true, 'id_venta'=>$id_venta, 'costo_envio'=>$costo_envio, 'total'=>$total, 'cupon_descuento'=>$cupon_descuento]);
 
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();

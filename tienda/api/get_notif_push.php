@@ -15,7 +15,7 @@ if (!$epHash) {
     echo json_encode([
         'titulo' => 'Canetto 🍪',
         'cuerpo' => 'Tu pedido fue actualizado',
-        'url'    => '/canetto/tienda/mis-pedidos.php',
+        'url'    => URL_TIENDA . '/mis-pedidos.php',
     ]);
     exit;
 }
@@ -30,7 +30,7 @@ try {
     $uid  = (int)$stmt->fetchColumn();
 
     if (!$uid) {
-        echo json_encode(['titulo' => 'Canetto 🍪', 'cuerpo' => 'Tu pedido fue actualizado', 'url' => '/canetto/tienda/mis-pedidos.php']);
+        echo json_encode(['titulo' => 'Canetto 🍪', 'cuerpo' => 'Tu pedido fue actualizado', 'url' => URL_TIENDA . '/mis-pedidos.php']);
         exit;
     }
 
@@ -55,9 +55,9 @@ try {
         echo json_encode([
             'titulo' => 'Canetto 🍪',
             'cuerpo' => 'Tu pedido fue actualizado — tocá para ver el estado',
-            'url'    => '/canetto/tienda/mis-pedidos.php',
+            'url'    => URL_TIENDA . '/mis-pedidos.php',
         ]);
     }
 } catch (Throwable $e) {
-    echo json_encode(['titulo' => 'Canetto 🍪', 'cuerpo' => 'Tu pedido fue actualizado', 'url' => '/canetto/tienda/mis-pedidos.php']);
+    echo json_encode(['titulo' => 'Canetto 🍪', 'cuerpo' => 'Tu pedido fue actualizado', 'url' => URL_TIENDA . '/mis-pedidos.php']);
 }

@@ -129,17 +129,16 @@ foreach ($boxRows as $row) {
     <!-- HEADER -->
     <div class="editor-header fade-up">
         <div>
-            <h1>Productos y Box</h1>
-            <p>Gestión de cookies y box de Canetto</p>
+            <h1>Productos <span class="header-y">&</span> Box</h1>
+            <p>Cookies individuales y combos de Canetto</p>
         </div>
         <button class="btn-primary" onclick="abrirModalProducto()">
-            <i class="fa-solid fa-plus"></i>
-            Nuevo
+            <i class="fa-solid fa-plus"></i> Nuevo producto
         </button>
     </div>
 
     <!-- BUSCADOR -->
-    <div class="prod-search-wrap">
+    <div class="prod-toolbar">
         <div class="prod-search-box">
             <i class="fa-solid fa-magnifying-glass prod-search-icon"></i>
             <input type="text" id="buscadorProductos" class="prod-search-input"
@@ -149,11 +148,16 @@ foreach ($boxRows as $row) {
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div class="prod-filter-pills">
-            <button class="prod-pill active" onclick="setPill(this,'todos')">Todos</button>
-            <button class="prod-pill" onclick="setPill(this,'activo')">Activos</button>
-            <button class="prod-pill" onclick="setPill(this,'inactivo')">Inactivos</button>
-        </div>
+        <select id="filtroEstadoProd" class="prod-filter-select" onchange="aplicarSelects()">
+            <option value="todos">Todos los estados</option>
+            <option value="activo">Activos</option>
+            <option value="inactivo">Inactivos</option>
+        </select>
+        <select id="filtroTipoProd" class="prod-filter-select" onchange="aplicarSelects()">
+            <option value="todos">Todos los tipos</option>
+            <option value="cookie">Cookies</option>
+            <option value="box">Box</option>
+        </select>
         <span class="prod-count" id="prodCount"></span>
     </div>
 
@@ -161,7 +165,12 @@ foreach ($boxRows as $row) {
     PRODUCTOS
     ========================= -->
 
-    <h2 class="titulo-seccion">Productos</h2>
+    <div class="seccion-divider seccion-cookies">
+        <div class="seccion-divider-inner">
+            <span class="seccion-title">Cookies</span>
+            <span class="seccion-badge seccion-badge-cookies"><?= count($productos) ?></span>
+        </div>
+    </div>
 
     <div class="cards-grid">
 
@@ -169,7 +178,8 @@ foreach ($boxRows as $row) {
 
             <div class="producto-card <?= $p['activo'] ? '' : 'inactivo' ?>"
                  data-nombre="<?= strtolower(htmlspecialchars($p['nombre'])) ?>"
-                 data-estado="<?= $p['activo'] ? 'activo' : 'inactivo' ?>">
+                 data-estado="<?= $p['activo'] ? 'activo' : 'inactivo' ?>"
+                 data-tipo="cookie">
 
                 <div class="prod-thumb-wrap">
                     <?php if (!empty($p['imagen'])): ?>
@@ -220,7 +230,12 @@ foreach ($boxRows as $row) {
     BOX
     ========================= -->
 
-    <h2 class="titulo-seccion">Box</h2>
+    <div class="seccion-divider seccion-box">
+        <div class="seccion-divider-inner">
+            <span class="seccion-title">Box</span>
+            <span class="seccion-badge seccion-badge-box"><?= count($boxAgrupados) ?></span>
+        </div>
+    </div>
 
     <div class="cards-grid">
 
@@ -228,7 +243,8 @@ foreach ($boxRows as $row) {
 
             <div class="producto-card box-card <?= $b['activo'] ? '' : 'inactivo' ?>"
                  data-nombre="<?= strtolower(htmlspecialchars($b['nombre'])) ?>"
-                 data-estado="<?= $b['activo'] ? 'activo' : 'inactivo' ?>">
+                 data-estado="<?= $b['activo'] ? 'activo' : 'inactivo' ?>"
+                 data-tipo="box">
 
                 <div class="prod-thumb-wrap prod-thumb-wrap--box">
                     <div class="prod-thumb-placeholder prod-thumb-placeholder--box">
@@ -858,12 +874,10 @@ X
 BUSCADOR + FILTRO
 ========================= */
 
-let _filtroEstado = 'todos';
-
 function filtrarProductos(q) {
     const term = q.trim().toLowerCase();
     document.getElementById('btnLimpiarBusqueda').style.display = term ? '' : 'none';
-    aplicarFiltro(term, _filtroEstado);
+    aplicarFiltro(term);
 }
 
 function limpiarBusqueda() {
@@ -871,26 +885,26 @@ function limpiarBusqueda() {
     inp.value = '';
     inp.focus();
     document.getElementById('btnLimpiarBusqueda').style.display = 'none';
-    aplicarFiltro('', _filtroEstado);
+    aplicarFiltro('');
 }
 
-function setPill(btn, estado) {
-    document.querySelectorAll('.prod-pill').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    _filtroEstado = estado;
-    const term = document.getElementById('buscadorProductos').value.trim().toLowerCase();
-    aplicarFiltro(term, estado);
+function aplicarSelects() {
+    aplicarFiltro(document.getElementById('buscadorProductos').value.trim().toLowerCase());
 }
 
-function aplicarFiltro(term, estado) {
+function aplicarFiltro(term) {
+    const _filtroEstado = document.getElementById('filtroEstadoProd').value;
+    const _filtroTipo   = document.getElementById('filtroTipoProd').value;
     const cards = document.querySelectorAll('.producto-card');
     let visible = 0;
     cards.forEach(card => {
-        const nombre   = card.dataset.nombre || '';
+        const nombre     = card.dataset.nombre || '';
         const cardEstado = card.dataset.estado || 'activo';
+        const cardTipo   = card.dataset.tipo   || 'cookie';
         const matchNombre = !term || nombre.includes(term);
-        const matchEstado = estado === 'todos' || cardEstado === estado;
-        const show = matchNombre && matchEstado;
+        const matchEstado = _filtroEstado === 'todos' || cardEstado === _filtroEstado;
+        const matchTipo   = _filtroTipo   === 'todos' || cardTipo   === _filtroTipo;
+        const show = matchNombre && matchEstado && matchTipo;
         card.style.display = show ? '' : 'none';
         if (show) visible++;
     });

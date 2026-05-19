@@ -73,7 +73,7 @@ function push_ensure_tables(\PDO $pdo): void {
             usuario_id INT          NOT NULL,
             titulo     VARCHAR(255) NOT NULL,
             cuerpo     TEXT         NOT NULL,
-            url        VARCHAR(512) NOT NULL DEFAULT '/canetto/tienda/mis-pedidos.php',
+            url        VARCHAR(512) NOT NULL DEFAULT 'https://tienda.canettocookies.com/mis-pedidos.php',
             leida      TINYINT(1)   NOT NULL DEFAULT 0,
             created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_uid_leida (usuario_id, leida)
@@ -83,7 +83,8 @@ function push_ensure_tables(\PDO $pdo): void {
 
 // ── Enviar push a TODOS los usuarios suscritos (paneles, anuncios) ─
 
-function push_enviar_a_todos(\PDO $pdo, string $titulo, string $cuerpo, string $url = '/canetto/tienda/'): array {
+function push_enviar_a_todos(\PDO $pdo, string $titulo, string $cuerpo, string $url = ''): array {
+    if ($url === '') $url = URL_TIENDA . '/';
     push_ensure_tables($pdo);
 
     // Insertar notificación para cada usuario único
@@ -144,7 +145,7 @@ function push_enviar_a_usuario(\PDO $pdo, int $uid, int $idVenta, int $estado): 
 
         $titulo = $msg['titulo'];
         $cuerpo = $msg['cuerpo'] . " (Pedido #{$idVenta})";
-        $url    = '/canetto/tienda/mis-pedidos.php';
+        $url    = URL_TIENDA . '/mis-pedidos.php';
 
         // Guardar notificación en DB
         $pdo->prepare("

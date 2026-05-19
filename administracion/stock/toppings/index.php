@@ -70,6 +70,30 @@ $bajos = count(array_filter($toppings, fn($t) => $t['activo'] && ($t['stock_actu
         </div>
     </div>
 
+    <!-- Barra de búsqueda y filtros -->
+    <div class="tp-toolbar">
+        <div class="tp-search-box">
+            <i class="fa-solid fa-magnifying-glass tp-search-icon"></i>
+            <input type="text" id="tpSearchInput" placeholder="Buscar topping..." autocomplete="off">
+        </div>
+        <div class="tp-filters">
+            <select id="filtroEstado" class="tp-filter-select">
+                <option value="">Todos los estados</option>
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+            </select>
+            <select id="filtroStock" class="tp-filter-select">
+                <option value="">Todo el stock</option>
+                <option value="ok">Stock OK</option>
+                <option value="bajo">Stock bajo</option>
+                <option value="sinstock">Sin stock</option>
+            </select>
+            <button id="btnLimpiarFiltros" class="tp-filter-clear" style="display:none" onclick="limpiarFiltros()">
+                <i class="fa-solid fa-xmark"></i> Limpiar
+            </button>
+        </div>
+    </div>
+
     <div class="tp-table-wrap">
         <table id="tpDT" class="tp-table" style="width:100%">
             <thead>
@@ -185,23 +209,17 @@ $bajos = count(array_filter($toppings, fn($t) => $t['activo'] && ($t['stock_actu
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
 <script>
+let dt;
 $(function() {
-    $('#tpDT').DataTable({
+    dt = $('#tpDT').DataTable({
         language: {
-            search:           '',
-            searchPlaceholder: '🔍  Buscar topping...',
-            lengthMenu:       'Mostrar _MENU_ por página',
-            zeroRecords:      'No se encontraron toppings',
-            emptyTable:       'No hay toppings cargados',
-            info:             'Mostrando _START_ a _END_ de _TOTAL_ toppings',
-            infoEmpty:        'Sin resultados',
-            infoFiltered:     '(filtrado de _MAX_ en total)',
-            paginate: {
-                first:    '«',
-                last:     '»',
-                next:     '›',
-                previous: '‹',
-            }
+            lengthMenu:   'Mostrar _MENU_ por página',
+            zeroRecords:  'No se encontraron toppings',
+            emptyTable:   'No hay toppings cargados',
+            info:         'Mostrando _START_ a _END_ de _TOTAL_ toppings',
+            infoEmpty:    'Sin resultados',
+            infoFiltered: '(filtrado de _MAX_ en total)',
+            paginate: { first:'«', last:'»', next:'›', previous:'‹' }
         },
         pageLength: 15,
         lengthMenu: [10, 15, 25, 50, 100],
@@ -211,11 +229,55 @@ $(function() {
             { targets: 5, orderable: false, className: 'dt-center' },
         ],
         dom:
-            "<'dt-top'<'dt-search'f><'dt-len'l>>" +
+            "<'dt-top'<'dt-len'l>>" +
             "<'dt-body'tr>" +
             "<'dt-foot'<'dt-info'i><'dt-pag'p>>",
     });
+
+    // Filtro custom: texto
+    $('#tpSearchInput').on('input', function() {
+        dt.search(this.value).draw();
+        actualizarBtnLimpiar();
+    });
+
+    // Filtro custom: estado y stock
+    $.fn.dataTable.ext.search.push(function(settings, data, idx) {
+        if (settings.nTable.id !== 'tpDT') return true;
+        const row       = dt.row(idx).node();
+        const estado    = $('#filtroEstado').val();
+        const stock     = $('#filtroStock').val();
+        const esActivo  = $(row).find('.badge-activo').length > 0;
+        const stockVal  = parseFloat(data[2]) || 0;
+        const minimoVal = parseFloat(data[3]) || 0;
+
+        if (estado === 'activo'   && !esActivo)  return false;
+        if (estado === 'inactivo' &&  esActivo)  return false;
+
+        if (stock === 'sinstock' && stockVal > 0) return false;
+        if (stock === 'bajo' && !(stockVal > 0 && minimoVal > 0 && stockVal <= minimoVal)) return false;
+        if (stock === 'ok'   && !(stockVal > minimoVal || minimoVal === 0 && stockVal > 0)) return false;
+
+        return true;
+    });
+
+    $('#filtroEstado, #filtroStock').on('change', function() {
+        dt.draw();
+        actualizarBtnLimpiar();
+    });
 });
+
+function actualizarBtnLimpiar() {
+    const activo = $('#tpSearchInput').val() || $('#filtroEstado').val() || $('#filtroStock').val();
+    $('#btnLimpiarFiltros').toggle(!!activo);
+}
+
+function limpiarFiltros() {
+    $('#tpSearchInput').val('');
+    $('#filtroEstado').val('');
+    $('#filtroStock').val('');
+    dt.search('').draw();
+    $('#btnLimpiarFiltros').hide();
+}
 
 /* ── Modal ── */
 function abrirModal(id=0, nombre='', precio=0, activo=1, stock=0, minimo=0) {

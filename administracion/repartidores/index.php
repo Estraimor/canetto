@@ -17,27 +17,27 @@ include '../../panel/dashboard/layaut/nav.php';
 
 /* ── Panel lateral ── */
 .rep-sidebar {
-  background: #fff;
-  border-right: 1px solid #e5e7eb;
+  background: #12121e;
+  border-right: 1px solid #2a2a3e;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 .rep-sidebar-hd {
   padding: 20px 20px 14px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #2a2a3e;
 }
 .rep-sidebar-title {
   font-size: 15px;
   font-weight: 800;
-  color: #111;
+  color: #fff;
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
 }
 .rep-sidebar-title i { color: #c88e99; }
-.rep-sidebar-sub { font-size: 12px; color: #888; }
+.rep-sidebar-sub { font-size: 12px; color: #666; }
 
 .rep-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
@@ -47,29 +47,30 @@ include '../../panel/dashboard/layaut/nav.php';
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  border: 1.5px solid #e5e7eb;
-  background: #fafafa;
+  border: 1.5px solid #2a2a3e;
+  background: #1a1a2e;
   cursor: pointer;
   transition: .15s;
 }
-.rep-item:hover           { border-color: #c88e99; background: #fdf0f3; }
-.rep-item.online          { border-color: #86efac; background: #f0fdf4; }
-.rep-item.online:hover    { border-color: #4ade80; }
+.rep-item:hover           { border-color: #c88e99; background: #22213a; }
+.rep-item.online          { border-color: #22c55e44; background: #0f1f1a; }
+.rep-item.online:hover    { border-color: #22c55e; }
 
 .rep-avatar {
   width: 40px; height: 40px; border-radius: 50%;
-  background: #f3d4da; color: #9b3a52;
+  background: #2a1a2e; color: #c88e99;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 800; flex-shrink: 0;
+  border: 1.5px solid #3a2a3e;
 }
-.rep-item.online .rep-avatar { background: #c88e99; color: #fff; }
+.rep-item.online .rep-avatar { background: #c88e99; color: #fff; border-color: #c88e99; }
 
 .rep-info { flex: 1; min-width: 0; }
-.rep-name  { font-size: 13px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rep-status { font-size: 11px; color: #999; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-.rep-dot    { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
-.rep-item.online .rep-dot    { background: #22c55e; }
-.rep-item.online .rep-status { color: #16a34a; }
+.rep-name  { font-size: 13px; font-weight: 700; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rep-status { font-size: 11px; color: #555; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.rep-dot    { width: 7px; height: 7px; border-radius: 50%; background: #3a3a4e; flex-shrink: 0; }
+.rep-item.online .rep-dot    { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.rep-item.online .rep-status { color: #4ade80; }
 
 .rep-go-btn {
   background: #c88e99; color: #fff; border: none; border-radius: 8px;
@@ -81,15 +82,16 @@ include '../../panel/dashboard/layaut/nav.php';
 /* ── Info actualización ── */
 .rep-footer {
   padding: 12px 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #2a2a3e;
   font-size: 11px;
-  color: #aaa;
+  color: #555;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #0f0f1a;
 }
 .rep-refresh-btn {
-  background: none; border: 1px solid #e5e7eb; border-radius: 8px;
+  background: none; border: 1px solid #2a2a3e; border-radius: 8px;
   padding: 4px 10px; font-size: 11px; color: #666; cursor: pointer;
   font-family: inherit; transition: .15s;
 }
@@ -98,30 +100,43 @@ include '../../panel/dashboard/layaut/nav.php';
 /* ── Sucursales section ── */
 .suc-section {
   padding: 10px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #2a2a3e;
 }
 .suc-section-title {
   font-size: 10px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: .06em; color: #aaa;
+  letter-spacing: .06em; color: #555;
   display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
 }
 #sucSelect {
   width: 100%; padding: 7px 10px;
-  border: 1.5px solid #e5e7eb; border-radius: 8px;
-  font-size: 12px; font-weight: 600; color: #333;
-  background: #fff; cursor: pointer;
+  border: 1.5px solid #2a2a3e; border-radius: 8px;
+  font-size: 12px; font-weight: 600; color: #ccc;
+  background: #1a1a2e; cursor: pointer;
   font-family: inherit;
 }
 #sucSelect:focus { outline: none; border-color: #c88e99; }
-#sucSelect option.opt-inactiva { color: #9ca3af; }
+#sucSelect option { background: #1a1a2e; color: #ccc; }
+#sucSelect option.opt-inactiva { color: #555; }
 
 /* ── Mapa ── */
 #repAdminMap { width: 100%; height: 100%; }
 
-/* ── Popup del mapa ── */
-.rep-popup { font-family: system-ui, sans-serif; min-width: 160px; }
-.rep-popup-name { font-size: 14px; font-weight: 800; color: #111; margin-bottom: 4px; }
-.rep-popup-time { font-size: 11px; color: #888; }
+/* ── Popup del mapa — tema oscuro ── */
+.leaflet-popup-content-wrapper {
+  background: #1a1a2e !important;
+  border: 1px solid #c88e99 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5) !important;
+}
+.leaflet-popup-tip { background: #1a1a2e !important; }
+.leaflet-popup-close-button { color: #c88e99 !important; font-size: 16px !important; }
+.rep-popup { font-family: system-ui, sans-serif; min-width: 180px; padding: 2px 0; }
+.rep-popup-name { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 7px; }
+.rep-popup-time { font-size: 11px; color: #888; background: #0f0f1a; border-radius: 6px; padding: 4px 8px; display: inline-block; }
+
+/* ── Sucursales popup ── */
+.leaflet-popup-content strong { color: #fff; }
+.leaflet-popup-content span   { color: #aaa !important; }
 
 /* ── Badge counter ── */
 .rep-counter {
@@ -187,7 +202,10 @@ include '../../panel/dashboard/layaut/nav.php';
 const initials = n => (n||'?').trim().split(/\s+/).map(w=>w[0]).join('').substring(0,2).toUpperCase();
 
 const map = L.map('repAdminMap', { zoomControl: true, attributionControl: false });
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  subdomains: 'abcd'
+}).addTo(map);
 map.setView([-34.6037, -58.3816], 13);
 
 // Sucursales
@@ -249,14 +267,29 @@ function irASucursalSelect(id) {
 }
 
 // Icono repartidor
-function iconRep() {
+function iconRep(nombre) {
   return L.divIcon({
     className: '',
-    html: `<div style="display:flex;align-items:center;justify-content:center;
-             width:36px;height:36px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))">
-             <i class="fa-solid fa-motorcycle" style="font-size:24px;color:#c88e99"></i>
-           </div>`,
-    iconSize: [36,36], iconAnchor: [18,18], popupAnchor: [0,-18],
+    html: `<div style="
+             background:#c88e99;
+             width:42px;height:42px;border-radius:50%;
+             display:flex;align-items:center;justify-content:center;
+             border:3px solid #fff;
+             box-shadow:0 0 0 3px rgba(200,142,153,.4), 0 4px 16px rgba(0,0,0,.6);
+           ">
+             <i class="fa-solid fa-motorcycle" style="font-size:18px;color:#fff"></i>
+           </div>
+           <div style="
+             margin-top:4px;text-align:center;
+             background:#1a1a2e;color:#fff;
+             font-size:10px;font-weight:700;
+             padding:2px 6px;border-radius:6px;
+             border:1px solid #c88e99;
+             white-space:nowrap;max-width:80px;
+             overflow:hidden;text-overflow:ellipsis;
+             box-shadow:0 2px 8px rgba(0,0,0,.5);
+           ">${nombre||''}</div>`,
+    iconSize: [42,62], iconAnchor: [21,42], popupAnchor: [0,-44],
   });
 }
 
@@ -309,13 +342,13 @@ function procesarUbicaciones(data) {
     const nombre = rep.nombre + ' ' + (rep.apellido || '');
     const popup  = `<div class="rep-popup">
       <div class="rep-popup-name"><i class="fa-solid fa-motorcycle" style="color:#c88e99"></i> ${nombre.trim()}</div>
-      <div class="rep-popup-time">Actualizado ${fmtAgo(rep.actualizado_at)}</div>
+      <div class="rep-popup-time"><i class="fa-solid fa-clock" style="margin-right:4px;opacity:.5"></i>Actualizado ${fmtAgo(rep.actualizado_at)}</div>
     </div>`;
 
     if (_markers[rep.idusuario]) {
       animarMarcador(_markers[rep.idusuario], lat, lng);
     } else {
-      _markers[rep.idusuario] = L.marker([lat, lng], { icon: iconRep() }).addTo(map);
+      _markers[rep.idusuario] = L.marker([lat, lng], { icon: iconRep(nombre.trim().split(' ')[0]) }).addTo(map);
     }
     _markers[rep.idusuario].bindPopup(popup);
   });

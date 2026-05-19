@@ -136,6 +136,40 @@ if ($prod['especificaciones']) {
 
 // Imágenes desde tabla productos_imagenes (ya cargadas arriba)
 $imgPrincipal = $imagenes[0] ?? '';
+
+// Toppings asignados a este producto
+$toppingsProd = [];
+if (!$esBox) {
+    try {
+        $stmtTp = $pdo->prepare("
+            SELECT t.idtoppings AS id, t.nombre, t.precio,
+                   COALESCE(ts.stock_actual, -1) AS stock
+            FROM producto_toppings pt
+            JOIN toppings t ON t.idtoppings = pt.toppings_idtoppings
+            LEFT JOIN toppings_stock ts ON ts.toppings_idtoppings = t.idtoppings
+            WHERE pt.productos_idproductos = ? AND t.activo = 1
+            ORDER BY t.precio ASC, t.nombre ASC
+        ");
+        $stmtTp->execute([$id]);
+        $toppingsProd = $stmtTp->fetchAll(PDO::FETCH_ASSOC);
+        // Si no tiene asignados, traer todos los activos
+        if (empty($toppingsProd)) {
+            $toppingsProd = $pdo->query("
+                SELECT t.idtoppings AS id, t.nombre, t.precio,
+                       COALESCE(ts.stock_actual, -1) AS stock
+                FROM toppings t
+                LEFT JOIN toppings_stock ts ON ts.toppings_idtoppings = t.idtoppings
+                WHERE t.activo = 1
+                ORDER BY t.precio ASC, t.nombre ASC
+            ")->fetchAll(PDO::FETCH_ASSOC);
+        }
+        foreach ($toppingsProd as &$tp) {
+            $tp['id']     = (int)$tp['id'];
+            $tp['precio'] = (float)$tp['precio'];
+            $tp['stock']  = (float)$tp['stock'];
+        }
+    } catch (Throwable $e) { $toppingsProd = []; }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -151,8 +185,14 @@ $imgPrincipal = $imagenes[0] ?? '';
 /* ════════════════════════════════
    PRODUCTO — Mobile first
 ════════════════════════════════ */
+@font-face {
+  font-family: 'Speedee';
+  src: url('<?= URL_ASSETS ?>/assets/fonts/Speedee.ttf') format('truetype');
+  font-weight: 400 900;
+  font-display: swap;
+}
 *, *::before, *::after { box-sizing: border-box; }
-body { background: #f8f9fa; margin: 0; font-family: inherit; }
+body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-serif; }
 
 /* ── NAV ── */
 .det-nav {
@@ -265,26 +305,41 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
   border-radius: 4px; margin: 14px auto 22px;
 }
 .det-tipo-tag {
-  display: inline-block; font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 1px;
+  display: inline-block; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.2px;
   color: #c88e99; background: #fdf0f3;
-  padding: 5px 13px; border-radius: 20px; margin-bottom: 10px;
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;
 }
 .det-nombre {
-  font-size: 26px; font-weight: 800; color: #1e293b;
-  line-height: 1.2; margin: 0 0 8px;
+  font-size: 28px; font-weight: 900; color: #111;
+  line-height: 1.15; margin: 0 0 14px;
+  letter-spacing: -.3px;
+}
+.det-precio-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 6px; flex-wrap: wrap;
 }
 .det-precio {
-  font-size: 32px; font-weight: 800; color: #c88e99;
-  margin-bottom: 14px;
+  font-size: 22px; font-weight: 700; color: #111;
+  letter-spacing: -.3px; line-height: 1;
 }
+.det-precio-tachado {
+  font-size: .6em; font-weight: 600;
+  text-decoration: line-through; color: #aaa; margin-left: 6px;
+}
+.det-precio-descuento {
+  font-size: .5em; font-weight: 800;
+  background: #dc2626; color: #fff;
+  border-radius: 20px; padding: 3px 10px; margin-left: 4px;
+  vertical-align: middle;
+}
+.det-precio-row .det-pill { position: static; font-size: 11px; border-radius: 12px; }
 .det-stock-row {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 20px; padding-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 18px; padding-bottom: 18px;
   border-bottom: 1px solid #f1f5f9;
 }
-.det-stock-row .det-pill { position: static; font-size: 12px; border-radius: 12px; }
-.det-stock-txt { font-size: 15px; color: #64748b; font-weight: 500; }
+.det-stock-txt { font-size: 13px; color: #94a3b8; font-weight: 500; }
 
 /* Descripción mobile */
 .det-desc {
@@ -332,6 +387,73 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
 }
 .box-item-row:last-child { border-bottom: none; }
 .box-item-qty { font-weight: 700; color: #c88e99; }
+
+/* ── TOPPINGS SELECTOR ── */
+.det-tp-section {
+  margin-bottom: 20px;
+  border: 1.5px solid #f0e8ed;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.det-tp-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #c88e99;
+  padding: 12px 16px 10px;
+  display: flex; align-items: center; gap: 6px;
+  border-bottom: 1px solid #f5eff2;
+  background: #fff9fb;
+}
+.det-tp-obligatorio {
+  font-size: 10px; font-weight: 700; color: #dc2626;
+  background: #fee2e2; padding: 2px 8px; border-radius: 20px;
+  margin-left: auto; text-transform: none; letter-spacing: 0;
+}
+.det-tp-sub {
+  font-size: 11px; color: #94a3b8; display: block; margin-top: 1px;
+}
+.det-tp-row-sin { border-top: 1px dashed #f0e8ed; }
+.det-tp-check-sin {
+  border-color: #94a3b8 !important;
+}
+.det-tp-row-sin.selected .det-tp-check-sin {
+  background: #64748b !important; border-color: #64748b !important; color: #fff;
+}
+.det-tp-row-sin.selected .det-tp-nombre { color: #475569 !important; }
+.det-tp-alerta {
+  font-size: 12px; color: #dc2626; font-weight: 600;
+  padding: 10px 16px; background: #fff5f5;
+  border-top: 1px solid #fecaca;
+  display: flex; align-items: center; gap: 6px;
+}
+.det-tp-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; cursor: pointer;
+  border-bottom: 1px solid #faf5f7;
+  transition: background .12s;
+}
+.det-tp-row:last-child { border-bottom: none; }
+.det-tp-row:hover:not(.det-tp-disabled) { background: #fff5f8; }
+.det-tp-row input { display: none; }
+.det-tp-disabled { opacity: .45; cursor: default; }
+.det-tp-info { flex: 1; min-width: 0; }
+.det-tp-nombre { font-size: 14px; font-weight: 600; color: #1e293b; }
+.det-tp-tag { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; margin-left: 6px; }
+.det-tp-tag-out { background: #fee2e2; color: #dc2626; }
+.det-tp-price {
+  font-size: 13px; font-weight: 700; color: #c88e99;
+  white-space: nowrap; flex-shrink: 0;
+}
+.det-tp-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid #e2e8f0; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: transparent; flex-shrink: 0;
+  transition: all .15s;
+}
+.det-tp-row.selected .det-tp-check {
+  background: #c88e99; border-color: #c88e99; color: #fff;
+}
+.det-tp-row.selected .det-tp-nombre { color: #c88e99; }
 
 /* Cantidad en card (solo desktop) */
 .det-qty-section { display: none; }
@@ -453,13 +575,14 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
     margin-bottom: 24px;
   }
   .det-dsk-meta {
-    font-size: 13px; font-weight: 500; color: #c88e99;
-    text-transform: uppercase; letter-spacing: 1px;
+    font-size: 11px; font-weight: 700; color: #c88e99;
+    text-transform: uppercase; letter-spacing: 1.2px;
     margin-bottom: 10px;
   }
   .det-dsk-title {
-    font-size: 32px; font-weight: 800; color: #1a1a1a;
-    line-height: 1.15; margin: 0 0 20px; font-family: inherit;
+    font-size: 36px; font-weight: 900; color: #111;
+    line-height: 1.1; margin: 0 0 20px;
+    letter-spacing: -.5px; font-family: 'Speedee', system-ui, sans-serif;
   }
   .det-dsk-hr {
     height: 2px;
@@ -518,10 +641,11 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
   .det-tipo-tag { display: none; }
   .det-nombre   { display: none; }
 
-  /* Precio — primera info visible en la card */
+  /* Precio desktop */
+  .det-precio-row { margin-bottom: 8px; }
   .det-precio {
-    font-size: 46px; font-weight: 300; color: #111;
-    margin-bottom: 6px; letter-spacing: -2px; font-family: inherit;
+    font-size: 28px; font-weight: 700; color: #111;
+    letter-spacing: -.4px; font-family: 'Speedee', system-ui, sans-serif;
   }
 
   /* Stock */
@@ -625,6 +749,75 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
   .det-trust-ic { font-size: 22px; margin-bottom: 8px; color: #c88e99; }
   .det-trust-txt { font-size: 11px; font-weight: 600; color: #888; line-height: 1.4; }
 }
+
+/* ── Modal sugerencias ─────────────────────────────────────────── */
+.sug-popup {
+  border-radius: 28px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  max-width: 380px !important;
+  width: 92vw !important;
+}
+.sug-wrap { padding: 28px 20px 8px; text-align: center; }
+.sug-check {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg,#2d8a4e,#3aab60);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 6px 20px rgba(45,138,78,.28);
+  animation: sugCheckPop .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+.sug-check i { color: #fff; font-size: 26px; }
+@keyframes sugCheckPop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.sug-title {
+  font-family: 'Speedee', system-ui, sans-serif;
+  font-size: 20px; font-weight: 900; color: #1a1a1a;
+  margin-bottom: 4px; letter-spacing: -.3px;
+}
+.sug-sub { font-size: 13px; color: #888; margin-bottom: 18px; }
+.sug-cards { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.sug-card {
+  display: flex; align-items: center; gap: 12px;
+  background: #fdf8f9; border: 1.5px solid #f1e4e8;
+  border-radius: 16px; padding: 10px 12px;
+  transition: border-color .2s, box-shadow .2s;
+  cursor: pointer;
+}
+.sug-card:hover { border-color: #c88e99; box-shadow: 0 4px 16px rgba(200,142,153,.18); }
+.sug-card-img {
+  width: 56px; height: 56px; border-radius: 12px;
+  background: #fff; overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid #f0e4e8;
+}
+.sug-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sug-card-info { flex: 1; min-width: 0; }
+.sug-card-name {
+  font-size: 13px; font-weight: 700; color: #1a1a1a;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.sug-card-price { font-size: 14px; font-weight: 800; color: #c88e99; }
+.sug-card-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #c88e99; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .2s;
+}
+.sug-card:hover .sug-card-btn { background: #b57585; }
+.sug-card-btn i { color: #fff; font-size: 13px; }
+.sug-footer-wrap { border-top: 1px solid #f1e4e8 !important; padding: 0 !important; }
+.sug-skip {
+  width: 100%; padding: 14px 20px;
+  font-size: 13px; font-weight: 600; color: #888;
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: color .2s;
+}
+.sug-skip:hover { color: #c88e99; }
+.swal2-timer-progress-bar { background: #c88e99 !important; }
 </style>
 </head>
 <body>
@@ -713,23 +906,26 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
       </div>
       <?php endif; ?>
       <div class="det-nombre"><?= $nombre ?></div>
-      <div class="det-precio">
-        $<?= $precio ?>
-        <?php if ($descuentoPct > 0): ?>
-          <span style="font-size:.55em;font-weight:600;text-decoration:line-through;color:#aaa;margin-left:8px">$<?= number_format($precioNum,0,',','.') ?></span>
-          <span style="font-size:.45em;font-weight:800;background:#dc2626;color:#fff;border-radius:20px;padding:3px 10px;margin-left:6px;vertical-align:middle">-<?= $descuentoPct ?>%</span>
-        <?php endif; ?>
+      <div class="det-precio-row">
+        <div class="det-precio">
+          $<?= $precio ?>
+          <?php if ($descuentoPct > 0): ?>
+            <span class="det-precio-tachado">$<?= number_format($precioNum,0,',','.') ?></span>
+            <span class="det-precio-descuento">-<?= $descuentoPct ?>%</span>
+          <?php endif; ?>
+        </div>
+        <span class="det-pill <?= $pillCls ?>" style="position:static"><?= $pillTxt ?></span>
       </div>
 
+      <?php if ($stock <= 0): ?>
       <div class="det-stock-row">
-        <span class="det-pill <?= $pillCls ?>" style="position:static"><?= $pillTxt ?></span>
-        <span class="det-stock-txt">
-          <?php if ($stock <= 0): ?>Sin stock disponible
-          <?php elseif ($stock <= 10): ?>¡Solo quedan <?= (int)$stock ?>!
-          <?php else: ?><?= (int)$stock ?> unidades disponibles
-          <?php endif; ?>
-        </span>
+        <span class="det-stock-txt">Sin stock disponible</span>
       </div>
+      <?php elseif ($stock <= 10): ?>
+      <div class="det-stock-row">
+        <span class="det-stock-txt">¡Solo quedan <?= (int)$stock ?>!</span>
+      </div>
+      <?php endif; ?>
 
       <?php if ($prod['descripcion']): ?>
       <div class="det-desc"><?= nl2br(htmlspecialchars($prod['descripcion'])) ?></div>
@@ -749,6 +945,50 @@ body { background: #f8f9fa; margin: 0; font-family: inherit; }
       </div>
       <?php endif; ?>
 
+
+      <!-- SELECTOR DE TOPPINGS -->
+      <?php if (!$esBox && !empty($toppingsProd)): ?>
+      <div class="det-tp-section" id="detTpSection">
+        <div class="det-tp-title">
+          <i class="fa-solid fa-sparkles"></i> Elegí tu topping
+        </div>
+        <div class="det-tp-list" id="detTpList">
+          <?php foreach ($toppingsProd as $tp): ?>
+            <?php $sinStock = $tp['stock'] == 0; ?>
+            <label class="det-tp-row <?= $sinStock ? 'det-tp-disabled' : '' ?>">
+              <input type="checkbox" class="det-tp-chk" name="topping"
+                     value="<?= $tp['id'] ?>"
+                     data-nombre="<?= htmlspecialchars($tp['nombre']) ?>"
+                     data-precio="<?= $tp['precio'] ?>"
+                     <?= $sinStock ? 'disabled' : '' ?>
+                     onchange="onToppingChange()">
+              <div class="det-tp-info">
+                <span class="det-tp-nombre"><?= htmlspecialchars($tp['nombre']) ?></span>
+                <?php if ($sinStock): ?>
+                  <span class="det-tp-tag det-tp-tag-out">Sin stock</span>
+                <?php endif; ?>
+              </div>
+              <span class="det-tp-price">
+                <?= $tp['precio'] > 0 ? '+$'.number_format($tp['precio'],0,',','.') : 'Gratis' ?>
+              </span>
+              <span class="det-tp-check"><i class="fa-solid fa-check"></i></span>
+            </label>
+          <?php endforeach; ?>
+          <!-- Opción sin topping -->
+          <div class="det-tp-row det-tp-row-sin" id="detTpSinRow" onclick="toggleSinTopping()">
+            <div class="det-tp-info">
+              <span class="det-tp-nombre" style="color:#64748b">Sin topping</span>
+              <span class="det-tp-sub">Continuar sin agregar extras</span>
+            </div>
+            <span class="det-tp-price" style="color:#94a3b8">$0</span>
+            <span class="det-tp-check det-tp-check-sin" id="detTpSinCheck"><i class="fa-solid fa-check"></i></span>
+          </div>
+        </div>
+        <div class="det-tp-alerta" id="detTpAlerta" style="display:none">
+          <i class="fa-solid fa-triangle-exclamation"></i> Seleccioná un topping o elegí "Sin topping"
+        </div>
+      </div>
+      <?php endif; ?>
 
       <!-- Separador + cantidad (solo desktop) -->
       <?php if ($stock > 0): ?>
@@ -841,10 +1081,75 @@ function cambiarQty(d){
   qty = Math.max(1, Math.min(qty + d, PROD_STOCK));
   const v = document.getElementById('qtyVal');
   const vm = document.getElementById('qtyValMob');
-  const cp = document.getElementById('ctaPrice');
   if(v)  v.textContent  = qty;
   if(vm) vm.textContent = qty;
-  if(cp) cp.textContent = fmtARS(qty * PROD_PRECIO);
+  actualizarPrecioBtn();
+}
+
+const PROD_TOPPINGS = <?= json_encode(array_values($toppingsProd ?? []), JSON_UNESCAPED_UNICODE) ?>;
+
+const HAS_TOPPINGS = <?= !$esBox && !empty($toppingsProd) ? 'true' : 'false' ?>;
+let _sinTopping = false;
+
+function getSelectedToppings() {
+  return [...document.querySelectorAll('.det-tp-chk:checked')].map(c => ({
+    id:     parseInt(c.value),
+    nombre: c.dataset.nombre,
+    precio: parseFloat(c.dataset.precio) || 0
+  }));
+}
+
+function toppingSeleccionado() {
+  if (!HAS_TOPPINGS) return true;
+  return _sinTopping || document.querySelectorAll('.det-tp-chk:checked').length > 0;
+}
+
+function toggleSinTopping() {
+  _sinTopping = !_sinTopping;
+  const row = document.getElementById('detTpSinRow');
+  if (!row) return;
+  if (_sinTopping) {
+    document.querySelectorAll('.det-tp-chk').forEach(c => {
+      c.checked = false;
+      c.closest('.det-tp-row').classList.remove('selected');
+    });
+    row.classList.add('selected');
+  } else {
+    row.classList.remove('selected');
+  }
+  actualizarPrecioBtn();
+  const al = document.getElementById('detTpAlerta');
+  if(al) al.style.display = 'none';
+}
+
+function onToppingChange() {
+  document.querySelectorAll('.det-tp-chk').forEach(c => {
+    c.closest('.det-tp-row').classList.toggle('selected', c.checked);
+  });
+  // Si elige un topping, desmarcar "sin topping"
+  if (document.querySelectorAll('.det-tp-chk:checked').length > 0 && _sinTopping) {
+    _sinTopping = false;
+    const row = document.getElementById('detTpSinRow');
+    const chk = document.getElementById('detTpSinChk');
+    if(row) row.classList.remove('selected');
+    if(chk) chk.checked = false;
+  }
+  actualizarPrecioBtn();
+  document.getElementById('detTpAlerta').style.display = 'none';
+}
+
+function actualizarPrecioBtn() {
+  const extra    = _sinTopping ? 0 : getSelectedToppings().reduce((s,t) => s + t.precio, 0);
+  const porUnidad = PROD_PRECIO + extra;
+  const total    = porUnidad * qty;
+  const cp = document.getElementById('ctaPrice');
+  if (cp) {
+    if (extra > 0 && qty > 1) {
+      cp.innerHTML = `<span style="font-size:.7em;opacity:.75">${fmtARS(porUnidad)} × ${qty}</span><br>${fmtARS(total)}`;
+    } else {
+      cp.textContent = fmtARS(total);
+    }
+  }
 }
 
 function agregarAlCarrito(){
@@ -856,27 +1161,110 @@ function agregarAlCarrito(){
     }).then(r=>{ if(r.isConfirmed) window.location.href='login.php'; });
     return;
   }
+  // Validar selección de topping
+  if (HAS_TOPPINGS && !toppingSeleccionado()) {
+    Swal.fire({
+      icon: 'info',
+      title: '¿Con qué topping?',
+      html: `<p style="font-size:15px;color:#555;line-height:1.6">
+               Elegí un topping para tu cookie o seleccioná
+               <strong>"Sin topping"</strong> para continuar sin extras.
+             </p>`,
+      confirmButtonColor: '#c88e99',
+      confirmButtonText: 'Elegir topping',
+      showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' },
+    }).then(() => {
+      document.getElementById('detTpSection')?.scrollIntoView({ behavior:'smooth', block:'center' });
+    });
+    return;
+  }
+  const selectedToppings = _sinTopping ? [] : getSelectedToppings();
+  const extraPrecio = selectedToppings.reduce((s,t) => s + t.precio, 0);
+  const precioTotal = PROD_PRECIO + extraPrecio;
+
   const cart = getCart();
-  const ex   = cart.find(i => i.id === PROD_ID);
+  // Buscar ítem con mismos toppings
+  const tpIds = selectedToppings.map(t=>t.id).sort().join(',');
+  const ex = cart.find(i => i.id === PROD_ID && (i._tpKey||'') === tpIds);
+
   if(ex ? ex.cantidad + qty > PROD_STOCK : qty > PROD_STOCK){
     Swal.fire({ icon:'warning', title:'Stock insuficiente',
       text:`Solo quedan ${PROD_STOCK} unidades disponibles.`,
       confirmButtonColor:'#c88e99', confirmButtonText:'Entendido' });
     return;
   }
-  if(ex) ex.cantidad += qty;
-  else cart.push({ id:PROD_ID, nombre:PROD_NOMBRE, precio:PROD_PRECIO, tipo:PROD_TIPO, imagen:PROD_IMAGEN, cantidad:qty });
+  if(ex) {
+    ex.cantidad += qty;
+  } else {
+    cart.push({
+      id: PROD_ID, nombre: PROD_NOMBRE, precio: precioTotal,
+      tipo: PROD_TIPO, imagen: PROD_IMAGEN, cantidad: qty,
+      toppings: selectedToppings, _tpKey: tpIds
+    });
+  }
   saveCart(cart);
 
+  // Marcar botón como agregado
   const btn  = document.getElementById('btnAddDet');
   const btnD = document.getElementById('btnAddDetDesk');
   [btn, btnD].forEach(b => {
     if(!b) return;
-    const orig = b.innerHTML;
     b.innerHTML = '<span class="btn-add-label">✓ Agregado</span>';
     b.style.background = '#2d8a4e';
-    setTimeout(() => { window.location.href = 'index.php?carrito=1'; }, 1400);
   });
+
+  const _goCart = () => { window.location.href = 'index.php?carrito=1'; };
+  const _fmtPrecio = n => '$' + Number(n).toLocaleString('es-AR', {maximumFractionDigits:0});
+
+  // Buscar sugerencias y mostrar modal
+  fetch(`<?= URL_ASSETS ?>/tienda/api/sugeridos.php?id=${PROD_ID}&tipo=${encodeURIComponent(PROD_TIPO)}`)
+    .then(r => r.json())
+    .then(sugeridos => {
+      if (!sugeridos || sugeridos.length === 0) { setTimeout(_goCart, 1000); return; }
+
+      const cardsHtml = sugeridos.map(p => {
+        const icon = p.tipo === 'box' ? 'fa-box-open' : 'fa-cookie-bite';
+        const imgSrc = `<?= URL_ASSETS ?>/img/productos/${encodeURIComponent(p.imagen || '')}`;
+        return `
+          <a href="producto.php?id=${p.idproductos}" class="sug-card">
+            <div class="sug-card-img">
+              <img src="${imgSrc}" alt="${p.nombre}"
+                   onerror="this.parentElement.innerHTML='<i class=\'fa-solid ${icon}\' style=\'font-size:28px;color:#c88e99\'></i>'">
+            </div>
+            <div class="sug-card-info">
+              <div class="sug-card-name">${p.nombre}</div>
+              <div class="sug-card-price">${_fmtPrecio(p.precio)}</div>
+            </div>
+            <div class="sug-card-btn"><i class="fa-solid fa-plus"></i></div>
+          </a>`;
+      }).join('');
+
+      Swal.fire({
+        html: `
+          <div class="sug-wrap">
+            <div class="sug-check"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="sug-title">¡Agregado!</div>
+            <div class="sug-sub">¿Querés sumarle algo más?</div>
+            <div class="sug-cards">${cardsHtml}</div>
+          </div>`,
+        showConfirmButton: false,
+        showCancelButton:  false,
+        showCloseButton:   false,
+        footer: `<button class="sug-skip" onclick="Swal.close()">
+                   No gracias, ir al carrito <i class="fa-solid fa-arrow-right"></i>
+                 </button>`,
+        customClass: { popup: 'sug-popup', footer: 'sug-footer-wrap' },
+        timer: 14000,
+        timerProgressBar: true,
+        didClose: _goCart,
+        willOpen: () => {
+          // Evitar que el footer de Swal tenga padding propio
+          const f = document.querySelector('.swal2-footer');
+          if (f) { f.style.padding = '0'; f.style.margin = '0'; }
+        }
+      });
+    })
+    .catch(() => { setTimeout(_goCart, 1000); });
 }
 
 function switchImg(thumb, src){
@@ -892,6 +1280,7 @@ document.getElementById('btnOpenCart2')?.addEventListener('click', () => {
 
 updateBadge();
 window.addEventListener('pageshow', updateBadge);
+actualizarPrecioBtn(); // sincronizar precio inicial del botón
 </script>
 <script src="transitions.js"></script>
 </body>

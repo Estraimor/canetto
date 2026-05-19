@@ -7,3 +7,11 @@ document.addEventListener('click', function(e) {
   document.body.classList.add('page-exit');
   setTimeout(function() { window.location.href = href; }, 210);
 });
+
+// Cuando el browser restaura la página desde bfcache (botón atrás),
+// eliminar page-exit para que el contenido no quede invisible.
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted) {
+    document.body.classList.remove('page-exit');
+  }
+});

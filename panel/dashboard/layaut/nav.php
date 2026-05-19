@@ -220,6 +220,13 @@ $current = $_SERVER['PHP_SELF'];
         <span class="nav-label">Clientes</span>
     </a>
 
+    <!-- CUPONES -->
+    <a href="<?= URL_ADMIN ?>/cupones/index.php" data-tip="Cupones"
+       class="<?= str_contains($current,'cupones') ? 'active' : '' ?>">
+        <i class="fa-solid fa-ticket"></i>
+        <span class="nav-label">Cupones</span>
+    </a>
+
     <div class="nav-section">Sistema</div>
 
     <!-- CONFIGURACIONES -->
@@ -323,6 +330,17 @@ $current = $_SERVER['PHP_SELF'];
             </button>
         </div>
 
+        <!-- ── DARK MODE TOGGLE ── -->
+        <button id="darkToggle" onclick="toggleDark()" title="Cambiar tema" style="
+            width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;
+            font-size:16px;transition:background .3s,transform .3s;
+            background:var(--bg-page);color:var(--text-2);
+            flex-shrink:0;
+        ">
+            <i class="fa-solid fa-moon" id="darkIcon"></i>
+        </button>
+
         <div class="topbar-clock">
             <i class="fa-regular fa-clock"></i>
             <span id="navClock">--:--:--</span>
@@ -353,7 +371,155 @@ $current = $_SERVER['PHP_SELF'];
     </div>
 </header>
 
+<style>
+/* ── Dark toggle button ── */
+#darkToggle {
+    position: relative;
+    overflow: visible !important;
+}
+#darkToggle:hover {
+    background: var(--brand-light) !important;
+    color: var(--brand) !important;
+}
+#darkIcon {
+    display: block;
+    transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .2s ease;
+}
+#darkToggle.spinning #darkIcon {
+    animation: iconSpin .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes iconSpin {
+    0%   { transform: rotate(0)   scale(1);   opacity: 1; }
+    40%  { transform: rotate(180deg) scale(0); opacity: 0; }
+    60%  { transform: rotate(180deg) scale(0); opacity: 0; }
+    100% { transform: rotate(360deg) scale(1); opacity: 1; }
+}
+
+/* ── Partículas ── */
+.dark-spark {
+    position: fixed;
+    pointer-events: none;
+    z-index: 99998;
+    border-radius: 50%;
+    animation: sparkFly .6s ease forwards;
+}
+@keyframes sparkFly {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+/* ── Capa de clip-path ── */
+#darkClip {
+    position: fixed;
+    inset: 0;
+    z-index: 99997;
+    pointer-events: none;
+    clip-path: circle(0px at 50% 50%);
+    transition: none;
+}
+</style>
+
+<div id="darkClip"></div>
+
 <script>
+/* ── Dark mode — init ─────────────────────────────────────── */
+(function initDark() {
+    const dark = localStorage.getItem('canetto_dark') === '1';
+    if (dark) {
+        document.documentElement.classList.add('dark');
+        const icon = document.getElementById('darkIcon');
+        if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+    }
+})();
+
+/* ── Partículas ── */
+function lanzarSparks(cx, cy, color) {
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'dark-spark';
+        const angle  = (360 / count) * i + Math.random() * 20;
+        const dist   = 40 + Math.random() * 50;
+        const size   = 4 + Math.random() * 6;
+        const rad    = angle * Math.PI / 180;
+        el.style.cssText = `
+            left:${cx - size/2}px; top:${cy - size/2}px;
+            width:${size}px; height:${size}px;
+            background:${color};
+            --tx:${Math.cos(rad)*dist}px;
+            --ty:${Math.sin(rad)*dist}px;
+            box-shadow: 0 0 ${size}px ${color};
+        `;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 700);
+    }
+}
+
+let _darkBusy = false;
+
+function toggleDark() {
+    if (_darkBusy) return;
+    _darkBusy = true;
+
+    const html   = document.documentElement;
+    const isDark = html.classList.contains('dark');
+    const btn    = document.getElementById('darkToggle');
+    const icon   = document.getElementById('darkIcon');
+    const clip   = document.getElementById('darkClip');
+
+    const rect = btn.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2;
+    const cy   = rect.top  + rect.height / 2;
+
+    const maxR = Math.hypot(
+        Math.max(cx, window.innerWidth  - cx),
+        Math.max(cy, window.innerHeight - cy)
+    ) + 50;
+
+    /* 1 — Partículas */
+    lanzarSparks(cx, cy, isDark ? '#f59e0b' : '#c88e99');
+
+    /* 2 — Animar ícono */
+    btn.classList.add('spinning');
+    setTimeout(() => btn.classList.remove('spinning'), 520);
+
+    /* 3 — Preparar capa clip-path con el color DESTINO */
+    clip.style.background = isDark ? '#f4f3f0' : '#0e0e1a';
+    clip.style.clipPath    = `circle(0px at ${cx}px ${cy}px)`;
+    clip.style.transition  = 'none';
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        /* Expandir la capa */
+        clip.style.transition = `clip-path .55s cubic-bezier(.4,0,.06,1)`;
+        clip.style.clipPath   = `circle(${maxR}px at ${cx}px ${cy}px)`;
+
+        setTimeout(() => {
+            /* Aplicar el tema cuando la capa ya cubre todo */
+            html.classList.add('dark-transitioning');
+            if (isDark) {
+                html.classList.remove('dark');
+                localStorage.setItem('canetto_dark', '0');
+                icon.classList.replace('fa-sun', 'fa-moon');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('canetto_dark', '1');
+                icon.classList.replace('fa-moon', 'fa-sun');
+            }
+
+            /* Contraer la capa revelando el nuevo tema */
+            clip.style.transition = `clip-path .45s cubic-bezier(.4,0,.2,1)`;
+            clip.style.clipPath   = `circle(0px at ${cx}px ${cy}px)`;
+
+            setTimeout(() => {
+                html.classList.remove('dark-transitioning');
+                clip.style.transition = 'none';
+                _darkBusy = false;
+            }, 480);
+
+        }, 380);
+    }));
+}
+
 /* ── Toggle Tienda ───────────────────────────── */
 let _tiendaAbierta = true;
 let _tiendaMensaje = '';

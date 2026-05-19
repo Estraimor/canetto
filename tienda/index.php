@@ -25,7 +25,7 @@ if (!$_tiendaAbierta) {
 <link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-@font-face{font-family:"Speedee";src:url("/canetto/assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Speedee";src:url("<?= URL_ASSETS ?>/assets/fonts/Speedee.ttf") format("truetype");font-weight:700;font-display:swap}
 *{box-sizing:border-box;margin:0;padding:0}
 body{min-height:100dvh;display:flex;align-items:center;justify-content:center;
      background:linear-gradient(135deg,#fff8f9 0%,#fdf0f3 60%,#fce4ec 100%);
@@ -45,7 +45,7 @@ body{min-height:100dvh;display:flex;align-items:center;justify-content:center;
 <div class="cerrada-card">
   <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px;gap:12px">
     <div style="width:90px;height:90px;border-radius:22px;background:#0a0a0a;box-shadow:0 4px 24px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;padding:10px">
-      <img src="/canetto/img/Logo_Canetto_Cookie.png"
+      <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png"
            onerror="this.style.display='none'"
            alt="Canetto" style="width:100%;height:100%;object-fit:contain">
     </div>
@@ -480,6 +480,20 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   <div class="swiper-pagination"></div>
 </div>
 
+<!-- ── CATEGORY BAR MOBILE ──── -->
+<div class="mob-cat-bar" id="mobCatBar">
+  <div class="mob-cat-scroll">
+    <button class="mob-cat-pill active" data-target="prodsGrid" onclick="scrollToSection(this,'prodsGrid')">
+      <i class="fa-solid fa-cookie-bite mob-cat-pill-ic"></i>
+      <span class="mob-cat-pill-lbl">Cookies</span>
+    </button>
+    <button class="mob-cat-pill" data-target="boxesGrid" onclick="scrollToSection(this,'boxesGrid')">
+      <i class="fa-solid fa-box-open mob-cat-pill-ic"></i>
+      <span class="mob-cat-pill-lbl">Boxes</span>
+    </button>
+  </div>
+</div>
+
 <!-- ── CATEGORY BAR (desktop) ──── -->
 <nav class="t-cat-bar" id="tCatBar">
   <div class="t-cat-bar-inner">
@@ -490,6 +504,10 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
     <a href="#boxesGrid" class="t-cat-item" onclick="setCatActive(this)">
       <span class="t-cat-ic"><i class="fa-solid fa-box-open"></i></span>
       <span class="t-cat-lbl">Boxes</span>
+    </a>
+    <a href="#sucursales" class="t-cat-item" onclick="setCatActive(this)">
+      <span class="t-cat-ic"><i class="fa-solid fa-location-dot"></i></span>
+      <span class="t-cat-lbl">Sucursales</span>
     </a>
     <a href="#sobre-nosotros" class="t-cat-item" onclick="setCatActive(this)">
       <span class="t-cat-ic"><i class="fa-solid fa-circle-info"></i></span>
@@ -506,9 +524,10 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <?php
 function renderProductCard($p) {
   $stock    = (float)$p['stock_hecho'];
-  if ($stock <= 0)       { $pill = 'sp-out'; $pillTxt = 'Sin stock';       $stockTxt = 'No disponible'; }
-  elseif ($stock <= 10)  { $pill = 'sp-low'; $pillTxt = 'Pocas unidades';  $stockTxt = 'Quedan '.(int)$stock.' u.'; }
-  else                   { $pill = 'sp-ok';  $pillTxt = 'Disponible';      $stockTxt = (int)$stock.' disponibles'; }
+  if ($stock <= 0)       { $pill = 'sp-out'; $pillTxt = 'Sin stock';      $stockTxt = ''; }
+  elseif ($stock <= 10)  { $pill = 'sp-low'; $pillTxt = 'Pocas unidades'; $stockTxt = 'Quedan '.(int)$stock.' u.'; }
+  else                   { $pill = 'sp-ok';  $pillTxt = 'Disponible';     $stockTxt = ''; }
+  $stockTxtHtml = $stockTxt ? "<div class=\"prod-stock-txt\">{$stockTxt}</div>" : '';
   $emoji  = $p['tipo'] === 'box' ? '<i class="fa-solid fa-box-open" style="font-size:40px;color:#c88e99"></i>' : '<i class="fa-solid fa-cookie-bite" style="font-size:40px;color:#c88e99"></i>';
   $nombre = htmlspecialchars($p['nombre']);
   $precio = number_format((float)$p['precio'], 0, ',', '.');
@@ -531,7 +550,7 @@ HTML;
   <div class="prod-body">
     <div class="prod-name">{$nombre}</div>
     <div class="prod-price">\${$precio}</div>
-    <div class="prod-stock-txt">{$stockTxt}</div>
+    {$stockTxtHtml}
 HTML;
   if ($p['tipo'] === 'box') echo '<span class="prod-type-tag">Box</span>';
   $btnCls = $stock <= 0 ? 'btn-ver-detalle disabled' : 'btn-ver-detalle';
@@ -816,32 +835,6 @@ HTML;
     </div>
     <div class="modal-body">
 
-      <!-- Paso 0: Toppings -->
-      <div class="ck-step" id="ckToppings">
-        <div style="text-align:center;margin-bottom:20px">
-          <div style="width:56px;height:56px;background:#fdf0f3;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><i class="fa-solid fa-candy-cane" style="font-size:24px;color:#c88e99"></i></div>
-          <div style="font-size:17px;font-weight:800;color:#1e293b;margin-bottom:4px">¿Querés agregarle algo?</div>
-          <div style="font-size:13px;color:#94a3b8">Toppings disponibles para tu pedido</div>
-        </div>
-        <div id="ckToppingsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
-        <!-- Opción "sin toppings" como checkbox -->
-        <label class="ck-topping-row ck-no-topping-row" id="ckNoToppingRow" onclick="toggleNoTopping()">
-          <input type="checkbox" id="ckNoToppingChk" style="display:none">
-          <div class="ck-tp-ic" style="background:#f1f5f9"><i class="fa-solid fa-ban" style="color:#94a3b8"></i></div>
-          <div class="ck-tp-info">
-            <div class="ck-tp-name" style="color:#64748b">Sin toppings</div>
-            <div class="ck-tp-price" style="color:#94a3b8">Continuar sin agregar</div>
-          </div>
-          <div class="ck-tp-chkmark" id="ckNoToppingMark"><i class="fa-solid fa-check"></i></div>
-        </label>
-        <div style="font-size:12px;color:#e11d48;margin:8px 0 4px;display:none" id="ckTpAlert">
-          <i class="fa-solid fa-triangle-exclamation"></i> Seleccioná al menos un topping o marcá "Sin toppings"
-        </div>
-        <button class="btn-pk" onclick="confirmarToppingsOrden()" style="margin-top:12px">
-          <i class="fa-solid fa-check"></i> Confirmar y continuar
-        </button>
-      </div>
-
       <!-- Paso A: quién sos -->
       <div class="ck-step" id="ckAuth">
         <div class="ck-tabs">
@@ -1021,6 +1014,33 @@ HTML;
           <label>Observaciones (opcional)</label>
           <textarea id="ckObs" rows="2" placeholder="Ej: Sin gluten, para regalo..."></textarea>
         </div>
+
+        <!-- Cupón de descuento -->
+        <div class="fg cupon-wrap">
+          <label>¿Tenés un cupón de descuento?</label>
+          <div class="cupon-row">
+            <input type="text" id="ckCuponInput" placeholder="Ingresá tu código" autocomplete="off"
+                   style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button type="button" class="btn-cupon-aplicar" id="btnAplicarCupon" onclick="aplicarCupon()">
+              Aplicar
+            </button>
+          </div>
+          <div id="cuponMsg" style="display:none;margin-top:8px;font-size:13px;font-weight:600;display:none"></div>
+          <div id="cuponResumen" style="display:none;margin-top:6px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:#15803d;font-weight:600">
+                <i class="fa-solid fa-tag" style="margin-right:5px"></i>
+                <span id="cuponResumenLabel">Cupón aplicado</span>
+              </span>
+              <button type="button" onclick="quitarCupon()"
+                style="background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;font-weight:700">
+                ✕ Quitar
+              </button>
+            </div>
+            <div style="font-size:18px;font-weight:800;color:#15803d;margin-top:4px" id="cuponDescuentoLabel"></div>
+          </div>
+        </div>
+
         <div class="ck-alert" id="dAlert"></div>
         <button class="btn-pk" id="btnConfirm" onclick="confirmOrder()">Confirmar pedido ✓</button>
         <button class="btn-sec" onclick="backToAuth()">← Volver</button>
@@ -1045,35 +1065,18 @@ HTML;
   </div>
 </div>
 
-<!-- ── TOPPINGS SELECTOR MODAL ────── -->
-<div class="modal-bg" id="toppingsModal" style="z-index:1100">
-  <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
-    <div class="modal-hd">
-      <div>
-        <span class="modal-title" id="tpSelTitulo">Personalizá tu cookie</span>
-        <div style="font-size:12px;color:#94a3b8;margin-top:2px">Seleccioná los toppings (obligatorio)</div>
-      </div>
-      <button class="btn-close" onclick="cerrarSelectorToppings()">✕</button>
-    </div>
-    <div style="overflow-y:auto;flex:1;padding:16px 20px" id="tpSelLista"></div>
-    <div style="padding:14px 20px 20px;border-top:1px solid #f5f5f5">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;color:#64748b">Total con toppings</span>
-        <span style="font-size:20px;font-weight:800;color:#c88e99" id="tpSelTotal">$0</span>
-      </div>
-      <div style="font-size:12px;color:#e11d48;margin-bottom:10px;display:none" id="tpSelAlert">
-        <i class="fa-solid fa-triangle-exclamation"></i> Seleccioná al menos un topping para continuar
-      </div>
-      <button class="btn-pk" id="tpSelConfirmar" onclick="confirmarToppings()">
-        <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- TOAST + FAB -->
+<!-- TOAST -->
 <div class="toast" id="toast"></div>
-<button class="fab" id="fabCart" onclick="openCart()"><i class="fa-solid fa-cart-shopping"></i><span class="fab-badge" id="fabBadge">0</span></button>
+
+<!-- FAB CARRITO ESTILO McDONALD'S -->
+<button class="mc-cart-bar" id="fabCart" onclick="openCart()" aria-label="Ver carrito">
+  <div class="mc-cart-left">
+    <span class="mc-cart-badge" id="fabBadge">0</span>
+    <i class="fa-solid fa-cookie-bite mc-cart-icon"></i>
+  </div>
+  <span class="mc-cart-total" id="mcCartTotal">$0</span>
+  <i class="fa-solid fa-chevron-right mc-cart-arrow"></i>
+</button>
 
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -1165,7 +1168,25 @@ function thumbHtml(it){
 }
 function renderCart(){
   const c=getCart(),n=count(c),t=total(c);
-  ['cartBadge','fabBadge'].forEach(id=>{const el=document.getElementById(id);el.textContent=n>99?'99+':n;el.classList.toggle('on',n>0)});
+
+  // Badge en nav/cart
+  const cartBadgeEl = document.getElementById('cartBadge');
+  if(cartBadgeEl){ cartBadgeEl.textContent=n>99?'99+':n; cartBadgeEl.classList.toggle('on',n>0); }
+
+  // MC Cart Bar
+  const bar     = document.getElementById('fabCart');
+  const badge   = document.getElementById('fabBadge');
+  const totalEl = document.getElementById('mcCartTotal');
+  if(bar){
+    const prev = badge ? parseInt(badge.textContent)||0 : 0;
+    if(badge){
+      badge.textContent = n > 99 ? '99+' : n;
+      if(n > prev){ badge.classList.remove('pop'); requestAnimationFrame(()=>{ badge.classList.add('pop'); }); }
+    }
+    if(totalEl) totalEl.textContent = fmt(t);
+    bar.classList.toggle('visible', n > 0);
+  }
+
   document.getElementById('cartCountTag').textContent=n+(n===1?' item':' items');
   document.getElementById('cartTotal').textContent=fmt(t);
   const w=document.getElementById('cartItemsWrap');
@@ -1374,13 +1395,65 @@ document.getElementById('boxModal')?.addEventListener('click',e=>{if(e.target===
 
 // ── CHECKOUT ────────────────────────────
 let ckCliente=null;
-let _toppingsOrden=[];  // toppings globales seleccionados para el pedido
+let _toppingsOrden=[];
 let _costoToppings=0;
+let _cuponAplicado=null; // { codigo, descuento, label }
+
+/* ── Cupón ── */
+async function aplicarCupon() {
+  const codigo = document.getElementById('ckCuponInput').value.trim().toUpperCase();
+  const msg    = document.getElementById('cuponMsg');
+  const resumen= document.getElementById('cuponResumen');
+  if (!codigo) return;
+
+  const btn = document.getElementById('btnAplicarCupon');
+  btn.disabled = true; btn.textContent = '...';
+
+  const totalCarrito = total(getCart()) + _costoToppings;
+  const res  = await fetch('api/validar_cupon.php', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ codigo, total: totalCarrito })
+  });
+  const data = await res.json();
+
+  btn.disabled = false; btn.textContent = 'Aplicar';
+
+  if (data.ok) {
+    _cuponAplicado = data;
+    const label = data.tipo === 'porcentaje'
+      ? `${data.valor}% OFF — ${data.descripcion || ''}`
+      : `$${Number(data.descuento).toLocaleString('es-AR')} OFF — ${data.descripcion || ''}`;
+    document.getElementById('cuponResumenLabel').textContent = label.trim();
+    document.getElementById('cuponDescuentoLabel').textContent =
+      `Ahorrás $${Number(data.descuento).toLocaleString('es-AR')}`;
+    msg.style.display = 'none';
+    resumen.style.display = 'block';
+    buildSummary();
+  } else {
+    _cuponAplicado = null;
+    resumen.style.display = 'none';
+    msg.style.display = 'block';
+    msg.style.color = '#dc2626';
+    msg.textContent = data.msg;
+  }
+}
+
+function quitarCupon() {
+  _cuponAplicado = null;
+  document.getElementById('ckCuponInput').value = '';
+  document.getElementById('cuponMsg').style.display    = 'none';
+  document.getElementById('cuponResumen').style.display = 'none';
+  buildSummary();
+}
+
+document.getElementById('ckCuponInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); aplicarCupon(); }
+});
 
 function openCheckout(){
   const c=getCart();
   if(!c.length){showToast('Tu carrito está vacío','err');return}
-  // Mínimo 4 cookies (no aplica a boxes)
+  // Mínimo de cookies (se valida también en el servidor)
   const totalCookies=c.filter(i=>i.tipo!=='box').reduce((s,i)=>s+i.cantidad,0);
   if(totalCookies>0&&totalCookies<4){
     Swal.fire({
@@ -1396,94 +1469,12 @@ function openCheckout(){
     return;
   }
   closeCart();
-  _toppingsOrden=[];_costoToppings=0;
-
-  // Obtener toppings activos disponibles
-  const todosLosToppings=Object.values(
-    Object.fromEntries(
-      Object.entries(TOPPINGS_BY_PRODUCTO).flatMap(([,ts])=>ts.map(t=>[t.id,t]))
-    )
-  ).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-
-  const toppingsDisponibles = todosLosToppings.filter(t => t.stock === undefined || t.stock < 0 || t.stock > 0);
-  if(toppingsDisponibles.length){
-    // Armar la lista de toppings (solo con stock > 0 o ilimitados)
-    document.getElementById('ckToppingsList').innerHTML=toppingsDisponibles.map(t=>{
-      const bajStock = t.stock !== undefined && t.stock > 0 && t.stock <= 5;
-      const stockTag = bajStock ? `<span class="tp-stock-badge tp-stock-low" style="font-size:10px">Últimas ${t.stock} uds.</span>` : '';
-      return `
-      <label class="ck-topping-row" onclick="recalcToppingsOrden()">
-        <input type="checkbox" class="ck-tp-chk" value="${t.id}"
-               data-nombre="${t.nombre.replace(/"/g,'&quot;')}" data-precio="${t.precio}">
-        <div class="ck-tp-ic"><i class="fa-solid fa-candy-cane"></i></div>
-        <div class="ck-tp-info">
-          <div class="ck-tp-name">${t.nombre}</div>
-          <div class="ck-tp-price">+ $${Number(t.precio).toLocaleString('es-AR')} ${stockTag}</div>
-        </div>
-        <div class="ck-tp-chkmark"><i class="fa-solid fa-check"></i></div>
-      </label>`;
-    }).join('');
-    // resetear estado "sin toppings"
-    const noChk=document.getElementById('ckNoToppingChk');
-    const noRow=document.getElementById('ckNoToppingRow');
-    if(noChk){noChk.checked=false;noRow?.classList.remove('on');}
-    document.getElementById('ckTpAlert').style.display='none';
-    showCkStep('ckToppings');
-  } else {
-    // No hay toppings — saltar al flujo normal
-    _abrirCheckoutPrincipal();
-  }
-
+  _toppingsOrden=[];
+  _costoToppings=0;
+  // Los toppings ya vienen por cookie desde producto.php — ir directo al checkout
+  _abrirCheckoutPrincipal();
   document.getElementById('checkoutModal').classList.add('on');
   document.body.style.overflow='hidden';
-}
-
-function recalcToppingsOrden(){
-  // pequeño delay para que el checkbox se actualice
-  setTimeout(()=>{
-    _costoToppings=[...document.querySelectorAll('.ck-tp-chk:checked')]
-      .reduce((s,c)=>s+(+c.dataset.precio),0);
-  },10);
-}
-
-function toggleNoTopping(){
-  const chk=document.getElementById('ckNoToppingChk');
-  const mark=document.getElementById('ckNoToppingMark');
-  const row=document.getElementById('ckNoToppingRow');
-  chk.checked=!chk.checked;
-  row.classList.toggle('on',chk.checked);
-  if(chk.checked){
-    // deseleccionar todos los toppings
-    document.querySelectorAll('.ck-tp-chk').forEach(c=>{
-      c.checked=false;
-      c.closest('.ck-topping-row')?.classList.remove('on');
-    });
-    recalcToppingsOrden();
-  }
-  document.getElementById('ckTpAlert').style.display='none';
-}
-
-function recalcToppingsOrden(){
-  // al seleccionar un topping, desmarcar "sin toppings"
-  const noChk=document.getElementById('ckNoToppingChk');
-  const noRow=document.getElementById('ckNoToppingRow');
-  if(noChk&&[...document.querySelectorAll('.ck-tp-chk:checked')].length>0){
-    noChk.checked=false;
-    noRow?.classList.remove('on');
-  }
-}
-
-function confirmarToppingsOrden(){
-  const toppingsSel=[...document.querySelectorAll('.ck-tp-chk:checked')];
-  const sinTopping=document.getElementById('ckNoToppingChk')?.checked;
-  if(!toppingsSel.length&&!sinTopping){
-    document.getElementById('ckTpAlert').style.display='block';
-    return;
-  }
-  document.getElementById('ckTpAlert').style.display='none';
-  _toppingsOrden=toppingsSel.map(c=>({id:+c.value,nombre:c.dataset.nombre,precio:+c.dataset.precio}));
-  _costoToppings=_toppingsOrden.reduce((s,t)=>s+t.precio,0);
-  _abrirCheckoutPrincipal();
 }
 
 function _abrirCheckoutPrincipal(){
@@ -1510,7 +1501,8 @@ function syncCkTab(){document.querySelectorAll('.ck-form').forEach(f=>f.classLis
 function buildSummary(){
   const c=getCart();
   const subtotal=total(c);
-  const totalFinal=subtotal+_costoEnvio+_costoToppings;
+  const descuentoCupon = _cuponAplicado ? (_cuponAplicado.descuento||0) : 0;
+  const totalFinal = Math.max(0, subtotal + _costoEnvio + _costoToppings - descuentoCupon);
   let html=c.map(i=>`<div class="ck-sum-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('');
   if(_toppingsOrden.length){
     html+=`<div class="ck-sum-row" style="color:#c88e99"><span><i class="fa-solid fa-candy-cane"></i> ${_toppingsOrden.map(t=>t.nombre).join(', ')}</span><span>${fmt(_costoToppings)}</span></div>`;
@@ -1518,6 +1510,9 @@ function buildSummary(){
   if(_costoEnvio>0||_tipoEntrega==='envio'){
     html+=`<div class="ck-sum-row subtot"><span>Subtotal</span><span>${fmt(subtotal+_costoToppings)}</span></div>`;
     html+=`<div class="ck-sum-row envio-row"><span><i class="fa-solid fa-motorcycle"></i> Envío</span><span>${_costoEnvio>0?fmt(_costoEnvio):'A calcular'}</span></div>`;
+  }
+  if(descuentoCupon>0){
+    html+=`<div class="ck-sum-row ck-sum-cupon"><span><i class="fa-solid fa-tag"></i> Cupón <strong>${_cuponAplicado.codigo}</strong></span><span>−${fmt(descuentoCupon)}</span></div>`;
   }
   html+=`<div class="ck-sum-row tot"><span>Total</span><span>${fmt(totalFinal)}</span></div>`;
   document.getElementById('ckSummary').innerHTML=html;
@@ -1644,9 +1639,15 @@ function setEntrega(tipo){
 
 // ── DIRECCIONES GUARDADAS ────────────────────────────────────────────────────
 let _dirs = [...(window.DIRS_GUARDADAS||[])];
-let _dirSeleccionada = null;
 
-// _dirSeleccionada se setea en seleccionarDirSesion() cuando el usuario elige en el modal
+// Precargar dirección desde sessionStorage si el usuario ya eligió una
+let _dirSeleccionada = (function() {
+  try {
+    const loc = JSON.parse(sessionStorage.getItem('canetto_loc'));
+    if (loc?.tipo === 'dir' && loc.dir?.id) return loc.dir.id;
+  } catch(e) {}
+  return null;
+})();
 
 function renderDirsGuardadas(){
   const wrap = document.getElementById('dirsGuardadasWrap');
@@ -2157,6 +2158,7 @@ async function confirmOrder(){
       lat_entrega:document.getElementById('ckLat')?.value||null,
       lng_entrega:document.getElementById('ckLng')?.value||null,
       es_mp:_selectedMetodoEsMP,
+      cupon_codigo: _cuponAplicado?.codigo || '',
     };
     const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
     if(d.success){
@@ -2301,6 +2303,72 @@ window.addEventListener('pageshow', function() {
     openCart();
   }
 });
+
+// ── CATEGORY BAR MOBILE ───────────────────────────────────────────────
+(function initCatBar() {
+  const bar = document.getElementById('mobCatBar');
+  if (!bar) return;
+
+  // Scroll suave con animación bounce al hacer click
+  window.scrollToSection = function(btn, targetId) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    // Animar la pill
+    document.querySelectorAll('.mob-cat-pill').forEach(p => p.classList.remove('active','popping'));
+    btn.classList.add('active','popping');
+    setTimeout(() => btn.classList.remove('popping'), 420);
+
+    // Centrar la pill visible en el scroll horizontal
+    btn.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+
+    // Scroll suave a la sección con offset del bar
+    const barH   = bar.offsetHeight + 8;
+    const top    = target.getBoundingClientRect().top + window.scrollY - barH - 8;
+    window.scrollTo({ top, behavior: 'smooth' });
+  };
+
+  // Highlight automático según sección visible (IntersectionObserver)
+  const sections = ['prodsGrid','boxesGrid'];
+  const pills    = document.querySelectorAll('.mob-cat-pill');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id   = entry.target.id;
+      const pill = document.querySelector(`.mob-cat-pill[data-target="${id}"]`);
+      if (!pill) return;
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      // Auto-scroll horizontal de la pill activa
+      pill.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+    });
+  }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 });
+
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+
+  // Ocultar/mostrar la bar al hacer scroll (efecto hide-on-scroll)
+  let lastY = 0, ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    requestAnimationFrame(() => {
+      const y = window.scrollY;
+      if (y < 80) {
+        bar.classList.remove('hidden');
+      } else if (y > lastY + 5) {
+        bar.classList.add('hidden');    // scrolling down → hide
+      } else if (y < lastY - 5) {
+        bar.classList.remove('hidden'); // scrolling up → show
+      }
+      lastY = y;
+      ticking = false;
+    });
+    ticking = true;
+  }, { passive: true });
+})();
 
 // ── BRANCH MAPS (Leaflet + OpenStreetMap) ──────────────────────────────
 
