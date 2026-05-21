@@ -4,6 +4,11 @@ document.addEventListener('click', function(e) {
   var href = a.getAttribute('href');
   if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('javascript') || a.target === '_blank') return;
   e.preventDefault();
+  // data-instant = navegar sin animación de salida (ej: login)
+  if (a.hasAttribute('data-instant')) {
+    window.location.href = href;
+    return;
+  }
   document.body.classList.add('page-exit');
   setTimeout(function() { window.location.href = href; }, 210);
 });

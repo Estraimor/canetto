@@ -256,6 +256,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <link rel="stylesheet" href="tienda.css">
+<link rel="prefetch" href="login.php">
 <style>
 .ck-entrega-toggle label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:8px}
 .ck-toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -388,7 +389,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
       <i class="fa-solid fa-user" style="font-size:14px"></i>
     </a>
     <?php else: ?>
-    <a href="login.php" class="t-btn" style="font-size:12px;font-weight:700;width:auto;padding:0 14px;border-radius:20px">
+    <a href="login.php" class="t-btn" data-instant style="font-size:12px;font-weight:700;width:auto;padding:0 14px;border-radius:20px">
       Ingresar
     </a>
     <?php endif; ?>
@@ -483,11 +484,11 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <!-- ── CATEGORY BAR MOBILE ──── -->
 <div class="mob-cat-bar" id="mobCatBar">
   <div class="mob-cat-scroll">
-    <button class="mob-cat-pill active" data-target="prodsGrid" onclick="scrollToSection(this,'prodsGrid')">
+    <button class="mob-cat-pill active" data-target="prodsGrid" onclick="scrollToSection(this,'secCookies')">
       <i class="fa-solid fa-cookie-bite mob-cat-pill-ic"></i>
       <span class="mob-cat-pill-lbl">Cookies</span>
     </button>
-    <button class="mob-cat-pill" data-target="boxesGrid" onclick="scrollToSection(this,'boxesGrid')">
+    <button class="mob-cat-pill" data-target="boxesGrid" onclick="scrollToSection(this,'secBoxes')">
       <i class="fa-solid fa-box-open mob-cat-pill-ic"></i>
       <span class="mob-cat-pill-lbl">Boxes</span>
     </button>
@@ -564,7 +565,7 @@ HTML;
 ?>
 
 <!-- Cookies -->
-<div class="prods-section-label"><i class="fa-solid fa-cookie-bite" style="color:#c88e99;margin-right:6px"></i>Cookies</div>
+<div class="prods-section-label" id="secCookies"><i class="fa-solid fa-cookie-bite" style="color:#c88e99;margin-right:6px"></i>Cookies</div>
 <div class="prods-grid" id="prodsGrid">
 <?php if (empty($galletitas)): ?>
   <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#aaa;font-size:14px">
@@ -574,7 +575,7 @@ HTML;
 </div>
 
 <!-- Divisor -->
-<div class="prods-divisor">
+<div class="prods-divisor" id="secBoxes">
   <span><i class="fa-solid fa-box-open" style="color:#c88e99;margin-right:6px"></i>Boxes</span>
 </div>
 
@@ -1057,7 +1058,7 @@ HTML;
           <?php if ($cliente_id): ?>
             <a href="mis-pedidos.php" class="btn-sec">Ver mis pedidos →</a>
           <?php else: ?>
-            <a href="login.php" class="btn-sec">Crear cuenta para seguir mis pedidos</a>
+            <a href="login.php" class="btn-sec" data-instant>Crear cuenta para seguir mis pedidos</a>
           <?php endif; ?>
         </div>
       </div>
@@ -2309,23 +2310,50 @@ window.addEventListener('pageshow', function() {
   const bar = document.getElementById('mobCatBar');
   if (!bar) return;
 
-  // Scroll suave con animación bounce al hacer click
+  let _jumping = false;
+
+  // Scroll animado custom — más rápido y controlado que el nativo
+  function animateScrollTo(targetY, duration) {
+    const startY = window.scrollY;
+    const dist   = targetY - startY;
+    if (Math.abs(dist) < 2) return;
+    const startT = performance.now();
+    function ease(t) {
+      // easeInOutQuart — arranca rápido, frena suave al llegar
+      return t < .5 ? 8*t*t*t*t : 1 - Math.pow(-2*t+2,4)/2;
+    }
+    function step(now) {
+      const t = Math.min((now - startT) / duration, 1);
+      window.scrollTo(0, startY + dist * ease(t));
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
   window.scrollToSection = function(btn, targetId) {
     const target = document.getElementById(targetId);
     if (!target) return;
 
-    // Animar la pill
-    document.querySelectorAll('.mob-cat-pill').forEach(p => p.classList.remove('active','popping'));
-    btn.classList.add('active','popping');
-    setTimeout(() => btn.classList.remove('popping'), 420);
+    // Marcar pill activa
+    document.querySelectorAll('.mob-cat-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.scrollIntoView({ inline: 'center', behavior: 'instant', block: 'nearest' });
 
-    // Centrar la pill visible en el scroll horizontal
-    btn.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+    // Mantener barra visible mientras scrollea
+    _jumping = true;
+    bar.classList.remove('hidden');
+    // Offset fijo: nav + barra. No usa getBoundingClientRect porque
+    // la barra puede no estar sticky todavía (primera vez desde el top).
+    const navH = document.querySelector('.t-nav')?.offsetHeight || 64;
+    const barH = bar.offsetHeight;
+    const top  = target.getBoundingClientRect().top + window.scrollY - navH - barH - 8;
 
-    // Scroll suave a la sección con offset del bar
-    const barH   = bar.offsetHeight + 8;
-    const top    = target.getBoundingClientRect().top + window.scrollY - barH - 8;
-    window.scrollTo({ top, behavior: 'smooth' });
+    // Duración proporcional a la distancia — máx 500ms, mín 180ms
+    const dist     = Math.abs(top - window.scrollY);
+    const duration = Math.min(500, Math.max(180, dist * 0.35));
+    animateScrollTo(top, duration);
+
+    setTimeout(() => { _jumping = false; }, duration + 50);
   };
 
   // Highlight automático según sección visible (IntersectionObserver)
@@ -2340,28 +2368,29 @@ window.addEventListener('pageshow', function() {
       if (!pill) return;
       pills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
-      // Auto-scroll horizontal de la pill activa
-      pill.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+      pill.scrollIntoView({ inline: 'center', behavior: 'instant', block: 'nearest' });
     });
-  }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 });
+  }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
 
   sections.forEach(id => {
     const el = document.getElementById(id);
     if (el) observer.observe(el);
   });
 
-  // Ocultar/mostrar la bar al hacer scroll (efecto hide-on-scroll)
+  // Ocultar/mostrar la bar al hacer scroll manual
   let lastY = 0, ticking = false;
   window.addEventListener('scroll', () => {
     if (ticking) return;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      if (y < 80) {
-        bar.classList.remove('hidden');
-      } else if (y > lastY + 5) {
-        bar.classList.add('hidden');    // scrolling down → hide
-      } else if (y < lastY - 5) {
-        bar.classList.remove('hidden'); // scrolling up → show
+      if (!_jumping) {
+        if (y < 80) {
+          bar.classList.remove('hidden');
+        } else if (y > lastY + 5) {
+          bar.classList.add('hidden');
+        } else if (y < lastY - 5) {
+          bar.classList.remove('hidden');
+        }
       }
       lastY = y;
       ticking = false;
@@ -2724,7 +2753,7 @@ document.getElementById('toppingsModal')?.addEventListener('click', e => {
     <span>Mis pedidos</span>
   </a>
   <?php else: ?>
-  <a href="login.php" class="bn-item">
+  <a href="login.php" class="bn-item" data-instant>
     <i class="fa-solid fa-bag-shopping"></i>
     <span>Mis pedidos</span>
   </a>
@@ -2739,7 +2768,7 @@ document.getElementById('toppingsModal')?.addEventListener('click', e => {
     <span>Mi cuenta</span>
   </a>
   <?php else: ?>
-  <a href="login.php" class="bn-item">
+  <a href="login.php" class="bn-item" data-instant>
     <i class="fa-solid fa-user"></i>
     <span>Ingresar</span>
   </a>

@@ -17,7 +17,6 @@ unset($_SESSION['error_cliente']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Canetto | Clientes</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="login.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -28,11 +27,11 @@ unset($_SESSION['error_cliente']);
 .lc-alert.err{background:#f9edf0;color:#c88e99;display:block}
 .lc-alert.ok{background:#e8f5e9;color:#1d8348;display:block}
 /* ── register btn ── */
-.btn-register{width:100%;padding:14px;background:#c88e99;color:#fff;border:none;border-radius:10px;font-weight:600;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:.25s;margin-top:4px}
+.btn-register{width:100%;padding:14px;background:#c88e99;color:#fff;border:none;border-radius:10px;font-weight:600;font-family:inherit;font-size:14px;cursor:pointer;transition:.25s;margin-top:4px}
 .btn-register:hover{background:#a46678;transform:translateY(-1px)}
 .btn-register:disabled{background:#ccc;cursor:default;transform:none}
 /* ── back link ── */
-.lc-back{display:block;text-align:center;font-size:13px;color:#888;margin-top:14px;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;width:100%}
+.lc-back{display:block;text-align:center;font-size:13px;color:#888;margin-top:14px;cursor:pointer;background:none;border:none;font-family:inherit;width:100%}
 .lc-back:hover{color:#111}
 /* ── badge cliente ── */
 .cliente-badge{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#f9d6df,#fce8ed);border:none;color:#a0445e;font-size:13px;font-weight:700;letter-spacing:.3px;padding:7px 18px;border-radius:30px;margin-bottom:6px;box-shadow:0 2px 10px rgba(200,142,153,.35)}

@@ -2483,16 +2483,14 @@ body.has-bottom-nav {
 /* ── MOBILE CATEGORY BAR ── */
 .mob-cat-bar {
   position: sticky;
-  top: 0;
-  z-index: 120;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  top: 64px; /* justo debajo del t-nav */
+  z-index: 90;
+  background: #fff;
   border-bottom: 1px solid #f0ece8;
   box-shadow: 0 2px 12px rgba(0,0,0,.06);
   padding: 10px 0;
   transform: translateY(0);
-  transition: transform .3s cubic-bezier(.4,0,.2,1), box-shadow .3s;
+  transition: transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s;
 }
 .mob-cat-bar.hidden { transform: translateY(-100%); }
 
@@ -2502,9 +2500,8 @@ body.has-bottom-nav {
   padding: 0 16px;
   justify-content: center;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .mob-cat-scroll::-webkit-scrollbar { display: none; }
 
@@ -2513,38 +2510,25 @@ body.has-bottom-nav {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border-radius: 16px;
   border: 2px solid #f0ece8;
   background: #fff;
   cursor: pointer;
-  scroll-snap-align: start;
   flex-shrink: 0;
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
   transition:
-    background .2s ease,
-    border-color .2s ease,
-    transform .25s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .2s ease;
-  position: relative;
-  overflow: hidden;
+    background .22s ease,
+    border-color .22s ease,
+    box-shadow .22s ease,
+    transform .2s cubic-bezier(.34,1.56,.64,1);
 }
-.mob-cat-pill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, rgba(200,142,153,.25) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity .3s ease;
-}
-.mob-cat-pill:active::after { opacity: 1; }
-.mob-cat-pill:active { transform: scale(.94); }
-
+.mob-cat-pill:active { transform: scale(.92); }
 .mob-cat-pill.active {
   background: #1a1a1a;
   border-color: #1a1a1a;
-  box-shadow: 0 4px 16px rgba(0,0,0,.2);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.22);
 }
 
 .mob-cat-pill-ic {

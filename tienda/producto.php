@@ -455,6 +455,21 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
 }
 .det-tp-row.selected .det-tp-nombre { color: #c88e99; }
 
+/* ── Cart fly animation ── */
+@keyframes cartReceive {
+  0%   { transform: scale(1)    rotate(0deg); }
+  25%  { transform: scale(1.4)  rotate(-12deg); }
+  55%  { transform: scale(0.88) rotate(6deg); }
+  80%  { transform: scale(1.12) rotate(-3deg); }
+  100% { transform: scale(1)    rotate(0deg); }
+}
+.cart-receive { animation: cartReceive .5s cubic-bezier(.36,.07,.19,.97) forwards; }
+.fly-dot {
+  position: fixed; border-radius: 50%;
+  background: #c88e99; pointer-events: none; z-index: 9999;
+  box-shadow: 0 2px 8px rgba(200,142,153,.5);
+}
+
 /* Cantidad en card (solo desktop) */
 .det-qty-section { display: none; }
 .qty-selector { display: inline-flex; align-items: center; gap: 4px; }
@@ -1174,7 +1189,7 @@ function agregarAlCarrito(){
       confirmButtonText: 'Elegir topping',
       showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' },
     }).then(() => {
-      document.getElementById('detTpSection')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      document.getElementById('detTpList')?.scrollIntoView({ behavior:'smooth', block:'center' });
     });
     return;
   }
@@ -1203,6 +1218,7 @@ function agregarAlCarrito(){
     });
   }
   saveCart(cart);
+  flyToCart();
 
   // Marcar botón como agregado
   const btn  = document.getElementById('btnAddDet');
@@ -1220,7 +1236,7 @@ function agregarAlCarrito(){
   fetch(`<?= URL_ASSETS ?>/tienda/api/sugeridos.php?id=${PROD_ID}&tipo=${encodeURIComponent(PROD_TIPO)}`)
     .then(r => r.json())
     .then(sugeridos => {
-      if (!sugeridos || sugeridos.length === 0) { setTimeout(_goCart, 1000); return; }
+      if (!sugeridos || sugeridos.length === 0) { setTimeout(_goCart, 550); return; }
 
       const cardsHtml = sugeridos.map(p => {
         const icon = p.tipo === 'box' ? 'fa-box-open' : 'fa-cookie-bite';
@@ -1264,7 +1280,69 @@ function agregarAlCarrito(){
         }
       });
     })
-    .catch(() => { setTimeout(_goCart, 1000); });
+    .catch(() => { setTimeout(_goCart, 550); });
+}
+
+function flyToCart() {
+  const cartBtn = document.getElementById('btnOpenCart2') || document.querySelector('.det-nav-cart');
+  const fromEl  = document.getElementById('btnAddDet');
+  if (!cartBtn || !fromEl) return;
+
+  const from = fromEl.getBoundingClientRect();
+  const to   = cartBtn.getBoundingClientRect();
+
+  const startX = from.left + from.width  / 2;
+  const startY = from.top  + from.height / 2;
+  const endX   = to.left   + to.width    / 2;
+  const endY   = to.top    + to.height   / 2;
+
+  // Control point for the arc — above the midpoint
+  const ctrlX  = (startX + endX) / 2;
+  const ctrlY  = Math.min(startY, endY) - 90;
+
+  const SIZE    = 16;
+  const DURATION = 620;
+
+  const dot = document.createElement('div');
+  dot.className = 'fly-dot';
+  dot.style.cssText = `width:${SIZE}px;height:${SIZE}px;left:${startX - SIZE/2}px;top:${startY - SIZE/2}px;`;
+  document.body.appendChild(dot);
+
+  const start = performance.now();
+
+  function ease(t) {
+    // ease-in-out cubic
+    return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+  }
+
+  function tick(now) {
+    const raw = Math.min((now - start) / DURATION, 1);
+    const t   = ease(raw);
+
+    // Quadratic bezier arc
+    const x = (1-t)*(1-t)*startX + 2*(1-t)*t*ctrlX + t*t*endX;
+    const y = (1-t)*(1-t)*startY + 2*(1-t)*t*ctrlY + t*t*endY;
+
+    const scale   = 1 - t * 0.65;
+    const opacity = raw > 0.72 ? 1 - (raw - 0.72) / 0.28 : 1;
+
+    dot.style.left    = (x - SIZE/2) + 'px';
+    dot.style.top     = (y - SIZE/2) + 'px';
+    dot.style.transform  = `scale(${scale})`;
+    dot.style.opacity    = opacity;
+
+    if (raw < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      dot.remove();
+      cartBtn.classList.remove('cart-receive');
+      void cartBtn.offsetWidth; // reflow para reiniciar animación si se llama dos veces
+      cartBtn.classList.add('cart-receive');
+      cartBtn.addEventListener('animationend', () => cartBtn.classList.remove('cart-receive'), { once: true });
+    }
+  }
+
+  requestAnimationFrame(tick);
 }
 
 function switchImg(thumb, src){
@@ -1280,7 +1358,8 @@ document.getElementById('btnOpenCart2')?.addEventListener('click', () => {
 
 updateBadge();
 window.addEventListener('pageshow', updateBadge);
-actualizarPrecioBtn(); // sincronizar precio inicial del botón
+actualizarPrecioBtn();
+
 </script>
 <script src="transitions.js"></script>
 </body>

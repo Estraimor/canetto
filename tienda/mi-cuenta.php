@@ -10,9 +10,16 @@ if (!isset($_SESSION['tienda_cliente_id'])) {
 $pdo = Conexion::conectar();
 $uid = (int)$_SESSION['tienda_cliente_id'];
 
-$stmt = $pdo->prepare("SELECT nombre, apellido, celular, dni, email FROM usuario WHERE idusuario = ?");
+$stmt = $pdo->prepare("SELECT nombre, apellido, celular, dni, email, password_hash FROM usuario WHERE idusuario = ?");
 $stmt->execute([$uid]);
 $user = $stmt->fetch();
+
+try {
+    $stmtGoogle = $pdo->prepare("SELECT provider_id FROM usuario_auth WHERE usuario_idusuario = ? AND provider = 'google' LIMIT 1");
+    $stmtGoogle->execute([$uid]);
+    $googleLinked = $stmtGoogle->fetch();
+} catch (Throwable $e) { $googleLinked = false; }
+$tienePassword = !empty($user['password_hash']);
 if (!$user) { header('Location: api/auth.php?action=logout_redirect'); exit; }
 
 try {
@@ -355,6 +362,23 @@ $iniciales = strtoupper(
             </div>
             <i class="fa-solid fa-chevron-right"></i>
           </div>
+          <?php if ($googleLinked): ?>
+          <div class="settings-row" style="border-top:1px solid #f5f5f5">
+            <div class="settings-row-body">
+              <div class="settings-row-title" style="display:flex;align-items:center;gap:7px">
+                <svg width="15" height="15" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+                Google vinculado
+              </div>
+              <div class="settings-row-sub"><?= htmlspecialchars($user['email'] ?? 'Cuenta Google') ?></div>
+            </div>
+            <button onclick="desvincularGoogle()" style="
+              background:none;border:1px solid #fca5a5;color:#dc2626;
+              border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;
+              cursor:pointer;white-space:nowrap;font-family:inherit">
+              Desvincular
+            </button>
+          </div>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -631,6 +655,41 @@ async function borrarDirPerfil(id, btn){
 function doLogout() {
   localStorage.removeItem('canetto_cart_<?= $uid ?>');
   window.location.href = 'api/auth.php?action=logout_redirect';
+}
+
+async function desvincularGoogle() {
+  <?php if (!$tienePassword): ?>
+  const conf = await Swal.fire({
+    icon: 'warning',
+    title: 'Sin contraseña configurada',
+    html: '<p style="font-size:14px;color:#555;line-height:1.6">Si desvinculás Google no vas a poder ingresar porque no tenés contraseña. <br><br>Primero cambiá tu contraseña desde "Seguridad", luego desvinculá Google.</p>',
+    confirmButtonText: 'Entendido',
+    confirmButtonColor: '#c88e99',
+  });
+  return;
+  <?php endif; ?>
+  const { isConfirmed } = await Swal.fire({
+    icon: 'question',
+    title: '¿Desvincular Google?',
+    html: '<p style="font-size:14px;color:#555;line-height:1.6">Tu cuenta quedará vinculada solo con tu celular y contraseña. Podrás volver a vincular Google cuando quieras.</p>',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, desvincular',
+    cancelButtonText:  'Cancelar',
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor:  '#94a3b8',
+  });
+  if (!isConfirmed) return;
+  try {
+    const fd = new FormData();
+    fd.append('action', 'unlink_google');
+    const r = await fetch('api/auth.php', { method: 'POST', body: fd }).then(r => r.json());
+    if (r.success) {
+      Swal.fire({ icon: 'success', title: 'Desvinculado', text: 'Google fue desvinculado de tu cuenta.', confirmButtonColor: '#c88e99' })
+        .then(() => location.reload());
+    } else {
+      swalErr('Error', r.message || 'No se pudo desvincular.');
+    }
+  } catch { swalErr('Error de conexión', 'Intentá de nuevo.'); }
 }
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

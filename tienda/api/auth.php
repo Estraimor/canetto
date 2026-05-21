@@ -135,6 +135,21 @@ switch ($action) {
         echo json_encode(['success'=>true]);
         break;
 
+    case 'unlink_google':
+        if (!isset($_SESSION['tienda_cliente_id'])) {
+            echo json_encode(['success'=>false,'message'=>'No autenticado']); exit;
+        }
+        $uid = (int)$_SESSION['tienda_cliente_id'];
+        $row = $pdo->prepare("SELECT password_hash FROM usuario WHERE idusuario=? AND activo=1");
+        $row->execute([$uid]);
+        $u = $row->fetch();
+        if (!$u || empty($u['password_hash'])) {
+            echo json_encode(['success'=>false,'message'=>'Configurá una contraseña antes de desvincular Google.']); exit;
+        }
+        $pdo->prepare("DELETE FROM usuario_auth WHERE usuario_idusuario=? AND provider='google'")->execute([$uid]);
+        echo json_encode(['success'=>true]);
+        break;
+
     case 'update_profile':
         if (!isset($_SESSION['tienda_cliente_id'])) {
             echo json_encode(['success'=>false,'message'=>'No autenticado']); exit;
