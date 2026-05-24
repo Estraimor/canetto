@@ -326,11 +326,19 @@ function procesarUbicaciones(data) {
   const activos = data.activos;
   const todos   = data.todos;
 
-  document.getElementById('repCounter').textContent  = activos.length;
+  // Un repartidor está "en línea" si tiene session_at en los últimos 10 minutos
+  const ahora = Date.now();
+  const onlineIds = new Set(
+    todos
+      .filter(r => r.session_at && (ahora - new Date(r.session_at.replace(' ','T')).getTime()) < 10 * 60 * 1000)
+      .map(r => r.idusuario)
+  );
+
+  document.getElementById('repCounter').textContent  = onlineIds.size;
   document.getElementById('repSubtitle').textContent =
-    activos.length === 0
+    onlineIds.size === 0
       ? 'Ningún repartidor activo ahora'
-      : activos.length + ' en línea · ' + (todos.length - activos.length) + ' sin ubicación';
+      : onlineIds.size + ' en línea · ' + (todos.length - onlineIds.size) + ' sin conexión';
   document.getElementById('repLastUpdate').textContent =
     'Actualizado ' + new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
 
@@ -371,12 +379,13 @@ function procesarUbicaciones(data) {
 
   list.innerHTML = '';
   todos.forEach(rep => {
-    const isOnline = activosIds.has(rep.idusuario);
-    const nombre   = (rep.nombre + ' ' + (rep.apellido || '')).trim();
-    const ago      = rep.lat ? fmtAgo(rep.actualizado_at) : 'Sin ubicación';
-    const item     = document.createElement('div');
-    item.className = 'rep-item' + (isOnline ? ' online' : '');
-    item.innerHTML = `
+    const isOnline  = onlineIds.has(rep.idusuario);
+    const tieneGPS  = activosIds.has(rep.idusuario);
+    const nombre    = (rep.nombre + ' ' + (rep.apellido || '')).trim();
+    const ago       = tieneGPS ? fmtAgo(rep.actualizado_at) : (isOnline ? 'Sin GPS aún' : 'Sin conexión');
+    const item      = document.createElement('div');
+    item.className  = 'rep-item' + (isOnline ? ' online' : '');
+    item.innerHTML  = `
       <div class="rep-avatar">${initials(nombre)}</div>
       <div class="rep-info">
         <div class="rep-name">${nombre}</div>
@@ -388,7 +397,7 @@ function procesarUbicaciones(data) {
       <button class="rep-go-btn" title="Centrar en mapa">
         <i class="fa-solid fa-crosshairs"></i>
       </button>`;
-    if (isOnline) {
+    if (tieneGPS) {
       const centrar = () => {
         map.setView([parseFloat(rep.lat), parseFloat(rep.lng)], 16);
         _markers[rep.idusuario]?.openPopup();

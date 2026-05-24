@@ -1,6 +1,8 @@
 /* ── Layout ── */
 .tp-wrap {
-    padding: 28px 32px;
+    padding: 32px 36px 80px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 /* ── Header ── */

@@ -386,18 +386,31 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
 
 /* WhatsApp */
 async function enviarWhatsApp(codigo, descripcion) {
+    const desc = descripcion ? `\n📝 ${descripcion}` : '';
+    const msgTexto = `🍪 *Canetto Cookies*\n\n¡Hola! Te enviamos tu cupón de descuento exclusivo:\n\n🎟️ *Código:* \`${codigo}\`${desc}\n\nUsalo al finalizar tu pedido en la tienda 🛒`;
+
     const { value: telefono } = await Swal.fire({
         title: '<i class="fa-brands fa-whatsapp" style="color:#25d366;margin-right:8px"></i>Enviar cupón por WhatsApp',
+        width: 520,
         html: `
-            <p style="font-size:13px;color:#666;margin:0 0 16px">
-                Ingresá el número del destinatario con código de área (sin espacios ni guiones).
-            </p>
-            <input id="swal-tel" type="tel" class="swal2-input"
-                placeholder="Ej: 5491123456789"
-                style="font-size:15px;letter-spacing:1px">
-            <div style="margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;text-align:left">
-                <div style="font-size:11px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Vista previa del mensaje</div>
-                <div style="font-size:13px;color:#555;line-height:1.6" id="swal-preview"></div>
+            <div style="text-align:left">
+                <p style="font-size:13px;color:#666;margin:0 0 10px">Buscá un cliente o ingresá el número manualmente.</p>
+
+                <div style="position:relative;margin-bottom:6px">
+                    <input id="swal-search" type="text" placeholder="🔍 Buscar cliente por nombre o número..."
+                        style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box">
+                </div>
+
+                <div id="swal-lista" style="max-height:160px;overflow-y:auto;border:1px solid #e8e7e4;border-radius:10px;margin-bottom:10px;display:none"></div>
+
+                <label style="font-size:12px;color:#888;font-weight:600;display:block;margin-bottom:4px">Número destino</label>
+                <input id="swal-tel" type="tel" placeholder="Ej: 5491123456789"
+                    style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;letter-spacing:1px;font-family:inherit;outline:none;box-sizing:border-box">
+
+                <div style="margin-top:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px">
+                    <div style="font-size:10px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Vista previa del mensaje</div>
+                    <div style="font-size:12px;color:#555;line-height:1.6;white-space:pre-wrap" id="swal-preview"></div>
+                </div>
             </div>`,
         showCancelButton: true,
         confirmButtonText: '<i class="fa-brands fa-whatsapp"></i> Enviar',
@@ -405,10 +418,73 @@ async function enviarWhatsApp(codigo, descripcion) {
         confirmButtonColor: '#25d366',
         cancelButtonColor: '#aaa',
         didOpen: () => {
-            const desc = descripcion ? `\n📝 ${descripcion}` : '';
-            const msg  = `🍪 *Canetto Cookies*\n\n¡Hola! Te enviamos tu cupón de descuento exclusivo:\n\n🎟️ *Código:* \`${codigo}\`${desc}\n\nUsalo al finalizar tu pedido en la tienda 🛒`;
-            document.getElementById('swal-preview').innerText = msg;
-            document.getElementById('swal-tel').focus();
+            document.getElementById('swal-preview').textContent = msgTexto;
+
+            let debounce;
+            const searchInput = document.getElementById('swal-search');
+            const lista       = document.getElementById('swal-lista');
+            const telInput    = document.getElementById('swal-tel');
+
+            function renderClientes(clientes, inicial) {
+                lista.style.display = 'block';
+                if (!clientes.length) {
+                    lista.innerHTML = `<div style="padding:12px 14px;font-size:13px;color:#94a3b8;text-align:center">
+                        <i class="fa-solid fa-magnifying-glass" style="margin-right:6px;opacity:.5"></i>
+                        No se encontró ningún cliente
+                    </div>`;
+                    return;
+                }
+                const footer = inicial
+                    ? `<div style="padding:7px 14px;font-size:11px;color:#aaa;text-align:center;border-top:1px solid #f0eef0">Mostrando los primeros 5 — escribí para buscar más</div>`
+                    : '';
+                lista.innerHTML = clientes.map(c => `
+                    <div class="wa-cli-row" data-tel="${c.celular}"
+                        style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f5f3f5;gap:10px">
+                        <span style="font-weight:600;color:#1a1a1a;font-size:13px">${c.nombre.trim()}</span>
+                        <span style="color:#25d366;font-family:monospace;font-size:12px;font-weight:600">${c.celular}</span>
+                    </div>`).join('') + footer;
+
+                lista.querySelectorAll('.wa-cli-row').forEach(row => {
+                    row.addEventListener('mouseenter', () => row.style.background = '#f0fdf4');
+                    row.addEventListener('mouseleave', () => row.style.background = '');
+                    row.addEventListener('click', () => {
+                        telInput.value = row.dataset.tel;
+                        lista.style.display = 'none';
+                        searchInput.value = row.querySelector('span').textContent.trim();
+                        telInput.focus();
+                    });
+                });
+            }
+
+            async function buscar(q) {
+                lista.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:#aaa;text-align:center">Buscando…</div>';
+                lista.style.display = 'block';
+                try {
+                    const r = await fetch(`api/get_clientes_tel.php?q=${encodeURIComponent(q)}`);
+                    const d = await r.json();
+                    if (d.ok) renderClientes(d.clientes, d.inicial);
+                    else lista.innerHTML = `<div style="padding:10px 14px;font-size:13px;color:#f87171;text-align:center">Error: ${d.error ?? 'No se pudo cargar'}</div>`;
+                } catch(e) {
+                    lista.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:#f87171;text-align:center">Error de conexión</div>';
+                }
+            }
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounce);
+                const q = searchInput.value.trim();
+                if (!q) { buscar(''); return; }
+                lista.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:#aaa;text-align:center">Buscando…</div>';
+                lista.style.display = 'block';
+                debounce = setTimeout(() => buscar(q), 300);
+            });
+
+            searchInput.addEventListener('focus', () => buscar(searchInput.value.trim()));
+
+            Swal.getHtmlContainer().addEventListener('click', e => {
+                if (!lista.contains(e.target) && e.target !== searchInput) lista.style.display = 'none';
+            });
+
+            searchInput.focus();
         },
         preConfirm: () => {
             const t = document.getElementById('swal-tel').value.replace(/\D/g,'');
@@ -421,10 +497,7 @@ async function enviarWhatsApp(codigo, descripcion) {
     });
 
     if (!telefono) return;
-
-    const desc = descripcion ? `\n📝 ${descripcion}` : '';
-    const msg  = `🍪 *Canetto Cookies*\n\n¡Hola! Te enviamos tu cupón de descuento exclusivo:\n\n🎟️ *Código:* \`${codigo}\`${desc}\n\nUsalo al finalizar tu pedido en la tienda 🛒`;
-    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(msgTexto)}`, '_blank');
 }
 
 /* Eliminar */

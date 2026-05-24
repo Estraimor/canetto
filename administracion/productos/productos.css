@@ -2,6 +2,13 @@
    productos.css — Canetto Admin · Productos & Box
    ========================================================= */
 
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.content-body {
+    padding: 32px 36px 80px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
 /* ── HEADER ────────────────────────────────────────────── */
 .editor-header {
     display: flex;

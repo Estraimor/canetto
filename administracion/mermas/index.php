@@ -7,7 +7,7 @@ include '../../panel/dashboard/layaut/nav.php';
 ?>
 <style>
 /* ── Mermas Page ─────────────────────────── */
-.mrm-wrap{padding:24px 28px;max-width:1200px}
+.mrm-wrap{padding:32px 36px 80px;max-width:1400px;margin:0 auto}
 .mrm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 .mrm-title{font-size:22px;font-weight:700;color:#1e293b}
 .mrm-title i{color:#f59e0b;margin-right:8px}

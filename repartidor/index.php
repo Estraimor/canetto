@@ -932,6 +932,11 @@ function switchTab(name, btn) {
 /* ════════════════════════════════════════
    LOGIN
 ════════════════════════════════════════ */
+function heartbeat() {
+  fetch('api/heartbeat.php').catch(() => {});
+}
+setInterval(heartbeat, 5 * 60 * 1000);
+
 async function doLogin() {
   const celular  = document.getElementById('lCelular').value.trim();
   const password = document.getElementById('lPassword').value;
@@ -958,6 +963,7 @@ async function doLogin() {
         document.getElementById('dashAvatar').textContent = initials(nombre);
         document.getElementById('appLogin').classList.add('hidden');
         document.getElementById('appDash').classList.remove('hidden');
+        heartbeat();
         cargarPedidos();
         startAutoRefresh();
         registrarPushRepartidor();
@@ -1601,6 +1607,7 @@ document.getElementById('lPassword')?.addEventListener('keydown', e => {
 if (!document.getElementById('appDash').classList.contains('hidden')) {
   const n = document.getElementById('dashNombre').textContent;
   document.getElementById('dashAvatar').textContent = initials(n);
+  heartbeat();
   cargarPedidos();
   startAutoRefresh();
   // Registrar SW siempre al cargar (para que _swReg esté listo antes de necesitarlo)

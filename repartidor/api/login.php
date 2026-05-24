@@ -46,6 +46,9 @@ if (!$rep || !password_verify($password, $rep['password_hash'])) {
 $_SESSION['repartidor_id']     = $rep['idusuario'];
 $_SESSION['repartidor_nombre'] = trim($rep['nombre'] . ' ' . ($rep['apellido'] ?? ''));
 
+try { $pdo->exec("ALTER TABLE usuario ADD COLUMN session_at DATETIME NULL"); } catch (Throwable $e) {}
+$pdo->prepare("UPDATE usuario SET session_at = NOW() WHERE idusuario = ?")->execute([$rep['idusuario']]);
+
 echo json_encode([
     'success' => true,
     'nombre'  => $_SESSION['repartidor_nombre'],

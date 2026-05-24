@@ -39,9 +39,9 @@ include '../../panel/dashboard/layaut/nav.php';
   .prov-module {
     font-family: "Speedee", system-ui, sans-serif;
     color: var(--ink);
-    background: var(--paper);
-    min-height: 100vh;
-    padding: 2.5rem 2rem 4rem;
+    padding: 32px 36px 80px;
+    max-width: 1400px;
+    margin: 0 auto;
   }
 
   /* ── Header ── */

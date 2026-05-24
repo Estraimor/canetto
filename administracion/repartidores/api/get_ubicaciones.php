@@ -17,6 +17,7 @@ try {
         "ALTER TABLE usuario ADD COLUMN ubicacion_lat  DECIMAL(10,8) NULL",
         "ALTER TABLE usuario ADD COLUMN ubicacion_lng  DECIMAL(11,8) NULL",
         "ALTER TABLE usuario ADD COLUMN ubicacion_at   DATETIME NULL",
+        "ALTER TABLE usuario ADD COLUMN session_at     DATETIME NULL",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
     // Repartidores con ubicación enviada en los últimos 10 minutos
@@ -38,7 +39,8 @@ try {
     $todos = $pdo->query("
         SELECT u.idusuario, u.nombre, u.apellido,
                u.ubicacion_lat AS lat, u.ubicacion_lng AS lng,
-               u.ubicacion_at  AS actualizado_at
+               u.ubicacion_at  AS actualizado_at,
+               u.session_at
         FROM usuario u
         INNER JOIN usuarios_roles ur ON ur.usuario_idusuario = u.idusuario
         INNER JOIN roles r ON r.idroles = ur.roles_idroles

@@ -30,7 +30,7 @@ body {
    WRAPPER
 ──────────────────────────── */
 .historial-wrapper {
-  padding: 2.5rem 2rem 5rem;
+  padding: 32px 36px 80px;
   max-width: 1400px;
   margin: 0 auto;
 }
