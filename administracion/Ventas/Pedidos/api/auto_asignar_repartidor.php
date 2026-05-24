@@ -123,6 +123,14 @@ try {
     audit($pdo, 'editar', 'pedidos',
         "Auto-asignación pedido #{$id_venta}: repartidor → {$repNombre}");
 
+    // Notificación push al repartidor
+    require_once __DIR__ . '/../../../../config/web_push.php';
+    push_enviar_a_repartidor(
+        $pdo, $repId,
+        '🛵 Tenés un pedido nuevo',
+        "El pedido #{$id_venta} fue asignado a vos. ¡Abrí la app!"
+    );
+
     // Notificación push al cliente
     $stmtUid = $pdo->prepare("SELECT usuario_idusuario FROM ventas WHERE idventas = ?");
     $stmtUid->execute([$id_venta]);

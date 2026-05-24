@@ -60,6 +60,14 @@ try {
         $params = [':rep' => $repartidor_id, ':id' => $id_venta];
         if ($tipo_entrega) $params[':te'] = $tipo_entrega;
         $stmt->execute($params);
+
+        // Notificación push al repartidor
+        require_once __DIR__ . '/../../../../config/web_push.php';
+        push_enviar_a_repartidor(
+            $pdo, $repartidor_id,
+            '🛵 Tenés un pedido nuevo',
+            "El pedido #{$id_venta} fue asignado a vos. ¡Abrí la app!"
+        );
     } elseif ($estado === 3 && $via_uber) {
         $stmt = $pdo->prepare(
             "UPDATE ventas SET estado_venta_idestado_venta=:estado,

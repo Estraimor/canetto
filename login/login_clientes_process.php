@@ -75,6 +75,7 @@ if (!$rolCliente) {
 
 $rol = $rolCliente;
 
+$_retorno = $_SESSION['login_retorno'] ?? '';
 session_regenerate_id(true);
 
 $_SESSION['usuario_id']              = $user['idusuario'];
@@ -85,14 +86,17 @@ $_SESSION['rol_id']                  = $rol['idroles'] ?? null;
 $_SESSION['tienda_cliente_id']       = $user['idusuario'];
 $_SESSION['tienda_cliente_nombre']   = trim($user['nombre'] . ' ' . ($user['apellido'] ?? ''));
 
+$destino = ($_retorno && str_starts_with($_retorno, URL_TIENDA)) ? $_retorno : URL_TIENDA . '/index.php';
+unset($_SESSION['login_retorno']);
+
 // Si viene por fetch (login con animación), devolver JSON
 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
     header('Content-Type: application/json');
     echo json_encode([
         'ok'       => true,
         'nombre'   => $_SESSION['tienda_cliente_nombre'],
-        'redirect' => URL_TIENDA . '/index.php',
+        'redirect' => $destino,
     ]);
     exit;
 }
-redirect(URL_TIENDA . '/index.php');
+redirect($destino);

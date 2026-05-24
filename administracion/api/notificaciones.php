@@ -157,7 +157,7 @@ try {
         FROM ventas v
         LEFT JOIN usuario u    ON u.idusuario       = v.usuario_idusuario
         LEFT JOIN metodo_pago mp ON mp.idmetodo_pago = v.metodo_pago_idmetodo_pago
-        WHERE v.estado_venta_idestado_venta IN (1,5)
+        WHERE v.estado_venta_idestado_venta = 1
           AND v.fecha >= NOW() - INTERVAL 10 MINUTE
           AND NOT EXISTS (
               SELECT 1 FROM notificaciones_admin n

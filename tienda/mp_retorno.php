@@ -10,6 +10,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 $status   = $_GET['status']   ?? 'pending';
 $pedidoId = (int)($_GET['pedido'] ?? 0);
 
+// MP incluye collection_status en la URL de retorno.
+// A veces redirige al pending URL pero collection_status ya es approved (pasa con Dinero disponible).
+$mpCollStatus = $_GET['collection_status'] ?? $_GET['payment_status'] ?? '';
+if ($status === 'pending' && $mpCollStatus === 'approved') {
+    $status = 'success';
+}
+
+$clienteId = (int)($_SESSION['tienda_cliente_id'] ?? 0);
+
 $msgs = [
     'success' => ['ic' => '🎉', 'titulo' => '¡Pago confirmado!',     'color' => '#2d8a4e', 'sub' => 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!'],
     'failure' => ['ic' => '❌', 'titulo' => 'El pago no se completó', 'color' => '#c0392b', 'sub' => 'Hubo un problema con el pago. Podés intentar nuevamente o elegir otro método.'],
@@ -61,22 +70,35 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
     <a href="index.php" class="btn btn-sec">← Seguir comprando</a>
   <?php endif; ?>
 </div>
-<?php if ($status === 'pending' && $pedidoId): ?>
 <script>
 (function () {
-    const pedidoId = <?= (int)$pedidoId ?>;
-    let attempts   = 0;
-    const maxTries = 12; // ~24 segundos
+    const status    = '<?= $status ?>';
+    const pedidoId  = <?= (int)$pedidoId ?>;
+    const uid       = <?= $clienteId ?>;
+    const ck        = uid ? 'canetto_cart_' + uid : 'canetto_cart_guest';
 
-    const msgsOk  = { ic: '🎉', titulo: '¡Pago confirmado!',      color: '#2d8a4e', sub: 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!' };
-    const msgsFail = { ic: '❌', titulo: 'El pago no se completó', color: '#c0392b', sub: 'Hubo un problema con el pago. Podés intentar nuevamente.' };
+    // Si el pago fue exitoso: limpiar el carrito ahora
+    if (status === 'success') {
+        localStorage.removeItem(ck);
+        return; // No necesitamos polling
+    }
+
+    // Si falló: el carrito sigue intacto (no se limpió al ir a MP)
+    if (status !== 'pending' || !pedidoId) return;
+
+    // Pending: pollear hasta confirmar aprobación o rechazo
+    let attempts = 0;
+    const maxTries = 30; // ~60 segundos — suficiente para que llegue el webhook
+
+    const msgsOk   = { ic: '🎉', titulo: '¡Pago confirmado!',      color: '#2d8a4e', sub: 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!' };
+    const msgsFail = { ic: '❌', titulo: 'El pago no se completó', color: '#c0392b', sub: 'Hubo un problema con el pago. Podés intentar nuevamente o elegir otro método.' };
 
     function applyUI(info) {
-        document.querySelector('.ic').textContent     = info.ic;
+        document.querySelector('.ic').textContent  = info.ic;
         const tit = document.querySelector('.titulo');
-        tit.style.color    = info.color;
-        tit.textContent    = info.titulo;
-        document.querySelector('.sub').textContent    = info.sub;
+        tit.style.color = info.color;
+        tit.textContent = info.titulo;
+        document.querySelector('.sub').textContent = info.sub;
         const card = document.querySelector('.card');
         card.style.transition = 'box-shadow 0.4s';
         card.style.boxShadow  = info.color === '#2d8a4e'
@@ -90,9 +112,10 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
             .then(data => {
                 if (!data.ok) { retry(); return; }
                 if (data.estado_id === 1) {
+                    localStorage.removeItem(ck); // Pago confirmado: limpiar carrito
                     applyUI(msgsOk);
                 } else if (data.estado_id === 6) {
-                    applyUI(msgsFail);
+                    applyUI(msgsFail); // Rechazado: carrito ya está intacto
                 } else {
                     retry();
                 }
@@ -105,10 +128,9 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
         if (attempts < maxTries) setTimeout(poll, 2000);
     }
 
-    // Primera consulta luego de 2 segundos (el webhook de MP puede tardar un poco)
-    setTimeout(poll, 2000);
+    // Primera consulta a 1.5s — el webhook suele llegar muy rápido
+    setTimeout(poll, 1500);
 })();
 </script>
-<?php endif; ?>
 </body>
 </html>

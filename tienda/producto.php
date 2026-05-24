@@ -1173,7 +1173,7 @@ function agregarAlCarrito(){
       icon:'info', title:'Iniciá sesión',
       text:'Necesitás una cuenta para agregar productos al carrito.',
       confirmButtonColor:'#c88e99', confirmButtonText:'Ingresar'
-    }).then(r=>{ if(r.isConfirmed) window.location.href='login.php'; });
+    }).then(r=>{ if(r.isConfirmed) window.location.href='login.php?retorno='+encodeURIComponent(location.href); });
     return;
   }
   // Validar selección de topping

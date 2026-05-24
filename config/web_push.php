@@ -201,3 +201,57 @@ function push_enviar_a_usuario(\PDO $pdo, int $uid, int $idVenta, int $estado): 
         // Silencioso
     }
 }
+
+// ── Enviar push a un repartidor (pedido nuevo u otras notificaciones) ─
+function push_enviar_a_repartidor(\PDO $pdo, int $repId, string $titulo, string $cuerpo): void {
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS notif_repartidores (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                usuario_id INT NOT NULL,
+                titulo     VARCHAR(255) NOT NULL,
+                cuerpo     TEXT NOT NULL,
+                leida      TINYINT(1)  NOT NULL DEFAULT 0,
+                created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_uid_leida (usuario_id, leida)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        ");
+
+        $pdo->prepare("INSERT INTO notif_repartidores (usuario_id, titulo, cuerpo) VALUES (?,?,?)")
+            ->execute([$repId, $titulo, $cuerpo]);
+
+        $subs = $pdo->prepare("SELECT endpoint, endpoint_hash FROM push_subscriptions WHERE usuario_id = ? AND activo = 1");
+        $subs->execute([$repId]);
+        $rows = $subs->fetchAll(\PDO::FETCH_ASSOC);
+        if (empty($rows)) return;
+
+        $privPem = PUSH_VAPID_PRIVATE_PEM;
+        $pubKey  = PUSH_VAPID_PUBLIC;
+        $subject = PUSH_SUBJECT;
+
+        foreach ($rows as $sub) {
+            try {
+                $jwt = push_vapid_jwt($sub['endpoint'], $subject, $privPem);
+                $ch  = curl_init($sub['endpoint']);
+                curl_setopt_array($ch, [
+                    CURLOPT_POST           => true,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER     => [
+                        'Authorization: vapid t=' . $jwt . ',k=' . $pubKey,
+                        'TTL: 3600',
+                        'Content-Length: 0',
+                    ],
+                    CURLOPT_POSTFIELDS     => '',
+                    CURLOPT_TIMEOUT        => 6,
+                    CURLOPT_SSL_VERIFYPEER => true,
+                ]);
+                curl_exec($ch);
+                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                if ($code === 410) {
+                    $pdo->prepare("UPDATE push_subscriptions SET activo=0 WHERE endpoint_hash=?")->execute([$sub['endpoint_hash']]);
+                }
+                curl_close($ch);
+            } catch (\Throwable $e) {}
+        }
+    } catch (\Throwable $e) {}
+}

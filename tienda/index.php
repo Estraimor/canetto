@@ -2169,7 +2169,6 @@ async function confirmOrder(){
         const mpBody={pedido_id:d.id_venta,items:getCart(),total:total(getCart())};
         const mp=await(await fetch('api/mp_preference.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mpBody)})).json();
         if(mp.success&&mp.init_point){
-          saveCart([]);renderCart();
           window.location.href=mp.init_point;
         } else {
           setAlert('dAlert','Pedido creado (#'+d.id_venta+') pero no se pudo iniciar el pago. Contactanos para coordinar el pago.','err');

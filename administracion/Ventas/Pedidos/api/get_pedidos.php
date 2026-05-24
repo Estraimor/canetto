@@ -26,7 +26,9 @@ try {
     // Crear estado 7 si no existe
     $pdo->exec("INSERT IGNORE INTO estado_venta (idestado_venta, nombre) VALUES (7, 'Listo para retiro')");
 
-    $where  = ['v.estado_venta_idestado_venta IN (1,2,3,5,7)'];
+    // Estado 5 (Pendiente de Pago / MP sin confirmar) se excluye del listado
+    // por defecto — sólo aparece si el admin filtra explícitamente por ese estado.
+    $where  = ['v.estado_venta_idestado_venta IN (1,2,3,7)'];
 
     if (!empty($_GET['estado'])) {
         $where  = ['v.estado_venta_idestado_venta = :estado'];
@@ -126,7 +128,7 @@ try {
             SUM(estado_venta_idestado_venta = 7) AS listo_retiro,
             COALESCE(SUM(total),0) AS total_hoy
         FROM ventas
-        WHERE DATE(fecha) = :hoy AND estado_venta_idestado_venta IN (1,2,3,5,7)
+        WHERE DATE(fecha) = :hoy AND estado_venta_idestado_venta IN (1,2,3,7)
     ");
     $stats->execute([':hoy' => $hoy]);
     $statsRow = $stats->fetch();

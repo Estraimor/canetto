@@ -9,6 +9,9 @@ if (!defined('APP_BOOT')) {
     exit('Acceso denegado.');
 }
 
+// Zona horaria de Argentina para date() y strtotime() en PHP
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
 // ── Detectar entorno ────────────────────────────────────────────────────────
 $_h       = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $_isLocal = in_array($_h, ['localhost', '127.0.0.1'], true);

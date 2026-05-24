@@ -4,8 +4,15 @@ require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../config/google_config.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
+$retorno = $_GET['retorno'] ?? '';
+if ($retorno && str_starts_with($retorno, URL_TIENDA)) {
+    $_SESSION['login_retorno'] = $retorno;
+}
+
 if (isset($_SESSION['usuario_id']) && ($_SESSION['rol'] ?? '') === 'cliente') {
-    redirect(URL_TIENDA . '/index.php');
+    $dest = $_SESSION['login_retorno'] ?? URL_TIENDA . '/index.php';
+    unset($_SESSION['login_retorno']);
+    redirect($dest);
 }
 
 $error = $_SESSION['error_cliente'] ?? null;

@@ -28,7 +28,7 @@ try {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="repartidor.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 /* ══ UBER-STYLE MAP MODE ══════════════════════════════════ */
 
@@ -1609,7 +1609,7 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
 }
 </script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 <script>
 /* ════════════════════════════════════════
@@ -1761,20 +1761,25 @@ async function abrirUberMap(pedido, multiPedidos) {
   setTimeout(() => {
     _uberMap.invalidateSize();
 
+    // Dibujar ruta inmediatamente (desde la tienda si no hay GPS aún) — no esperar GPS
+    dibujarRuta(pedido);
+
     if (!_uberDriver && navigator.geolocation) {
-      // Sin posición aún: obtener y luego dibujar la ruta desde el repartidor real
+      // Obtener posición en paralelo: usar caché reciente o baja precisión para ser rápido
       navigator.geolocation.getCurrentPosition(pos => {
         const lat   = pos.coords.latitude;
         const lng   = pos.coords.longitude;
         const color = _uberPhase === 'pickup' ? '#f59e0b' : '#c88e99';
-        _uberDriver = L.marker([lat, lng], { icon: createDriverIcon(color), zIndexOffset: 1000 })
-          .bindPopup('<strong>Tu posición</strong>').addTo(_uberMap);
-        dibujarRuta(pedido);
-      }, () => dibujarRuta(pedido), { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
-    } else {
-      dibujarRuta(pedido);
+        if (_uberDriver) {
+          _uberDriver.setLatLng([lat, lng]);
+        } else {
+          _uberDriver = L.marker([lat, lng], { icon: createDriverIcon(color), zIndexOffset: 1000 })
+            .bindPopup('<strong>Tu posición</strong>').addTo(_uberMap);
+        }
+        dibujarRuta(pedido); // Actualizar ruta con posición real
+      }, null, { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 });
     }
-  }, 250);
+  }, 200);
 
   // Seguir posición del repartidor
   iniciarGeolocalizacion();
@@ -2486,8 +2491,16 @@ function resetActividadTimer() {
 
 function _sonidoActividad() {
   try {
+    let plays = 0;
     const audio = new Audio('sounds/akaza_theme.mp3');
     audio.volume = 0.85;
+    audio.addEventListener('ended', () => {
+      plays++;
+      if (plays < 5) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      }
+    });
     audio.play().catch(() => {});
   } catch (_) {}
 }
