@@ -17,12 +17,42 @@ if (!$pedidoId || $totalAmt <= 0) {
     echo json_encode(['success' => false, 'message' => 'Datos inválidos']); exit;
 }
 
+// ── Armar título con los productos reales ───────────────────────────────────
+$nombresItems = [];
+$totalUnidades = 0;
+foreach ($items as $it) {
+    $nombre = trim($it['nombre'] ?? '');
+    $cant   = (int)($it['cantidad'] ?? 1);
+    $totalUnidades += $cant;
+    if ($nombre) {
+        $nombresItems[] = $cant > 1 ? "{$nombre} ×{$cant}" : $nombre;
+    }
+}
+
+// Título principal: nombre(s) del producto, máx 2 + "y más" si hay más
+$titulo = 'Galletitas Canetto';
+if (!empty($nombresItems)) {
+    if (count($nombresItems) === 1) {
+        $titulo = $nombresItems[0];
+    } elseif (count($nombresItems) === 2) {
+        $titulo = $nombresItems[0] . ' y ' . $nombresItems[1];
+    } else {
+        $titulo = $nombresItems[0] . ', ' . $nombresItems[1] . ' y más';
+    }
+}
+// MP limita el título a 256 caracteres
+$titulo = mb_substr($titulo, 0, 256);
+
+$descripcion = $totalUnidades > 0
+    ? "{$totalUnidades} " . ($totalUnidades === 1 ? 'galletita artesanal' : 'galletitas artesanales') . ' — Canetto Cookies'
+    : 'Galletitas artesanales — Canetto Cookies';
+
 // ── Armar items para MP ──────────────────────────────────────────────────────
 $mpItems = [];
 $mpItems[] = [
     'id'          => 'pedido_' . $pedidoId,
-    'title'       => 'Canetto Cookies',
-    'description' => 'Pedido #' . $pedidoId,
+    'title'       => $titulo,
+    'description' => $descripcion,
     'quantity'    => 1,
     'unit_price'  => $totalAmt,
     'currency_id' => 'ARS',

@@ -96,9 +96,13 @@ try {
         VALUES (?, 'google', ?, NOW())
     ")->execute([$userId, $googleId]);
 
-    // Actualizar avatar si no tiene
-    if (!$user['avatar'] && $avatar) {
-        $pdo->prepare("UPDATE usuario SET avatar = ?, updated_at = NOW() WHERE idusuario = ?")->execute([$avatar, $userId]);
+    // Determinar avatar final: preferir el de Google (siempre fresco), sino el que tenga en BD
+    $avatarFinal = $avatar ?: ($user['avatar'] ?? null);
+
+    // Guardar/actualizar avatar de Google en BD (puede cambiar la foto de perfil)
+    if ($avatar) {
+        $pdo->prepare("UPDATE usuario SET avatar = ?, updated_at = NOW() WHERE idusuario = ?")
+            ->execute([$avatar, $userId]);
     }
 
     // ── Iniciar sesión admin ────────────────────────────────────────────────
@@ -108,6 +112,7 @@ try {
     $_SESSION['apellido']   = $user['apellido'];
     $_SESSION['rol']        = strtolower($user['rol_nombre']);
     $_SESSION['rol_id']     = $user['rol_id'];
+    $_SESSION['avatar']     = $avatarFinal;
     $_SESSION['last_seen']  = time();
 
     ob_end_clean();

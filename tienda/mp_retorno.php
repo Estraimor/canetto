@@ -17,37 +17,62 @@ if ($status === 'pending' && $mpCollStatus === 'approved') {
     $status = 'success';
 }
 
-// Si sigue siendo pending pero vino collection_id/payment_id, consultar MP directamente
-// para no depender solo del webhook (que puede tardar >60s).
-if ($status === 'pending') {
-    $collectionId = $_GET['collection_id'] ?? $_GET['payment_id'] ?? '';
-    if ($collectionId) {
-        $ch = curl_init("https://api.mercadopago.com/v1/payments/" . (int)$collectionId);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 8,
-            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . MP_ACCESS_TOKEN],
-        ]);
-        $mpResp = curl_exec($ch);
-        $mpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+// Si sigue siendo pending: consultar MP directamente para obtener el estado real,
+// sin depender del webhook (que puede tardar o no llegar a tiempo).
+if ($status === 'pending' && $pedidoId) {
+    $mpStatusReal = '';
 
-        if ($mpCode === 200) {
-            $mpData   = json_decode($mpResp, true);
-            $mpStatus = $mpData['status'] ?? '';
-            if ($mpStatus === 'approved') {
-                $status = 'success';
-                // Actualizar el pedido ya que el webhook puede no haber llegado aún
-                try {
-                    $pdo = Conexion::conectar();
-                    $pdo->prepare("UPDATE ventas SET estado_venta_idestado_venta = 1, updated_at = NOW() WHERE idventas = ?")
-                        ->execute([$pedidoId]);
-                } catch (Throwable $e) {}
-            } elseif ($mpStatus === 'rejected' || $mpStatus === 'cancelled') {
-                $status = 'failure';
+    // Opción A: usar collection_id/payment_id de la URL si es un número válido
+    $collectionId = (int)($_GET['collection_id'] ?? $_GET['payment_id'] ?? 0);
+    if ($collectionId > 0) {
+        $ch = curl_init("https://api.mercadopago.com/v1/payments/{$collectionId}");
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8,
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . MP_ACCESS_TOKEN]]);
+        $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); unset($ch);
+        if ($code === 200) {
+            $mpStatusReal = json_decode($r, true)['status'] ?? '';
+        }
+    }
+
+    // Opción B: usar preference_id para buscar el pago en MP (siempre viene en la URL)
+    if (!$mpStatusReal) {
+        $prefId = trim($_GET['preference_id'] ?? '');
+        if ($prefId) {
+            $ch = curl_init('https://api.mercadopago.com/v1/payments/search?preference_id=' . urlencode($prefId) . '&sort=date_created&criteria=desc&limit=1');
+            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8,
+                CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . MP_ACCESS_TOKEN]]);
+            $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); unset($ch);
+            if ($code === 200) {
+                $results = json_decode($r, true)['results'] ?? [];
+                if (!empty($results)) {
+                    $mpStatusReal = $results[0]['status'] ?? '';
+                    // Si encontramos el pago, guardamos su ID para el webhook
+                    $foundPaymentId = $results[0]['id'] ?? null;
+                }
             }
         }
     }
+
+    // Aplicar el estado real de MP
+    if ($mpStatusReal === 'approved') {
+        $status = 'success';
+        try {
+            $pdo = Conexion::conectar();
+            $pdo->prepare("UPDATE ventas SET estado_venta_idestado_venta = 1, updated_at = NOW() WHERE idventas = ?")
+                ->execute([$pedidoId]);
+            // Actualizar también pagos_mercadopago si el webhook no llegó aún
+            if (!empty($foundPaymentId)) {
+                $pdo->prepare("UPDATE pagos_mercadopago SET estado_mp='approved', mp_payment_id=? WHERE ventas_idventas=? AND mp_payment_id IS NULL LIMIT 1")
+                    ->execute([(string)$foundPaymentId, $pedidoId]);
+            } else {
+                $pdo->prepare("UPDATE pagos_mercadopago SET estado_mp='approved' WHERE ventas_idventas=? AND mp_payment_id IS NULL LIMIT 1")
+                    ->execute([$pedidoId]);
+            }
+        } catch (Throwable $e) {}
+    } elseif (in_array($mpStatusReal, ['rejected', 'cancelled'], true)) {
+        $status = 'failure';
+    }
+    // Si $mpStatusReal sigue vacío o es 'pending'/'in_process', se queda en pending → polling
 }
 
 $clienteId = (int)($_SESSION['tienda_cliente_id'] ?? 0);

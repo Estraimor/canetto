@@ -1644,10 +1644,10 @@ function setEntrega(tipo){
 // ── DIRECCIONES GUARDADAS ────────────────────────────────────────────────────
 let _dirs = [...(window.DIRS_GUARDADAS||[])];
 
-// Precargar dirección desde sessionStorage si el usuario ya eligió una
+// Precargar dirección desde localStorage si el usuario ya eligió una
 let _dirSeleccionada = (function() {
   try {
-    const loc = JSON.parse(sessionStorage.getItem('canetto_loc'));
+    const loc = JSON.parse(localStorage.getItem('canetto_loc'));
     if (loc?.tipo === 'dir' && loc.dir?.id) return loc.dir.id;
   } catch(e) {}
   return null;
@@ -2856,10 +2856,10 @@ document.getElementById('toppingsModal')?.addEventListener('click', e => {
 ════════════════════════════════════════════════════════════════ */
 
 function _getLoc() {
-  try { return JSON.parse(sessionStorage.getItem('canetto_loc')); } catch { return null; }
+  try { return JSON.parse(localStorage.getItem('canetto_loc')); } catch { return null; }
 }
 function _setLoc(obj) {
-  sessionStorage.setItem('canetto_loc', JSON.stringify(obj));
+  localStorage.setItem('canetto_loc', JSON.stringify(obj));
 }
 
 /* ── Barra superior ─────────────────────────────────────────── */
@@ -2890,7 +2890,7 @@ function actualizarLocBar() {
 
 /* Toca "Cambiar" → borrar y volver a preguntar */
 function cambiarUbicacion() {
-  sessionStorage.removeItem('canetto_loc');
+  localStorage.removeItem('canetto_loc');
   _dirSeleccionada = null;
   actualizarLocBar();
   _abrirModal();

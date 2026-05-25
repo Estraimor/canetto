@@ -18,7 +18,7 @@ if ($action === 'logout_redirect') {
     $uidJs = $uid ? (int)$uid : 0;
     echo "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><script>
     " . ($uidJs ? "localStorage.removeItem('canetto_cart_{$uidJs}');" : "Object.keys(localStorage).filter(k=>k.startsWith('canetto_cart_')).forEach(k=>localStorage.removeItem(k));") . "
-    sessionStorage.removeItem('canetto_loc');
+    localStorage.removeItem('canetto_loc');
     window.location.replace('" . URL_TIENDA . "/login.php');
     </script></body></html>";
     exit;
