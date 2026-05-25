@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql -u root -e ' *)",
+      "Bash(mysql -u root --password= -e ' *)",
+      "Bash(grep -v \"^\\\\s*$\")",
+      "Bash(grep -v \"^--$\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\wamp64\\\\www\\\\canetto\" -Recurse -Force)",
+      "Bash(mysql -u root -e \"DESCRIBE u966473590_canetto.ventas;\")",
+      "Bash(mysql -u root --password=\"\" -e \"DESCRIBE u966473590_canetto.ventas;\")",
+      "PowerShell(& \"C:\\\\wamp64\\\\bin\\\\mariadb\\\\mariadb10.11.6\\\\bin\\\\mysql.exe\" -u root --password=\"\" -e \"DESCRIBE u966473590_canetto.ventas;\")"
+    ]
+  }
+}

@@ -206,9 +206,31 @@ body.page-exit #page-wrap {
   z-index: 2;
   padding: 24px 20px;
   width: 100%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, transparent 100%);
   color: #fff;
 }
+
+/* Flechas del carousel */
+.swiper-button-prev,
+.swiper-button-next {
+  width: 44px !important;
+  height: 44px !important;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(6px);
+  border-radius: 50%;
+  color: #fff !important;
+  transition: background 0.2s;
+}
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  background: rgba(255,255,255,0.4);
+}
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  font-size: 16px !important;
+  font-weight: 700;
+}
+
 .slide-tag {
   display: inline-block;
   background: rgba(255, 255, 255, 0.2);
@@ -2659,7 +2681,7 @@ body.has-bottom-nav {
   .slide-content {
     padding: 56px 80px;
     max-width: 700px;
-    background: linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.15) 65%, transparent 100%);
+    background: linear-gradient(to top, rgba(0,0,0,.35) 0%, rgba(0,0,0,.05) 65%, transparent 100%);
   }
   .slide-tag   { font-size: 11px; padding: 5px 16px; margin-bottom: 12px; }
   .slide-title { font-size: 52px; line-height: 1.05; margin-bottom: 12px; }

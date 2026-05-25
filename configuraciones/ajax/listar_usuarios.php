@@ -20,6 +20,7 @@ try {
             usuario,
             activo
         FROM usuario
+        WHERE usuario != '__deleted__'
         ORDER BY nombre ASC
     ");
 

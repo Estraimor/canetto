@@ -67,11 +67,12 @@ if (!$rolAdmin) {
 
 session_regenerate_id(true);
 
-$_SESSION['usuario_id'] = $user['idusuario'];
-$_SESSION['nombre']     = $user['nombre'];
-$_SESSION['apellido']   = $user['apellido'];
-$_SESSION['rol']        = strtolower($rolAdmin['nombre']);
-$_SESSION['rol_id']     = $rolAdmin['idroles'];
+$_SESSION['usuario_id']   = $user['idusuario'];
+$_SESSION['nombre']       = $user['nombre'];
+$_SESSION['apellido']     = $user['apellido'];
+$_SESSION['rol']          = strtolower($rolAdmin['nombre']);
+$_SESSION['rol_id']       = $rolAdmin['idroles'];
+$_SESSION['avatar']       = $user['avatar'] ?? null;
 
 if ($esAjax) {
     header('Content-Type: application/json');

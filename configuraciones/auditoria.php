@@ -30,7 +30,7 @@ $sucursales = $pdo->query("SELECT DISTINCT COALESCE(sucursal_nombre,'Casa Centra
     padding: .5rem .8rem;
     border: 1px solid var(--rule-dark);
     border-radius: var(--radius);
-    font-family: 'DM Sans', sans-serif;
+    font-family: inherit;
     font-size: .82rem;
     color: var(--ink);
     background: var(--white);
@@ -51,7 +51,7 @@ $sucursales = $pdo->query("SELECT DISTINCT COALESCE(sucursal_nombre,'Casa Centra
     padding: .5rem 1rem; border-radius: var(--radius);
     font-size: .78rem; font-weight: 600; cursor: pointer;
     border: 1px solid var(--rule-dark); background: var(--white); color: var(--ink);
-    font-family: 'DM Sans', sans-serif;
+    font-family: inherit;
     transition: all var(--transition);
 }
 .btn-outline:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }

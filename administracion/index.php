@@ -197,7 +197,7 @@ include '../panel/dashboard/layaut/nav.php';
     pointer-events: none;
 }
 .cv-bar-label {
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     font-size: .73rem;
     font-weight: 700;
     color: #c88e99;
@@ -209,7 +209,7 @@ include '../panel/dashboard/layaut/nav.php';
     gap: 7px;
 }
 .cv-select {
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     font-size: .95rem;
     font-weight: 700;
     color: #111110;
@@ -232,7 +232,7 @@ include '../panel/dashboard/layaut/nav.php';
 .cv-badge {
     margin-left: auto;
     display: flex; align-items: center; gap: 8px;
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     font-size: .8rem; color: #8a8a86;
 }
 .cv-badge-dot {
@@ -264,7 +264,7 @@ include '../panel/dashboard/layaut/nav.php';
     gap: 6px;
 }
 .sf-lbl {
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     font-size: .7rem;
     font-weight: 600;
     color: #8a8a86;
@@ -274,7 +274,7 @@ include '../panel/dashboard/layaut/nav.php';
     margin-right: 2px;
 }
 .sf-pill {
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     font-size: .72rem;
     font-weight: 600;
     color: #4a4a47;
@@ -289,7 +289,7 @@ include '../panel/dashboard/layaut/nav.php';
 .sf-pill:hover { background: #f0eaf0; border-color: #c88e99; color: #c88e99; }
 .sf-pill.active { background: #c88e99; border-color: #c88e99; color: #fff; }
 .sf-reset {
-    font-family: 'Inter', sans-serif;
+    font-family: inherit;
     font-size: .7rem;
     font-weight: 600;
     color: #c88e99;
@@ -1348,14 +1348,14 @@ function initChartProd() {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: '#1e1e1e',
-                    titleFont: { family: 'Inter', size: 12 },
-                    bodyFont:  { family: 'Inter', size: 13 },
+                    titleFont: { family: 'Speedee', size: 12 },
+                    bodyFont:  { family: 'Speedee', size: 13 },
                     callbacks: { label: function(c) { return ' ' + c.raw + ' lote' + (c.raw !== 1 ? 's' : ''); } }
                 }
             },
             scales: {
                 x: { grid: { display: false }, border: { display: false },
-                     ticks: { font: { size: 11, family: 'Inter' }, color: '#9e9e9a' } },
+                     ticks: { font: { size: 11, family: 'Speedee' }, color: '#9e9e9a' } },
                 y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 }, color: '#9e9e9a' },
                      grid: { color: 'rgba(0,0,0,.05)' }, border: { display: false } }
             }

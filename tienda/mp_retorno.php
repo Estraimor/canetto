@@ -5,16 +5,49 @@
  */
 define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../config/mp_config.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $status   = $_GET['status']   ?? 'pending';
 $pedidoId = (int)($_GET['pedido'] ?? 0);
 
 // MP incluye collection_status en la URL de retorno.
-// A veces redirige al pending URL pero collection_status ya es approved (pasa con Dinero disponible).
 $mpCollStatus = $_GET['collection_status'] ?? $_GET['payment_status'] ?? '';
 if ($status === 'pending' && $mpCollStatus === 'approved') {
     $status = 'success';
+}
+
+// Si sigue siendo pending pero vino collection_id/payment_id, consultar MP directamente
+// para no depender solo del webhook (que puede tardar >60s).
+if ($status === 'pending') {
+    $collectionId = $_GET['collection_id'] ?? $_GET['payment_id'] ?? '';
+    if ($collectionId) {
+        $ch = curl_init("https://api.mercadopago.com/v1/payments/" . (int)$collectionId);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . MP_ACCESS_TOKEN],
+        ]);
+        $mpResp = curl_exec($ch);
+        $mpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($mpCode === 200) {
+            $mpData   = json_decode($mpResp, true);
+            $mpStatus = $mpData['status'] ?? '';
+            if ($mpStatus === 'approved') {
+                $status = 'success';
+                // Actualizar el pedido ya que el webhook puede no haber llegado aún
+                try {
+                    $pdo = Conexion::conectar();
+                    $pdo->prepare("UPDATE ventas SET estado_venta_idestado_venta = 1, updated_at = NOW() WHERE idventas = ?")
+                        ->execute([$pedidoId]);
+                } catch (Throwable $e) {}
+            } elseif ($mpStatus === 'rejected' || $mpStatus === 'cancelled') {
+                $status = 'failure';
+            }
+        }
+    }
 }
 
 $clienteId = (int)($_SESSION['tienda_cliente_id'] ?? 0);
@@ -77,18 +110,17 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
     const uid       = <?= $clienteId ?>;
     const ck        = uid ? 'canetto_cart_' + uid : 'canetto_cart_guest';
 
-    // Si el pago fue exitoso: limpiar el carrito ahora
-    if (status === 'success') {
+    // Limpiar el carrito en cualquier caso excepto failure:
+    // el pedido ya fue creado en el sistema, no tiene sentido mantener los items.
+    if (status !== 'failure') {
         localStorage.removeItem(ck);
-        return; // No necesitamos polling
     }
 
-    // Si falló: el carrito sigue intacto (no se limpió al ir a MP)
     if (status !== 'pending' || !pedidoId) return;
 
-    // Pending: pollear hasta confirmar aprobación o rechazo
+    // Pending: pollear hasta confirmar aprobación o rechazo (~3 minutos)
     let attempts = 0;
-    const maxTries = 30; // ~60 segundos — suficiente para que llegue el webhook
+    const maxTries = 90; // 90 × 2s = 3 minutos
 
     const msgsOk   = { ic: '🎉', titulo: '¡Pago confirmado!',      color: '#2d8a4e', sub: 'Tu pago fue procesado correctamente. ¡Gracias por tu compra!' };
     const msgsFail = { ic: '❌', titulo: 'El pago no se completó', color: '#c0392b', sub: 'Hubo un problema con el pago. Podés intentar nuevamente o elegir otro método.' };
@@ -107,15 +139,15 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
     }
 
     function poll() {
-        fetch('api/check_pedido_estado.php?id=' + pedidoId)
+        fetch('api/check_pedido_estado.php?id=' + pedidoId + '&uid=' + uid)
             .then(r => r.json())
             .then(data => {
                 if (!data.ok) { retry(); return; }
                 if (data.estado_id === 1) {
-                    localStorage.removeItem(ck); // Pago confirmado: limpiar carrito
                     applyUI(msgsOk);
+                    // El carrito ya fue limpiado al cargar la página
                 } else if (data.estado_id === 6) {
-                    applyUI(msgsFail); // Rechazado: carrito ya está intacto
+                    applyUI(msgsFail);
                 } else {
                     retry();
                 }
@@ -128,7 +160,7 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
         if (attempts < maxTries) setTimeout(poll, 2000);
     }
 
-    // Primera consulta a 1.5s — el webhook suele llegar muy rápido
+    // Primera consulta a 1.5s
     setTimeout(poll, 1500);
 })();
 </script>

@@ -22,7 +22,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
 <style>
 .hub-module * { box-sizing: border-box; }
 .hub-module {
-    font-family: 'DM Sans', sans-serif;
+    font-family: inherit;
     color: var(--ink);
     background: var(--paper);
     min-height: 100vh;
@@ -40,7 +40,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
     gap: 1rem;
 }
 .hub-header__title {
-    font-family: 'Playfair Display', serif;
+    font-family: inherit;
     font-size: 2.6rem;
     font-weight: 700;
     letter-spacing: -.5px;
@@ -48,7 +48,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
 }
 .hub-header__title span {
     display: block;
-    font-family: 'DM Sans', sans-serif;
+    font-family: inherit;
     font-size: .72rem;
     font-weight: 500;
     letter-spacing: .2em;
@@ -132,7 +132,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
 
 /* ── Card body ── */
 .hub-card__title {
-    font-family: 'Playfair Display', serif;
+    font-family: inherit;
     font-size: 1.3rem;
     font-weight: 700;
     margin-bottom: .35rem;
@@ -153,7 +153,7 @@ try { $counts['ofertas']       = (int)$pdo->query("SELECT COUNT(*) FROM oferta W
     margin-top: auto;
 }
 .hub-card__count {
-    font-family: 'Playfair Display', serif;
+    font-family: inherit;
     font-size: 1.8rem;
     font-weight: 700;
     line-height: 1;

@@ -5,7 +5,6 @@ include '../panel/dashboard/layaut/nav.php';
 ?>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
   :root {
     --ink:        #0a0a0a;
@@ -25,15 +24,15 @@ include '../panel/dashboard/layaut/nav.php';
   }
 
   .usr-module * { box-sizing: border-box; margin: 0; padding: 0; }
-  .usr-module { font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--paper); min-height: 100vh; padding: 2.5rem 2rem 4rem; }
+  .usr-module { font-family: inherit; color: var(--ink); background: var(--paper); min-height: 100vh; padding: 2.5rem 2rem 4rem; }
 
   /* ── Header ── */
   .usr-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:2.5rem; padding-bottom:1.5rem; border-bottom:2px solid var(--ink); }
-  .usr-header__title { font-family:'Playfair Display',serif; font-size:2.4rem; font-weight:700; letter-spacing:-.5px; line-height:1; }
-  .usr-header__title span { display:block; font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:.4rem; }
+  .usr-header__title { font-family:inherit; font-size:2.4rem; font-weight:700; letter-spacing:-.5px; line-height:1; }
+  .usr-header__title span { display:block; font-family:inherit; font-size:.72rem; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:.4rem; }
 
   /* ── Buttons ── */
-  .btn-primary { display:inline-flex; align-items:center; gap:.5rem; background:var(--ink); color:var(--white); border:none; padding:.7rem 1.5rem; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:600; letter-spacing:.03em; cursor:pointer; transition:background var(--transition), transform var(--transition), box-shadow var(--transition); box-shadow:var(--shadow-sm); }
+  .btn-primary { display:inline-flex; align-items:center; gap:.5rem; background:var(--ink); color:var(--white); border:none; padding:.7rem 1.5rem; border-radius:var(--radius); font-family:inherit; font-size:.85rem; font-weight:600; letter-spacing:.03em; cursor:pointer; transition:background var(--transition), transform var(--transition), box-shadow var(--transition); box-shadow:var(--shadow-sm); }
   .btn-primary:hover { background:#333; transform:translateY(-1px); box-shadow:var(--shadow-md); }
   .btn-primary svg { width:16px; height:16px; flex-shrink:0; }
   .btn-sm { display:inline-flex; align-items:center; gap:.35rem; padding:.38rem .85rem; border-radius:var(--radius); font-size:.75rem; font-weight:600; cursor:pointer; border:1px solid var(--rule); background:var(--white); color:var(--ink); transition:all var(--transition); }
@@ -47,7 +46,7 @@ include '../panel/dashboard/layaut/nav.php';
   .stats-bar { display:grid; grid-template-columns:repeat(3, 1fr); gap:1.2rem; margin-bottom:2rem; }
   .stat-card { background:var(--white); border:1px solid var(--rule); border-radius:var(--radius); padding:1.2rem 1.5rem; display:flex; flex-direction:column; gap:.3rem; transition:box-shadow var(--transition); }
   .stat-card:hover { box-shadow:var(--shadow-md); }
-  .stat-card__num { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; line-height:1; }
+  .stat-card__num { font-family:inherit; font-size:2rem; font-weight:700; line-height:1; }
   .stat-card__label { font-size:.75rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
   .stat-card__num.activos { color:var(--success); }
   .stat-card__num.inactivos { color:var(--danger); }
@@ -57,12 +56,12 @@ include '../panel/dashboard/layaut/nav.php';
 
   /* ── DataTables override ── */
   .dt-wrapper { padding:1rem 1rem .5rem; }
-  div.dataTables_wrapper div.dataTables_filter input { border:1px solid var(--rule-dark); border-radius:var(--radius); padding:.4rem .7rem; font-family:'DM Sans',sans-serif; font-size:.82rem; outline:none; }
+  div.dataTables_wrapper div.dataTables_filter input { border:1px solid var(--rule-dark); border-radius:var(--radius); padding:.4rem .7rem; font-family:inherit; font-size:.82rem; outline:none; }
   div.dataTables_wrapper div.dataTables_filter input:focus { border-color:var(--ink); }
-  div.dataTables_wrapper div.dataTables_length select { border:1px solid var(--rule-dark); border-radius:var(--radius); padding:.3rem .5rem; font-family:'DM Sans',sans-serif; font-size:.82rem; }
+  div.dataTables_wrapper div.dataTables_length select { border:1px solid var(--rule-dark); border-radius:var(--radius); padding:.3rem .5rem; font-family:inherit; font-size:.82rem; }
   div.dataTables_wrapper div.dataTables_info { font-size:.78rem; color:var(--ink-soft); padding:0 1rem .8rem; }
   div.dataTables_wrapper div.dataTables_paginate { padding:.5rem 1rem 1rem; }
-  div.dataTables_wrapper div.dataTables_paginate .paginate_button { border-radius:var(--radius) !important; font-family:'DM Sans',sans-serif; font-size:.78rem !important; }
+  div.dataTables_wrapper div.dataTables_paginate .paginate_button { border-radius:var(--radius) !important; font-family:inherit; font-size:.78rem !important; }
   div.dataTables_wrapper div.dataTables_paginate .paginate_button.current { background:var(--ink) !important; color:var(--white) !important; border-color:var(--ink) !important; }
   table.dataTable thead th { background:var(--ink); color:var(--white); border-bottom:none !important; }
   table.dataTable.no-footer { border-bottom:none; }
@@ -83,7 +82,7 @@ include '../panel/dashboard/layaut/nav.php';
   .modal { background:var(--white); border-radius:10px; width:100%; max-width:640px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg); transform:translateY(20px) scale(.97); transition:transform .28s cubic-bezier(.4,0,.2,1); }
   .modal-overlay.open .modal { transform:translateY(0) scale(1); }
   .modal-header { display:flex; align-items:center; justify-content:space-between; padding:1.4rem 1.8rem; border-bottom:1px solid var(--rule); position:sticky; top:0; background:var(--white); z-index:1; }
-  .modal-header h2 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; }
+  .modal-header h2 { font-family:inherit; font-size:1.3rem; font-weight:700; }
   .modal-close { background:none; border:none; cursor:pointer; color:var(--ink-soft); padding:.3rem; border-radius:4px; display:flex; transition:color var(--transition),background var(--transition); }
   .modal-close:hover { color:var(--ink); background:var(--rule); }
   .modal-body   { padding:1.8rem; }
@@ -95,10 +94,10 @@ include '../panel/dashboard/layaut/nav.php';
   .form-group.full { grid-column:1/-1; }
   .form-group label { font-size:.775rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); }
   .form-group input,
-  .form-group select { padding:.65rem .9rem; border:1px solid var(--rule-dark); border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.875rem; color:var(--ink); background:var(--paper); transition:border-color var(--transition),box-shadow var(--transition); outline:none; }
+  .form-group select { padding:.65rem .9rem; border:1px solid var(--rule-dark); border-radius:var(--radius); font-family:inherit; font-size:.875rem; color:var(--ink); background:var(--paper); transition:border-color var(--transition),box-shadow var(--transition); outline:none; }
   .form-group input:focus,
   .form-group select:focus { border-color:var(--ink); box-shadow:0 0 0 3px rgba(10,10,10,.07); }
-  .form-section-title { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:600; color:var(--ink); padding-bottom:.4rem; border-bottom:1px solid var(--rule); grid-column:1/-1; margin-top:.4rem; }
+  .form-section-title { font-family:inherit; font-size:.95rem; font-weight:600; color:var(--ink); padding-bottom:.4rem; border-bottom:1px solid var(--rule); grid-column:1/-1; margin-top:.4rem; }
 
   /* ── Toggle switch ── */
   .toggle-wrap { display:flex; align-items:center; gap:.75rem; padding-top:.6rem; }
@@ -464,37 +463,59 @@ async function guardarUsuario() {
 }
 
 /* ══ ELIMINAR ══ */
-function confirmarEliminar(id, nombre) {
-  Swal.fire({
+async function confirmarEliminar(id, nombre) {
+  // Primera confirmación
+  const paso1 = await Swal.fire({
     title: '¿Eliminar usuario?',
-    html: 'Se eliminará permanentemente a <strong>' + esc(nombre) + '</strong>.<br>Esta acción no se puede deshacer.',
+    html: `Se eliminará permanentemente a <strong>${esc(nombre)}</strong> junto con todos sus datos asociados:
+           <ul style="text-align:left;margin-top:10px;font-size:13px;color:#555;line-height:1.8">
+             <li>Roles y permisos</li>
+             <li>Suscripciones push</li>
+             <li>Notificaciones</li>
+             <li>Direcciones guardadas</li>
+             <li>Usos de cupones</li>
+           </ul>
+           Las ventas y producciones asociadas se conservan.`,
     icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e53e3e',
+    cancelButtonColor: '#e0e0e0',
+    confirmButtonText: 'Continuar',
+    cancelButtonText: 'Cancelar'
+  });
+  if (!paso1.isConfirmed) return;
+
+  // Segunda confirmación
+  const paso2 = await Swal.fire({
+    title: '¿Confirmar eliminación definitiva?',
+    html: `Esta acción <strong>no se puede deshacer</strong>.<br>¿Seguro que querés eliminar a <strong>${esc(nombre)}</strong>?`,
+    icon: 'error',
     showCancelButton: true,
     confirmButtonColor: '#0a0a0a',
     cancelButtonColor: '#e0e0e0',
-    confirmButtonText: 'Sí, eliminar',
+    confirmButtonText: 'Sí, eliminar definitivamente',
     cancelButtonText: 'Cancelar'
-  }).then(async (result) => {
-    if (!result.isConfirmed) return;
-    try {
-      const res = await ajax('ajax/eliminar_usuario.php', { idusuario: id });
-      if (res.ok) {
-        dtUsuarios.ajax.reload(null, false);
-        Swal.fire({
-          icon: 'success',
-          title: 'Eliminado',
-          text: '"' + esc(nombre) + '" fue eliminado del sistema.',
-          confirmButtonColor: '#0a0a0a',
-          timer: 2500,
-          timerProgressBar: true
-        });
-      } else {
-        Swal.fire({ icon: 'error', title: 'Error', text: res.msg || 'No se pudo eliminar.', confirmButtonColor: '#0a0a0a' });
-      }
-    } catch (e) {
-      Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#0a0a0a' });
-    }
   });
+  if (!paso2.isConfirmed) return;
+
+  try {
+    const res = await ajax('ajax/eliminar_usuario.php', { idusuario: id });
+    if (res.ok) {
+      dtUsuarios.ajax.reload(null, false);
+      Swal.fire({
+        icon: 'success',
+        title: 'Eliminado',
+        text: '"' + esc(nombre) + '" fue eliminado del sistema.',
+        confirmButtonColor: '#0a0a0a',
+        timer: 2500,
+        timerProgressBar: true
+      });
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: res.msg || 'No se pudo eliminar.', confirmButtonColor: '#0a0a0a' });
+    }
+  } catch (e) {
+    Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#0a0a0a' });
+  }
 }
 
 /* ══ UTILS ══ */

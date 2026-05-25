@@ -76,14 +76,14 @@ $allPkg   = $pdo->query("
         <input type="text" id="pkgSearch" placeholder="Buscar caja, cinta, sticker...">
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <select id="pkgFiltroEstado" style="height:40px;border:1px solid #e0e0e0;border-radius:8px;padding:0 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:#3a3a3a">
+        <select id="pkgFiltroEstado" style="height:40px;border:1px solid #e0e0e0;border-radius:8px;padding:0 12px;font-size:13px;font-family:inherit;background:#fff;color:#3a3a3a">
           <option value="all">Todos los estados</option>
           <option value="ok">OK</option>
           <option value="low">Bajo</option>
           <option value="critical">Crítico</option>
           <option value="nostock">Sin stock</option>
         </select>
-        <select id="pkgFiltroActivo" style="height:40px;border:1px solid #e0e0e0;border-radius:8px;padding:0 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:#3a3a3a">
+        <select id="pkgFiltroActivo" style="height:40px;border:1px solid #e0e0e0;border-radius:8px;padding:0 12px;font-size:13px;font-family:inherit;background:#fff;color:#3a3a3a">
           <option value="1">Activos</option>
           <option value="0">Inactivos</option>
           <option value="all">Todos</option>

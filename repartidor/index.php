@@ -23,9 +23,6 @@ try {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f172a">
 <title>Canetto — Repartidor</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="repartidor.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -215,7 +212,7 @@ try {
 
 .or-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:#475569;font-size:12px}
 .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.12)}
-.btn-google-rep{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;color:#3c4043;font-size:14px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;transition:.2s;margin-top:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.btn-google-rep{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;color:#3c4043;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;transition:.2s;margin-top:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .btn-google-rep:hover{border-color:#c88e99;box-shadow:0 2px 8px rgba(200,142,153,.2);transform:translateY(-1px)}
 .btn-google-rep img{width:18px;height:18px}
 
@@ -1536,14 +1533,17 @@ async function handleGoogleLogin(response) {
 
     if (data.success) {
       const nombre = data.nombre;
-      document.getElementById('dashNombre').textContent = nombre;
-      document.getElementById('dashAvatar').textContent = initials(nombre);
-      document.getElementById('appLogin').classList.add('hidden');
-      document.getElementById('appDash').classList.remove('hidden');
-      cargarPedidos();
-      startAutoRefresh();
-      registrarPushRepartidor();
-      mostrarPantallaPermisos();
+      _repShowOverlay(nombre, () => {
+        document.getElementById('dashNombre').textContent = nombre;
+        document.getElementById('dashAvatar').textContent = initials(nombre);
+        document.getElementById('appLogin').classList.add('hidden');
+        document.getElementById('appDash').classList.remove('hidden');
+        heartbeat();
+        cargarPedidos();
+        startAutoRefresh();
+        registrarPushRepartidor();
+        mostrarPantallaPermisos();
+      });
     } else {
       showLoginAlert(data.message || 'No se pudo ingresar con Google');
     }

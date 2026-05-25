@@ -363,13 +363,105 @@ $current = $_SERVER['PHP_SELF'];
             </div>
         </div>
 
-        <i class="fa-regular fa-user"></i>
-        <span><?= htmlspecialchars(($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '')) ?></span>
-        <a href="<?= URL_LOGIN ?>/logout.php" title="Cerrar sesión" style="color:inherit;text-decoration:none;margin-left:6px;opacity:.6;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">
-            <i class="fa-solid fa-right-from-bracket"></i>
-        </a>
+        <div class="nav-perfil-wrap" id="navPerfilWrap">
+            <div class="nav-perfil-btn" id="navPerfilBtn" onclick="togglePerfilMenu()">
+                <div id="navAvatar">
+                    <?php if (!empty($_SESSION['avatar'])):
+                    $__av = $_SESSION['avatar'];
+                    $__avUrl = str_starts_with($__av, 'http') ? $__av : URL_ASSETS . '/' . $__av . '?v=' . time();
+                ?>
+                        <img src="<?= htmlspecialchars($__avUrl) ?>"
+                             style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--brand)">
+                    <?php else:
+                        $__ini = strtoupper(substr($_SESSION['nombre'] ?? '', 0, 1) . substr($_SESSION['apellido'] ?? '', 0, 1)) ?: '?';
+                    ?>
+                        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#c88e99,#e07a8c);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;border:2px solid var(--brand)"><?= htmlspecialchars($__ini) ?></div>
+                    <?php endif; ?>
+                </div>
+                <span id="navUserName"><?= htmlspecialchars(trim(($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? ''))) ?></span>
+                <i class="fa-solid fa-chevron-down" id="navPerfilChevron" style="font-size:10px;opacity:.5;transition:transform .2s"></i>
+            </div>
+            <div class="nav-perfil-menu" id="navPerfilMenu">
+                <a href="<?= URL_ASSETS ?>/configuraciones/perfil.php" class="nav-perfil-item">
+                    <i class="fa-solid fa-circle-user"></i> Mi perfil
+                </a>
+                <div class="nav-perfil-divider"></div>
+                <a href="<?= URL_LOGIN ?>/logout.php" class="nav-perfil-item nav-perfil-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
     </div>
 </header>
+
+<style>
+.nav-perfil-wrap {
+    position: relative;
+}
+.nav-perfil-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: background .15s;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    user-select: none;
+}
+.nav-perfil-btn:hover { background: var(--bg-page); }
+.nav-perfil-wrap.open .nav-perfil-btn { background: var(--bg-page); }
+.nav-perfil-wrap.open #navPerfilChevron { transform: rotate(180deg); }
+
+.nav-perfil-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 14px;
+    min-width: 180px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+    overflow: hidden;
+    z-index: 9999;
+    animation: perfilMenuIn .15s ease;
+}
+.nav-perfil-wrap.open .nav-perfil-menu { display: block; }
+@keyframes perfilMenuIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.nav-perfil-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    transition: background .1s;
+}
+.nav-perfil-item:hover { background: var(--bg-page, #f5f5f5); }
+.nav-perfil-item i { width: 16px; text-align: center; opacity: .7; }
+.nav-perfil-logout { color: #dc2626; }
+.nav-perfil-logout i { opacity: 1; }
+.nav-perfil-logout:hover { background: #fef2f2; }
+.nav-perfil-divider { height: 1px; background: var(--border, #e5e7eb); margin: 2px 0; }
+</style>
+
+<script>
+function togglePerfilMenu() {
+    document.getElementById('navPerfilWrap').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('navPerfilWrap');
+    if (wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
+});
+</script>
 
 <style>
 /* ── Dark toggle button ── */

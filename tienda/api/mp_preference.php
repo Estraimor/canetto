@@ -19,9 +19,6 @@ if (!$pedidoId || $totalAmt <= 0) {
 
 // ── Armar items para MP ──────────────────────────────────────────────────────
 $mpItems = [];
-// Usamos un único ítem consolidado con el nombre de la marca
-// para que en la pantalla de pago de MP aparezca "Canetto Cookies"
-// y no el nombre interno de cada producto.
 $mpItems[] = [
     'id'          => 'pedido_' . $pedidoId,
     'title'       => 'Canetto Cookies',
@@ -33,8 +30,6 @@ $mpItems[] = [
 ];
 
 // ── URLs de retorno ──────────────────────────────────────────────────────────
-// SITE_URL viene de config/mailer.php → pero mailer no se incluye aquí.
-// Detectamos el entorno igual que helpers.php.
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $isProd = !in_array($host, ['localhost', '127.0.0.1'], true);
 $base   = $isProd ? 'https://tienda.canettocookies.com' : 'http://localhost/canetto/tienda';
@@ -73,10 +68,22 @@ curl_close($ch);
 $data = json_decode($response, true);
 
 if ($httpCode === 201 && isset($data['init_point'])) {
+    // Registrar en pagos_mercadopago el inicio del pago
+    try {
+        $pdo = Conexion::conectar();
+        $pdo->prepare("
+            INSERT INTO pagos_mercadopago
+                (ventas_idventas, mp_preference_id, estado_mp, monto, external_reference, created_at)
+            VALUES (?, ?, 'pending', ?, ?, NOW())
+        ")->execute([$pedidoId, $data['id'], $totalAmt, 'canetto_' . $pedidoId]);
+    } catch (Throwable $e) {
+        error_log('[MP Preference] No se pudo guardar en pagos_mercadopago: ' . $e->getMessage());
+    }
+
     echo json_encode([
-        'success'     => true,
-        'init_point'  => $data['init_point'],
-        'preference_id' => $data['id'],
+        'success'        => true,
+        'init_point'     => $data['init_point'],
+        'preference_id'  => $data['id'],
     ]);
 } else {
     error_log('[MP] Error ' . $httpCode . ': ' . ($data['message'] ?? $response));

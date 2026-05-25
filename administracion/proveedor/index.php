@@ -1566,11 +1566,11 @@ include '../../panel/dashboard/layaut/nav.php';
     <div style="display:grid;gap:.9rem;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
         <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
-          <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:${color}">${stock} <span style="font-size:.9rem">${unidAbrev}</span></div>
+          <div style="font-family:inherit;font-size:1.6rem;font-weight:700;color:${color}">${stock} <span style="font-size:.9rem">${unidAbrev}</span></div>
           <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock actual</div>
         </div>
         <div style="background:#f5f5f5;border-radius:4px;padding:.7rem;text-align:center;">
-          <div style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;">${min} <span style="font-size:.9rem">${unidAbrev}</span></div>
+          <div style="font-family:inherit;font-size:1.6rem;font-weight:700;">${min} <span style="font-size:.9rem">${unidAbrev}</span></div>
           <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-top:.2rem;">Stock mínimo</div>
         </div>
       </div>

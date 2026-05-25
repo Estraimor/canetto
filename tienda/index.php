@@ -479,6 +479,8 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
     <?php endforeach; ?>
   </div>
   <div class="swiper-pagination"></div>
+  <div class="swiper-button-prev"></div>
+  <div class="swiper-button-next"></div>
 </div>
 
 <!-- ── CATEGORY BAR MOBILE ──── -->
@@ -1105,6 +1107,7 @@ window.DIRS_GUARDADAS = <?= json_encode($direcciones_guardadas, JSON_UNESCAPED_U
       ? { delay: 4000, disableOnInteraction: false, pauseOnMouseEnter: true }
       : false,
     pagination: { el: '.swiper-pagination', clickable: true },
+    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
     grabCursor: true,
   });
 })();

@@ -6,7 +6,6 @@ include '../../../../panel/dashboard/layaut/nav.php';
 ?>
 
 <link rel="stylesheet" href="historial.css">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
 <div class="historial-wrapper">
 
