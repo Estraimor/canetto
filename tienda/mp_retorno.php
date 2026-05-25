@@ -11,30 +11,57 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 $status   = $_GET['status']   ?? 'pending';
 $pedidoId = (int)($_GET['pedido'] ?? 0);
 
+// Normalizar: MP a veces sobreescribe nuestro status=success con status=approved al final de la URL.
+// PHP toma el último valor cuando hay duplicados, así que 'approved' debe tratarse como success.
+if ($status === 'approved') $status = 'success';
+if ($status === 'rejected' || $status === 'cancelled') $status = 'failure';
+
 // MP incluye collection_status en la URL de retorno.
 $mpCollStatus = $_GET['collection_status'] ?? $_GET['payment_status'] ?? '';
 if ($status === 'pending' && $mpCollStatus === 'approved') {
     $status = 'success';
 }
 
-// Si sigue siendo pending: consultar MP directamente para obtener el estado real,
-// sin depender del webhook (que puede tardar o no llegar a tiempo).
+// Si sigue siendo pending: resolver el estado real en orden de confiabilidad.
 if ($status === 'pending' && $pedidoId) {
-    $mpStatusReal = '';
+    $mpStatusReal   = '';
+    $foundPaymentId = null;
 
-    // Opción A: usar collection_id/payment_id de la URL si es un número válido
-    $collectionId = (int)($_GET['collection_id'] ?? $_GET['payment_id'] ?? 0);
-    if ($collectionId > 0) {
-        $ch = curl_init("https://api.mercadopago.com/v1/payments/{$collectionId}");
-        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8,
-            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . MP_ACCESS_TOKEN]]);
-        $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); unset($ch);
-        if ($code === 200) {
-            $mpStatusReal = json_decode($r, true)['status'] ?? '';
+    // ── 1. Nuestra BD (lo más rápido: el webhook ya puede haber llegado) ──────
+    try {
+        $pdoCheck = Conexion::conectar();
+        $rowPago  = $pdoCheck->prepare("
+            SELECT estado_mp, mp_payment_id
+            FROM pagos_mercadopago
+            WHERE ventas_idventas = ?
+            ORDER BY idpagos_mercadopago DESC
+            LIMIT 1
+        ");
+        $rowPago->execute([$pedidoId]);
+        $pmpRow = $rowPago->fetch(PDO::FETCH_ASSOC);
+        if ($pmpRow && $pmpRow['estado_mp'] !== 'pending') {
+            $mpStatusReal   = $pmpRow['estado_mp'];   // approved / rejected / cancelled
+            $foundPaymentId = $pmpRow['mp_payment_id'] ?? null;
+        }
+    } catch (Throwable $e) {}
+
+    // ── 2. API de MP por collection_id (si viene como número válido en la URL) ─
+    if (!$mpStatusReal) {
+        $collectionId = (int)($_GET['collection_id'] ?? $_GET['payment_id'] ?? 0);
+        if ($collectionId > 0) {
+            $ch = curl_init("https://api.mercadopago.com/v1/payments/{$collectionId}");
+            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8,
+                CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . MP_ACCESS_TOKEN]]);
+            $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); unset($ch);
+            if ($code === 200) {
+                $d = json_decode($r, true);
+                $mpStatusReal   = $d['status'] ?? '';
+                $foundPaymentId = $d['id']     ?? null;
+            }
         }
     }
 
-    // Opción B: usar preference_id para buscar el pago en MP (siempre viene en la URL)
+    // ── 3. API de MP por preference_id (siempre viene en la URL de retorno) ───
     if (!$mpStatusReal) {
         $prefId = trim($_GET['preference_id'] ?? '');
         if ($prefId) {
@@ -45,34 +72,29 @@ if ($status === 'pending' && $pedidoId) {
             if ($code === 200) {
                 $results = json_decode($r, true)['results'] ?? [];
                 if (!empty($results)) {
-                    $mpStatusReal = $results[0]['status'] ?? '';
-                    // Si encontramos el pago, guardamos su ID para el webhook
-                    $foundPaymentId = $results[0]['id'] ?? null;
+                    $mpStatusReal   = $results[0]['status'] ?? '';
+                    $foundPaymentId = $results[0]['id']     ?? null;
                 }
             }
         }
     }
 
-    // Aplicar el estado real de MP
+    // ── Aplicar resultado ─────────────────────────────────────────────────────
     if ($mpStatusReal === 'approved') {
         $status = 'success';
         try {
             $pdo = Conexion::conectar();
             $pdo->prepare("UPDATE ventas SET estado_venta_idestado_venta = 1, updated_at = NOW() WHERE idventas = ?")
                 ->execute([$pedidoId]);
-            // Actualizar también pagos_mercadopago si el webhook no llegó aún
-            if (!empty($foundPaymentId)) {
-                $pdo->prepare("UPDATE pagos_mercadopago SET estado_mp='approved', mp_payment_id=? WHERE ventas_idventas=? AND mp_payment_id IS NULL LIMIT 1")
+            if ($foundPaymentId) {
+                $pdo->prepare("UPDATE pagos_mercadopago SET estado_mp='approved', mp_payment_id=COALESCE(mp_payment_id,?) WHERE ventas_idventas=? LIMIT 1")
                     ->execute([(string)$foundPaymentId, $pedidoId]);
-            } else {
-                $pdo->prepare("UPDATE pagos_mercadopago SET estado_mp='approved' WHERE ventas_idventas=? AND mp_payment_id IS NULL LIMIT 1")
-                    ->execute([$pedidoId]);
             }
         } catch (Throwable $e) {}
     } elseif (in_array($mpStatusReal, ['rejected', 'cancelled'], true)) {
         $status = 'failure';
     }
-    // Si $mpStatusReal sigue vacío o es 'pending'/'in_process', se queda en pending → polling
+    // Si sigue vacío o 'in_process'/'pending' → queda en pending → polling activo
 }
 
 $clienteId = (int)($_SESSION['tienda_cliente_id'] ?? 0);
@@ -115,9 +137,6 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
   <div class="ic"><?= $info['ic'] ?></div>
   <div class="titulo" style="color:<?= $info['color'] ?>"><?= $info['titulo'] ?></div>
   <div class="sub"><?= $info['sub'] ?></div>
-  <?php if ($pedidoId): ?>
-    <div class="pedido-num">Pedido #<?= $pedidoId ?></div>
-  <?php endif; ?>
 
   <?php if ($status === 'failure'): ?>
     <a href="index.php" class="btn btn-primary">Volver a la tienda</a>

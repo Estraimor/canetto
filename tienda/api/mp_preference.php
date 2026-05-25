@@ -44,8 +44,8 @@ if (!empty($nombresItems)) {
 $titulo = mb_substr($titulo, 0, 256);
 
 $descripcion = $totalUnidades > 0
-    ? "{$totalUnidades} " . ($totalUnidades === 1 ? 'galletita artesanal' : 'galletitas artesanales') . ' — Canetto Cookies'
-    : 'Galletitas artesanales — Canetto Cookies';
+    ? "{$totalUnidades} " . ($totalUnidades === 1 ? 'cookie artesanal' : 'cookies artesanales') . ' — Canetto Cookies'
+    : 'Cookies artesanales — Canetto Cookies';
 
 // ── Armar items para MP ──────────────────────────────────────────────────────
 $mpItems = [];
@@ -93,7 +93,7 @@ curl_setopt_array($ch, [
 ]);
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+unset($ch);
 
 $data = json_decode($response, true);
 
