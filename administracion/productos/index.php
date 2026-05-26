@@ -10,9 +10,21 @@ $pdo = Conexion::conectar();
 
 // Agregar columna imagen si no existe
 try { $pdo->exec("ALTER TABLE productos ADD COLUMN imagen VARCHAR(255) NULL"); } catch (Throwable $e) {}
+try { $pdo->exec("ALTER TABLE productos ADD COLUMN orden INT NULL DEFAULT NULL"); } catch (Throwable $e) {}
 // Crear directorio de imágenes de productos
 $imgDir = __DIR__ . '/../../img/productos';
 if (!is_dir($imgDir)) @mkdir($imgDir, 0755, true);
+
+// Leer modo de orden configurado
+$ordenModo = 'aleatorio';
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS configuracion_tienda (
+        clave VARCHAR(60) PRIMARY KEY, valor TEXT NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )");
+    $rModo = $pdo->query("SELECT valor FROM configuracion_tienda WHERE clave='orden_productos'")->fetch();
+    if ($rModo) $ordenModo = $rModo['valor'];
+} catch (Throwable $e) {}
 
 /* =========================
 PRODUCTOS
@@ -27,21 +39,31 @@ $stmtProductos = $pdo->query("
         p.tipo,
         p.recetas_idrecetas,
         p.imagen,
+        p.orden,
         r.nombre AS receta_nombre,
 
-        COALESCE(MAX(CASE 
-            WHEN sp.tipo_stock = 'CONGELADO' 
-            THEN sp.stock_minimo 
+        COALESCE(MAX(CASE
+            WHEN sp.tipo_stock = 'CONGELADO'
+            THEN sp.stock_minimo
         END), 0) AS min_congelado,
 
-        COALESCE(MAX(CASE 
-            WHEN sp.tipo_stock = 'HECHO' 
-            THEN sp.stock_minimo 
-        END), 0) AS min_hecho
+        COALESCE(MAX(CASE
+            WHEN sp.tipo_stock = 'HECHO'
+            THEN sp.stock_minimo
+        END), 0) AS min_hecho,
+
+        COALESCE((
+            SELECT o.valor FROM oferta o
+            WHERE o.productos_idproductos = p.idproductos
+              AND o.tipo_panel = 'descuento' AND o.activo = 1
+              AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+              AND (o.fecha_fin   IS NULL OR o.fecha_fin   >= CURDATE())
+            LIMIT 1
+        ), 0) AS descuento_pct
 
     FROM productos p
 
-    LEFT JOIN recetas r 
+    LEFT JOIN recetas r
         ON r.idrecetas = p.recetas_idrecetas
 
     LEFT JOIN stock_productos sp
@@ -132,9 +154,14 @@ foreach ($boxRows as $row) {
             <h1>Productos <span class="header-y">&</span> Box</h1>
             <p>Cookies individuales y combos de Canetto</p>
         </div>
-        <button class="btn-primary" onclick="abrirModalProducto()">
-            <i class="fa-solid fa-plus"></i> Nuevo producto
-        </button>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn-secondary" onclick="abrirModalOrden()" style="background:#f5f5f5;color:#333;border:none;padding:10px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px">
+                <i class="fa-solid fa-arrow-up-wide-short"></i> Orden de visualización
+            </button>
+            <button class="btn-primary" onclick="abrirModalProducto()">
+                <i class="fa-solid fa-plus"></i> Nuevo producto
+            </button>
+        </div>
     </div>
 
     <!-- BUSCADOR -->
@@ -191,6 +218,9 @@ foreach ($boxRows as $row) {
                     <span class="estado-badge <?= $p['activo'] ? 'badge-activo' : 'badge-inactivo' ?>">
                         <?= $p['activo'] ? 'Activo' : 'Inactivo' ?>
                     </span>
+                    <?php if (!empty($p['descuento_pct'])): ?>
+                    <span class="admin-desc-badge"><?= (int)$p['descuento_pct'] ?>% OFF</span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="prod-card-body">
@@ -296,6 +326,67 @@ foreach ($boxRows as $row) {
 
 
 <!-- =========================
+MODAL ORDEN DE VISUALIZACIÓN
+========================= -->
+
+<div class="modal-overlay" id="modalOrden">
+    <div class="modal-card" style="max-width:560px">
+        <h2>Orden de visualización</h2>
+        <p style="color:#aaa;font-size:13px;margin:-8px 0 18px">Configurá cómo se muestran las cookies en la tienda para los clientes.</p>
+
+        <!-- Toggle modo -->
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+            <button id="btnModoAleatorio" onclick="setModoOrden('aleatorio')"
+                    class="btn-modo <?= $ordenModo === 'aleatorio' ? 'btn-modo--activo' : '' ?>">
+                <i class="fa-solid fa-shuffle"></i> Aleatorio
+            </button>
+            <button id="btnModoManual" onclick="setModoOrden('manual')"
+                    class="btn-modo <?= $ordenModo === 'manual' ? 'btn-modo--activo' : '' ?>">
+                <i class="fa-solid fa-list-ol"></i> Orden manual
+            </button>
+        </div>
+
+        <!-- Info modo aleatorio -->
+        <div id="infoAleatorio" style="<?= $ordenModo !== 'aleatorio' ? 'display:none;' : '' ?>background:#f8f9fa;border-radius:10px;padding:14px 16px;font-size:13px;color:#666;margin-bottom:16px">
+            <i class="fa-solid fa-shuffle" style="color:#c88e99;margin-right:6px"></i>
+            Las cookies se muestran en orden aleatorio cada vez. Los productos con descuento siempre aparecen primero.
+        </div>
+
+        <!-- Lista drag-and-drop para modo manual -->
+        <div id="listaOrdenManual" style="<?= $ordenModo !== 'manual' ? 'display:none;' : '' ?>">
+            <p style="font-size:12px;color:#aaa;margin-bottom:10px"><i class="fa-solid fa-circle-info"></i> Arrastrá para reordenar. Los productos con descuento activo siempre aparecen primero en la tienda.</p>
+            <div id="sortableProductos" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;padding-right:4px">
+                <?php
+                $prodsSorted = $productos;
+                usort($prodsSorted, fn($a, $b) => ($a['orden'] ?? 9999) <=> ($b['orden'] ?? 9999));
+                foreach ($prodsSorted as $p):
+                ?>
+                <div class="orden-row" data-id="<?= $p['idproductos'] ?>" draggable="true">
+                    <i class="fa-solid fa-grip-vertical" style="color:#ccc;cursor:grab;flex-shrink:0"></i>
+                    <?php if (!empty($p['imagen'])): ?>
+                        <img src="<?= URL_ASSETS ?>/img/productos/<?= htmlspecialchars($p['imagen']) ?>" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0">
+                    <?php else: ?>
+                        <span style="width:36px;height:36px;background:#fdeef1;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-cookie-bite" style="color:#c88e99;font-size:14px"></i></span>
+                    <?php endif; ?>
+                    <span style="flex:1;font-size:13px;font-weight:600"><?= htmlspecialchars($p['nombre']) ?></span>
+                    <?php if (!empty($p['descuento_pct'])): ?>
+                        <span style="background:#fef2f2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px"><?= (int)$p['descuento_pct'] ?>% OFF</span>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="modal-actions prod-modal-full" style="margin-top:20px">
+            <button type="button" onclick="cerrarModalOrden()">Cancelar</button>
+            <button class="btn-primary" onclick="guardarOrdenProductos()">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
 MODAL CREAR / EDITAR
 ========================= -->
 
@@ -394,6 +485,38 @@ MODAL CREAR / EDITAR
                     </button>
                 </div>
 
+                <!-- Descuento (solo producto) -->
+                <div id="grupoDescuento" style="display:none">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin:16px 0 10px;display:flex;align-items:center;gap:8px">
+                        Descuento
+                        <span style="flex:1;height:1px;background:#ebebeb;display:block"></span>
+                    </div>
+
+                    <!-- Aviso si ya hay panel activo -->
+                    <div id="descuentoPanelInfo" style="display:none;background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12.5px;color:#991b1b;align-items:center;gap:8px">
+                        <i class="fa-solid fa-tag"></i>
+                        <span id="descuentoPanelTexto"></span>
+                    </div>
+
+                    <div class="form-group" style="position:relative">
+                        <label>Descuento (%)</label>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <input type="number" id="inputDescuento" min="1" max="99" step="1"
+                                   placeholder="Ej: 20"
+                                   style="flex:1">
+                            <button type="button" id="btnQuitarDescuento" onclick="quitarDescuento()"
+                                    style="display:none;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">
+                                <i class="fa-solid fa-xmark"></i> Quitar
+                            </button>
+                        </div>
+                        <span style="font-size:11px;color:#aaa;margin-top:4px;display:block">El descuento crea o actualiza un panel de tipo Descuento vinculado a este producto.</span>
+                    </div>
+
+                    <button type="button" id="btnGuardarDescuento" onclick="guardarDescuento()"
+                            style="background:#dc2626;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;margin-top:4px">
+                        <i class="fa-solid fa-tag"></i> Aplicar descuento
+                    </button>
+                </div>
 
             </div><!-- /fields-col -->
 
@@ -440,7 +563,11 @@ async function editarProducto(id, nombre, precio, tipo, receta, minCong, minHech
 
     if (receta) document.getElementById("selectRecetas").value = receta;
     if (tipo === "box") { activarModoBox(); cargarBox(id); }
-    else activarModoProducto();
+    else {
+        activarModoProducto();
+        document.getElementById("grupoDescuento").style.display = "block";
+        cargarDescuento(id);
+    }
 }
 
 let _dragSrc = null;
@@ -688,6 +815,13 @@ function resetModalProducto(){
 
     document.getElementById("listaBox").innerHTML = "";
 
+    // Reset descuento
+    _idProductoActual = 0;
+    document.getElementById("inputDescuento").value = '';
+    document.getElementById("descuentoPanelInfo").style.display = 'none';
+    document.getElementById("btnQuitarDescuento").style.display = 'none';
+    document.getElementById("grupoDescuento").style.display = 'none';
+
     activarModoProducto();
 
 }
@@ -729,12 +863,16 @@ function activarModoBox(){
     document.getElementById("grupoReceta").style.display = "none";
     document.getElementById("builderBox").style.display = "block";
     document.getElementById("grupoStock").style.display = "none";
+    document.getElementById("grupoDescuento").style.display = "none";
 }
 
 function activarModoProducto(){
     document.getElementById("grupoReceta").style.display = "block";
     document.getElementById("builderBox").style.display = "none";
     document.getElementById("grupoStock").style.display = "block";
+    // grupoDescuento solo se muestra si hay un ID (modo edición)
+    const id = document.getElementById("idproducto").value;
+    document.getElementById("grupoDescuento").style.display = id ? "block" : "none";
 }
 
 
@@ -910,6 +1048,161 @@ function aplicarFiltro(term) {
     });
     const countEl = document.getElementById('prodCount');
     countEl.textContent = visible === cards.length ? '' : `${visible} resultado${visible !== 1 ? 's' : ''}`;
+}
+
+/* =========================
+MODAL ORDEN DE VISUALIZACIÓN
+========================= */
+
+let _modoOrden = '<?= $ordenModo ?>';
+let _dragOrdenSrc = null;
+
+function abrirModalOrden() {
+    document.getElementById('modalOrden').classList.add('open');
+}
+function cerrarModalOrden() {
+    document.getElementById('modalOrden').classList.remove('open');
+}
+
+function setModoOrden(modo) {
+    _modoOrden = modo;
+    document.getElementById('btnModoAleatorio').classList.toggle('btn-modo--activo', modo === 'aleatorio');
+    document.getElementById('btnModoManual').classList.toggle('btn-modo--activo', modo === 'manual');
+    document.getElementById('infoAleatorio').style.display    = modo === 'aleatorio' ? '' : 'none';
+    document.getElementById('listaOrdenManual').style.display = modo === 'manual'    ? '' : 'none';
+}
+
+async function guardarOrdenProductos() {
+    const ids = [...document.querySelectorAll('#sortableProductos .orden-row')].map(el => +el.dataset.id);
+    const res = await fetch('api/guardar_orden_productos.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modo: _modoOrden, ids })
+    });
+    const data = await res.json();
+    if (data.ok) {
+        Swal.fire({ icon: 'success', title: 'Guardado', timer: 1400, showConfirmButton: false });
+        cerrarModalOrden();
+    } else {
+        Swal.fire('Error', data.msg || 'No se pudo guardar', 'error');
+    }
+}
+
+// Drag & drop para lista de orden
+document.addEventListener('DOMContentLoaded', () => {
+    const sortable = document.getElementById('sortableProductos');
+    if (!sortable) return;
+
+    sortable.addEventListener('dragstart', e => {
+        const row = e.target.closest('.orden-row');
+        if (!row) return;
+        _dragOrdenSrc = row;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => row.style.opacity = '.4', 0);
+    });
+    sortable.addEventListener('dragend', e => {
+        const row = e.target.closest('.orden-row');
+        if (row) { row.style.opacity = '1'; row.style.outline = ''; }
+        document.querySelectorAll('.orden-row').forEach(r => r.style.outline = '');
+    });
+    sortable.addEventListener('dragover', e => {
+        e.preventDefault();
+        const row = e.target.closest('.orden-row');
+        if (row && row !== _dragOrdenSrc) row.style.outline = '2px solid #c88e99';
+    });
+    sortable.addEventListener('dragleave', e => {
+        const row = e.target.closest('.orden-row');
+        if (row) row.style.outline = '';
+    });
+    sortable.addEventListener('drop', e => {
+        e.preventDefault();
+        const target = e.target.closest('.orden-row');
+        if (!target || !_dragOrdenSrc || target === _dragOrdenSrc) return;
+        const items = [...sortable.querySelectorAll('.orden-row')];
+        const fromI = items.indexOf(_dragOrdenSrc);
+        const toI   = items.indexOf(target);
+        if (fromI < toI) sortable.insertBefore(_dragOrdenSrc, target.nextSibling);
+        else             sortable.insertBefore(_dragOrdenSrc, target);
+        target.style.outline = '';
+        _dragOrdenSrc.style.opacity = '1';
+    });
+});
+
+/* =========================
+DESCUENTO DESDE MODAL
+========================= */
+
+let _idProductoActual = 0;
+
+async function cargarDescuento(idProducto) {
+    _idProductoActual = idProducto;
+    const info  = document.getElementById('descuentoPanelInfo');
+    const texto = document.getElementById('descuentoPanelTexto');
+    const input = document.getElementById('inputDescuento');
+    const btnQ  = document.getElementById('btnQuitarDescuento');
+
+    info.style.display  = 'none';
+    input.value         = '';
+    btnQ.style.display  = 'none';
+
+    try {
+        const res  = await fetch('api/descuento_producto.php?id=' + idProducto);
+        const data = await res.json();
+        if (data.ok && data.panel) {
+            const p = data.panel;
+            input.value = p.valor ? Math.round(p.valor) : '';
+            if (p.activo == 1) {
+                texto.textContent = 'Panel activo: "' + p.titulo + '"';
+                info.style.display = 'flex';
+            }
+            if (p.valor) btnQ.style.display = '';
+        }
+    } catch(_) {}
+}
+
+async function guardarDescuento() {
+    const valor = document.getElementById('inputDescuento').value;
+    if (!valor || +valor <= 0) {
+        Swal.fire({ icon: 'warning', title: 'Ingresá un porcentaje', text: 'El descuento debe ser mayor a 0%', timer: 1800, showConfirmButton: false });
+        return;
+    }
+    const res  = await fetch('api/descuento_producto.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'guardar', id_producto: _idProductoActual, valor: +valor })
+    });
+    const data = await res.json();
+    if (data.ok) {
+        Swal.fire({ icon: 'success', title: 'Descuento aplicado', timer: 1400, showConfirmButton: false });
+        cargarDescuento(_idProductoActual);
+    } else {
+        Swal.fire('Error', data.msg || 'No se pudo guardar', 'error');
+    }
+}
+
+async function quitarDescuento() {
+    const confirmQ = await Swal.fire({
+        title: '¿Quitar descuento?',
+        text: 'Se desactivará el panel de descuento de este producto.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, quitar',
+        cancelButtonText: 'Cancelar'
+    });
+    if (!confirmQ.isConfirmed) return;
+
+    const res  = await fetch('api/descuento_producto.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'quitar', id_producto: _idProductoActual })
+    });
+    const data = await res.json();
+    if (data.ok) {
+        Swal.fire({ icon: 'success', title: 'Descuento quitado', timer: 1400, showConfirmButton: false });
+        cargarDescuento(_idProductoActual);
+    } else {
+        Swal.fire('Error', data.msg || 'No se pudo quitar', 'error');
+    }
 }
 
 /* =========================

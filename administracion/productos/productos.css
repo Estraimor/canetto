@@ -665,3 +665,57 @@
     100% { transform: scale(1); }
 }
 .btn-primary.saved { animation: savePulse .4s ease; }
+
+/* ── BADGE DESCUENTO (admin cards) ─────────────────────── */
+.admin-desc-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    z-index: 2;
+    backdrop-filter: blur(6px);
+}
+
+/* ── MODAL ORDEN ────────────────────────────────────────── */
+.btn-modo {
+    background: #f5f5f5;
+    color: #555;
+    border: 2px solid transparent;
+    padding: 9px 16px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: inherit;
+    transition: all .15s;
+}
+.btn-modo:hover { background: #ebebeb; }
+.btn-modo--activo {
+    background: #fdeef1;
+    color: #c88e99;
+    border-color: #c88e99;
+}
+.orden-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ebebeb;
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: grab;
+    user-select: none;
+    transition: background .15s, outline .1s;
+}
+.orden-row:active { cursor: grabbing; }
+.orden-row:hover { background: #f3f3f3; }

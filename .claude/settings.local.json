@@ -36,7 +36,9 @@
       "Bash(\"c:\\\\wamp64\\\\bin\\\\php\\\\php8.3.14\\\\php.exe\" -r \"var_dump\\(openssl_get_curve_names\\(\\)\\);\")",
       "PowerShell($env:OPENSSL_CONF = \"c:\\\\wamp64\\\\bin\\\\apache\\\\apache2.4.62\\\\conf\\\\openssl.cnf\"; & \"c:\\\\wamp64\\\\bin\\\\php\\\\php8.3.14\\\\php.exe\" \"c:\\\\wamp64\\\\www\\\\canetto\\\\tienda\\\\generar_vapid.php\" 2>&1)",
       "PowerShell($env:OPENSSL_CONF = \"c:\\\\wamp64\\\\bin\\\\apache\\\\apache2.4.62\\\\conf\\\\openssl.cnf\"; & \"c:\\\\wamp64\\\\bin\\\\php\\\\php8.3.14\\\\php.exe\" \"c:\\\\wamp64\\\\www\\\\canetto\\\\tienda\\\\debug_vapid.php\")",
-      "PowerShell($env:OPENSSL_CONF = \"c:\\\\wamp64\\\\bin\\\\php\\\\php8.3.14\\\\extras\\\\ssl\\\\openssl.cnf\"; & \"c:\\\\wamp64\\\\bin\\\\php\\\\php8.3.14\\\\php.exe\" \"c:\\\\wamp64\\\\www\\\\canetto\\\\tienda\\\\debug_vapid.php\")"
+      "PowerShell($env:OPENSSL_CONF = \"c:\\\\wamp64\\\\bin\\\\php\\\\php8.3.14\\\\extras\\\\ssl\\\\openssl.cnf\"; & \"c:\\\\wamp64\\\\bin\\\\php\\\\php8.3.14\\\\php.exe\" \"c:\\\\wamp64\\\\www\\\\canetto\\\\tienda\\\\debug_vapid.php\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\wamp64\\\\www\\\\canetto\" -Recurse -File)",
+      "Bash(Select-Object -First 20)"
     ]
   }
 }

@@ -28,18 +28,18 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS tipos_panel (
     orden  INT         NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+// Migrar paneles de tipos eliminados a 'anuncio'
+$pdo->exec("UPDATE oferta SET tipo_panel='anuncio', tipo='anuncio'
+            WHERE tipo_panel IN ('bienvenida','regalo','soporte','novedad','informativo','marketing')");
+// Eliminar tipos redundantes
+$pdo->exec("DELETE FROM tipos_panel WHERE clave IN ('bienvenida','regalo','soporte','novedad','informativo','marketing')");
+
 $ins = $pdo->prepare("INSERT IGNORE INTO tipos_panel (clave,label,emoji,color,orden) VALUES (?,?,?,?,?)");
 foreach ([
-    ['promo',       'Promo',        '📢', '#c88e99', 0],
-    ['bienvenida',  'Bienvenida',   '👋', '#1d9e75', 1],
-    ['regalo',      'Regalo',       '🎁', '#7c3aed', 2],
-    ['soporte',     'Soporte',      '🛟', '#0891b2', 3],
-    ['temporada',   'Temporada',    '🌸', '#f59e0b', 4],
-    ['descuento',   'Descuento',    '💸', '#dc2626', 5],
-    ['novedad',     'Novedad',      '✨', '#8b5cf6', 6],
-    ['anuncio',     'Anuncio',      '📣', '#0ea5e9', 7],
-    ['informativo', 'Informativo',  'ℹ️',  '#64748b', 8],
-    ['marketing',   'Marketing',    '🚀', '#f97316', 9],
+    ['promo',     'Promo',     '📢', '#c88e99', 0],
+    ['temporada', 'Temporada', '🌸', '#f59e0b', 1],
+    ['descuento', 'Descuento', '💸', '#dc2626', 2],
+    ['anuncio',   'Anuncio',   '📣', '#0ea5e9', 3],
 ] as $d) $ins->execute($d);
 
 $tiposRows   = $pdo->query("SELECT * FROM tipos_panel WHERE activo=1 ORDER BY orden ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -760,10 +760,10 @@ function updatePreview() {
   if (desc) { prevDesc.textContent = desc; prevDesc.style.display = ''; }
   else       { prevDesc.style.display = 'none'; }
 
-  // Valor/precio
+  // Valor/precio (descuento no se muestra en preview del carrusel)
   const prevValor = document.getElementById('prevValor');
-  if (TIPOS_CON_PRECIO.includes(tipo) && valor) {
-    prevValor.textContent = tipo === 'descuento' ? valor + '% OFF' : '$' + valor;
+  if (TIPOS_CON_PRECIO.includes(tipo) && valor && tipo !== 'descuento') {
+    prevValor.textContent = '$' + valor;
     prevValor.style.display = '';
   } else {
     prevValor.style.display = 'none';
@@ -939,8 +939,8 @@ function buildSlideInner(o, idx) {
     : `<div class="slide-bg ${BG_CLASSES[idx % 4]}">${esc(o.emoji||'🍪')}</div>`;
   const tag    = TAG_LABELS[o.tipo] || (TIPOS_PANEL_JS[o.tipo_panel]?.label?.replace(/^.+ /,'') || 'Canetto');
   const desc   = o.descripcion ? `<div class="slide-desc">${esc(o.descripcion)}</div>` : '';
-  const valor  = (TIPOS_CON_PRECIO.includes(o.tipo_panel) && o.valor)
-    ? `<div class="slide-desc slide-valor">${o.tipo==='descuento'?o.valor+'% OFF':'$'+o.valor}</div>` : '';
+  const valor  = (TIPOS_CON_PRECIO.includes(o.tipo_panel) && o.valor && o.tipo !== 'descuento')
+    ? `<div class="slide-desc slide-valor">$${o.valor}</div>` : '';
   const btn    = (o.link||o.btn_txt) ? `<span class="slide-cart-btn">${esc(o.btn_txt||'Ver más')}</span>` : '';
   const inactive = o.activo==0
     ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:3;display:flex;align-items:center;justify-content:center">

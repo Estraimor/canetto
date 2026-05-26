@@ -2195,6 +2195,24 @@ body.has-bottom-nav {
 .prod-card { cursor: pointer; }
 .prod-card--sinstock { cursor: not-allowed; }
 .prod-card--sinstock:hover .btn-ver-detalle { background: #eee; color: #bbb; }
+
+.desc-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 7px;
+  border-radius: 20px;
+}
+.prod-card--descuento { border: 2px solid #fca5a5; }
+.prod-price--desc { display: flex; align-items: baseline; gap: 6px; color: #dc2626; }
+.prod-price-orig { text-decoration: line-through; color: #aaa; font-size: 14px; font-weight: 400; }
+
 .btn-ver-detalle {
   width: 100%; padding: 10px;
   background: #f5f5f5; color: var(--dk); border: none;

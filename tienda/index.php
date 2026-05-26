@@ -107,6 +107,22 @@ try {
     // Agregar columnas opcionales antes de usarlas en el SELECT
     try { $pdo->exec("ALTER TABLE productos ADD COLUMN descripcion TEXT NULL"); } catch (Throwable $e) {}
     try { $pdo->exec("ALTER TABLE productos ADD COLUMN especificaciones TEXT NULL"); } catch (Throwable $e) {}
+    try { $pdo->exec("ALTER TABLE productos ADD COLUMN orden INT NULL DEFAULT NULL"); } catch (Throwable $e) {}
+
+    // Leer modo de orden configurado
+    $ordenModo = 'aleatorio';
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS configuracion_tienda (
+            clave VARCHAR(60) PRIMARY KEY, valor TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )");
+        $r = $pdo->query("SELECT valor FROM configuracion_tienda WHERE clave='orden_productos'")->fetch();
+        if ($r) $ordenModo = $r['valor'];
+    } catch (Throwable $e) {}
+
+    $orderClause = $ordenModo === 'manual'
+        ? 'CASE p.tipo WHEN "box" THEN 1 ELSE 0 END, tiene_descuento DESC, COALESCE(p.orden, 9999) ASC, p.nombre ASC'
+        : 'CASE p.tipo WHEN "box" THEN 1 ELSE 0 END, tiene_descuento DESC, RAND()';
 
     $productos = $pdo->query("
         SELECT p.idproductos, p.nombre, p.precio, p.tipo,
@@ -116,6 +132,7 @@ try {
                ) AS imagen,
                COALESCE(p.descripcion, '') AS descripcion,
                COALESCE(p.especificaciones, '') AS especificaciones,
+               p.orden,
             CASE
                 WHEN p.tipo = 'box' THEN (
                     SELECT COALESCE(MIN(FLOOR(sp2.stock_actual / bp.cantidad)), 0)
@@ -126,12 +143,28 @@ try {
                     WHERE bp.producto_box = p.idproductos
                 )
                 ELSE COALESCE(MAX(CASE WHEN sp.tipo_stock='HECHO' THEN sp.stock_actual END), 0)
-            END AS stock_hecho
+            END AS stock_hecho,
+            CASE WHEN EXISTS (
+                SELECT 1 FROM oferta o
+                WHERE o.productos_idproductos = p.idproductos
+                  AND o.tipo_panel = 'descuento'
+                  AND o.activo = 1
+                  AND (o.fecha_inicio IS NULL OR o.fecha_inicio <= CURDATE())
+                  AND (o.fecha_fin   IS NULL OR o.fecha_fin   >= CURDATE())
+            ) THEN 1 ELSE 0 END AS tiene_descuento,
+            COALESCE((
+                SELECT o2.valor FROM oferta o2
+                WHERE o2.productos_idproductos = p.idproductos
+                  AND o2.tipo_panel = 'descuento' AND o2.activo = 1
+                  AND (o2.fecha_inicio IS NULL OR o2.fecha_inicio <= CURDATE())
+                  AND (o2.fecha_fin   IS NULL OR o2.fecha_fin   >= CURDATE())
+                LIMIT 1
+            ), 0) AS descuento_pct
         FROM productos p
         LEFT JOIN stock_productos sp ON sp.productos_idproductos = p.idproductos AND p.tipo != 'box'
         WHERE p.activo = 1
-        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen, p.descripcion, p.especificaciones, p.activo
-        ORDER BY CASE p.tipo WHEN 'box' THEN 1 ELSE 0 END, p.nombre ASC
+        GROUP BY p.idproductos, p.nombre, p.precio, p.tipo, p.imagen, p.descripcion, p.especificaciones, p.activo, p.orden
+        ORDER BY $orderClause
     ")->fetchAll();
 
     // Productos sin packaging disponible → marcar como sin stock
@@ -534,10 +567,13 @@ function renderProductCard($p) {
   $emoji  = $p['tipo'] === 'box' ? '<i class="fa-solid fa-box-open" style="font-size:40px;color:#c88e99"></i>' : '<i class="fa-solid fa-cookie-bite" style="font-size:40px;color:#c88e99"></i>';
   $nombre = htmlspecialchars($p['nombre']);
   $precio = number_format((float)$p['precio'], 0, ',', '.');
+  $descPct = isset($p['descuento_pct']) ? (int)$p['descuento_pct'] : 0;
+  $tieneDescuento = $descPct > 0;
   $onclick = $stock <= 0
     ? 'sinStockAlert(' . json_encode($nombre) . ')'
     : "window.location.href='producto.php?id={$p['idproductos']}'";
   $cardCls = $stock <= 0 ? 'prod-card prod-card--sinstock' : 'prod-card';
+  if ($tieneDescuento) $cardCls .= ' prod-card--descuento';
   echo <<<HTML
 <div class="{$cardCls}" data-tipo="{$p['tipo']}" onclick="{$onclick}">
   <div class="prod-thumb">
@@ -547,14 +583,21 @@ HTML;
   } else {
     echo '<span class="prod-thumb-emoji">'.$emoji.'</span>';
   }
+  $descBadgeHtml = $tieneDescuento ? "<span class=\"desc-badge\">{$descPct}% OFF</span>" : '';
   echo <<<HTML
     <span class="stock-pill {$pill}">{$pillTxt}</span>
+    {$descBadgeHtml}
   </div>
   <div class="prod-body">
     <div class="prod-name">{$nombre}</div>
-    <div class="prod-price">\${$precio}</div>
-    {$stockTxtHtml}
 HTML;
+  if ($tieneDescuento) {
+    $precioFinal = number_format(round((float)$p['precio'] * (1 - $descPct / 100)), 0, ',', '.');
+    echo "<div class=\"prod-price prod-price--desc\"><span class=\"prod-price-orig\">\${$precio}</span> \${$precioFinal}</div>";
+  } else {
+    echo "<div class=\"prod-price\">\${$precio}</div>";
+  }
+  echo $stockTxtHtml;
   if ($p['tipo'] === 'box') echo '<span class="prod-type-tag">Box</span>';
   $btnCls = $stock <= 0 ? 'btn-ver-detalle disabled' : 'btn-ver-detalle';
   $btnTxt = $stock <= 0 ? 'Sin stock' : 'Ver detalle →';
