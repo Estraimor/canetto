@@ -3,16 +3,44 @@ define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-// ── Verificar si la tienda está abierta ─────────────────────────────
+// ── Verificar estado de la tienda (3 modos: abierta | solo_vista | cerrada) ──
 try {
     $_pdo_check = Conexion::conectar();
-    $_est = $_pdo_check->query("SELECT valor FROM configuracion_tienda WHERE clave='tienda_abierta'")->fetch();
-    $_msg = $_pdo_check->query("SELECT valor FROM configuracion_tienda WHERE clave='tienda_mensaje_cierre'")->fetch();
-    $_tiendaAbierta  = !$_est || $_est['valor'] === '1';
-    $_tiendaMensaje  = $_msg['valor'] ?? 'La tienda está temporalmente cerrada. ¡Volvemos pronto!';
+    $_rows = $_pdo_check->query("SELECT clave, valor FROM configuracion_tienda")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $_cfg = array_merge([
+        'tienda_mensaje_cierre'   => 'La tienda está temporalmente cerrada. ¡Volvemos pronto!',
+        'tienda_modo'             => 'abierta',
+        'horario_activado'        => '0',
+        'horario_apertura'        => '09:00',
+        'horario_cierre'          => '21:00',
+        'horario_forzado_cerrado' => '0',
+    ], $_rows);
+
+    $_modoConfig = $_cfg['tienda_modo'];
+
+    if ($_cfg['horario_activado'] === '1') {
+        $_tz     = new DateTimeZone('America/Argentina/Buenos_Aires');
+        $_ahora  = new DateTime('now', $_tz);
+        $_minAct = (int)$_ahora->format('H') * 60 + (int)$_ahora->format('i');
+        [$_ha, $_ma] = explode(':', $_cfg['horario_apertura']);
+        [$_hc, $_mc] = explode(':', $_cfg['horario_cierre']);
+        $_minAp = (int)$_ha * 60 + (int)$_ma;
+        $_minCi = (int)$_hc * 60 + (int)$_mc;
+        $_enH   = ($_minAct >= $_minAp && $_minAct < $_minCi);
+        $_forzado = $_cfg['horario_forzado_cerrado'] === '1';
+        $_modoEfectivo = ($_enH && !$_forzado) ? $_modoConfig : 'cerrada';
+    } else {
+        $_modoEfectivo = $_modoConfig;
+    }
+
+    $_tiendaAbierta    = $_modoEfectivo !== 'cerrada';
+    $_tiendaAceptaPedidos = $_modoEfectivo === 'abierta';
+    $_tiendaMensaje    = $_cfg['tienda_mensaje_cierre'];
 } catch (Throwable $e) {
-    $_tiendaAbierta = true;
-    $_tiendaMensaje = '';
+    $_tiendaAbierta       = true;
+    $_tiendaAceptaPedidos = true;
+    $_tiendaMensaje       = '';
+    $_modoEfectivo        = 'abierta';
 }
 
 if (!$_tiendaAbierta) {
@@ -814,6 +842,33 @@ HTML;
   </div>
 </div>
 
+<?php if (!$_tiendaAceptaPedidos && $_tiendaAbierta): ?>
+<div id="soloVistaBanner" style="position:sticky;top:0;z-index:900;background:linear-gradient(90deg,#1e40af,#3b82f6);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;font-weight:600;letter-spacing:.01em;box-shadow:0 2px 12px rgba(30,64,175,.3)">
+    <i class="fa-solid fa-eye" style="font-size:15px;opacity:.9"></i>
+    <span>La tienda está <strong>cerrada para pedidos</strong> — podés ver los productos, pero no se pueden hacer pedidos por el momento.</span>
+</div>
+<?php endif; ?>
+
+<script>
+window.TIENDA_ACEPTA_PEDIDOS = <?= $_tiendaAceptaPedidos ? 'true' : 'false' ?>;
+window.TIENDA_MODO = <?= json_encode($_modoEfectivo ?? 'abierta') ?>;
+// Ocultar todos los elementos del carrito si no acepta pedidos
+if (window.TIENDA_ACEPTA_PEDIDOS === false) {
+    document.addEventListener('DOMContentLoaded', () => {
+        ['fabCart', 'btnOpenCart', 'cartDrawer', 'cartOverlay'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        // Desactivar botones de "agregar al carrito" en el carousel
+        document.querySelectorAll('.slide-cart-btn, .btn-add-cart, [data-tipo]').forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '.4';
+            btn.style.cursor = 'not-allowed';
+        });
+    });
+}
+</script>
+
 <!-- ── CART DRAWER ─────────────── -->
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
 <aside class="cart-drawer" id="cartDrawer">
@@ -925,165 +980,196 @@ HTML;
       <div class="ck-step" id="ckDetails">
         <div class="ck-summary" id="ckSummary"></div>
 
-        <!-- Toggle retiro / envío -->
-        <div class="fg ck-entrega-toggle">
-          <label>¿Cómo recibís tu pedido?</label>
-          <div class="ck-toggle-row">
-            <button type="button" class="ck-toggle-btn on" id="btnRetiro" onclick="setEntrega('retiro')">
-              🏪 Retiro en local
-            </button>
-            <button type="button" class="ck-toggle-btn" id="btnEnvio" onclick="setEntrega('envio')">
-              🛵 Envío a domicilio
-            </button>
-          </div>
-        </div>
-
-        <!-- Sucursal (solo retiro) -->
-        <div class="fg" id="wrapSucursal">
-          <label>Sucursal de retiro<?php if (!empty($sucursales)): ?> *<?php endif; ?></label>
-          <select id="ckSuc">
-            <option value="">— Elegí una sucursal —</option>
-            <?php foreach ($sucursales as $s): ?>
-            <option value="<?= $s['idsucursal'] ?>"><?= htmlspecialchars($s['nombre']) ?><?= $s['ciudad'] ? ' — '.htmlspecialchars($s['ciudad']) : '' ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-
-        <!-- Dirección (solo envío) -->
-        <div class="fg" id="wrapEnvio" style="display:none">
-          <label>Tu dirección de entrega *</label>
-
-          <?php if ($cliente_id): ?>
-          <!-- Cards de direcciones guardadas -->
-          <div id="dirsGuardadasWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px"></div>
-          <?php endif; ?>
-
-          <!-- Input manual (oculto por defecto si hay dirs guardadas) -->
-          <div id="nuevaDirSection" class="nueva-dir-section" style="display:none">
-            <div class="dir-ac-wrap">
-              <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA" autocomplete="off">
-              <div id="ckDirSuggestions" class="dir-suggestions" style="display:none"></div>
-            </div>
-            <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
-              📍 Usar mi ubicación actual
-            </button>
-            <?php if ($cliente_id): ?>
-            <button type="button" class="btn-geo" id="btnGuardarDir" onclick="guardarDireccionActual()" style="display:none;background:#f0fdf4;border-color:#bbf7d0;color:#15803d">
-              💾 Guardar esta dirección
-            </button>
-            <?php endif; ?>
-          </div>
-
-          <input type="hidden" id="ckLat">
-          <input type="hidden" id="ckLng">
-          <div id="geoStatus"></div>
-          <button type="button" id="btnAbrirMapa" onclick="toggleMapa()" style="display:none;margin-top:8px;width:100%;padding:9px 14px;background:#f0f4ff;border:1.5px solid #bfdbfe;border-radius:10px;font-size:13px;font-weight:600;color:#3b82f6;cursor:pointer;text-align:center;transition:background .15s">
-            🗺️ Ver ubicación en el mapa
+        <!-- Entrega (colapsable) -->
+        <div class="fg" id="wrapEntregaCollapse" style="margin-bottom:8px">
+          <button type="button" class="ck-collapse-toggle open" onclick="toggleCkSection('wrapEntregaCollapse','bodyEntrega')" id="toggleEntrega">
+            <span id="labelEntrega"><i class="fa-solid fa-store" style="margin-right:7px"></i>🏪 Retiro</span>
+            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
           </button>
-          <div id="ckMapaWrap">
-            <div id="ckMapa"></div>
-          </div>
-          <div id="envioEstimate" style="display:none;margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0">
-            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc">
-              <div style="width:36px;height:36px;background:#dbeafe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                <i class="fa-solid fa-motorcycle" style="color:#3b82f6;font-size:15px"></i>
-              </div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:2px">Costo de envío</div>
-                <div id="envioEstimateTxt" style="font-size:14px;font-weight:700;color:#1e293b"></div>
-              </div>
-              <div id="envioEstimatePrice" style="font-size:18px;font-weight:800;color:#3b82f6;font-family:'Speedee',sans-serif;flex-shrink:0"></div>
-            </div>
-          </div>
-        </div>
+          <div class="ck-collapse-body" id="bodyEntrega" style="display:block">
 
-        <div class="fg">
-          <label>Método de pago *</label>
-          <input type="hidden" id="ckMetodoId">
-          <div class="ck-pago-grid" id="ckPagoGrid">
-            <?php foreach ($metodos_pago as $m):
-              $nLow      = strtolower($m['nombre']);
-              $esMP    = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
-              $esTrans = str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
-              $esTarjeta = !$esMP && !$esTrans && (str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito'));
-            ?>
-            <button type="button"
-              class="ck-pago-card<?= $esTarjeta ? ' prox' : '' ?>"
-              <?= $esTarjeta ? 'disabled' : '' ?>
-              onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false' ?>,<?= $esTrans?'true':'false' ?>)">
-              <div class="ck-pago-ic">
-                <?php if ($esMP): ?>
-                  <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="26" width="52">
-                    <rect width="56" height="28" rx="5" fill="#009EE3"/>
-                    <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
-                  </svg>
-                <?php elseif ($esTrans): ?>
-                  <i class="fa-solid fa-building-columns" style="font-size:22px;color:#5b6470"></i>
-                <?php elseif ($esTarjeta): ?>
-                  <i class="fa-solid fa-credit-card" style="font-size:20px;color:#94a3b8"></i>
-                <?php elseif (str_contains($nLow,'efectivo')||str_contains($nLow,'cash')): ?>
-                  <i class="fa-solid fa-money-bill-wave" style="font-size:20px;color:#22c55e"></i>
-                <?php else: ?>
-                  <i class="fa-solid fa-coins" style="font-size:20px;color:#f59e0b"></i>
+            <!-- Toggle retiro / envío -->
+            <div class="ck-entrega-toggle" style="margin-bottom:10px">
+              <div class="ck-toggle-row">
+                <button type="button" class="ck-toggle-btn on" id="btnRetiro" onclick="setEntrega('retiro')">
+                  🏪 Retiro
+                </button>
+                <button type="button" class="ck-toggle-btn" id="btnEnvio" onclick="setEntrega('envio')">
+                  🛵 Envío a domicilio
+                </button>
+              </div>
+            </div>
+
+            <!-- Sucursal (solo retiro) -->
+            <div id="wrapSucursal">
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Sucursal de retiro<?php if (!empty($sucursales)): ?> *<?php endif; ?></label>
+              <select id="ckSuc" style="width:100%;padding:11px 13px;border:1.5px solid #eee;border-radius:10px;font-family:inherit;font-size:14px;background:#fff;outline:none">
+                <option value="">— Elegí una sucursal —</option>
+                <?php foreach ($sucursales as $s): ?>
+                <option value="<?= $s['idsucursal'] ?>"><?= htmlspecialchars($s['nombre']) ?><?= $s['ciudad'] ? ' — '.htmlspecialchars($s['ciudad']) : '' ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
+            <!-- Dirección (solo envío) -->
+            <div id="wrapEnvio" style="display:none;margin-top:10px">
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Tu dirección de entrega *</label>
+
+              <?php if ($cliente_id): ?>
+              <!-- Cards de direcciones guardadas -->
+              <div id="dirsGuardadasWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px"></div>
+              <?php endif; ?>
+
+              <!-- Input manual (oculto por defecto si hay dirs guardadas) -->
+              <div id="nuevaDirSection" class="nueva-dir-section" style="display:none">
+                <div class="dir-ac-wrap">
+                  <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA" autocomplete="off">
+                  <div id="ckDirSuggestions" class="dir-suggestions" style="display:none"></div>
+                </div>
+                <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
+                  📍 Usar mi ubicación actual
+                </button>
+                <?php if ($cliente_id): ?>
+                <button type="button" class="btn-geo" id="btnGuardarDir" onclick="guardarDireccionActual()" style="display:none;background:#f0fdf4;border-color:#bbf7d0;color:#15803d">
+                  💾 Guardar esta dirección
+                </button>
                 <?php endif; ?>
               </div>
-              <div class="ck-pago-info">
-                <div class="ck-pago-label"><?= htmlspecialchars($m['nombre']) ?></div>
-                <?php if ($esMP): ?><div class="ck-pago-sub">Pago seguro · Tarjeta, débito, efectivo</div><?php endif; ?>
-                <?php if ($esTrans): ?><div class="ck-pago-sub">CBU / Alias · Acreditación 24-72 hs</div><?php endif; ?>
-                <?php if ($esTarjeta): ?><div class="ck-pago-sub">Disponible próximamente</div><?php endif; ?>
+
+              <input type="hidden" id="ckLat">
+              <input type="hidden" id="ckLng">
+              <div id="geoStatus"></div>
+              <button type="button" id="btnAbrirMapa" onclick="toggleMapa()" style="display:none;margin-top:8px;width:100%;padding:9px 14px;background:#f0f4ff;border:1.5px solid #bfdbfe;border-radius:10px;font-size:13px;font-weight:600;color:#3b82f6;cursor:pointer;text-align:center;transition:background .15s">
+                🗺️ Ver ubicación en el mapa
+              </button>
+              <div id="ckMapaWrap">
+                <div id="ckMapa"></div>
               </div>
-              <?php if ($esTarjeta): ?><span class="ck-pago-prox">Próximamente</span><?php endif; ?>
+              <div id="envioEstimate" style="display:none;margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc">
+                  <div style="width:36px;height:36px;background:#dbeafe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="fa-solid fa-motorcycle" style="color:#3b82f6;font-size:15px"></i>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:2px">Costo de envío</div>
+                    <div id="envioEstimateTxt" style="font-size:14px;font-weight:700;color:#1e293b"></div>
+                  </div>
+                  <div id="envioEstimatePrice" style="font-size:18px;font-weight:800;color:#3b82f6;font-family:'Speedee',sans-serif;flex-shrink:0"></div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" onclick="continuarDesdeEntrega()" style="width:100%;margin-top:12px;padding:10px;background:#c88e99;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background='#b07887'" onmouseout="this.style.background='#c88e99'">
+              Continuar →
             </button>
-            <?php endforeach; ?>
-          </div>
-        </div>
-        <!-- Panel datos bancarios (transferencia) -->
-        <div id="transferPanel" style="display:none;margin-top:4px">
-          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden">
-            <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e2e8f0">
-              <div style="width:32px;height:32px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                <i class="fa-solid fa-building-columns" style="color:#3b82f6;font-size:14px"></i>
-              </div>
-              <div>
-                <div style="font-size:13px;font-weight:800;color:#1e293b">Datos para transferencia</div>
-                <div style="font-size:11px;color:#94a3b8;margin-top:1px">Copiá el CBU o alias y transferí el total</div>
+
+          </div><!-- /bodyEntrega -->
+        </div><!-- /wrapEntregaCollapse -->
+
+        <!-- Método de pago (colapsable) -->
+        <div class="fg" id="wrapPagoCollapse" style="margin-bottom:8px">
+          <input type="hidden" id="ckMetodoId">
+          <button type="button" class="ck-collapse-toggle" onclick="toggleCkSection('wrapPagoCollapse','bodyPago')" id="togglePago">
+            <span id="labelPago"><i class="fa-solid fa-credit-card" style="margin-right:7px"></i>Seleccionar método de pago</span>
+            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
+          </button>
+          <div class="ck-collapse-body" id="bodyPago" style="display:none">
+            <div class="ck-pago-grid" id="ckPagoGrid" style="margin-bottom:0">
+              <?php foreach ($metodos_pago as $m):
+                $nLow      = strtolower($m['nombre']);
+                $esMP    = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
+                $esTrans = str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
+                $esTarjeta = !$esMP && !$esTrans && (str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito'));
+              ?>
+              <button type="button"
+                class="ck-pago-card<?= $esTarjeta ? ' prox' : '' ?>"
+                <?= $esTarjeta ? 'disabled' : '' ?>
+                onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false' ?>,<?= $esTrans?'true':'false' ?>)">
+                <div class="ck-pago-ic">
+                  <?php if ($esMP): ?>
+                    <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="26" width="52">
+                      <rect width="56" height="28" rx="5" fill="#009EE3"/>
+                      <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
+                    </svg>
+                  <?php elseif ($esTrans): ?>
+                    <i class="fa-solid fa-building-columns" style="font-size:22px;color:#5b6470"></i>
+                  <?php elseif ($esTarjeta): ?>
+                    <i class="fa-solid fa-credit-card" style="font-size:20px;color:#94a3b8"></i>
+                  <?php elseif (str_contains($nLow,'efectivo')||str_contains($nLow,'cash')): ?>
+                    <i class="fa-solid fa-money-bill-wave" style="font-size:20px;color:#22c55e"></i>
+                  <?php else: ?>
+                    <i class="fa-solid fa-coins" style="font-size:20px;color:#f59e0b"></i>
+                  <?php endif; ?>
+                </div>
+                <div class="ck-pago-info">
+                  <div class="ck-pago-label"><?= htmlspecialchars($m['nombre']) ?></div>
+                  <?php if ($esMP): ?><div class="ck-pago-sub">Pago seguro · Tarjeta, débito, efectivo</div><?php endif; ?>
+                  <?php if ($esTrans): ?><div class="ck-pago-sub">CBU / Alias · Acreditación 24-72 hs</div><?php endif; ?>
+                  <?php if ($esTarjeta): ?><div class="ck-pago-sub">Disponible próximamente</div><?php endif; ?>
+                </div>
+                <?php if ($esTarjeta): ?><span class="ck-pago-prox">Próximamente</span><?php endif; ?>
+              </button>
+              <?php endforeach; ?>
+            </div>
+            <!-- Panel datos bancarios (transferencia) -->
+            <div id="transferPanel" style="display:none;margin-top:8px">
+              <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden">
+                <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e2e8f0">
+                  <div style="width:32px;height:32px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="fa-solid fa-building-columns" style="color:#3b82f6;font-size:14px"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:800;color:#1e293b">Datos para transferencia</div>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:1px">Copiá el CBU o alias y transferí el total</div>
+                  </div>
+                </div>
+                <div id="transferBody" style="padding:12px 16px;font-size:13px;color:#374151">
+                  <div style="text-align:center;padding:16px;color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
+                </div>
               </div>
             </div>
-            <div id="transferBody" style="padding:12px 16px;font-size:13px;color:#374151">
-              <div style="text-align:center;padding:16px;color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
-            </div>
+          </div><!-- /bodyPago -->
+        </div><!-- /wrapPagoCollapse -->
+
+        <!-- Observaciones (colapsable) -->
+        <div class="fg" id="wrapObs" style="margin-bottom:8px">
+          <button type="button" class="ck-collapse-toggle" onclick="toggleCkSection('wrapObs','bodyObs')" id="toggleObs">
+            <span><i class="fa-solid fa-comment-dots" style="margin-right:7px"></i>Agregar observación</span>
+            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
+          </button>
+          <div class="ck-collapse-body" id="bodyObs" style="display:none">
+            <textarea id="ckObs" rows="2" placeholder="Ej: Sin gluten, para regalo..." style="border:none;padding:0;border-radius:0;font-size:14px;resize:none;outline:none;width:100%;background:transparent"></textarea>
           </div>
         </div>
 
-        <div class="fg">
-          <label>Observaciones (opcional)</label>
-          <textarea id="ckObs" rows="2" placeholder="Ej: Sin gluten, para regalo..."></textarea>
-        </div>
-
-        <!-- Cupón de descuento -->
-        <div class="fg cupon-wrap">
-          <label>¿Tenés un cupón de descuento?</label>
-          <div class="cupon-row">
-            <input type="text" id="ckCuponInput" placeholder="Ingresá tu código" autocomplete="off"
-                   style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-            <button type="button" class="btn-cupon-aplicar" id="btnAplicarCupon" onclick="aplicarCupon()">
-              Aplicar
-            </button>
-          </div>
-          <div id="cuponMsg" style="display:none;margin-top:8px;font-size:13px;font-weight:600;display:none"></div>
-          <div id="cuponResumen" style="display:none;margin-top:6px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:13px;color:#15803d;font-weight:600">
-                <i class="fa-solid fa-tag" style="margin-right:5px"></i>
-                <span id="cuponResumenLabel">Cupón aplicado</span>
-              </span>
-              <button type="button" onclick="quitarCupon()"
-                style="background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;font-weight:700">
-                ✕ Quitar
+        <!-- Cupón de descuento (colapsable) -->
+        <div class="fg cupon-wrap" id="wrapCupon" style="margin-bottom:8px">
+          <button type="button" class="ck-collapse-toggle" onclick="toggleCkSection('wrapCupon','bodyCupon')" id="toggleCupon">
+            <span><i class="fa-solid fa-tag" style="margin-right:7px"></i>¿Tenés un cupón de descuento?</span>
+            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
+          </button>
+          <div class="ck-collapse-body" id="bodyCupon" style="display:none">
+            <div class="cupon-row" style="margin-bottom:4px">
+              <input type="text" id="ckCuponInput" placeholder="Ingresá tu código" autocomplete="off"
+                     style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+              <button type="button" class="btn-cupon-aplicar" id="btnAplicarCupon" onclick="aplicarCupon()">
+                Aplicar
               </button>
             </div>
-            <div style="font-size:18px;font-weight:800;color:#15803d;margin-top:4px" id="cuponDescuentoLabel"></div>
+            <div id="cuponMsg" style="display:none;margin-top:6px;font-size:13px;font-weight:600"></div>
+            <div id="cuponResumen" style="display:none;margin-top:6px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:13px;color:#15803d;font-weight:600">
+                  <i class="fa-solid fa-tag" style="margin-right:5px"></i>
+                  <span id="cuponResumenLabel">Cupón aplicado</span>
+                </span>
+                <button type="button" onclick="quitarCupon()"
+                  style="background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;font-weight:700">
+                  ✕ Quitar
+                </button>
+              </div>
+              <div style="font-size:18px;font-weight:800;color:#15803d;margin-top:4px" id="cuponDescuentoLabel"></div>
+            </div>
           </div>
         </div>
 
@@ -1172,6 +1258,10 @@ function requireLogin(){
   return false;
 }
 function addToCart(btn){
+  if(window.TIENDA_ACEPTA_PEDIDOS === false){
+    Swal.fire({icon:'info',title:'Tienda cerrada para pedidos',text:'Podés ver los productos, pero los pedidos no están disponibles por el momento.',confirmButtonColor:'#c88e99'});
+    return;
+  }
   if(requireLogin()) return;
   const id=+btn.dataset.id,nombre=btn.dataset.nombre,precio=+btn.dataset.precio,tipo=btn.dataset.tipo,stock=+btn.dataset.stock;
   const precioOriginal=btn.dataset.precioOriginal?+btn.dataset.precioOriginal:null;
@@ -1446,6 +1536,45 @@ let _toppingsOrden=[];
 let _costoToppings=0;
 let _cuponAplicado=null; // { codigo, descuento, label }
 
+/* ── Secciones colapsables / cascada checkout ── */
+function toggleCkSection(wrapId, bodyId) {
+  const body = document.getElementById(bodyId);
+  const toggle = document.querySelector('#' + wrapId + ' .ck-collapse-toggle');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  toggle.classList.toggle('open', !open);
+}
+
+// Cierra una sección y abre la siguiente automáticamente
+function cascadeSection(fromBodyId, toBodyId) {
+  const fromBody = document.getElementById(fromBodyId);
+  const fromTog  = fromBody?.closest('.fg')?.querySelector('.ck-collapse-toggle');
+  if (fromBody) { fromBody.style.display = 'none'; fromTog?.classList.remove('open'); }
+
+  const toBody = document.getElementById(toBodyId);
+  const toTog  = toBody?.closest('.fg')?.querySelector('.ck-collapse-toggle');
+  if (toBody) { toBody.style.display = 'block'; toTog?.classList.add('open'); }
+
+  setTimeout(() => toBody?.closest('.fg')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+}
+
+// Llamado al presionar "Continuar →" en la sección de entrega
+function continuarDesdeEntrega() {
+  if (_tipoEntrega === 'retiro') {
+    const suc = document.getElementById('ckSuc');
+    if (!suc?.value) { showToast('Elegí una sucursal primero', 'err'); return; }
+    const sucName = suc.options[suc.selectedIndex]?.text?.split('—')[0]?.trim() || '';
+    const lbl = document.getElementById('labelEntrega');
+    if (lbl) lbl.innerHTML = `<i class="fa-solid fa-store" style="margin-right:7px"></i>🏪 Retiro<span style="font-size:12px;font-weight:400;color:#94a3b8;margin-left:8px">· ${sucName}</span>`;
+  } else {
+    const dir = document.getElementById('ckDireccion')?.value?.trim();
+    if (!dir) { showToast('Ingresá tu dirección primero', 'err'); return; }
+    const lbl = document.getElementById('labelEntrega');
+    if (lbl) lbl.innerHTML = `<i class="fa-solid fa-motorcycle" style="margin-right:7px"></i>🛵 Envío a domicilio<span style="font-size:12px;font-weight:400;color:#94a3b8;margin-left:8px">· ${dir.substring(0,30)}${dir.length>30?'…':''}</span>`;
+  }
+  cascadeSection('bodyEntrega', 'bodyPago');
+}
+
 /* ── Cupón ── */
 async function aplicarCupon() {
   const codigo = document.getElementById('ckCuponInput').value.trim().toUpperCase();
@@ -1498,6 +1627,10 @@ document.getElementById('ckCuponInput')?.addEventListener('keydown', e => {
 });
 
 function openCheckout(){
+  if(window.TIENDA_ACEPTA_PEDIDOS === false){
+    Swal.fire({icon:'info',title:'Cerrado para pedidos',text:'La tienda está cerrada para pedidos por el momento. Podés ver los productos pero no se pueden realizar pedidos.',confirmButtonColor:'#3b82f6'});
+    return;
+  }
   const c=getCart();
   if(!c.length){showToast('Tu carrito está vacío','err');return}
   // Mínimo de cookies (se valida también en el servidor)
@@ -1621,6 +1754,17 @@ function seleccionarMetodo(id,btn,esMP,esTrans=false){
   const al=document.getElementById('dAlert');if(al)al.classList.remove('on');
   const tp=document.getElementById('transferPanel');
   if(tp){ tp.style.display=esTrans?'':'none'; if(esTrans) cargarDatosBancarios(); }
+  // Actualizar label del toggle de pago
+  const nombre=btn.querySelector('.ck-pago-label')?.textContent||'Método seleccionado';
+  const lbl=document.getElementById('labelPago');
+  if(lbl) lbl.innerHTML=`<i class="fa-solid fa-check" style="margin-right:7px;color:#22c55e"></i>${nombre}`;
+  // Transferencia: mantener abierto para mostrar panel de datos bancarios
+  // Otros: colapsar la sección de pago
+  if(!esTrans){
+    const body=document.getElementById('bodyPago');
+    const tog=document.getElementById('togglePago');
+    if(body){body.style.display='none';tog&&tog.classList.remove('open');}
+  }
 }
 
 let _tipoEntrega='retiro', _costoEnvio=0;
@@ -1666,6 +1810,10 @@ function setEntrega(tipo){
   document.getElementById('btnEnvio').classList.toggle('on',tipo==='envio');
   document.getElementById('wrapSucursal').style.display=tipo==='retiro'?'':'none';
   document.getElementById('wrapEnvio').style.display   =tipo==='envio'?'':'none';
+  const lbl=document.getElementById('labelEntrega');
+  if(lbl) lbl.innerHTML=tipo==='retiro'
+    ?'<i class="fa-solid fa-store" style="margin-right:7px"></i>🏪 Retiro'
+    :'<i class="fa-solid fa-motorcycle" style="margin-right:7px"></i>🛵 Envío a domicilio';
   if(tipo==='envio') document.getElementById('btnAbrirMapa').style.display='block';
   if(tipo==='retiro'){
     _costoEnvio=0;

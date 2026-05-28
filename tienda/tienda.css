@@ -1947,15 +1947,15 @@ body.has-bottom-nav {
 .ck-pago-grid {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 6px;
 }
 .ck-pago-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 13px 15px;
+  gap: 12px;
+  padding: 9px 12px;
   border: 2px solid #e8e8e8;
-  border-radius: 13px;
+  border-radius: 11px;
   background: #fff;
   cursor: pointer;
   transition: border-color .18s, background .18s, box-shadow .18s;
@@ -2001,6 +2001,10 @@ body.has-bottom-nav {
   font-size: 11px;
   color: #94a3b8;
   margin-top: 2px;
+  display: none;
+}
+.ck-pago-card.on .ck-pago-sub {
+  display: block;
 }
 .ck-pago-prox {
   font-size: 10px;
@@ -2011,6 +2015,54 @@ body.has-bottom-nav {
   border-radius: 20px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* ── SECCIONES COLAPSABLES CHECKOUT ─────────────── */
+.ck-collapse-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.ck-collapse-toggle:hover {
+  background: #fdf8f9;
+  border-color: #c88e99;
+  color: #c88e99;
+}
+.ck-collapse-toggle.open {
+  border-color: #c88e99;
+  color: #c88e99;
+  background: #fdf0f3;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+.ck-col-chev {
+  font-size: 11px;
+  color: #94a3b8;
+  transition: transform .2s;
+}
+.ck-collapse-toggle.open .ck-col-chev {
+  transform: rotate(180deg);
+  color: #c88e99;
+}
+.ck-collapse-body {
+  margin-top: 0;
+  border: 1.5px solid #c88e99;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 10px 14px 4px;
+  background: #fff;
 }
 
 /* ── SAVE / SUCCESS ANIMATIONS ──────────────────── */

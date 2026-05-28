@@ -32,6 +32,32 @@ if (empty($carrito) || !$metodo_pago) {
     echo json_encode(['success'=>false,'message'=>'Faltan datos obligatorios']); exit;
 }
 
+// Verificar que la tienda acepta pedidos en este momento
+try {
+    $_pdo_check = Conexion::conectar();
+    $_cfg = $_pdo_check->query("SELECT clave, valor FROM configuracion_tienda")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $_modo    = $_cfg['tienda_modo'] ?? 'abierta';
+    $_horario = ($_cfg['horario_activado'] ?? '0') === '1';
+    if ($_horario) {
+        $_tz  = new DateTimeZone('America/Argentina/Buenos_Aires');
+        $_now = new DateTime('now', $_tz);
+        $_min = (int)$_now->format('H') * 60 + (int)$_now->format('i');
+        [$_ha, $_ma] = explode(':', $_cfg['horario_apertura'] ?? '09:00');
+        [$_hc, $_mc] = explode(':', $_cfg['horario_cierre']   ?? '21:00');
+        $_enH = ($_min >= (int)$_ha*60+(int)$_ma && $_min < (int)$_hc*60+(int)$_mc);
+        $_forzado = ($_cfg['horario_forzado_cerrado'] ?? '0') === '1';
+        $_modoEfectivo = ($_enH && !$_forzado) ? $_modo : 'cerrada';
+    } else {
+        $_modoEfectivo = $_modo;
+    }
+    if ($_modoEfectivo !== 'abierta') {
+        $msg = $_modoEfectivo === 'solo_vista'
+            ? 'La tienda está en modo solo consulta. No se aceptan pedidos por el momento.'
+            : 'La tienda está cerrada. No se aceptan pedidos por el momento.';
+        echo json_encode(['success'=>false,'message'=>$msg]); exit;
+    }
+} catch (Throwable $_e) {}
+
 // Cupón aplicado
 $cupon_codigo = trim($input['cupon_codigo'] ?? '');
 $cupon_descuento = 0.0; // monto fijo a descontar del total

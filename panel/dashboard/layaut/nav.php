@@ -301,6 +301,12 @@ $current = $_SERVER['PHP_SELF'];
                 <i class="fa-solid fa-building-columns"></i>
                 Datos Bancarios
             </a>
+
+            <a href="<?= URL_ASSETS ?>/configuraciones/tienda.php"
+               class="<?= str_contains($current,'configuraciones/tienda') ? 'active' : '' ?>">
+                <i class="fa-solid fa-store"></i>
+                Tienda
+            </a>
         </div>
     </div>
 
@@ -612,23 +618,39 @@ function toggleDark() {
     }));
 }
 
-/* ── Toggle Tienda ───────────────────────────── */
-let _tiendaAbierta = true;
-let _tiendaMensaje = '';
+/* ── Estado Tienda ───────────────────────────── */
+let _tiendaModo      = 'abierta'; // abierta | solo_vista | cerrada (efectivo)
+let _tiendaModoConf  = 'abierta'; // modo guardado en config
+let _tiendaMensaje   = '';
+let _tiendaHorario   = false;
+let _tiendaEnHorario = null;
+let _tiendaApertura  = '09:00';
+let _tiendaCierre    = '21:00';
+
+const _MODO_CFG = {
+    abierta:    { color:'#c88e99', bg:'#fdf0f3', bdr:'#c88e99', dot:'#c88e99', label:'Tienda abierta',   labelAuto:'Abierta (auto)' },
+    solo_vista: { color:'#2563eb', bg:'#eff6ff', bdr:'#2563eb', dot:'#2563eb', label:'Cerrado para pedidos',    labelAuto:'Cerrado para pedidos (auto)' },
+    cerrada:    { color:'#dc2626', bg:'#fef2f2', bdr:'#dc2626', dot:'#dc2626', label:'⛔ Cerrada',       labelAuto:'⛔ Fuera de horario' },
+};
 
 function tiendaRenderBtn() {
-    const btn  = document.getElementById('btnTiendaToggle');
-    const dot  = document.getElementById('tiendaDot');
-    const lbl  = document.getElementById('tiendaLabel');
+    const btn = document.getElementById('btnTiendaToggle');
+    const dot = document.getElementById('tiendaDot');
+    const lbl = document.getElementById('tiendaLabel');
     if (!btn) return;
-    if (_tiendaAbierta) {
-        btn.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;border:2px solid #c88e99;background:#fdf0f3;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:all .2s;color:#c88e99';
-        dot.style.background = '#c88e99';
-        lbl.textContent = 'Tienda abierta';
+    const BASE = 'display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:all .2s;';
+    const fueraHorario = _tiendaHorario && _tiendaEnHorario === false;
+    if (fueraHorario) {
+        btn.style.cssText = BASE + 'border:2px solid #f59e0b;background:#fffbeb;color:#b45309';
+        dot.style.background = '#f59e0b';
+        lbl.textContent = 'Fuera de horario';
+        btn.title = `Abre a las ${_tiendaApertura}`;
     } else {
-        btn.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;border:2px solid #dc2626;background:#fef2f2;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:all .2s;color:#dc2626';
-        dot.style.background = '#dc2626';
-        lbl.textContent = '⛔ Tienda cerrada';
+        const cfg = _MODO_CFG[_tiendaModo] ?? _MODO_CFG.cerrada;
+        btn.style.cssText = BASE + `border:2px solid ${cfg.bdr};background:${cfg.bg};color:${cfg.color}`;
+        dot.style.background = cfg.dot;
+        lbl.textContent = _tiendaHorario ? cfg.labelAuto : cfg.label;
+        btn.title = _tiendaHorario ? `Horario: ${_tiendaApertura} – ${_tiendaCierre}` : '';
     }
 }
 
@@ -636,76 +658,126 @@ async function tiendaCargarEstado() {
     try {
         const r = await fetch('<?= URL_ADMIN ?>/api/tienda_estado.php');
         const d = await r.json();
-        _tiendaAbierta = d.abierta;
-        _tiendaMensaje = d.mensaje;
-    } catch(e) {
-        // Si falla la API, asumir abierta para no bloquear el panel
-        _tiendaAbierta = true;
-        _tiendaMensaje = '';
-    } finally {
-        tiendaRenderBtn();
-    }
+        _tiendaModo      = d.modo          ?? 'abierta';
+        _tiendaModoConf  = d.modo_config   ?? 'abierta';
+        _tiendaMensaje   = d.mensaje       ?? '';
+        _tiendaHorario   = d.horario_activado  ?? false;
+        _tiendaEnHorario = d.en_horario    ?? null;
+        _tiendaApertura  = d.horario_apertura ?? '09:00';
+        _tiendaCierre    = d.horario_cierre   ?? '21:00';
+    } catch(e) { _tiendaModo = 'abierta'; }
+    finally { tiendaRenderBtn(); }
 }
 
 async function tiendaToggle() {
-    // Usar Swal si está disponible, sino confirm nativo
-    const usaSwal = typeof Swal !== 'undefined';
-
-    let confirmado = false;
-    let mensajeCierre = _tiendaMensaje;
-
-    if (usaSwal) {
-        const result = await Swal.fire({
-            title: _tiendaAbierta ? '⛔ Cerrar tienda' : '✅ Abrir tienda',
-            html: `<p style="color:#555;margin-bottom:12px">${_tiendaAbierta ? '¿Cerrar la tienda? Los clientes verán un cartel de fuera de línea.' : '¿Abrir la tienda? Los clientes podrán comprar nuevamente.'}</p>` +
-                  (!_tiendaAbierta ? '' :
-                  `<label style="display:block;text-align:left;font-size:12px;font-weight:700;color:#333;margin-bottom:6px">Mensaje para los clientes:</label>
-                   <textarea id="swalMensajeCierre" rows="3" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-family:inherit;font-size:13px;resize:none"
-                   placeholder="Ej: Hoy no trabajamos. Volvemos el lunes.">${_tiendaMensaje}</textarea>`),
-            showCancelButton: true,
-            confirmButtonText: _tiendaAbierta ? '⛔ Cerrar tienda' : '✅ Abrir tienda',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: _tiendaAbierta ? '#dc2626' : '#c88e99',
-            cancelButtonColor: '#aaa',
-            preConfirm: () => { const ta = document.getElementById('swalMensajeCierre'); return ta ? ta.value : null; }
-        });
-        if (!result.isConfirmed) return;
-        confirmado = true;
-        if (result.value) mensajeCierre = result.value;
-    } else {
-        const txt = _tiendaAbierta
-            ? '¿Cerrar la tienda?\n\nEscribí el mensaje para los clientes (o dejá en blanco):'
-            : '¿Abrir la tienda? Confirmá con OK.';
-        const resp = _tiendaAbierta ? prompt(txt, _tiendaMensaje) : (confirm(txt) ? '' : null);
-        if (resp === null) return;
-        confirmado = true;
-        if (resp) mensajeCierre = resp;
+    // Fuera de horario: sólo info
+    if (_tiendaHorario && _tiendaEnHorario === false) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon:'info', title:'Fuera de horario',
+                html:`La tienda se abrirá automáticamente a las <strong>${_tiendaApertura}</strong>.<br><small style="color:#aaa">Podés cambiar el horario en <a href="<?= URL_ADMIN ?>/configuraciones/tienda.php" style="color:#c88e99">Configuración → Tienda</a></small>`,
+                confirmButtonColor:'#c88e99' });
+        }
+        return;
     }
 
-    if (!confirmado) return;
-
-    if (_tiendaAbierta && mensajeCierre) {
-        await fetch('<?= URL_ADMIN ?>/api/tienda_estado.php', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ accion:'mensaje', mensaje: mensajeCierre })
-        });
+    if (typeof Swal === 'undefined') {
+        const nuevo = _tiendaModo === 'cerrada' ? 'abierta' : 'cerrada';
+        await _tiendaSetModo(nuevo, '');
+        return;
     }
 
+    // Modal con 3 opciones
+    const modoActual = _tiendaModo;
+    const { value: formValues } = await Swal.fire({
+        title: 'Estado de la tienda',
+        width: 420,
+        html: `
+<style>
+.swal-modo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.swal-modo-opt{cursor:pointer;border-radius:12px;border:2px solid #ebebeb;padding:12px 8px;text-align:center;transition:.15s;background:#fafafa}
+.swal-modo-opt:hover{border-color:#d0d0d0;background:#f5f5f5}
+.swal-modo-opt input{display:none}
+.swal-modo-opt.sel-abierta{border-color:#16a34a;background:#f0fdf4}
+.swal-modo-opt.sel-solo_vista{border-color:#2563eb;background:#eff6ff}
+.swal-modo-opt.sel-cerrada{border-color:#dc2626;background:#fef2f2}
+.swal-modo-ico{font-size:22px;margin-bottom:5px}
+.swal-modo-nm{font-size:12px;font-weight:800;color:#1a1a1a}
+.swal-modo-ds{font-size:10px;color:#aaa;margin-top:2px;line-height:1.3}
+.swal-modo-opt.sel-abierta .swal-modo-nm{color:#15803d}
+.swal-modo-opt.sel-solo_vista .swal-modo-nm{color:#1d4ed8}
+.swal-modo-opt.sel-cerrada .swal-modo-nm{color:#b91c1c}
+</style>
+<div class="swal-modo-grid">
+  <label class="swal-modo-opt ${modoActual==='abierta'?'sel-abierta':''}" data-v="abierta">
+    <input type="radio" name="sm" value="abierta" ${modoActual==='abierta'?'checked':''}>
+    <div class="swal-modo-ico">✅</div>
+    <div class="swal-modo-nm">Abierta</div>
+    <div class="swal-modo-ds">Ven y piden</div>
+  </label>
+  <label class="swal-modo-opt ${modoActual==='solo_vista'?'sel-solo_vista':''}" data-v="solo_vista">
+    <input type="radio" name="sm" value="solo_vista" ${modoActual==='solo_vista'?'checked':''}>
+    <div class="swal-modo-ico">👁️</div>
+    <div class="swal-modo-nm">Cerrado para pedidos</div>
+    <div class="swal-modo-ds">Ven, sin pedidos</div>
+  </label>
+  <label class="swal-modo-opt ${modoActual==='cerrada'?'sel-cerrada':''}" data-v="cerrada">
+    <input type="radio" name="sm" value="cerrada" ${modoActual==='cerrada'?'checked':''}>
+    <div class="swal-modo-ico">⛔</div>
+    <div class="swal-modo-nm">Cerrada</div>
+    <div class="swal-modo-ds">Página offline</div>
+  </label>
+</div>
+<div id="swalMsgWrap" style="display:${modoActual==='cerrada'?'block':'none'}">
+  <label style="display:block;text-align:left;font-size:11px;font-weight:700;color:#888;margin-bottom:5px;text-transform:uppercase">Mensaje para los clientes</label>
+  <textarea id="swalMensajeCierre" rows="2" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;resize:none;outline:none" placeholder="Ej: Hoy no atendemos. Volvemos mañana.">${_tiendaMensaje}</textarea>
+</div>`,
+        didOpen: () => {
+            document.querySelectorAll('.swal-modo-opt').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const v = opt.dataset.v;
+                    document.querySelectorAll('.swal-modo-opt').forEach(o => {
+                        o.className = 'swal-modo-opt' + (o.dataset.v === v ? ` sel-${v}` : '');
+                        o.querySelector('input').checked = o.dataset.v === v;
+                    });
+                    document.getElementById('swalMsgWrap').style.display = v === 'cerrada' ? 'block' : 'none';
+                });
+            });
+        },
+        preConfirm: () => ({
+            modo:    document.querySelector('input[name="sm"]:checked')?.value ?? modoActual,
+            mensaje: document.getElementById('swalMensajeCierre')?.value ?? '',
+        }),
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText:  'Cancelar',
+        confirmButtonColor: '#c88e99',
+        cancelButtonColor:  '#aaa',
+    });
+
+    if (!formValues) return;
+    await _tiendaSetModo(formValues.modo, formValues.mensaje);
+}
+
+async function _tiendaSetModo(modo, mensaje) {
     const r = await fetch('<?= URL_ADMIN ?>/api/tienda_estado.php', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ accion:'toggle' })
+        body: JSON.stringify({ accion:'set_modo', modo, mensaje })
     });
     const d = await r.json();
-    _tiendaAbierta = d.abierta;
-    _tiendaMensaje = d.mensaje;
+    if (!d.ok) {
+        if (typeof Swal !== 'undefined') Swal.fire({ icon:'warning', title:'Error', text: d.msg, confirmButtonColor:'#c88e99' });
+        return;
+    }
+    _tiendaModo      = d.modo        ?? modo;
+    _tiendaModoConf  = d.modo_config ?? modo;
+    _tiendaMensaje   = d.mensaje     ?? mensaje;
+    _tiendaEnHorario = d.en_horario  ?? _tiendaEnHorario;
     tiendaRenderBtn();
-
-    if (usaSwal) {
+    if (typeof Swal !== 'undefined') {
+        const labels = { abierta:'Tienda abierta ✅', solo_vista:'Cerrado para pedidos 👁️', cerrada:'Tienda cerrada ⛔' };
         Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2500,
-            icon: d.abierta ? 'success' : 'warning',
-            title: d.abierta ? 'Tienda abierta ✅' : 'Tienda cerrada ⛔' });
-    } else {
-        alert(d.abierta ? 'Tienda abierta ✅' : 'Tienda cerrada ⛔');
+            icon: _tiendaModo === 'abierta' ? 'success' : 'warning',
+            title: labels[_tiendaModo] ?? 'Listo' });
     }
 }
 

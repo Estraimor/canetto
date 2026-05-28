@@ -8,6 +8,29 @@ $pdo = Conexion::conectar();
 
 if (!$id) { header('Location: index.php'); exit; }
 
+// Verificar modo de la tienda
+try {
+    $_cfgRows = $pdo->query("SELECT clave, valor FROM configuracion_tienda")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $_modo    = $_cfgRows['tienda_modo'] ?? 'abierta';
+    $_horActivo = ($_cfgRows['horario_activado'] ?? '0') === '1';
+    if ($_horActivo) {
+        $_tz  = new DateTimeZone('America/Argentina/Buenos_Aires');
+        $_now = new DateTime('now', $_tz);
+        $_min = (int)$_now->format('H')*60+(int)$_now->format('i');
+        [$_ha,$_ma] = explode(':', $_cfgRows['horario_apertura'] ?? '09:00');
+        [$_hc,$_mc] = explode(':', $_cfgRows['horario_cierre']   ?? '21:00');
+        $_enH = ($_min>=(int)$_ha*60+(int)$_ma && $_min<(int)$_hc*60+(int)$_mc);
+        $_forzado = ($_cfgRows['horario_forzado_cerrado'] ?? '0') === '1';
+        $_modoEfectivo = ($_enH && !$_forzado) ? $_modo : 'cerrada';
+    } else {
+        $_modoEfectivo = $_modo;
+    }
+    $tiendaAceptaPedidos = $_modoEfectivo === 'abierta';
+} catch (Throwable $_e) {
+    $tiendaAceptaPedidos = true;
+    $_modoEfectivo = 'abierta';
+}
+
 $stmt = $pdo->prepare("
     SELECT p.idproductos, p.nombre, p.precio, p.tipo, p.imagen,
            COALESCE(p.descripcion,'') AS descripcion,
@@ -1020,10 +1043,15 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
 
       <!-- Botón desktop -->
       <button class="det-btn-desktop" id="btnAddDetDesk"
-        <?= $stock <= 0 ? 'disabled' : '' ?>
+        <?= ($stock <= 0 || !$tiendaAceptaPedidos) ? 'disabled' : '' ?>
         onclick="agregarAlCarrito()">
-        <i class="fa-solid fa-cart-plus" style="margin-right:8px"></i>
-        <?= $stock <= 0 ? 'Sin stock disponible' : 'Agregar al carrito' ?>
+        <?php if (!$tiendaAceptaPedidos): ?>
+          <i class="fa-solid fa-ban" style="margin-right:8px"></i>Pedidos no disponibles
+        <?php elseif ($stock <= 0): ?>
+          Sin stock disponible
+        <?php else: ?>
+          <i class="fa-solid fa-cart-plus" style="margin-right:8px"></i>Agregar al carrito
+        <?php endif; ?>
       </button>
 
       <a href="index.php" class="det-btn-back">
@@ -1060,8 +1088,12 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
           <span class="det-add-qty-num" id="qtyValMob">1</span>
           <span class="det-add-qty-btn" onclick="event.stopPropagation();cambiarQty(1)">+</span>
         </span>
-        <span class="btn-add-label" onclick="agregarAlCarrito()">Agregar</span>
-        <span class="btn-add-price" id="ctaPrice" onclick="agregarAlCarrito()">$<?= number_format($precioFinal, 0, ',', '.') ?></span>
+        <?php if (!$tiendaAceptaPedidos): ?>
+          <span class="btn-add-label">Pedidos no disponibles</span>
+        <?php else: ?>
+          <span class="btn-add-label" onclick="agregarAlCarrito()">Agregar</span>
+          <span class="btn-add-price" id="ctaPrice" onclick="agregarAlCarrito()">$<?= number_format($precioFinal, 0, ',', '.') ?></span>
+        <?php endif; ?>
       <?php else: ?>
         <span class="btn-add-label">Sin stock disponible</span>
       <?php endif; ?>
@@ -1079,6 +1111,7 @@ const PROD_TIPO  = <?= json_encode($prod['tipo']) ?>;
 const PROD_STOCK = <?= (int)$stock ?>;
 const PROD_IMAGEN= <?= json_encode($imgPrincipal) ?>;
 const CLIENTE_PHP= <?= json_encode($cliente_id ? ['id'=>$cliente_id] : null) ?>;
+const TIENDA_ACEPTA_PEDIDOS = <?= $tiendaAceptaPedidos ? 'true' : 'false' ?>;
 
 const CK      = CLIENTE_PHP ? 'canetto_cart_' + CLIENTE_PHP.id : 'canetto_cart_guest';
 const getCart = () => { try { return JSON.parse(localStorage.getItem(CK)||'[]'); } catch { return []; } };
@@ -1168,6 +1201,10 @@ function actualizarPrecioBtn() {
 }
 
 function agregarAlCarrito(){
+  if(!TIENDA_ACEPTA_PEDIDOS){
+    Swal.fire({icon:'info',title:'Tienda cerrada para pedidos',text:'Podés ver los productos, pero los pedidos no están disponibles por el momento.',confirmButtonColor:'#c88e99'});
+    return;
+  }
   if(!CLIENTE_PHP){
     Swal.fire({
       icon:'info', title:'Iniciá sesión',
