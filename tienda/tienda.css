@@ -745,44 +745,53 @@ body.page-exit #page-wrap {
 }
 .cart-drawer {
   position: fixed;
-  top: 0;
-  right: -110%;
-  width: min(100%, 420px);
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
 
-  height: 100svh; /* 🔥 CLAVE PARA CELULARES */
-
-  background: #fff;
+  background: #f7f8fa;
   z-index: 300;
 
   display: flex;
   flex-direction: column;
 
-  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
 
   overflow: hidden;
 }
-
-.cart-drawer {
-  height: 100vh; /* fallback */
-  height: 100svh; /* 🔥 override moderno */
-}
 .cart-drawer.on {
-  right: 0;
+  transform: translateY(0);
 }
 .cart-dhead {
-  padding: 16px 18px;
+  padding: 14px 18px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   flex-shrink: 0;
+  background: #fff;
+}
+.cart-back-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #1e293b;
+  line-height: 1;
+  padding: 0 4px 0 0;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.cart-dhead-title {
+  flex: 1;
 }
 .cart-dhead-title {
   font-family: "Speedee", sans-serif;
   font-size: 18px;
   font-weight: 700;
+  flex: 1;
 }
 .cart-count-tag {
   background: var(--pk-lt);
@@ -815,10 +824,10 @@ body.page-exit #page-wrap {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 16px;
+  padding: 0 0 8px;
   -webkit-overflow-scrolling: touch;
-  min-height:0;
-  justify-content: flex-start;
+  min-height: 0;
+  background: #f7f8fa;
 }
 
 
@@ -829,6 +838,7 @@ body.page-exit #page-wrap {
 @supports (-webkit-touch-callout: none) {
   .cart-drawer {
     height: -webkit-fill-available;
+    height: 100svh;
   }
 }
 .cart-empty {
@@ -846,9 +856,10 @@ body.page-exit #page-wrap {
 .cart-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f3f3f3;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  margin: 0 0 1px;
 }
 .cart-item-ic {
   width: 44px;
@@ -919,7 +930,8 @@ body.page-exit #page-wrap {
   text-align: center;
 }
 .cart-dfooter {
-  padding: 12px 16px 16px;
+  padding: 14px 16px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
   border-top: 1px solid #f0f0f0;
   flex-shrink: 0;
   background: #fff;
@@ -1034,17 +1046,19 @@ body.page-exit #page-wrap {
   }
 }
 .modal-hd {
-  padding: 18px 20px 14px;
+  padding: 16px 20px 14px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  gap: 8px;
 }
 .modal-title {
   font-family: "Speedee", sans-serif;
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
+  flex: 1;
 }
 .modal-body {
   overflow-y: auto;
@@ -2893,8 +2907,9 @@ body.has-bottom-nav {
   .modal-bg     { align-items: center; }
   .modal-sheet  { border-radius: 28px !important; max-width: 600px; max-height: 88vh; }
 
-  /* ═══ CART DRAWER — más ancho ═══ */
-  .cart-drawer { width: 500px; }
+  /* ═══ CART PAGE — centrado en desktop ═══ */
+  .cart-drawer { max-width: 560px; left: 50%; transform: translateX(-50%) translateY(100%); right: auto; }
+  .cart-drawer.on { transform: translateX(-50%) translateY(0); }
 
   /* ═══ TOAST ═══ */
   .toast { bottom: 36px; font-size: 14px; padding: 13px 24px; }
@@ -2912,3 +2927,147 @@ body.has-bottom-nav {
   .t-cat-bar-inner{ max-width: 1100px; }
   .branch-grid    { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ══════════════════════════════════════════════════════════
+   CHECKOUT REDISEÑADO (estilo McDonald's)
+══════════════════════════════════════════════════════════ */
+
+/* Modal header con botón volver */
+.modal-hd-back {
+  background: none; border: none; cursor: pointer;
+  font-size: 22px; color: #374151; padding: 0 8px 0 0;
+  display: flex; align-items: center; line-height: 1;
+}
+.modal-hd-back:hover { color: #c88e99; }
+
+/* Toggle retiro / envío — pill style */
+.ckd-entrega-tabs {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden;
+}
+.ckd-tab {
+  flex: 1; padding: 11px 8px; background: #fff; border: none;
+  font-size: 13px; font-weight: 700; color: #64748b;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.ckd-tab.on {
+  background: #1e293b; color: #fff;
+}
+.ckd-tab:first-child { border-radius: 0; }
+.ckd-tab:last-child  { border-left: 1.5px solid #e2e8f0; }
+.ckd-tab.on + .ckd-tab { border-left-color: #1e293b; }
+
+/* Sección genérica */
+.ckd-sec { margin-bottom: 20px; }
+.ckd-sec-title {
+  font-size: 15px; font-weight: 800; color: #1e293b;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.ckd-sec-title i { color: #c88e99; }
+
+/* Select estilo flat */
+.ckd-select {
+  width: 100%; padding: 13px 14px;
+  border: 1.5px solid #e2e8f0; border-radius: 12px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  background: #f8fafc; outline: none; color: #1e293b;
+  cursor: pointer; transition: border-color .15s;
+}
+.ckd-select:focus { border-color: #c88e99; }
+
+/* Método de pago — grid 2 columnas */
+.ckd-pago-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.ckd-pago-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 16px 10px;
+  border: 2px solid #e2e8f0; border-radius: 14px;
+  background: #fff; cursor: pointer; font-family: inherit;
+  transition: all .15s; text-align: center;
+}
+.ckd-pago-card:hover:not(:disabled) {
+  border-color: #c88e99; background: #fdf0f3;
+}
+.ckd-pago-card.on {
+  border-color: #1e293b; background: #f8fafc;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+.ckd-pago-card:disabled { opacity: .45; cursor: default; }
+.ckd-pago-card-ic {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: #f1f5f9; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.ckd-pago-card.on .ckd-pago-card-ic { background: #e2e8f0; }
+.ckd-pago-card-lbl {
+  font-size: 13px; font-weight: 700; color: #1e293b; line-height: 1.2;
+}
+.ckd-pago-card-sub {
+  font-size: 10px; color: #94a3b8; font-weight: 500; line-height: 1.3;
+}
+.ckd-pago-prox-tag {
+  font-size: 9px; font-weight: 800; background: #fef9c3; color: #a16207;
+  padding: 2px 6px; border-radius: 8px; margin-top: 2px;
+}
+
+/* Cupón — row flat */
+.ckd-cupon-row {
+  display: flex; gap: 8px; align-items: stretch;
+}
+.ckd-cupon-row input {
+  flex: 1; padding: 12px 14px;
+  border: 1.5px solid #e2e8f0; border-radius: 12px;
+  font-size: 14px; font-family: inherit; outline: none;
+  background: #f8fafc; text-transform: uppercase;
+  transition: border-color .15s;
+}
+.ckd-cupon-row input:focus { border-color: #c88e99; }
+.ckd-cupon-row button {
+  padding: 0 18px; background: #1e293b; color: #fff;
+  border: none; border-radius: 12px; font-size: 13px;
+  font-weight: 700; cursor: pointer; font-family: inherit;
+  white-space: nowrap; transition: background .15s;
+}
+.ckd-cupon-row button:hover { background: #0f172a; }
+
+/* Observación textarea flat */
+.ckd-obs {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid #e2e8f0; border-radius: 12px;
+  font-size: 14px; font-family: inherit; resize: none; outline: none;
+  background: #f8fafc; color: #1e293b;
+  transition: border-color .15s;
+}
+.ckd-obs:focus { border-color: #c88e99; }
+
+/* Footer pegado al fondo del modal (flex child de modal-sheet) */
+.ckd-footer {
+  background: #fff;
+  border-top: 1.5px solid #f0f0f0;
+  padding: 12px 20px;
+  padding-bottom: max(16px, calc(12px + env(safe-area-inset-bottom, 0px)));
+  display: none; gap: 12px; align-items: center;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.06);
+  flex-shrink: 0;
+}
+.ckd-footer.on { display: flex; }
+.ckd-footer-total {
+  display: flex; flex-direction: column;
+}
+.ckd-footer-total-lbl {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; color: #94a3b8;
+}
+.ckd-footer-total-amt {
+  font-size: 18px; font-weight: 900; color: #1e293b;
+}
+.ckd-btn-pagar {
+  flex: 1; padding: 14px; border: none; border-radius: 14px;
+  background: #c88e99; color: #fff;
+  font-size: 15px; font-weight: 800; cursor: pointer;
+  font-family: inherit; transition: background .15s; letter-spacing: .3px;
+}
+.ckd-btn-pagar:hover { background: #b07887; }
+.ckd-btn-pagar:disabled { background: #ccc; cursor: default; }

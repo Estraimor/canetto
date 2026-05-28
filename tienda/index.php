@@ -14,6 +14,7 @@ try {
         'horario_apertura'        => '09:00',
         'horario_cierre'          => '21:00',
         'horario_forzado_cerrado' => '0',
+        'tarifa_servicio'         => '0',
     ], $_rows);
 
     $_modoConfig = $_cfg['tienda_modo'];
@@ -401,6 +402,58 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   padding:2px 7px;border-radius:10px;
   border:1px solid #f9dde3;
 }
+/* Cart item edit button */
+.cart-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
+.cart-item-edit{font-size:11px;font-weight:700;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0;white-space:nowrap;flex-shrink:0;margin-top:1px}
+/* Cart item price breakdown */
+.cart-item-price-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;margin-top:3px}
+.cart-item-price-base{font-size:12px;color:#94a3b8;font-weight:600}
+.cart-item-price-extras{font-size:11px;color:#c88e99;font-weight:700;background:#fdf0f3;padding:1px 6px;border-radius:8px}
+.cart-item-price{font-size:13px;font-weight:800;color:#1e293b;font-family:"Speedee",sans-serif}
+/* Cart free shipping banner */
+.cart-free-ship{display:none;margin:0;background:#e8f5e9;padding:10px 16px;font-size:13px;font-weight:700;color:#2e7d32;align-items:center;gap:8px;border-bottom:1px solid #c8e6c9}
+.cart-free-ship.on{display:flex}
+/* Propina section */
+.propina-wrap{margin-bottom:12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px}
+.propina-title{font-size:14px;font-weight:800;color:#1e293b;margin-bottom:2px}
+.propina-sub{font-size:11px;color:#94a3b8;margin-bottom:10px}
+.propina-btns{display:flex;flex-wrap:wrap;gap:8px}
+.propina-btn{padding:7px 14px;border:2px solid #e2e8f0;border-radius:20px;background:#fff;font-size:13px;font-weight:700;color:#374151;cursor:pointer;transition:all .15s}
+.propina-btn.on{border-color:#3b82f6;background:#eff6ff;color:#3b82f6}
+.propina-btn-otra{border-style:dashed}
+.propina-custom-wrap{margin-top:10px;display:none}
+.propina-custom-wrap.on{display:block}
+.propina-custom-wrap input{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;outline:none}
+/* Resumen pedido estilo McD */
+.ck-resumen-box{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:12px}
+.ck-resumen-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:10px}
+.ck-resumen-row{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#374151;margin-bottom:6px}
+.ck-resumen-row:last-child{margin-bottom:0}
+.ck-resumen-total{font-size:17px;font-weight:900;color:#1e293b;border-top:1.5px solid #e2e8f0;margin-top:8px;padding-top:8px}
+.ck-badge-gratis{background:#dcfce7;color:#15803d;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px}
+/* Topping edit modal — Dips style */
+.tp-edit-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;opacity:0;transition:opacity .25s}
+.tp-edit-modal.on{pointer-events:all;opacity:1}
+.tp-edit-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.tp-edit-sheet{position:relative;background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1)}
+.tp-edit-modal.on .tp-edit-sheet{transform:none}
+.tp-edit-hd{display:flex;align-items:center;gap:10px;padding:16px 18px 0;flex-shrink:0}
+.tp-edit-title{font-size:17px;font-weight:900;color:#1e293b;flex:1}
+.tp-edit-subtitle{font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;padding:6px 18px 10px;flex-shrink:0;border-bottom:1px solid #f0f0f0}
+.tp-edit-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 4px}
+.dips-row{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #f3f3f3}
+.dips-row:last-child{border-bottom:none}
+.dips-row-nostock{opacity:.45;pointer-events:none}
+.dips-row-info{flex:1;min-width:0}
+.dips-row-name{font-size:14px;font-weight:600;color:#1e293b}
+.dips-row-price{font-size:12px;font-weight:700;color:#c88e99;margin-top:2px}
+.dips-qty{display:flex;align-items:center;gap:0;flex-shrink:0}
+.dips-qty-btn{width:32px;height:32px;border-radius:50%;border:2px solid #e2e8f0;background:#fff;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1e293b;transition:all .15s;-webkit-tap-highlight-color:transparent;line-height:1}
+.dips-qty-btn:active{background:#f0f0f0}
+.dips-qty-btn.active{border-color:#c88e99;color:#c88e99}
+.dips-qty-num{font-size:15px;font-weight:800;min-width:28px;text-align:center;color:#1e293b}
+.dips-qty-num.zero{color:#ccc}
+.tp-edit-foot{padding:14px 18px;padding-bottom:max(14px,env(safe-area-inset-bottom));border-top:1px solid #f0f0f0;flex-shrink:0;background:#fff}
 /* Sobre nosotros */
 .sn-row{
   display:flex;align-items:center;gap:14px;padding:16px 18px;
@@ -855,7 +908,7 @@ window.TIENDA_MODO = <?= json_encode($_modoEfectivo ?? 'abierta') ?>;
 // Ocultar todos los elementos del carrito si no acepta pedidos
 if (window.TIENDA_ACEPTA_PEDIDOS === false) {
     document.addEventListener('DOMContentLoaded', () => {
-        ['fabCart', 'btnOpenCart', 'cartDrawer', 'cartOverlay'].forEach(id => {
+        ['fabCart', 'btnOpenCart', 'cartDrawer'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
@@ -869,13 +922,15 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
 }
 </script>
 
-<!-- ── CART DRAWER ─────────────── -->
-<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<!-- ── CART PAGE ─────────────── -->
 <aside class="cart-drawer" id="cartDrawer">
   <div class="cart-dhead">
-    <span class="cart-dhead-title">Mi Carrito</span>
+    <button class="cart-back-btn" onclick="closeCart()" aria-label="Volver">‹</button>
+    <span class="cart-dhead-title">Mi pedido</span>
     <span class="cart-count-tag" id="cartCountTag">0 items</span>
-    <button class="btn-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-free-ship" id="cartFreeShipBanner">
+    <i class="fa-solid fa-motorcycle"></i> ¡Ya tenés envío gratis!
   </div>
   <div class="cart-items-wrap" id="cartItemsWrap"></div>
   <div class="cart-dfooter">
@@ -883,10 +938,26 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
       <span class="cart-total-lbl">Total</span>
       <span class="cart-total-amt" id="cartTotal">$0</span>
     </div>
-    <button class="btn-checkout" onclick="openCheckout()">Finalizar pedido →</button>
-    <button class="btn-clear" onclick="clearCartConfirm()">Vaciar carrito</button>
+    <button class="btn-checkout" onclick="openCheckout()">Siguiente</button>
+    <button class="btn-clear" onclick="closeCart()">Seguir pidiendo</button>
   </div>
 </aside>
+
+<!-- ── TOPPING EDIT MODAL ─────────── -->
+<div class="tp-edit-modal" id="tpEditModal" onclick="if(event.target===this||event.target.classList.contains('tp-edit-overlay'))cerrarTpEdit()">
+  <div class="tp-edit-overlay"></div>
+  <div class="tp-edit-sheet">
+    <div class="tp-edit-hd">
+      <span class="tp-edit-title" id="tpEditTitle">Personalizar</span>
+      <button class="btn-close" onclick="cerrarTpEdit()">✕</button>
+    </div>
+    <div class="tp-edit-subtitle" id="tpEditSubtitle">Extras</div>
+    <div class="tp-edit-list" id="tpEditList"></div>
+    <div class="tp-edit-foot">
+      <button class="btn-pk" style="width:100%" onclick="guardarTpEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── BOX BUILDER MODAL ────────── -->
 <div class="modal-bg" id="boxModal">
@@ -931,10 +1002,11 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
 <div class="modal-bg" id="checkoutModal">
   <div class="modal-sheet">
     <div class="modal-hd">
-      <span class="modal-title">Finalizar pedido</span>
-      <button class="btn-close" onclick="closeCheckout()">✕</button>
+      <button class="modal-hd-back" id="ckHdBack" onclick="backToAuth()" style="display:none">‹</button>
+      <span class="modal-title" id="ckHdTitle">Finalizar pedido</span>
+      <button class="btn-close" id="ckHdClose" onclick="closeCheckout()">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" id="ckModalBody">
 
       <!-- Paso A: quién sos -->
       <div class="ck-step" id="ckAuth">
@@ -976,206 +1048,186 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
         </div>
       </div>
 
-      <!-- Paso B: detalles -->
+      <!-- Paso B: Detalle del pago -->
       <div class="ck-step" id="ckDetails">
-        <div class="ck-summary" id="ckSummary"></div>
 
-        <!-- Entrega (colapsable) -->
-        <div class="fg" id="wrapEntregaCollapse" style="margin-bottom:8px">
-          <button type="button" class="ck-collapse-toggle open" onclick="toggleCkSection('wrapEntregaCollapse','bodyEntrega')" id="toggleEntrega">
-            <span id="labelEntrega"><i class="fa-solid fa-store" style="margin-right:7px"></i>🏪 Retiro</span>
-            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
+        <!-- Toggle retiro / envío -->
+        <div class="ckd-entrega-tabs">
+          <button type="button" class="ckd-tab on" id="btnRetiro" onclick="setEntrega('retiro')">
+            <i class="fa-solid fa-store"></i> Retiro
           </button>
-          <div class="ck-collapse-body" id="bodyEntrega" style="display:block">
+          <button type="button" class="ckd-tab" id="btnEnvio" onclick="setEntrega('envio')">
+            <i class="fa-solid fa-motorcycle"></i> Envío a domicilio
+          </button>
+        </div>
 
-            <!-- Toggle retiro / envío -->
-            <div class="ck-entrega-toggle" style="margin-bottom:10px">
-              <div class="ck-toggle-row">
-                <button type="button" class="ck-toggle-btn on" id="btnRetiro" onclick="setEntrega('retiro')">
-                  🏪 Retiro
-                </button>
-                <button type="button" class="ck-toggle-btn" id="btnEnvio" onclick="setEntrega('envio')">
-                  🛵 Envío a domicilio
-                </button>
+        <!-- Sección: Retirar en (retiro) -->
+        <div class="ckd-sec" id="wrapSucursal">
+          <div class="ckd-sec-title"><i class="fa-solid fa-store"></i> Retirar en</div>
+          <select id="ckSuc" class="ckd-select">
+            <option value="">— Elegí una sucursal —</option>
+            <?php foreach ($sucursales as $s): ?>
+            <option value="<?= $s['idsucursal'] ?>"><?= htmlspecialchars($s['nombre']) ?><?= $s['ciudad'] ? ' — '.htmlspecialchars($s['ciudad']) : '' ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- Sección: Enviar a (envío) -->
+        <div class="ckd-sec" id="wrapEnvio" style="display:none">
+          <div class="ckd-sec-title"><i class="fa-solid fa-location-dot"></i> Enviar a</div>
+
+          <?php if ($cliente_id): ?>
+          <div id="dirsGuardadasWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px"></div>
+          <?php endif; ?>
+
+          <div id="nuevaDirSection" class="nueva-dir-section" style="display:none">
+            <div class="dir-ac-wrap">
+              <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234" autocomplete="off">
+              <div id="ckDirSuggestions" class="dir-suggestions" style="display:none"></div>
+            </div>
+            <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
+              📍 Usar mi ubicación actual
+            </button>
+            <?php if ($cliente_id): ?>
+            <button type="button" class="btn-geo" id="btnGuardarDir" onclick="guardarDireccionActual()" style="display:none;background:#f0fdf4;border-color:#bbf7d0;color:#15803d">
+              💾 Guardar esta dirección
+            </button>
+            <?php endif; ?>
+          </div>
+
+          <input type="hidden" id="ckLat">
+          <input type="hidden" id="ckLng">
+          <div id="geoStatus" style="font-size:12px;color:#64748b;margin-top:4px"></div>
+
+          <button type="button" id="btnAbrirMapa" onclick="toggleMapa()" style="display:none;margin-top:8px;width:100%;padding:9px 14px;background:#f0f4ff;border:1.5px solid #bfdbfe;border-radius:12px;font-size:13px;font-weight:600;color:#3b82f6;cursor:pointer;text-align:center;transition:background .15s">
+            🗺️ Ver ubicación en el mapa
+          </button>
+          <div id="ckMapaWrap">
+            <div id="ckMapa"></div>
+          </div>
+
+          <!-- Costo de envío -->
+          <div id="envioEstimate" style="display:none;margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc">
+              <div style="width:36px;height:36px;background:#dbeafe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="fa-solid fa-motorcycle" style="color:#3b82f6;font-size:15px"></i>
               </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:2px">Costo de envío</div>
+                <div id="envioEstimateTxt" style="font-size:14px;font-weight:700;color:#1e293b"></div>
+              </div>
+              <div id="envioEstimatePrice" style="font-size:18px;font-weight:800;color:#3b82f6;font-family:'Speedee',sans-serif;flex-shrink:0"></div>
             </div>
+          </div>
+        </div>
 
-            <!-- Sucursal (solo retiro) -->
-            <div id="wrapSucursal">
-              <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Sucursal de retiro<?php if (!empty($sucursales)): ?> *<?php endif; ?></label>
-              <select id="ckSuc" style="width:100%;padding:11px 13px;border:1.5px solid #eee;border-radius:10px;font-family:inherit;font-size:14px;background:#fff;outline:none">
-                <option value="">— Elegí una sucursal —</option>
-                <?php foreach ($sucursales as $s): ?>
-                <option value="<?= $s['idsucursal'] ?>"><?= htmlspecialchars($s['nombre']) ?><?= $s['ciudad'] ? ' — '.htmlspecialchars($s['ciudad']) : '' ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <!-- Dirección (solo envío) -->
-            <div id="wrapEnvio" style="display:none;margin-top:10px">
-              <label style="display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Tu dirección de entrega *</label>
-
-              <?php if ($cliente_id): ?>
-              <!-- Cards de direcciones guardadas -->
-              <div id="dirsGuardadasWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px"></div>
-              <?php endif; ?>
-
-              <!-- Input manual (oculto por defecto si hay dirs guardadas) -->
-              <div id="nuevaDirSection" class="nueva-dir-section" style="display:none">
-                <div class="dir-ac-wrap">
-                  <input type="text" id="ckDireccion" placeholder="Ej: Corrientes 1234, CABA" autocomplete="off">
-                  <div id="ckDirSuggestions" class="dir-suggestions" style="display:none"></div>
-                </div>
-                <button type="button" class="btn-geo" id="btnGeo" onclick="usarMiUbicacion()">
-                  📍 Usar mi ubicación actual
-                </button>
-                <?php if ($cliente_id): ?>
-                <button type="button" class="btn-geo" id="btnGuardarDir" onclick="guardarDireccionActual()" style="display:none;background:#f0fdf4;border-color:#bbf7d0;color:#15803d">
-                  💾 Guardar esta dirección
-                </button>
+        <!-- Sección: Método de pago -->
+        <div class="ckd-sec">
+          <div class="ckd-sec-title"><i class="fa-solid fa-credit-card"></i> Método de pago</div>
+          <input type="hidden" id="ckMetodoId">
+          <div class="ckd-pago-grid" id="ckPagoGrid">
+            <?php foreach ($metodos_pago as $m):
+              $nLow      = strtolower($m['nombre']);
+              $esMP    = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
+              $esTrans = str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
+              $esTarjeta = !$esMP && !$esTrans && (str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito'));
+            ?>
+            <button type="button"
+              class="ckd-pago-card<?= $esTarjeta ? ' disabled' : '' ?>"
+              <?= $esTarjeta ? 'disabled' : '' ?>
+              onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false' ?>,<?= $esTrans?'true':'false' ?>)">
+              <div class="ckd-pago-card-ic">
+                <?php if ($esMP): ?>
+                  <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="24" width="48">
+                    <rect width="56" height="28" rx="5" fill="#009EE3"/>
+                    <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
+                  </svg>
+                <?php elseif ($esTrans): ?>
+                  <i class="fa-solid fa-building-columns" style="font-size:20px;color:#5b6470"></i>
+                <?php elseif ($esTarjeta): ?>
+                  <i class="fa-solid fa-credit-card" style="font-size:20px;color:#94a3b8"></i>
+                <?php elseif (str_contains($nLow,'efectivo')||str_contains($nLow,'cash')): ?>
+                  <i class="fa-solid fa-money-bill-wave" style="font-size:20px;color:#22c55e"></i>
+                <?php else: ?>
+                  <i class="fa-solid fa-coins" style="font-size:20px;color:#f59e0b"></i>
                 <?php endif; ?>
               </div>
-
-              <input type="hidden" id="ckLat">
-              <input type="hidden" id="ckLng">
-              <div id="geoStatus"></div>
-              <button type="button" id="btnAbrirMapa" onclick="toggleMapa()" style="display:none;margin-top:8px;width:100%;padding:9px 14px;background:#f0f4ff;border:1.5px solid #bfdbfe;border-radius:10px;font-size:13px;font-weight:600;color:#3b82f6;cursor:pointer;text-align:center;transition:background .15s">
-                🗺️ Ver ubicación en el mapa
-              </button>
-              <div id="ckMapaWrap">
-                <div id="ckMapa"></div>
-              </div>
-              <div id="envioEstimate" style="display:none;margin-top:10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0">
-                <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc">
-                  <div style="width:36px;height:36px;background:#dbeafe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                    <i class="fa-solid fa-motorcycle" style="color:#3b82f6;font-size:15px"></i>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;margin-bottom:2px">Costo de envío</div>
-                    <div id="envioEstimateTxt" style="font-size:14px;font-weight:700;color:#1e293b"></div>
-                  </div>
-                  <div id="envioEstimatePrice" style="font-size:18px;font-weight:800;color:#3b82f6;font-family:'Speedee',sans-serif;flex-shrink:0"></div>
-                </div>
-              </div>
-            </div>
-
-            <button type="button" onclick="continuarDesdeEntrega()" style="width:100%;margin-top:12px;padding:10px;background:#c88e99;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s" onmouseover="this.style.background='#b07887'" onmouseout="this.style.background='#c88e99'">
-              Continuar →
+              <div class="ckd-pago-card-lbl"><?= htmlspecialchars($m['nombre']) ?></div>
+              <?php if ($esMP): ?><div class="ckd-pago-card-sub">Tarjeta · débito · efectivo</div><?php endif; ?>
+              <?php if ($esTrans): ?><div class="ckd-pago-card-sub">CBU / Alias</div><?php endif; ?>
+              <?php if ($esTarjeta): ?><div class="ckd-pago-prox-tag">Próximamente</div><?php endif; ?>
             </button>
-
-          </div><!-- /bodyEntrega -->
-        </div><!-- /wrapEntregaCollapse -->
-
-        <!-- Método de pago (colapsable) -->
-        <div class="fg" id="wrapPagoCollapse" style="margin-bottom:8px">
-          <input type="hidden" id="ckMetodoId">
-          <button type="button" class="ck-collapse-toggle" onclick="toggleCkSection('wrapPagoCollapse','bodyPago')" id="togglePago">
-            <span id="labelPago"><i class="fa-solid fa-credit-card" style="margin-right:7px"></i>Seleccionar método de pago</span>
-            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
-          </button>
-          <div class="ck-collapse-body" id="bodyPago" style="display:none">
-            <div class="ck-pago-grid" id="ckPagoGrid" style="margin-bottom:0">
-              <?php foreach ($metodos_pago as $m):
-                $nLow      = strtolower($m['nombre']);
-                $esMP    = str_contains($nLow,'mercado') || str_contains($nLow,'mercadopago');
-                $esTrans = str_contains($nLow,'transfer') || str_contains($nLow,'deposito') || str_contains($nLow,'depósito');
-                $esTarjeta = !$esMP && !$esTrans && (str_contains($nLow,'tarjeta') || str_contains($nLow,'credito') || str_contains($nLow,'debito'));
-              ?>
-              <button type="button"
-                class="ck-pago-card<?= $esTarjeta ? ' prox' : '' ?>"
-                <?= $esTarjeta ? 'disabled' : '' ?>
-                onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false' ?>,<?= $esTrans?'true':'false' ?>)">
-                <div class="ck-pago-ic">
-                  <?php if ($esMP): ?>
-                    <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="26" width="52">
-                      <rect width="56" height="28" rx="5" fill="#009EE3"/>
-                      <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
-                    </svg>
-                  <?php elseif ($esTrans): ?>
-                    <i class="fa-solid fa-building-columns" style="font-size:22px;color:#5b6470"></i>
-                  <?php elseif ($esTarjeta): ?>
-                    <i class="fa-solid fa-credit-card" style="font-size:20px;color:#94a3b8"></i>
-                  <?php elseif (str_contains($nLow,'efectivo')||str_contains($nLow,'cash')): ?>
-                    <i class="fa-solid fa-money-bill-wave" style="font-size:20px;color:#22c55e"></i>
-                  <?php else: ?>
-                    <i class="fa-solid fa-coins" style="font-size:20px;color:#f59e0b"></i>
-                  <?php endif; ?>
-                </div>
-                <div class="ck-pago-info">
-                  <div class="ck-pago-label"><?= htmlspecialchars($m['nombre']) ?></div>
-                  <?php if ($esMP): ?><div class="ck-pago-sub">Pago seguro · Tarjeta, débito, efectivo</div><?php endif; ?>
-                  <?php if ($esTrans): ?><div class="ck-pago-sub">CBU / Alias · Acreditación 24-72 hs</div><?php endif; ?>
-                  <?php if ($esTarjeta): ?><div class="ck-pago-sub">Disponible próximamente</div><?php endif; ?>
-                </div>
-                <?php if ($esTarjeta): ?><span class="ck-pago-prox">Próximamente</span><?php endif; ?>
-              </button>
-              <?php endforeach; ?>
-            </div>
-            <!-- Panel datos bancarios (transferencia) -->
-            <div id="transferPanel" style="display:none;margin-top:8px">
-              <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden">
-                <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e2e8f0">
-                  <div style="width:32px;height:32px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                    <i class="fa-solid fa-building-columns" style="color:#3b82f6;font-size:14px"></i>
-                  </div>
-                  <div>
-                    <div style="font-size:13px;font-weight:800;color:#1e293b">Datos para transferencia</div>
-                    <div style="font-size:11px;color:#94a3b8;margin-top:1px">Copiá el CBU o alias y transferí el total</div>
-                  </div>
-                </div>
-                <div id="transferBody" style="padding:12px 16px;font-size:13px;color:#374151">
-                  <div style="text-align:center;padding:16px;color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
-                </div>
-              </div>
-            </div>
-          </div><!-- /bodyPago -->
-        </div><!-- /wrapPagoCollapse -->
-
-        <!-- Observaciones (colapsable) -->
-        <div class="fg" id="wrapObs" style="margin-bottom:8px">
-          <button type="button" class="ck-collapse-toggle" onclick="toggleCkSection('wrapObs','bodyObs')" id="toggleObs">
-            <span><i class="fa-solid fa-comment-dots" style="margin-right:7px"></i>Agregar observación</span>
-            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
-          </button>
-          <div class="ck-collapse-body" id="bodyObs" style="display:none">
-            <textarea id="ckObs" rows="2" placeholder="Ej: Sin gluten, para regalo..." style="border:none;padding:0;border-radius:0;font-size:14px;resize:none;outline:none;width:100%;background:transparent"></textarea>
+            <?php endforeach; ?>
           </div>
-        </div>
-
-        <!-- Cupón de descuento (colapsable) -->
-        <div class="fg cupon-wrap" id="wrapCupon" style="margin-bottom:8px">
-          <button type="button" class="ck-collapse-toggle" onclick="toggleCkSection('wrapCupon','bodyCupon')" id="toggleCupon">
-            <span><i class="fa-solid fa-tag" style="margin-right:7px"></i>¿Tenés un cupón de descuento?</span>
-            <i class="fa-solid fa-chevron-down ck-col-chev"></i>
-          </button>
-          <div class="ck-collapse-body" id="bodyCupon" style="display:none">
-            <div class="cupon-row" style="margin-bottom:4px">
-              <input type="text" id="ckCuponInput" placeholder="Ingresá tu código" autocomplete="off"
-                     style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-              <button type="button" class="btn-cupon-aplicar" id="btnAplicarCupon" onclick="aplicarCupon()">
-                Aplicar
-              </button>
-            </div>
-            <div id="cuponMsg" style="display:none;margin-top:6px;font-size:13px;font-weight:600"></div>
-            <div id="cuponResumen" style="display:none;margin-top:6px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:13px;color:#15803d;font-weight:600">
-                  <i class="fa-solid fa-tag" style="margin-right:5px"></i>
-                  <span id="cuponResumenLabel">Cupón aplicado</span>
-                </span>
-                <button type="button" onclick="quitarCupon()"
-                  style="background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;font-weight:700">
-                  ✕ Quitar
-                </button>
+          <!-- Panel datos bancarios (transferencia) -->
+          <div id="transferPanel" style="display:none;margin-top:12px">
+            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e2e8f0">
+                <div style="width:32px;height:32px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="fa-solid fa-building-columns" style="color:#3b82f6;font-size:14px"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:800;color:#1e293b">Datos para transferencia</div>
+                  <div style="font-size:11px;color:#94a3b8;margin-top:1px">Copiá el CBU o alias y transferí el total</div>
+                </div>
               </div>
-              <div style="font-size:18px;font-weight:800;color:#15803d;margin-top:4px" id="cuponDescuentoLabel"></div>
+              <div id="transferBody" style="padding:12px 16px;font-size:13px;color:#374151">
+                <div style="text-align:center;padding:16px;color:#aaa"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="ck-alert" id="dAlert"></div>
-        <button class="btn-pk" id="btnConfirm" onclick="confirmOrder()">Confirmar pedido ✓</button>
-        <button class="btn-sec" onclick="backToAuth()">← Volver</button>
+        <!-- Sección: Propina (solo envío) -->
+        <div class="ckd-sec" id="wrapPropina" style="display:none">
+          <div class="ckd-sec-title"><i class="fa-solid fa-hand-holding-heart"></i> Propina para tu repartidor</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Es voluntaria y la recibe como reconocimiento por su trabajo</div>
+          <div class="propina-btns" id="propinaBtns">
+            <button type="button" class="propina-btn" onclick="seleccionarPropina(700,this)">$700</button>
+            <button type="button" class="propina-btn" onclick="seleccionarPropina(1000,this)">$1.000</button>
+            <button type="button" class="propina-btn" onclick="seleccionarPropina(1200,this)">$1.200</button>
+            <button type="button" class="propina-btn propina-btn-otra" onclick="propinaCantidadCustom(this)">Otra cantidad ✏️</button>
+          </div>
+          <div class="propina-custom-wrap" id="propinaCustomWrap">
+            <input type="number" id="propinaCustomInput" placeholder="Ingresá el monto" min="0"
+              oninput="_propina=Math.max(0,+this.value)||0;buildSummary()">
+          </div>
+        </div>
+
+        <!-- Sección: Cupón -->
+        <div class="ckd-sec">
+          <div class="ckd-sec-title"><i class="fa-solid fa-tag"></i> ¿Tenés un cupón?</div>
+          <div class="ckd-cupon-row" style="margin-bottom:8px">
+            <input type="text" id="ckCuponInput" placeholder="Ingresá tu código" autocomplete="off"
+                   oninput="this.value=this.value.toUpperCase()">
+            <button type="button" id="btnAplicarCupon" onclick="aplicarCupon()">Aplicar</button>
+          </div>
+          <div id="cuponMsg" style="display:none;font-size:13px;font-weight:600;color:#dc2626"></div>
+          <div id="cuponResumen" style="display:none;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:#15803d;font-weight:700">
+                <i class="fa-solid fa-tag" style="margin-right:5px"></i>
+                <span id="cuponResumenLabel">Cupón aplicado</span>
+              </span>
+              <button type="button" onclick="quitarCupon()" style="background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;font-weight:700">✕ Quitar</button>
+            </div>
+            <div style="font-size:17px;font-weight:800;color:#15803d;margin-top:4px" id="cuponDescuentoLabel"></div>
+          </div>
+        </div>
+
+        <!-- Sección: Observación -->
+        <div class="ckd-sec">
+          <div class="ckd-sec-title"><i class="fa-solid fa-comment-dots"></i> Observación (opcional)</div>
+          <textarea id="ckObs" rows="2" class="ckd-obs" placeholder="Ej: Sin gluten, para regalo, tocar timbre..."></textarea>
+        </div>
+
+        <!-- Resumen del pedido -->
+        <div id="ckSummary"></div>
+
+        <div class="ck-alert" id="dAlert" style="margin-top:8px"></div>
+
+        <!-- Espacio para el footer fijo -->
+        <div style="height:80px"></div>
       </div>
 
       <!-- Paso C: éxito -->
@@ -1193,9 +1245,19 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
           <?php endif; ?>
         </div>
       </div>
+    </div><!-- /modal-body -->
+
+    <!-- Footer fijo: Total + Pagar (visible solo en ckDetails) -->
+    <div class="ckd-footer" id="ckdFooter">
+      <div class="ckd-footer-total">
+        <div class="ckd-footer-total-lbl">Total</div>
+        <div class="ckd-footer-total-amt" id="ckdFooterAmt">$0</div>
+      </div>
+      <button class="ckd-btn-pagar" id="btnConfirm" onclick="confirmOrder()">Pagar</button>
     </div>
-  </div>
-</div>
+
+  </div><!-- /modal-sheet -->
+</div><!-- /checkoutModal -->
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -1223,6 +1285,7 @@ window.SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
 window.CLIENTE_PHP = <?= json_encode($cliente_id ? ['id'=>$cliente_id,'nombre'=>$cliente_nombre] : null) ?>;
 window.BOX_CONTENIDO = <?= json_encode($boxContenido, JSON_UNESCAPED_UNICODE) ?>;
 window.DIRS_GUARDADAS = <?= json_encode($direcciones_guardadas, JSON_UNESCAPED_UNICODE) ?>;
+window.TARIFA_SERVICIO = <?= (int)($_cfg['tarifa_servicio'] ?? 0) ?>;
 
 // ── SWIPER ──────────────────────────────
 (function(){
@@ -1324,16 +1387,108 @@ function renderCart(){
     bar.classList.toggle('visible', n > 0);
   }
 
+  // Banner envío gratis
+  const fsBanner = document.getElementById('cartFreeShipBanner');
+  if(fsBanner) fsBanner.classList.toggle('on', _envioGratis);
+
   document.getElementById('cartCountTag').textContent=n+(n===1?' item':' items');
   document.getElementById('cartTotal').textContent=fmt(t);
   const w=document.getElementById('cartItemsWrap');
   if(!c.length){w.innerHTML='<div class="cart-empty"><div class="cart-empty-ic"><i class="fa-solid fa-cart-shopping"></i></div><div class="cart-empty-txt">Tu carrito está vacío</div></div>';return}
   w.innerHTML=c.map((it,idx)=>{
+    const base=precioBase(it);
+    const tpCosto=it.toppings&&it.toppings.length?it.toppings.reduce((s,t)=>s+t.precio,0):0;
     const tpHtml=it.toppings&&it.toppings.length
-      ?`<div class="cart-toppings">${it.toppings.map(t=>`<span class="cart-topping-tag">+ ${t.nombre}</span>`).join('')}</div>`:'';
-    return `<div class="cart-item">${thumbHtml(it)}<div class="cart-item-inf"><div class="cart-item-name">${it.nombre}</div>${tpHtml}<div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="updateQtyByIdx(${idx},-1)">−</button><span class="qty-num">${it.cantidad}</span><button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button></div></div>`;
+      ?`<div class="cart-toppings">${it.toppings.map(tp=>`<span class="cart-topping-tag">+ ${tp.nombre}</span>`).join('')}</div>`:'';
+    const editBtn=`<button class="cart-item-edit" onclick="abrirTpEdit(${idx})">Editar →</button>`;
+    const precioBaseHtml=`<span class="cart-item-price-base">${fmt(base)} × ${it.cantidad}</span>`;
+    const extrasHtml=tpCosto>0?`<span class="cart-item-price-extras">+ Extras ${fmt(tpCosto*it.cantidad)}</span>`:'';
+    const totalHtml=`<span class="cart-item-price">${fmt(it.precio*it.cantidad)}</span>`;
+    return `<div class="cart-item">
+      ${thumbHtml(it)}
+      <div class="cart-item-inf">
+        <div class="cart-item-top">
+          <div class="cart-item-name">${it.nombre}</div>
+          ${editBtn}
+        </div>
+        ${tpHtml}
+        <div class="cart-item-price-row">${precioBaseHtml}${extrasHtml}${totalHtml}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="updateQtyByIdx(${idx},-1)">−</button>
+        <span class="qty-num">${it.cantidad}</span>
+        <button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button>
+      </div>
+    </div>`;
   }).join('');
 }
+
+/* ── Editar toppings de un ítem del carrito — Dips style ── */
+function abrirTpEdit(idx){
+  const c=getCart();
+  const it=c[idx];
+  if(!it) return;
+  const topsDisp=(window.TOPPINGS_BY_PRODUCTO||{})[it.id]||[];
+  _editCartIdx=idx;
+  document.getElementById('tpEditTitle').textContent=it.nombre;
+  const selectedMap={};
+  (it.toppings||[]).forEach(t=>{selectedMap[t.id]=(selectedMap[t.id]||0)+1;});
+  document.getElementById('tpEditSubtitle').textContent=`Extras disponibles (${topsDisp.length})`;
+  document.getElementById('tpEditList').innerHTML=topsDisp.map(tp=>{
+    const qty=selectedMap[tp.id]||0;
+    const sinStock=tp.stock!==undefined&&tp.stock>=0&&tp.stock===0;
+    return `<div class="dips-row${sinStock?' dips-row-nostock':''}" data-id="${tp.id}" data-nombre="${escHtml2(tp.nombre)}" data-precio="${tp.precio}">
+      <div class="dips-row-info">
+        <div class="dips-row-name">${tp.nombre}${sinStock?' <span style="font-size:10px;color:#dc2626;font-weight:700">(sin stock)</span>':''}</div>
+        ${tp.precio>0?`<div class="dips-row-price">+${fmt(tp.precio)}</div>`:''}
+      </div>
+      <div class="dips-qty">
+        <button class="dips-qty-btn${qty>0?' active':''}" onclick="changeTpQty(this,-1)" ${sinStock?'disabled':''}>−</button>
+        <span class="dips-qty-num${qty===0?' zero':''}" data-qty="${qty}">${qty}</span>
+        <button class="dips-qty-btn${qty>0?' active':''}" onclick="changeTpQty(this,1)" ${sinStock?'disabled':''}>+</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('tpEditModal').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function changeTpQty(btn,delta){
+  const row=btn.closest('.dips-row');
+  const numEl=row.querySelector('.dips-qty-num');
+  let qty=parseInt(numEl.dataset.qty)||0;
+  qty=Math.max(0,Math.min(qty+delta,5));
+  numEl.dataset.qty=qty;
+  numEl.textContent=qty;
+  numEl.className='dips-qty-num'+(qty===0?' zero':'');
+  row.querySelectorAll('.dips-qty-btn').forEach(b=>{
+    b.className='dips-qty-btn'+(qty>0?' active':'');
+  });
+}
+function cerrarTpEdit(){
+  document.getElementById('tpEditModal').classList.remove('on');
+  document.body.style.overflow='';
+  _editCartIdx=null;
+}
+function guardarTpEdit(){
+  if(_editCartIdx===null) return;
+  const c=getCart();
+  const it=c[_editCartIdx];
+  if(!it) return;
+  const toppings=[];
+  document.querySelectorAll('#tpEditList .dips-row').forEach(row=>{
+    const qty=parseInt(row.querySelector('.dips-qty-num').dataset.qty)||0;
+    if(qty>0){
+      const tp={id:+row.dataset.id,nombre:row.dataset.nombre,precio:+row.dataset.precio};
+      for(let i=0;i<qty;i++) toppings.push(tp);
+    }
+  });
+  it.toppings=toppings;
+  it.precio=precioBase(it)+toppings.reduce((s,t)=>s+t.precio,0);
+  saveCart(c);
+  cerrarTpEdit();
+  showToast('Cambios guardados ✓','ok');
+}
+function escHtml2(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ── PRODUCT DETAIL ──────────────────────
 let pdActual = null, pdQty = 1;
@@ -1450,9 +1605,9 @@ function mostrarBannerCarrito(){
   }
 })();
 
-// ── CART DRAWER ─────────────────────────
-function openCart(){document.getElementById('cartDrawer').classList.add('on');document.getElementById('cartOverlay').classList.add('on');document.body.style.overflow='hidden'}
-function closeCart(){document.getElementById('cartDrawer').classList.remove('on');document.getElementById('cartOverlay').classList.remove('on');document.body.style.overflow=''}
+// ── CART PAGE ─────────────────────────
+function openCart(){document.getElementById('cartDrawer').classList.add('on');document.body.style.overflow='hidden'}
+function closeCart(){document.getElementById('cartDrawer').classList.remove('on');document.body.style.overflow=''}
 
 // ── FILTER ──────────────────────────────
 document.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',function(){
@@ -1535,6 +1690,9 @@ let ckCliente=null;
 let _toppingsOrden=[];
 let _costoToppings=0;
 let _cuponAplicado=null; // { codigo, descuento, label }
+let _envioGratis=false;
+let _propina=0;
+let _editCartIdx=null; // índice del ítem en edición de toppings
 
 /* ── Secciones colapsables / cascada checkout ── */
 function toggleCkSection(wrapId, bodyId) {
@@ -1545,7 +1703,7 @@ function toggleCkSection(wrapId, bodyId) {
   toggle.classList.toggle('open', !open);
 }
 
-// Cierra una sección y abre la siguiente automáticamente
+// Función legada mantenida para compatibilidad (ya no hay acordeones)
 function cascadeSection(fromBodyId, toBodyId) {
   const fromBody = document.getElementById(fromBodyId);
   const fromTog  = fromBody?.closest('.fg')?.querySelector('.ck-collapse-toggle');
@@ -1596,17 +1754,27 @@ async function aplicarCupon() {
 
   if (data.ok) {
     _cuponAplicado = data;
-    const label = data.tipo === 'porcentaje'
-      ? `${data.valor}% OFF — ${data.descripcion || ''}`
-      : `$${Number(data.descuento).toLocaleString('es-AR')} OFF — ${data.descripcion || ''}`;
-    document.getElementById('cuponResumenLabel').textContent = label.trim();
-    document.getElementById('cuponDescuentoLabel').textContent =
-      `Ahorrás $${Number(data.descuento).toLocaleString('es-AR')}`;
+    if (data.envio_gratis) {
+      _envioGratis = true;
+      _costoEnvio = 0;
+      document.getElementById('cuponResumenLabel').textContent = `Envío Gratis — ${data.descripcion || ''}`.trim().replace(/— $/, '');
+      document.getElementById('cuponDescuentoLabel').textContent = '¡Envío sin costo!';
+    } else {
+      _envioGratis = false;
+      const label = data.tipo === 'porcentaje'
+        ? `${data.valor}% OFF — ${data.descripcion || ''}`
+        : `$${Number(data.descuento).toLocaleString('es-AR')} OFF — ${data.descripcion || ''}`;
+      document.getElementById('cuponResumenLabel').textContent = label.trim();
+      document.getElementById('cuponDescuentoLabel').textContent =
+        `Ahorrás $${Number(data.descuento).toLocaleString('es-AR')}`;
+    }
     msg.style.display = 'none';
     resumen.style.display = 'block';
+    renderCart();
     buildSummary();
   } else {
     _cuponAplicado = null;
+    _envioGratis = false;
     resumen.style.display = 'none';
     msg.style.display = 'block';
     msg.style.color = '#dc2626';
@@ -1616,6 +1784,8 @@ async function aplicarCupon() {
 
 function quitarCupon() {
   _cuponAplicado = null;
+  _envioGratis = false;
+  renderCart();
   document.getElementById('ckCuponInput').value = '';
   document.getElementById('cuponMsg').style.display    = 'none';
   document.getElementById('cuponResumen').style.display = 'none';
@@ -1651,6 +1821,10 @@ function openCheckout(){
   closeCart();
   _toppingsOrden=[];
   _costoToppings=0;
+  _envioGratis=false;
+  _propina=0;
+  _cuponAplicado=null;
+  _costoEnvio=0;
   // Los toppings ya vienen por cookie desde producto.php — ir directo al checkout
   _abrirCheckoutPrincipal();
   document.getElementById('checkoutModal').classList.add('on');
@@ -1669,7 +1843,31 @@ function closeCheckout(){
   document.getElementById('geoStatus').textContent='';
   if(_ckMap){_ckMap.remove();_ckMap=null;_ckMarker=null;}
 }
-function showCkStep(id){document.querySelectorAll('.ck-step').forEach(s=>s.classList.remove('on'));document.getElementById(id)?.classList.add('on')}
+function showCkStep(id){
+  document.querySelectorAll('.ck-step').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id)?.classList.add('on');
+  // Header dinámico
+  const hdTitle=document.getElementById('ckHdTitle');
+  const hdBack=document.getElementById('ckHdBack');
+  const hdClose=document.getElementById('ckHdClose');
+  const footer=document.getElementById('ckdFooter');
+  if(id==='ckDetails'){
+    if(hdTitle) hdTitle.textContent='Detalle del pago';
+    if(hdBack){ hdBack.style.display=''; hdBack.onclick=()=>backToAuth(); }
+    if(hdClose) hdClose.style.display='none';
+    if(footer) footer.classList.add('on');
+  } else if(id==='ckSuccess'){
+    if(hdTitle) hdTitle.textContent='¡Pedido realizado!';
+    if(hdBack) hdBack.style.display='none';
+    if(hdClose){ hdClose.style.display=''; hdClose.onclick=()=>{closeCheckout();clearCart();} }
+    if(footer) footer.classList.remove('on');
+  } else {
+    if(hdTitle) hdTitle.textContent='Finalizar pedido';
+    if(hdBack) hdBack.style.display='none';
+    if(hdClose){ hdClose.style.display=''; hdClose.onclick=()=>closeCheckout(); }
+    if(footer) footer.classList.remove('on');
+  }
+}
 let _currentTab='guest';
 function switchCkTab(tab,btn){
   _currentTab=tab;
@@ -1680,22 +1878,72 @@ function switchCkTab(tab,btn){
 function syncCkTab(){document.querySelectorAll('.ck-form').forEach(f=>f.classList.remove('on'));document.getElementById('ckGuest')?.classList.add('on');document.querySelectorAll('.ck-tab').forEach((b,i)=>{b.classList.toggle('on',i===0)})}
 function buildSummary(){
   const c=getCart();
-  const subtotal=total(c);
+  const subtotal=total(c)+_costoToppings;
   const descuentoCupon = _cuponAplicado ? (_cuponAplicado.descuento||0) : 0;
-  const totalFinal = Math.max(0, subtotal + _costoEnvio + _costoToppings - descuentoCupon);
-  let html=c.map(i=>`<div class="ck-sum-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('');
+  const costoEnvioEfectivo = _envioGratis ? 0 : _costoEnvio;
+  const tarifa = window.TARIFA_SERVICIO || 0;
+  const totalFinal = Math.max(0, subtotal + costoEnvioEfectivo + tarifa + _propina - descuentoCupon);
+
+  // Resumen tipo McDonald's
+  let rows='';
+
+  // Items
+  rows+=c.map(i=>`<div class="ck-resumen-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('');
+
+  // Toppings legacy (carrito viejo)
   if(_toppingsOrden.length){
-    html+=`<div class="ck-sum-row" style="color:#c88e99"><span><i class="fa-solid fa-candy-cane"></i> ${_toppingsOrden.map(t=>t.nombre).join(', ')}</span><span>${fmt(_costoToppings)}</span></div>`;
+    rows+=`<div class="ck-resumen-row" style="color:#c88e99"><span><i class="fa-solid fa-candy-cane"></i> Extras</span><span>${fmt(_costoToppings)}</span></div>`;
   }
-  if(_costoEnvio>0||_tipoEntrega==='envio'){
-    html+=`<div class="ck-sum-row subtot"><span>Subtotal</span><span>${fmt(subtotal+_costoToppings)}</span></div>`;
-    html+=`<div class="ck-sum-row envio-row"><span><i class="fa-solid fa-motorcycle"></i> Envío</span><span>${_costoEnvio>0?fmt(_costoEnvio):'A calcular'}</span></div>`;
+
+  // Subtotal (siempre visible)
+  rows+=`<div class="ck-resumen-row" style="font-weight:700"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>`;
+
+  // Envío
+  if(_tipoEntrega==='envio'){
+    const envioLabel = _envioGratis
+      ? `<span class="ck-badge-gratis">Envío Gratis</span>`
+      : (costoEnvioEfectivo>0 ? fmt(costoEnvioEfectivo) : '<span style="color:#94a3b8;font-size:12px">A calcular</span>');
+    rows+=`<div class="ck-resumen-row"><span>Envío</span><span>${envioLabel}</span></div>`;
   }
+
+  // Tarifa de servicio
+  if(tarifa>0){
+    rows+=`<div class="ck-resumen-row"><span>Tarifa de servicio <i class="fa-solid fa-circle-info" style="font-size:11px;color:#94a3b8"></i></span><span>${fmt(tarifa)}</span></div>`;
+  }
+
+  // Cupón descuento
   if(descuentoCupon>0){
-    html+=`<div class="ck-sum-row ck-sum-cupon"><span><i class="fa-solid fa-tag"></i> Cupón <strong>${_cuponAplicado.codigo}</strong></span><span>−${fmt(descuentoCupon)}</span></div>`;
+    rows+=`<div class="ck-resumen-row" style="color:#15803d"><span><i class="fa-solid fa-tag"></i> Cupón ${_cuponAplicado.codigo}</span><span>−${fmt(descuentoCupon)}</span></div>`;
   }
-  html+=`<div class="ck-sum-row tot"><span>Total</span><span>${fmt(totalFinal)}</span></div>`;
-  document.getElementById('ckSummary').innerHTML=html;
+
+  // Propina
+  if(_propina>0){
+    rows+=`<div class="ck-resumen-row" style="color:#3b82f6"><span>Propina repartidor</span><span>${fmt(_propina)}</span></div>`;
+  }
+
+  // Total
+  rows+=`<div class="ck-resumen-row ck-resumen-total"><span>Total</span><span>${fmt(totalFinal)}</span></div>`;
+
+  document.getElementById('ckSummary').innerHTML=`<div class="ck-resumen-box"><div class="ck-resumen-title">Resumen de tu pedido</div>${rows}</div>`;
+  const footerAmt=document.getElementById('ckdFooterAmt');
+  if(footerAmt) footerAmt.textContent=fmt(totalFinal);
+}
+
+/* ── Propina ── */
+function seleccionarPropina(monto, btn){
+  document.querySelectorAll('.propina-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  _propina=monto;
+  document.getElementById('propinaCustomWrap').classList.remove('on');
+  document.getElementById('propinaCustomInput').value='';
+  buildSummary();
+}
+function propinaCantidadCustom(btn){
+  document.querySelectorAll('.propina-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  _propina=0;
+  document.getElementById('propinaCustomWrap').classList.add('on');
+  document.getElementById('propinaCustomInput').focus();
 }
 function guestContinue(){
   const n=document.getElementById('gNom').value.trim();
@@ -1754,17 +2002,8 @@ function seleccionarMetodo(id,btn,esMP,esTrans=false){
   const al=document.getElementById('dAlert');if(al)al.classList.remove('on');
   const tp=document.getElementById('transferPanel');
   if(tp){ tp.style.display=esTrans?'':'none'; if(esTrans) cargarDatosBancarios(); }
-  // Actualizar label del toggle de pago
-  const nombre=btn.querySelector('.ck-pago-label')?.textContent||'Método seleccionado';
-  const lbl=document.getElementById('labelPago');
-  if(lbl) lbl.innerHTML=`<i class="fa-solid fa-check" style="margin-right:7px;color:#22c55e"></i>${nombre}`;
-  // Transferencia: mantener abierto para mostrar panel de datos bancarios
-  // Otros: colapsar la sección de pago
-  if(!esTrans){
-    const body=document.getElementById('bodyPago');
-    const tog=document.getElementById('togglePago');
-    if(body){body.style.display='none';tog&&tog.classList.remove('open');}
-  }
+  // Scroll suave al panel de transferencia si es trans
+  if(esTrans) tp?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 let _tipoEntrega='retiro', _costoEnvio=0;
@@ -1782,6 +2021,12 @@ async function actualizarCostoEnvio(lat,lng){
   const tx=document.getElementById('envioEstimateTxt');
   const pr=document.getElementById('envioEstimatePrice');
   if(el) el.style.display='';
+  if(_envioGratis){
+    if(tx) tx.innerHTML='<span class="ck-badge-gratis">Envío Gratis</span>';
+    if(pr) pr.textContent='';
+    buildSummary();
+    return;
+  }
   if(tx) tx.textContent='Calculando...';
   if(pr) pr.textContent='';
   try{
@@ -1810,13 +2055,14 @@ function setEntrega(tipo){
   document.getElementById('btnEnvio').classList.toggle('on',tipo==='envio');
   document.getElementById('wrapSucursal').style.display=tipo==='retiro'?'':'none';
   document.getElementById('wrapEnvio').style.display   =tipo==='envio'?'':'none';
-  const lbl=document.getElementById('labelEntrega');
-  if(lbl) lbl.innerHTML=tipo==='retiro'
-    ?'<i class="fa-solid fa-store" style="margin-right:7px"></i>🏪 Retiro'
-    :'<i class="fa-solid fa-motorcycle" style="margin-right:7px"></i>🛵 Envío a domicilio';
-  if(tipo==='envio') document.getElementById('btnAbrirMapa').style.display='block';
+  if(tipo==='envio'){ const btn=document.getElementById('btnAbrirMapa'); if(btn) btn.style.display='block'; }
+  // Propina: solo visible si es envío
+  const wrapPropina=document.getElementById('wrapPropina');
+  if(wrapPropina) wrapPropina.style.display=tipo==='envio'?'':'none';
   if(tipo==='retiro'){
     _costoEnvio=0;
+    _propina=0;
+    document.querySelectorAll('.propina-btn').forEach(b=>b.classList.remove('on'));
     buildSummary();
     const el=document.getElementById('envioEstimate');
     if(el) el.style.display='none';
@@ -2340,12 +2586,17 @@ async function confirmOrder(){
   }
   const btn=document.getElementById('btnConfirm');btn.disabled=true;btn.textContent='Procesando...';
   try{
+    const costoEnvioEfectivo = _envioGratis ? 0 : _costoEnvio;
+    const tarifa = window.TARIFA_SERVICIO || 0;
+    const baseTotal = total(getCart()) + _costoToppings;
+    const descuento = _cuponAplicado ? (_cuponAplicado.descuento||0) : 0;
+    const totalFinal = Math.max(0, baseTotal + costoEnvioEfectivo + tarifa + _propina - descuento);
     const body={
       carrito:getCart(),cliente:ckCliente,metodo_pago:+met,
       sucursal_id:_tipoEntrega==='retiro'?document.getElementById('ckSuc').value||null:null,
       observacion:document.getElementById('ckObs').value.trim(),
-      total:total(getCart())+_costoToppings,
-      costo_envio:_costoEnvio,
+      total:totalFinal,
+      costo_envio:costoEnvioEfectivo,
       costo_toppings:_costoToppings,
       toppings:_toppingsOrden,
       tipo_entrega:_tipoEntrega,
@@ -2354,6 +2605,9 @@ async function confirmOrder(){
       lng_entrega:document.getElementById('ckLng')?.value||null,
       es_mp:_selectedMetodoEsMP,
       cupon_codigo: _cuponAplicado?.codigo || '',
+      envio_gratis: _envioGratis,
+      propina: _propina,
+      tarifa_servicio: tarifa,
     };
     const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
     if(d.success){
@@ -2366,7 +2620,7 @@ async function confirmOrder(){
           window.location.href=mp.init_point;
         } else {
           setAlert('dAlert','Pedido creado (#'+d.id_venta+') pero no se pudo iniciar el pago. Contactanos para coordinar el pago.','err');
-          btn.disabled=false;btn.textContent='Confirmar pedido ✓';
+          btn.disabled=false;btn.textContent='Pagar';
         }
       } else {
         document.getElementById('ckOrderNum').textContent='#'+d.id_venta;
@@ -2386,7 +2640,7 @@ async function confirmOrder(){
     }
     else setAlert('dAlert',d.message||'Error al procesar','err');
   }catch{setAlert('dAlert','Error de conexión. Intentá nuevamente.','err')}
-  if(!_selectedMetodoEsMP){btn.disabled=false;btn.textContent='Confirmar pedido ✓';}
+  if(!_selectedMetodoEsMP){btn.disabled=false;btn.textContent='Pagar';}
 }
 function setAlert(id,msg,type){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='ck-alert on '+(type==='err'?'err':'ok');setTimeout(()=>el.classList.remove('on'),5000)}
 document.getElementById('checkoutModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCheckout()});
@@ -2489,7 +2743,6 @@ function setCatActive(el){ document.querySelectorAll('.t-cat-item').forEach(i=>i
 window.addEventListener('pageshow', function() {
   document.body.style.overflow = '';
   document.getElementById('cartDrawer')?.classList.remove('on');
-  document.getElementById('cartOverlay')?.classList.remove('on');
   renderCart();
   // Abrir carrito si viene de producto.php con #cart
   if (window.location.hash === '#cart') {

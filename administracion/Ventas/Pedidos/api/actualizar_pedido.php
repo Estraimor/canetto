@@ -16,6 +16,7 @@ $id_venta      = intval($input['id_venta']      ?? 0);
 $estado        = intval($input['estado']        ?? 0);
 $repartidor_id = isset($input['repartidor_id']) && $input['repartidor_id'] ? intval($input['repartidor_id']) : null;
 $via_uber      = !empty($input['via_uber']) ? 1 : 0;
+$uber_link     = isset($input['uber_link']) ? trim($input['uber_link']) : null;
 $tipo_entrega  = in_array($input['tipo_entrega'] ?? '', ['envio', 'retiro']) ? $input['tipo_entrega'] : null;
 
 if (!$id_venta || $estado < 1 || ($estado > 6 && $estado !== 7)) {
@@ -45,7 +46,9 @@ try {
     foreach ([
         "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
         "ALTER TABLE ventas ADD COLUMN repartidor_idusuario INT NULL",
+        "ALTER TABLE ventas ADD COLUMN repartidor_pendiente_idusuario INT NULL",
         "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN uber_link VARCHAR(500) NULL",
         "ALTER TABLE ventas ADD COLUMN updated_at DATETIME NULL",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
@@ -69,13 +72,16 @@ try {
             "El pedido #{$id_venta} fue asignado a vos. ¡Abrí la app!"
         );
     } elseif ($estado === 3 && $via_uber) {
+        $uberLinkSet = $uber_link !== null ? ', uber_link=:ul' : '';
         $stmt = $pdo->prepare(
             "UPDATE ventas SET estado_venta_idestado_venta=:estado,
-             repartidor_idusuario=NULL, via_uber=1{$teSet}, updated_at=NOW()
+             repartidor_idusuario=NULL, repartidor_pendiente_idusuario=NULL,
+             via_uber=1{$teSet}{$uberLinkSet}, updated_at=NOW()
              WHERE idventas=:id"
         );
         $params = [':estado' => $estado, ':id' => $id_venta];
         if ($tipo_entrega) $params[':te'] = $tipo_entrega;
+        if ($uber_link !== null) $params[':ul'] = $uber_link ?: null;
         $stmt->execute($params);
     } else {
         $stmt = $pdo->prepare(

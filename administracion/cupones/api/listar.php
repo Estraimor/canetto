@@ -11,7 +11,7 @@ try {
         id INT AUTO_INCREMENT PRIMARY KEY,
         codigo VARCHAR(50) NOT NULL UNIQUE,
         descripcion VARCHAR(200) NULL,
-        tipo ENUM('porcentaje','fijo') NOT NULL DEFAULT 'porcentaje',
+        tipo ENUM('porcentaje','fijo','envio_gratis') NOT NULL DEFAULT 'porcentaje',
         valor DECIMAL(10,2) NOT NULL DEFAULT 0,
         min_pedido DECIMAL(10,2) NOT NULL DEFAULT 0,
         max_usos INT NULL,
@@ -23,6 +23,7 @@ try {
         created_at DATETIME DEFAULT NOW(),
         updated_at DATETIME DEFAULT NOW() ON UPDATE NOW()
     )");
+    try { $pdo->exec("ALTER TABLE cupones MODIFY COLUMN tipo ENUM('porcentaje','fijo','envio_gratis') NOT NULL DEFAULT 'porcentaje'"); } catch (Throwable $e) {}
     $pdo->exec("CREATE TABLE IF NOT EXISTS cupones_usos (
         id INT AUTO_INCREMENT PRIMARY KEY,
         cupon_id INT NOT NULL,

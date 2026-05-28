@@ -47,6 +47,20 @@ try {
         { echo json_encode(['ok'=>false,'msg'=>'Este cupón requiere un pedido mínimo de $'.number_format($c['min_pedido'],0,',','.')]); exit; }
 
     // Calcular descuento
+    if ($c['tipo'] === 'envio_gratis') {
+        echo json_encode([
+            'ok'          => true,
+            'codigo'      => $c['codigo'],
+            'descripcion' => $c['descripcion'],
+            'tipo'        => 'envio_gratis',
+            'valor'       => 0,
+            'descuento'   => 0,
+            'envio_gratis'=> true,
+            'total_final' => (float)$total,
+        ]);
+        exit;
+    }
+
     $descuento = $c['tipo'] === 'porcentaje'
         ? round($total * $c['valor'] / 100, 2)
         : min((float)$c['valor'], $total);
@@ -58,6 +72,7 @@ try {
         'tipo'        => $c['tipo'],
         'valor'       => (float)$c['valor'],
         'descuento'   => $descuento,
+        'envio_gratis'=> false,
         'total_final' => max(0, $total - $descuento),
     ]);
 

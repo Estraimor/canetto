@@ -224,6 +224,74 @@ try {
 .pedido-cobro-rows{display:flex;flex-direction:column;gap:3px}
 .pedido-cobro-row{display:flex;justify-content:space-between;font-size:13px;color:#78350f}
 .cobro-total-row{font-weight:800;color:#1c1917;border-top:1.5px solid #d97706;margin-top:6px;padding-top:6px;font-size:15px}
+
+/* ══ INCOMING ORDER OVERLAY ════════════════════════════════ */
+#incomingOverlay{
+  position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;
+  background:rgba(10,14,26,.96);backdrop-filter:blur(16px);
+  animation:incomingFadeIn .3s ease;
+}
+#incomingOverlay.visible{display:flex}
+@keyframes incomingFadeIn{from{opacity:0}to{opacity:1}}
+
+.incoming-pulse{
+  position:absolute;inset:0;background:radial-gradient(circle at 50% 40%, rgba(200,142,153,.18) 0%, transparent 70%);
+  animation:incomingPulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes incomingPulse{from{opacity:.5}to{opacity:1}}
+
+.incoming-card{
+  position:relative;z-index:1;width:min(340px,92vw);
+  background:rgba(15,23,42,.95);border:1px solid rgba(200,142,153,.25);
+  border-radius:28px;padding:28px 24px 24px;text-align:center;
+  box-shadow:0 24px 64px rgba(0,0,0,.7);
+}
+.incoming-icon-wrap{
+  width:72px;height:72px;margin:0 auto 14px;border-radius:50%;
+  background:rgba(200,142,153,.18);border:2px solid rgba(200,142,153,.35);
+  display:flex;align-items:center;justify-content:center;font-size:32px;
+  animation:incomingBounce .6s ease infinite alternate;
+}
+@keyframes incomingBounce{from{transform:scale(1)}to{transform:scale(1.08)}}
+
+.incoming-headline{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px}
+.incoming-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:18px;text-transform:uppercase;letter-spacing:.08em}
+
+/* Timer SVG ring */
+.incoming-timer-wrap{position:relative;width:72px;height:72px;margin:0 auto 18px}
+.incoming-timer-wrap svg{position:absolute;inset:0;transform:rotate(-90deg)}
+#incomingTimerBg{stroke:rgba(255,255,255,.08)}
+#incomingTimerRing{stroke:#c88e99;transition:stroke-dashoffset .9s linear,stroke .5s}
+.incoming-secs{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;color:#fff;
+}
+
+/* Order info */
+.incoming-order-info{
+  background:rgba(255,255,255,.05);border-radius:14px;padding:14px 16px;margin-bottom:18px;text-align:left;
+}
+.incoming-order-row{display:flex;align-items:flex-start;gap:10px;padding:5px 0}
+.incoming-order-row:not(:last-child){border-bottom:1px solid rgba(255,255,255,.06)}
+.incoming-order-icon{color:#c88e99;width:18px;flex-shrink:0;margin-top:1px;text-align:center}
+.incoming-order-text{font-size:13px;color:rgba(255,255,255,.85);line-height:1.4}
+.incoming-order-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:1px}
+
+/* Buttons */
+.incoming-btns{display:grid;grid-template-columns:1fr 1.6fr;gap:10px}
+.btn-incoming-rechazar{
+  padding:14px 10px;border-radius:16px;border:1.5px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);
+  font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s;
+}
+.btn-incoming-rechazar:active{background:rgba(255,255,255,.12)}
+.btn-incoming-aceptar{
+  padding:14px 10px;border-radius:16px;border:none;
+  background:linear-gradient(135deg,#10b981,#059669);color:#fff;
+  font-size:16px;font-weight:900;font-family:inherit;cursor:pointer;
+  box-shadow:0 6px 20px rgba(16,185,129,.4);transition:.15s;
+}
+.btn-incoming-aceptar:active{transform:scale(.97)}
 </style>
 </head>
 <body>
@@ -2588,6 +2656,192 @@ function _sesionExpirada() {
   detenerSistemaActividad();
   doLogout();
 }
+</script>
+
+<!-- ══════════════════════════════════════
+     INCOMING ORDER OVERLAY
+══════════════════════════════════════ -->
+<div id="incomingOverlay">
+  <div class="incoming-pulse"></div>
+  <div class="incoming-card">
+    <div class="incoming-icon-wrap">🛵</div>
+    <div class="incoming-headline">¡Nuevo pedido!</div>
+    <div class="incoming-sub">Tenés que responder rápido</div>
+
+    <!-- Countdown ring -->
+    <div class="incoming-timer-wrap">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle id="incomingTimerBg"   cx="36" cy="36" r="30" fill="none" stroke-width="5"/>
+        <circle id="incomingTimerRing" cx="36" cy="36" r="30" fill="none" stroke-width="5"
+                stroke-linecap="round"
+                stroke-dasharray="188.5" stroke-dashoffset="0"/>
+      </svg>
+      <div class="incoming-secs" id="incomingSecs">30</div>
+    </div>
+
+    <!-- Info del pedido -->
+    <div class="incoming-order-info" id="incomingOrderInfo">
+      <div class="incoming-order-row">
+        <div class="incoming-order-icon"><i class="fa-solid fa-hashtag"></i></div>
+        <div class="incoming-order-text">
+          <div class="incoming-order-label">Pedido</div>
+          <span id="incomingNum">—</span>
+        </div>
+      </div>
+      <div class="incoming-order-row">
+        <div class="incoming-order-icon"><i class="fa-solid fa-user"></i></div>
+        <div class="incoming-order-text">
+          <div class="incoming-order-label">Cliente</div>
+          <span id="incomingCliente">—</span>
+        </div>
+      </div>
+      <div class="incoming-order-row">
+        <div class="incoming-order-icon"><i class="fa-solid fa-location-dot"></i></div>
+        <div class="incoming-order-text">
+          <div class="incoming-order-label">Dirección</div>
+          <span id="incomingDir">—</span>
+        </div>
+      </div>
+      <div class="incoming-order-row">
+        <div class="incoming-order-icon"><i class="fa-solid fa-box"></i></div>
+        <div class="incoming-order-text">
+          <div class="incoming-order-label">Productos</div>
+          <span id="incomingProds">—</span>
+        </div>
+      </div>
+      <div class="incoming-order-row">
+        <div class="incoming-order-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+        <div class="incoming-order-text">
+          <div class="incoming-order-label">Total</div>
+          <strong id="incomingTotal" style="color:#c88e99;font-size:16px">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="incoming-btns">
+      <button class="btn-incoming-rechazar" onclick="responderPedidoPendiente('rechazar')">
+        ✕ Rechazar
+      </button>
+      <button class="btn-incoming-aceptar" onclick="responderPedidoPendiente('aceptar')">
+        ✓ Aceptar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══ INCOMING ORDER POLLING & RESPONSE ════════════════════ */
+let _incomingPollTimer  = null;
+let _incomingCountTimer = null;
+let _incomingCountRaf   = null;
+let _incomingVentaId    = null;
+let _incomingEndMs      = 0;
+const INCOMING_SECS     = 30; // segundos para responder
+const INCOMING_CIRCUM   = 2 * Math.PI * 30; // 188.5
+
+function startIncomingPoll() {
+  clearTimeout(_incomingPollTimer);
+  _incomingPollTimer = setTimeout(_doPollIncoming, 5000);
+}
+
+async function _doPollIncoming() {
+  // No hacer poll si ya hay un pedido mostrándose
+  if (_incomingVentaId) { startIncomingPoll(); return; }
+  try {
+    const res  = await fetch('api/get_pedido_pendiente.php');
+    const data = await res.json();
+    if (data.pendiente) {
+      _mostrarIncoming(data.pendiente);
+    } else {
+      startIncomingPoll();
+    }
+  } catch (e) {
+    startIncomingPoll();
+  }
+}
+
+function _mostrarIncoming(pedido) {
+  _incomingVentaId = pedido.idventas;
+
+  // Rellenar info
+  document.getElementById('incomingNum').textContent     = '#' + pedido.idventas;
+  document.getElementById('incomingCliente').textContent = pedido.cliente_nombre || '—';
+  document.getElementById('incomingDir').textContent     = pedido.direccion_entrega || 'Sin dirección';
+  document.getElementById('incomingProds').textContent   = pedido.productos || '—';
+  document.getElementById('incomingTotal').textContent   = '$' + parseFloat(pedido.total || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  // Mostrar overlay
+  const overlay = document.getElementById('incomingOverlay');
+  overlay.classList.add('visible');
+
+  // Vibrar si el dispositivo lo soporta
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+
+  // Iniciar countdown
+  _incomingEndMs = Date.now() + INCOMING_SECS * 1000;
+  _tickIncoming();
+}
+
+function _tickIncoming() {
+  cancelAnimationFrame(_incomingCountRaf);
+  const rest = Math.max(0, _incomingEndMs - Date.now());
+  const secs = Math.ceil(rest / 1000);
+  const pct  = rest / (INCOMING_SECS * 1000);
+  const offset = INCOMING_CIRCUM * (1 - pct);
+
+  const ring = document.getElementById('incomingTimerRing');
+  const txt  = document.getElementById('incomingSecs');
+  if (ring) {
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = pct > .5 ? '#c88e99' : pct > .25 ? '#f59e0b' : '#f43f5e';
+  }
+  if (txt) txt.textContent = secs;
+
+  if (rest > 0) {
+    _incomingCountRaf = requestAnimationFrame(_tickIncoming);
+  } else {
+    // Tiempo agotado → auto-rechazar
+    responderPedidoPendiente('rechazar');
+  }
+}
+
+async function responderPedidoPendiente(accion) {
+  cancelAnimationFrame(_incomingCountRaf);
+  clearTimeout(_incomingPollTimer);
+
+  const ventaId = _incomingVentaId;
+  _incomingVentaId = null;
+
+  // Ocultar overlay
+  const overlay = document.getElementById('incomingOverlay');
+  overlay.classList.remove('visible');
+
+  if (!ventaId) { startIncomingPoll(); return; }
+
+  try {
+    await fetch('api/responder_pedido.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_venta: ventaId, accion }),
+    });
+  } catch (e) { /* red caída, la propuesta expirará sola */ }
+
+  if (accion === 'aceptar') {
+    // Recargar pedidos activos para mostrar el nuevo
+    if (typeof cargarPedidosRepartidor === 'function') cargarPedidosRepartidor();
+    if (typeof switchTab === 'function') switchTab('pedidos', document.querySelector('.tab-btn'));
+  }
+
+  // Retomar el poll
+  startIncomingPoll();
+}
+
+// Arrancar el poll cuando el repartidor esté logueado
+document.addEventListener('DOMContentLoaded', () => {
+  <?php if ($repId): ?>
+  startIncomingPoll();
+  <?php endif; ?>
+});
 </script>
 </body>
 </html>

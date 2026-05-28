@@ -117,8 +117,16 @@ const PedidosApp = (() => {
         ? `<span class="badge-origen badge-app">📱 App</span>`
         : `<span class="badge-origen badge-pos">🖥 Admin</span>`;
       const repInfo = v.via_uber
-        ? `<small style="color:#7c3aed">🚗 Uber</small>`
-        : (v.repartidor_nombre ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>` : '');
+        ? (v.uber_link
+            ? `<small style="color:#7c3aed">🚗 <a href="${v.uber_link}" target="_blank" rel="noopener" style="color:#7c3aed;text-decoration:underline">Ver en Uber</a></small>`
+            : `<small style="color:#7c3aed">🚗 Uber</small>`)
+        : (v.repartidor_nombre
+            ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>`
+            : (v.repartidor_pendiente_nombre
+                ? `<small style="color:#f59e0b" id="rep-status-${v.idventas}">⏳ Esperando a ${v.repartidor_pendiente_nombre}...</small>`
+                : (v.estado_id == 3 && v.tipo_entrega === 'envio'
+                    ? `<small style="color:#94a3b8" id="rep-status-${v.idventas}">🔍 Buscando repartidor...</small>`
+                    : '')));
 
       const rowCls = `row-estado-${estadoId}` + (esCancelado ? ' row-cancelado' : '');
 
@@ -130,7 +138,7 @@ const PedidosApp = (() => {
       }).join('');
 
       return `
-        <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}" class="${rowCls}">
+        <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}" data-rep-pendiente="${v.repartidor_pendiente_idusuario || ''}" class="${rowCls}">
           <td>
             <span class="venta-id">#${v.idventas}</span><br>
             ${badgeEntrega}${badgeOrigen}
@@ -166,7 +174,7 @@ const PedidosApp = (() => {
               ` : ''}
               ${estadoId === 3 && esEnvio ? `
               <button class="btn-accion btn-reasignar" onclick="PedidosApp.reasignarRepartidor(${v.idventas})">
-                🔄 Reasignar
+                🔄 Liberar y rebuscar
               </button>
               <button class="btn-accion btn-whatsapp"
                       onclick="PedidosApp.mensajeCliente('${String(v.cliente_telefono||'').replace(/\D/g,'')}', '${(v.cliente_nombre||'').split(' ')[0].replace(/'/g,"\\'")}')">
@@ -207,32 +215,41 @@ const PedidosApp = (() => {
       return;
     }
 
-    // Para pedidos de envío que van a "En reparto": auto-asignar repartidor
+    // Para pedidos de envío que van a "En reparto": elegir repartidor o Uber
     if (tipoEntrega === 'envio' && nuevoEstado === 3) {
-      await autoAsignarRepartidor(idVenta, btn);
-      return;
-    }
-    // Para pedidos de envío en CUALQUIER otro estado: ofrecer también cambiar repartidor
-    if (tipoEntrega === 'envio' && nuevoEstado !== 3) {
-      await ejecutarCambio(idVenta, nuevoEstado, null, btn);
-      // Mostrar opción de actualizar repartidor sin bloquear
-      const row2 = document.getElementById('row-' + idVenta);
-      if (row2) {
-        const repBtn = document.createElement('button');
-        repBtn.className = 'btn-accion btn-reasignar';
-        repBtn.style.cssText = 'margin-top:6px;font-size:11px';
-        repBtn.textContent = '🔄 Actualizar reparto';
-        repBtn.onclick = () => { repBtn.remove(); PedidosApp.reasignarRepartidor(idVenta); };
-        const acciones = row2.querySelector('.acciones-cell');
-        if (acciones && !acciones.querySelector('.btn-reasignar')) acciones.appendChild(repBtn);
-      }
+      await abrirModalRepartidor(idVenta);
+      if (btn) { btn.disabled = false; btn.textContent = '💾'; }
       return;
     }
     await ejecutarCambio(idVenta, nuevoEstado, null, btn);
   }
 
   async function reasignarRepartidor(idVenta) {
-    await abrirModalRepartidor(idVenta, true);
+    const ok = await Swal.fire({
+      title: '¿Liberar repartidor?',
+      html: 'Se le quitará el pedido al repartidor actual y se buscará uno nuevo automáticamente.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#f97316',
+      cancelButtonColor: '#718096',
+      confirmButtonText: '🔄 Sí, rebuscar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!ok.isConfirmed) return;
+
+    _cancelarBusqueda(idVenta);
+    try {
+      const res  = await fetch('api/liberar_repartidor.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_venta: idVenta }),
+      });
+      const data = await res.json();
+      if (!data.success) { showToast('Error: ' + (data.message || 'No se pudo liberar'), 'error'); return; }
+    } catch (e) {
+      showToast('Error de conexión', 'error'); return;
+    }
+    iniciarBusquedaRep(idVenta);
   }
 
   async function cancelarPedido(idVenta) {
@@ -280,145 +297,187 @@ const PedidosApp = (() => {
     }
   }
 
-  // ─── AUTO-ASIGNACIÓN REPARTIDOR ──────────────────────────────
-  // Mapa de timers de retry activos: idVenta → timeoutId
-  const _retryTimers = {};
+  // ─── BÚSQUEDA DE REPARTIDOR (con aceptación/rechazo) ────────
+  // Estado por pedido: { repId, rechazados:[], retryTimer, pollTimer }
+  const _busquedas = {};
 
-  function _cancelarRetry(idVenta) {
-    if (_retryTimers[idVenta]) {
-      clearTimeout(_retryTimers[idVenta]);
-      delete _retryTimers[idVenta];
-    }
+  function _cancelarBusqueda(idVenta) {
+    const b = _busquedas[idVenta];
+    if (!b) return;
+    clearTimeout(b.retryTimer);
+    clearTimeout(b.pollTimer);
+    delete _busquedas[idVenta];
   }
 
-  async function autoAsignarRepartidor(idVenta, btn, intento = 1) {
-    _cancelarRetry(idVenta);
+  function _setRepStatus(idVenta, html) {
+    const el = document.getElementById('rep-status-' + idVenta);
+    if (el) el.outerHTML = `<small id="rep-status-${idVenta}">${html}</small>`;
+  }
 
-    // Actualizar estado visual del botón
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = intento === 1
-        ? '⏳ Buscando...'
-        : `🔍 Intento ${intento}...`;
-    }
-
-    // Si es el segundo intento, agregar botón "Manual" en la fila
-    if (intento === 2) {
-      const row = document.getElementById('row-' + idVenta);
-      if (row && !row.querySelector('.btn-manual-rep')) {
-        const acciones = row.querySelector('.acciones-cell');
-        if (acciones) {
-          const manualBtn = document.createElement('button');
-          manualBtn.className = 'btn-accion btn-reasignar btn-manual-rep';
-          manualBtn.style.cssText = 'margin-top:4px;font-size:11px';
-          manualBtn.textContent = '👤 Asignar manual';
-          manualBtn.onclick = () => {
-            _cancelarRetry(idVenta);
-            manualBtn.remove();
-            if (btn) { btn.disabled = false; btn.textContent = '💾'; }
-            abrirModalRepartidor(idVenta);
-          };
-          acciones.appendChild(manualBtn);
-        }
-      }
-    }
+  async function iniciarBusquedaRep(idVenta, rechazados = []) {
+    _cancelarBusqueda(idVenta);
+    _busquedas[idVenta] = { repId: null, rechazados, retryTimer: null, pollTimer: null };
+    _setRepStatus(idVenta, '🔍 Buscando repartidor...');
 
     try {
       const res  = await fetch('api/auto_asignar_repartidor.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_venta: idVenta })
+        body: JSON.stringify({ id_venta: idVenta, rechazados }),
       });
       const data = await res.json();
 
-      if (data.success) {
-        // Asignado ✅ — limpiar todo
-        _cancelarRetry(idVenta);
-        const row = document.getElementById('row-' + idVenta);
-        row?.querySelector('.btn-manual-rep')?.remove();
-        showToast(`✅ Asignado a ${data.repartidor}`, 'success');
-        cargarPedidos();
+      if (data.success && data.propuesta) {
+        const b = _busquedas[idVenta];
+        if (!b) return; // fue cancelada mientras esperaba
+        b.repId = data.repartidor_id;
+        _setRepStatus(idVenta, `⏳ Esperando que <strong>${data.repartidor}</strong> acepte...`);
+        showToast(`⏳ Propuesta enviada a ${data.repartidor}`, '');
+        pollPropuesta(idVenta);
 
       } else if (data.sin_repartidor) {
-        // Sin repartidor disponible → reintentar en 10 segundos
-        showToast(`⚠️ Sin repartidores libres. Reintentando en 10s... (intento ${intento})`, 'warning');
-        _retryTimers[idVenta] = setTimeout(
-          () => autoAsignarRepartidor(idVenta, btn, intento + 1),
-          10_000
-        );
+        _setRepStatus(idVenta, '⚠️ Sin repartidores disponibles. Reintentando...');
+        showToast('⚠️ Sin repartidores libres. Reintentando en 15s...', 'warning');
+        if (_busquedas[idVenta]) {
+          _busquedas[idVenta].retryTimer = setTimeout(
+            () => iniciarBusquedaRep(idVenta, rechazados),
+            15_000
+          );
+        }
 
       } else {
-        // Error inesperado → no reintentar
-        _cancelarRetry(idVenta);
-        showToast('Error: ' + (data.message || 'No se pudo asignar'), 'error');
-        if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+        _cancelarBusqueda(idVenta);
+        _setRepStatus(idVenta, '❌ Error al buscar');
+        showToast('Error: ' + (data.message || 'No se pudo buscar repartidor'), 'error');
       }
 
     } catch (e) {
-      // Error de red → reintentar igual
-      showToast(`⚠️ Error de conexión. Reintentando en 10s... (intento ${intento})`, 'warning');
-      _retryTimers[idVenta] = setTimeout(
-        () => autoAsignarRepartidor(idVenta, btn, intento + 1),
-        10_000
-      );
+      _setRepStatus(idVenta, '⚠️ Error de conexión. Reintentando...');
+      showToast('⚠️ Error de conexión. Reintentando en 15s...', 'warning');
+      if (_busquedas[idVenta]) {
+        _busquedas[idVenta].retryTimer = setTimeout(
+          () => iniciarBusquedaRep(idVenta, rechazados),
+          15_000
+        );
+      }
     }
+  }
+
+  function pollPropuesta(idVenta) {
+    const b = _busquedas[idVenta];
+    if (!b) return;
+
+    b.pollTimer = setTimeout(async () => {
+      try {
+        const res  = await fetch('api/check_propuesta.php?id_venta=' + idVenta);
+        const data = await res.json();
+        const bNow = _busquedas[idVenta];
+        if (!bNow) return; // cancelada
+
+        if (data.status === 'aceptado') {
+          _cancelarBusqueda(idVenta);
+          showToast(`✅ Pedido aceptado por ${data.repartidor}`, 'success');
+          cargarPedidos();
+
+        } else if (data.status === 'libre') {
+          // Repartidor rechazó — agregar a rechazados y proponer al siguiente
+          const rechazadosNuevos = [...(bNow.rechazados || [])];
+          if (bNow.repId && !rechazadosNuevos.includes(bNow.repId)) {
+            rechazadosNuevos.push(bNow.repId);
+          }
+          _cancelarBusqueda(idVenta);
+          showToast('El repartidor rechazó el pedido. Buscando otro...', 'warning');
+          iniciarBusquedaRep(idVenta, rechazadosNuevos);
+
+        } else {
+          // 'esperando' o error → seguir polling cada 4s
+          pollPropuesta(idVenta);
+        }
+      } catch (e) {
+        pollPropuesta(idVenta); // error de red, reintentar poll
+      }
+    }, 4_000);
   }
 
   // ─── MODAL REPARTIDOR ─────────────────────
   let _repVentaId = null;
 
-  async function abrirModalRepartidor(idVenta, soloReasignar = false) {
+  async function abrirModalRepartidor(idVenta) {
     _repVentaId = idVenta;
     const modal = document.getElementById('modal-repartidor');
-    const sel   = document.getElementById('rep-select');
     const info  = document.getElementById('rep-cliente-info');
-    sel.innerHTML  = '<option value="">Cargando...</option>';
-    info.innerHTML = '';
-    // Reset siempre a "envio" al abrir
+    info.innerHTML = '<div style="color:#94a3b8;font-size:13px">Cargando...</div>';
+
+    // Reset al abrir
     if (typeof setTipoEntregaModal === 'function') setTipoEntregaModal('envio');
+    if (typeof setMetodoEnvio === 'function') setMetodoEnvio('repartidor');
+    const uberInput = document.getElementById('uber-link-input');
+    if (uberInput) uberInput.value = '';
+
     modal.style.display = 'flex';
 
     try {
-      const [reps, detalle] = await Promise.all([
-        fetch('api/get_repartidores.php').then(r => r.json()),
-        fetch('api/get_detalle.php?id=' + idVenta).then(r => r.json())
-      ]);
-      const uberOpt = '<option value="uber">🚗 Uber — sin repartidor propio</option>';
-      sel.innerHTML = '<option value="">— Elegí cómo se envía —</option>' +
-        (reps.map ? reps.map(r => `<option value="${r.idrepartidor}">${r.nombre} ${r.apellido || ''} ${r.celular ? '('+r.celular+')' : ''}</option>`).join('') : '') +
-        uberOpt;
+      const detalle = await fetch('api/get_detalle.php?id=' + idVenta).then(r => r.json());
       const dir = detalle.direccion_entrega || '—';
       const tel = String(detalle.cliente_telefono || '—');
       info.innerHTML = `<div class="rep-modal-info">
-        <div><strong>Cliente:</strong> ${detalle.cliente_nombre} ${detalle.cliente_apellido || ''}</div>
+        <div><strong>Cliente:</strong> ${detalle.cliente_nombre || ''} ${detalle.cliente_apellido || ''}</div>
         <div><strong>Teléfono:</strong> ${tel}</div>
         <div><strong>Dirección:</strong> ${dir}</div>
       </div>`;
     } catch (e) {
-      sel.innerHTML = '<option value="">Error al cargar repartidores</option>';
+      info.innerHTML = '';
     }
   }
 
   async function confirmarRepartidor() {
-    const ventaId  = _repVentaId;
-    const tipoModal = (typeof _modalTipoEntrega !== 'undefined') ? _modalTipoEntrega : 'envio';
+    const ventaId   = _repVentaId;
+    const tipoModal  = (typeof _modalTipoEntrega !== 'undefined')  ? _modalTipoEntrega  : 'envio';
+    const metodoEnvio = (typeof _modalMetodoEnvio !== 'undefined') ? _modalMetodoEnvio  : 'repartidor';
 
     if (tipoModal === 'retiro') {
-      // Cambiar a retiro en local → estado 7 "Listo para retiro"
       cerrarModalRep();
       const btn = document.getElementById('btn-save-' + ventaId) || { disabled: false, textContent: '' };
       await ejecutarCambio(ventaId, 7, null, btn, false, 'retiro');
       return;
     }
 
-    // Envío a domicilio → requiere repartidor
-    const sel = document.getElementById('rep-select');
-    if (!sel.value) { alert('Seleccioná un repartidor o elegí Uber'); return; }
-    const viaUber = sel.value === 'uber';
-    const repId   = viaUber ? null : parseInt(sel.value);
+    // Envío a domicilio
+    if (metodoEnvio === 'uber') {
+      const uberLink = (document.getElementById('uber-link-input')?.value || '').trim();
+      cerrarModalRep();
+      const btn = document.getElementById('btn-save-' + ventaId) || { disabled: false, textContent: '' };
+      await ejecutarCambioUber(ventaId, uberLink, btn);
+      return;
+    }
+
+    // Repartidor propio → iniciar búsqueda automática
     cerrarModalRep();
-    const btn = document.getElementById('btn-save-' + ventaId) || { disabled: false, textContent: '' };
-    await ejecutarCambio(ventaId, 3, repId, btn, viaUber, 'envio');
+    iniciarBusquedaRep(ventaId);
+  }
+
+  async function ejecutarCambioUber(idVenta, uberLink, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    try {
+      const body = { id_venta: idVenta, estado: 3, via_uber: true, tipo_entrega: 'envio' };
+      if (uberLink) body.uber_link = uberLink;
+      const res  = await fetch('api/actualizar_pedido.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🚗 Uber asignado', 'success');
+        cargarPedidos();
+      } else {
+        showToast('Error: ' + (data.message || 'No se pudo actualizar'), 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+      }
+    } catch (e) {
+      showToast('Error de conexión', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '💾'; }
+    }
   }
 
   function cerrarModalRep() {

@@ -15,10 +15,12 @@ try {
     foreach ([
         "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
         "ALTER TABLE ventas ADD COLUMN repartidor_idusuario INT NULL",
+        "ALTER TABLE ventas ADD COLUMN repartidor_pendiente_idusuario INT NULL",
         "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
         "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
         "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
         "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN uber_link VARCHAR(500) NULL",
         "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
@@ -54,6 +56,7 @@ try {
             COALESCE(v.tipo_entrega, 'retiro') AS tipo_entrega,
             v.direccion_entrega,
             COALESCE(v.via_uber, 0) AS via_uber,
+            v.uber_link,
             COALESCE(v.origen, 'pos') AS origen,
             COALESCE(v.toppings_json, '') AS toppings_json,
 
@@ -64,13 +67,16 @@ try {
 
             mp.nombre AS metodo_pago,
 
-            CONCAT(r.nombre, ' ', COALESCE(r.apellido,'')) AS repartidor_nombre,
-            r.idusuario AS repartidor_idusuario
+            TRIM(CONCAT(r.nombre, ' ', COALESCE(r.apellido,'')))  AS repartidor_nombre,
+            r.idusuario AS repartidor_idusuario,
+            v.repartidor_pendiente_idusuario,
+            TRIM(CONCAT(rp.nombre,' ', COALESCE(rp.apellido,''))) AS repartidor_pendiente_nombre
 
         FROM ventas v
         LEFT JOIN usuario u  ON u.idusuario  = v.usuario_idusuario
         LEFT JOIN metodo_pago mp ON mp.idmetodo_pago = v.metodo_pago_idmetodo_pago
         LEFT JOIN usuario r  ON r.idusuario  = v.repartidor_idusuario
+        LEFT JOIN usuario rp ON rp.idusuario = v.repartidor_pendiente_idusuario
         WHERE $where_sql
         ORDER BY v.idventas DESC
         LIMIT 300
@@ -87,7 +93,9 @@ try {
         $row['cliente_apellido']  = $row['cliente_apellido']  ?: 'Final';
         $row['cliente_telefono']  = (string)($row['cliente_telefono'] ?? '');
         $row['cliente_email']     = $row['cliente_email']     ?? '';
-        $row['repartidor_nombre'] = trim($row['repartidor_nombre'] ?? '') ?: null;
+        $row['repartidor_nombre']          = trim($row['repartidor_nombre'] ?? '') ?: null;
+        $row['repartidor_pendiente_nombre'] = trim($row['repartidor_pendiente_nombre'] ?? '') ?: null;
+        $row['uber_link']                  = $row['uber_link'] ?? null;
         $row['tipo_entrega']      = $row['tipo_entrega'] ?? 'retiro';
         $row['direccion_entrega'] = $row['direccion_entrega'] ?? '';
         $row['productos'] = [];

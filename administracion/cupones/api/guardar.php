@@ -11,7 +11,7 @@ $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $id          = (int)($data['id'] ?? 0);
 $codigo      = strtoupper(trim($data['codigo'] ?? ''));
 $descripcion = trim($data['descripcion'] ?? '');
-$tipo        = in_array($data['tipo'] ?? '', ['porcentaje','fijo']) ? $data['tipo'] : 'porcentaje';
+$tipo        = in_array($data['tipo'] ?? '', ['porcentaje','fijo','envio_gratis']) ? $data['tipo'] : 'porcentaje';
 $valor       = max(0, (float)($data['valor'] ?? 0));
 $min_pedido  = max(0, (float)($data['min_pedido'] ?? 0));
 $max_usos    = isset($data['max_usos']) && $data['max_usos'] !== '' ? max(1,(int)$data['max_usos']) : null;
@@ -20,9 +20,10 @@ $fecha_ini   = $data['fecha_inicio'] ?? null ?: null;
 $fecha_fin   = $data['fecha_fin']    ?? null ?: null;
 $activo      = isset($data['activo']) ? (int)$data['activo'] : 1;
 
-if (!$codigo || $valor <= 0) {
-    echo json_encode(['ok'=>false,'msg'=>'Código y valor son obligatorios']); exit;
+if (!$codigo || ($tipo !== 'envio_gratis' && $valor <= 0)) {
+    echo json_encode(['ok'=>false,'msg'=>'Código requerido. El valor es obligatorio para cupones de descuento']); exit;
 }
+if ($tipo === 'envio_gratis') { $valor = 0; }
 if ($tipo === 'porcentaje' && $valor > 100) {
     echo json_encode(['ok'=>false,'msg'=>'El porcentaje no puede superar 100%']); exit;
 }

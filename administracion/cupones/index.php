@@ -110,12 +110,13 @@ include '../../panel/dashboard/layaut/nav.php';
                 </div>
                 <div class="cup-field">
                     <label>Tipo *</label>
-                    <select id="cup_tipo">
+                    <select id="cup_tipo" onchange="onCupTipoChange(this.value)">
                         <option value="porcentaje">Porcentaje (%)</option>
                         <option value="fijo">Monto fijo ($)</option>
+                        <option value="envio_gratis">Envío Gratis</option>
                     </select>
                 </div>
-                <div class="cup-field">
+                <div class="cup-field" id="cup_valor_wrap">
                     <label>Valor *</label>
                     <input type="number" id="cup_valor" min="0.01" step="0.01" placeholder="Ej: 15">
                     <span class="cup-hint" id="cup_valor_hint">% de descuento sobre el total</span>
@@ -204,6 +205,7 @@ const tabla = jQuery('#cupTable').DataTable({
         {
             data: null,
             render: r => {
+                if (r.tipo === 'envio_gratis') return `<span class="cup-valor" style="background:#dcfce7;color:#15803d">Envío Gratis</span>`;
                 const v = r.tipo === 'porcentaje' ? `${r.valor}%` : fmt(r.valor);
                 return `<span class="cup-valor">${v}</span>`;
             }
@@ -270,10 +272,18 @@ document.getElementById('cupSearch').addEventListener('input', function() {
 });
 
 /* Tipo → hint valor */
-document.getElementById('cup_tipo').addEventListener('change', function() {
-    document.getElementById('cup_valor_hint').textContent =
-        this.value === 'porcentaje' ? '% de descuento sobre el total' : 'Monto fijo en pesos';
-});
+function onCupTipoChange(tipo) {
+    const wrap = document.getElementById('cup_valor_wrap');
+    const hint = document.getElementById('cup_valor_hint');
+    if (tipo === 'envio_gratis') {
+        wrap.style.display = 'none';
+        document.getElementById('cup_valor').value = '0';
+    } else {
+        wrap.style.display = '';
+        hint.textContent = tipo === 'porcentaje' ? '% de descuento sobre el total' : 'Monto fijo en pesos';
+    }
+}
+document.getElementById('cup_tipo').addEventListener('change', function() { onCupTipoChange(this.value); });
 document.getElementById('cup_codigo').addEventListener('input', function() {
     this.value = this.value.toUpperCase();
 });
@@ -319,7 +329,7 @@ document.getElementById('btnNuevoCupon').addEventListener('click', () => {
     document.getElementById('cup_fecha_inicio').value = '';
     document.getElementById('cup_fecha_fin').value    = '';
     document.getElementById('cup_activo').checked  = true;
-    document.getElementById('cup_valor_hint').textContent = '% de descuento sobre el total';
+    onCupTipoChange('porcentaje');
     abrirModal('Nuevo cupón');
 });
 
@@ -337,8 +347,7 @@ function abrirEditar(id) {
     document.getElementById('cup_fecha_inicio').value  = row.fecha_inicio || '';
     document.getElementById('cup_fecha_fin').value     = row.fecha_fin    || '';
     document.getElementById('cup_activo').checked      = !!parseInt(row.activo);
-    document.getElementById('cup_valor_hint').textContent =
-        row.tipo === 'porcentaje' ? '% de descuento sobre el total' : 'Monto fijo en pesos';
+    onCupTipoChange(row.tipo);
     abrirModal('Editar cupón');
 }
 

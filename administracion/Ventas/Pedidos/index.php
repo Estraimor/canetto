@@ -120,11 +120,26 @@ include '../../../panel/dashboard/layaut/nav.php';
         </div>
       </div>
 
+      <!-- Opciones de envío (visible solo cuando tipo=envio) -->
       <div id="rep-envio-fields">
-        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:6px">¿Quién lo lleva?</label>
-        <select id="rep-select" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;background:#f8fafc">
-          <option value="">— Elegí cómo se envía —</option>
-        </select>
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:8px">¿Quién lo lleva?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <button type="button" id="btn-metodo-rep" onclick="setMetodoEnvio('repartidor')"
+            style="padding:12px 8px;border:2px solid #f97316;background:#fff7ed;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;color:#c2410c">
+            🛵 Repartidor propio
+          </button>
+          <button type="button" id="btn-metodo-uber" onclick="setMetodoEnvio('uber')"
+            style="padding:12px 8px;border:2px solid #e2e8f0;background:white;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;color:#64748b">
+            🚗 Uber
+          </button>
+        </div>
+        <!-- Campo link Uber (solo visible cuando metodo=uber) -->
+        <div id="uber-link-field" style="display:none">
+          <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:6px">Link de seguimiento Uber</label>
+          <input type="url" id="uber-link-input" placeholder="https://uber.com/track/..."
+            style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;background:#f8fafc;box-sizing:border-box">
+          <small style="color:#94a3b8;font-size:11px;margin-top:4px;display:block">Podés pegar el link de seguimiento de Uber para que se muestre en el admin.</small>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -135,7 +150,9 @@ include '../../../panel/dashboard/layaut/nav.php';
 </div>
 
 <script>
-let _modalTipoEntrega = 'envio';
+let _modalTipoEntrega  = 'envio';
+let _modalMetodoEnvio  = 'repartidor';
+
 function setTipoEntregaModal(tipo) {
   _modalTipoEntrega = tipo;
   const envioBtn  = document.getElementById('btn-entrega-envio');
@@ -152,6 +169,25 @@ function setTipoEntregaModal(tipo) {
     envioBtn.style.borderColor  = '#e2e8f0'; envioBtn.style.background = 'white';    envioBtn.style.color = '#64748b';
     repFields.style.display = 'none';
     confBtn.textContent = '🏪 Confirmar retiro';
+  }
+}
+
+function setMetodoEnvio(metodo) {
+  _modalMetodoEnvio = metodo;
+  const repBtn   = document.getElementById('btn-metodo-rep');
+  const uberBtn  = document.getElementById('btn-metodo-uber');
+  const uberFld  = document.getElementById('uber-link-field');
+  const confBtn  = document.getElementById('btn-confirmar-rep');
+  if (metodo === 'repartidor') {
+    repBtn.style.borderColor  = '#f97316'; repBtn.style.background  = '#fff7ed'; repBtn.style.color = '#c2410c';
+    uberBtn.style.borderColor = '#e2e8f0'; uberBtn.style.background = 'white';  uberBtn.style.color = '#64748b';
+    uberFld.style.display = 'none';
+    confBtn.textContent = '🛵 Buscar repartidor';
+  } else {
+    uberBtn.style.borderColor = '#7c3aed'; uberBtn.style.background  = '#f5f3ff'; uberBtn.style.color = '#6d28d9';
+    repBtn.style.borderColor  = '#e2e8f0'; repBtn.style.background   = 'white';   repBtn.style.color  = '#64748b';
+    uberFld.style.display = 'block';
+    confBtn.textContent = '🚗 Confirmar Uber';
   }
 }
 </script>

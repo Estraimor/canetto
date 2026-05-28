@@ -20,6 +20,9 @@ $lng_entrega      = isset($input['lng_entrega'])  && is_numeric($input['lng_entr
 $costo_envio_cli  = isset($input['costo_envio'])  && is_numeric($input['costo_envio'])  ? (float)$input['costo_envio']  : 0.0;
 $toppings_data    = is_array($input['toppings'] ?? null) ? $input['toppings'] : [];
 $costo_toppings   = isset($input['costo_toppings']) && is_numeric($input['costo_toppings']) ? (float)$input['costo_toppings'] : 0.0;
+$envio_gratis     = !empty($input['envio_gratis']);
+$propina          = isset($input['propina']) && is_numeric($input['propina']) ? max(0.0, (float)$input['propina']) : 0.0;
+$tarifa_servicio  = isset($input['tarifa_servicio']) && is_numeric($input['tarifa_servicio']) ? max(0.0, (float)$input['tarifa_servicio']) : 0.0;
 
 /* ── Haversine ── */
 function haversineKm(float $la1, float $lo1, float $la2, float $lo2): float {
@@ -113,12 +116,16 @@ try {
                 echo json_encode(['success'=>false,'message'=>"Este cupón requiere un pedido mínimo de $" . number_format($cupon['min_pedido'],0,',','.') . "."]); exit;
             }
             // Calcular descuento
-            if ($cupon['tipo'] === 'porcentaje') {
+            if ($cupon['tipo'] === 'envio_gratis') {
+                $envio_gratis = true;
+                $cupon_descuento = 0.0;
+            } elseif ($cupon['tipo'] === 'porcentaje') {
                 $cupon_descuento = round($total * $cupon['valor'] / 100, 2);
+                $total = max(0, $total - $cupon_descuento);
             } else {
                 $cupon_descuento = min((float)$cupon['valor'], $total);
+                $total = max(0, $total - $cupon_descuento);
             }
-            $total = max(0, $total - $cupon_descuento);
         } catch (Throwable $e) { $cupon_codigo = ''; }
     }
 
@@ -139,13 +146,14 @@ try {
         "ALTER TABLE ventas ADD COLUMN lat_entrega DECIMAL(10,8) NULL",
         "ALTER TABLE ventas ADD COLUMN lng_entrega DECIMAL(11,8) NULL",
         "ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN tarifa_servicio DECIMAL(10,2) NOT NULL DEFAULT 0",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
-    /* ── Costo de envío: se usa el valor que confirmó el cliente ── */
+    /* ── Costo de envío: cupón envio_gratis lo anula ── */
     $costo_envio = 0.0;
-    if ($tipo_entrega === 'envio') {
+    if ($tipo_entrega === 'envio' && !$envio_gratis) {
         $costo_envio = $costo_envio_cli > 0 ? $costo_envio_cli : 0.0;
-        $total += $costo_envio;
     }
 
     /* ── Sucursal de despacho para envíos: la activa más cercana ── */
@@ -212,8 +220,8 @@ try {
         (usuario_idusuario, total, estado_venta_idestado_venta,
          metodo_pago_idmetodo_pago, sucursal_retiro_idsucursal,
          observacion_cliente, tipo_entrega, direccion_entrega,
-         lat_entrega, lng_entrega, costo_envio, toppings_json, origen, fecha, created_at, updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
+         lat_entrega, lng_entrega, costo_envio, propina, tarifa_servicio, toppings_json, origen, fecha, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'tienda',NOW(),NOW(),NOW())
     ")->execute([
         $idusuario, $total, $es_mp ? 5 : 1, $metodo_pago,
         $tipo_entrega === 'retiro' ? $sucursal_id : $sucursal_envio_id,
@@ -223,6 +231,8 @@ try {
         $lat_entrega,
         $lng_entrega,
         $costo_envio,
+        $propina,
+        $tarifa_servicio,
         !empty($toppings_data) ? json_encode($toppings_data, JSON_UNESCAPED_UNICODE) : null,
     ]);
     $id_venta = (int)$pdo->lastInsertId();
