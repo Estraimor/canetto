@@ -405,11 +405,38 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 /* Cart item edit button */
 .cart-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
 .cart-item-edit{font-size:11px;font-weight:700;color:#3b82f6;background:none;border:none;cursor:pointer;padding:0;white-space:nowrap;flex-shrink:0;margin-top:1px}
-/* Cart item price breakdown */
-.cart-item-price-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;margin-top:3px}
-.cart-item-price-base{font-size:12px;color:#94a3b8;font-weight:600}
+/* Cart item redesign */
+.cart-item{align-items:flex-start;padding:14px 16px;gap:12px;border-bottom:1px solid #f5f5f5;background:#fff}
+.cart-item-body{flex:1;min-width:0}
+.cart-item-row1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.cart-item-name{font-size:14px;font-weight:700;color:#1e293b;flex:1;min-width:0;line-height:1.35;white-space:normal}
+.cart-item-total{font-size:15px;font-weight:900;color:#1e293b;white-space:nowrap;flex-shrink:0}
+.cart-item-row2{display:flex;align-items:center;justify-content:space-between;margin-top:7px;gap:6px}
+.cart-item-breakdown{font-size:11px;color:#94a3b8;font-weight:600;flex:1;min-width:0}
+.cart-item-extras-badge{display:inline-block;font-size:11px;color:#c88e99;font-weight:700;background:#fdf0f3;padding:1px 7px;border-radius:8px;border:1px solid #f9dde3;margin-top:3px}
+.cart-qty-group{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.cart-item-del{width:28px;height:28px;border:1.5px solid #f0f0f0;background:#fff;color:#94a3b8;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s;padding:0;flex-shrink:0}
+.cart-item-del:hover{border-color:#fecaca;color:#e74c3c;background:#fff5f5}
+/* Promo/Descuentos row */
+.cart-promo-row{display:flex;align-items:center;gap:12px;padding:13px 16px;background:#fff;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .12s;-webkit-tap-highlight-color:transparent}
+.cart-promo-row:hover{background:#fafafa}
+.cart-promo-ic{width:36px;height:36px;border-radius:10px;background:#fff0f3;display:flex;align-items:center;justify-content:center;color:#c88e99;font-size:15px;flex-shrink:0}
+.cart-promo-arrow{color:#bbb;font-size:11px;flex-shrink:0;transition:transform .2s}
+.cart-cupon-panel{background:#f8fafc;border-bottom:1px solid #f0f0f0;padding:12px 16px}
+.cart-cupon-input-row{display:flex;gap:8px}
+.cart-cupon-input-row input{flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;text-transform:uppercase;background:#fff;outline:none;font-family:inherit}
+.cart-cupon-input-row input:focus{border-color:#c88e99}
+.cart-cupon-input-row button{padding:0 16px;background:#1e293b;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.cart-cupon-input-row button:hover{background:#0f172a}
+.cart-cupon-ok{display:flex;justify-content:space-between;align-items:center;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-top:8px}
+.cart-cupon-ok-quitar{background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;font-weight:700}
+/* legacy aliases */
+.cart-item-price{font-size:15px;font-weight:900;color:#1e293b}
+.cart-item-price-base{font-size:11px;color:#94a3b8;font-weight:600}
 .cart-item-price-extras{font-size:11px;color:#c88e99;font-weight:700;background:#fdf0f3;padding:1px 6px;border-radius:8px}
-.cart-item-price{font-size:13px;font-weight:800;color:#1e293b;font-family:"Speedee",sans-serif}
+/* Vaciar carrito */
+.cart-vaciar-btn{font-size:11px;font-weight:700;color:#e74c3c;background:none;border:1.5px solid #fecaca;border-radius:20px;padding:3px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:all .15s}
+.cart-vaciar-btn:hover{background:#fee2e2}
 /* Cart free shipping banner */
 .cart-free-ship{display:none;margin:0;background:#e8f5e9;padding:10px 16px;font-size:13px;font-weight:700;color:#2e7d32;align-items:center;gap:8px;border-bottom:1px solid #c8e6c9}
 .cart-free-ship.on{display:flex}
@@ -927,10 +954,39 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
   <div class="cart-dhead">
     <button class="cart-back-btn" onclick="closeCart()" aria-label="Volver">‹</button>
     <span class="cart-dhead-title">Mi pedido</span>
-    <span class="cart-count-tag" id="cartCountTag">0 items</span>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <button class="cart-vaciar-btn" id="cartVaciarBtn" onclick="clearCartConfirm()" title="Vaciar carrito" style="display:none">
+        <i class="fa-solid fa-trash-can"></i> Vaciar
+      </button>
+      <span class="cart-count-tag" id="cartCountTag">0 items</span>
+    </div>
   </div>
   <div class="cart-free-ship" id="cartFreeShipBanner">
     <i class="fa-solid fa-motorcycle"></i> ¡Ya tenés envío gratis!
+  </div>
+  <!-- Descuentos y promociones -->
+  <div class="cart-promo-row" id="cartPromoRow" onclick="toggleCartCupon()">
+    <div class="cart-promo-ic"><i class="fa-solid fa-tag"></i></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:700;color:#1e293b">Descuentos y promociones</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:1px" id="cartPromoSub">Ingresá tu código de descuento</div>
+    </div>
+    <i class="fa-solid fa-chevron-right cart-promo-arrow" id="cartPromoArrow"></i>
+  </div>
+  <div class="cart-cupon-panel" id="cartCuponPanel" style="display:none">
+    <div class="cart-cupon-input-row">
+      <input type="text" id="cartCuponInput" placeholder="Código de descuento" autocomplete="off"
+             oninput="this.value=this.value.toUpperCase()">
+      <button id="btnCartCupon" onclick="aplicarCuponCart()">Aplicar</button>
+    </div>
+    <div id="cartCuponMsg" style="margin-top:6px;font-size:12px;font-weight:600;color:#dc2626"></div>
+    <div class="cart-cupon-ok" id="cartCuponOk" style="display:none">
+      <div>
+        <div style="font-size:13px;color:#15803d;font-weight:700"><i class="fa-solid fa-circle-check"></i> <span id="cartCuponOkLabel">Cupón aplicado</span></div>
+        <div style="font-size:16px;font-weight:800;color:#15803d;margin-top:2px" id="cartCuponOkAmount"></div>
+      </div>
+      <button class="cart-cupon-ok-quitar" onclick="quitarCuponCart()">✕ Quitar</button>
+    </div>
   </div>
   <div class="cart-items-wrap" id="cartItemsWrap"></div>
   <div class="cart-dfooter">
@@ -1354,7 +1410,7 @@ async function clearCartConfirm(){
   });
   if(r.isConfirmed) clearCart();
 }
-const total=c=>c.reduce((s,i)=>s+i.precio*i.cantidad,0);
+const total=c=>c.reduce((s,i)=>{const b=i.precio_base||i.precio;const tp=i.toppings&&i.toppings.length?i.toppings.reduce((ts,t)=>ts+t.precio,0):0;return s+b*i.cantidad+tp;},0);
 const precioBase=it=>it.precio_base||it.precio;
 const count=c=>c.reduce((s,i)=>s+i.cantidad,0);
 const fmt=n=>'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:0});
@@ -1393,6 +1449,8 @@ function renderCart(){
 
   document.getElementById('cartCountTag').textContent=n+(n===1?' item':' items');
   document.getElementById('cartTotal').textContent=fmt(t);
+  const vaciarBtn=document.getElementById('cartVaciarBtn');
+  if(vaciarBtn) vaciarBtn.style.display=c.length?'flex':'none';
   const w=document.getElementById('cartItemsWrap');
   if(!c.length){w.innerHTML='<div class="cart-empty"><div class="cart-empty-ic"><i class="fa-solid fa-cart-shopping"></i></div><div class="cart-empty-txt">Tu carrito está vacío</div></div>';return}
   w.innerHTML=c.map((it,idx)=>{
@@ -1400,24 +1458,28 @@ function renderCart(){
     const tpCosto=it.toppings&&it.toppings.length?it.toppings.reduce((s,t)=>s+t.precio,0):0;
     const tpHtml=it.toppings&&it.toppings.length
       ?`<div class="cart-toppings">${it.toppings.map(tp=>`<span class="cart-topping-tag">+ ${tp.nombre}</span>`).join('')}</div>`:'';
-    const editBtn=`<button class="cart-item-edit" onclick="abrirTpEdit(${idx})">Editar →</button>`;
-    const precioBaseHtml=`<span class="cart-item-price-base">${fmt(base)} × ${it.cantidad}</span>`;
-    const extrasHtml=tpCosto>0?`<span class="cart-item-price-extras">+ Extras ${fmt(tpCosto*it.cantidad)}</span>`:'';
-    const totalHtml=`<span class="cart-item-price">${fmt(it.precio*it.cantidad)}</span>`;
+    const itemTotal=base*it.cantidad+tpCosto;
+    const breakdown=tpCosto>0?`${fmt(base)}/u × ${it.cantidad} + extras ${fmt(tpCosto)}`:`${fmt(base)}/u × ${it.cantidad}`;
+    const extrasTag=tpCosto>0?`<span class="cart-item-extras-badge">+ Extras ${fmt(tpCosto)}</span>`:'';
+    const delIcon=it.cantidad===1?'<i class="fa-solid fa-trash-can"></i>':'−';
     return `<div class="cart-item">
       ${thumbHtml(it)}
-      <div class="cart-item-inf">
-        <div class="cart-item-top">
+      <div class="cart-item-body">
+        <div class="cart-item-row1">
           <div class="cart-item-name">${it.nombre}</div>
-          ${editBtn}
+          <div class="cart-item-total">${fmt(itemTotal)}</div>
         </div>
+        <button class="cart-item-edit" onclick="abrirTpEdit(${idx})">Editar →</button>
         ${tpHtml}
-        <div class="cart-item-price-row">${precioBaseHtml}${extrasHtml}${totalHtml}</div>
-      </div>
-      <div class="qty-ctrl">
-        <button class="qty-btn" onclick="updateQtyByIdx(${idx},-1)">−</button>
-        <span class="qty-num">${it.cantidad}</span>
-        <button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button>
+        ${extrasTag}
+        <div class="cart-item-row2">
+          <span class="cart-item-breakdown">${breakdown}</span>
+          <div class="cart-qty-group">
+            <button class="cart-item-del" onclick="updateQtyByIdx(${idx},-1)" title="${it.cantidad===1?'Eliminar':'Reducir'}">${delIcon}</button>
+            <span class="qty-num">${it.cantidad}</span>
+            <button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1463,6 +1525,49 @@ function changeTpQty(btn,delta){
   row.querySelectorAll('.dips-qty-btn').forEach(b=>{
     b.className='dips-qty-btn'+(qty>0?' active':'');
   });
+}
+function toggleCartCupon(){
+  const panel=document.getElementById('cartCuponPanel');
+  const arrow=document.getElementById('cartPromoArrow');
+  const isOpen=panel.style.display!=='none';
+  panel.style.display=isOpen?'none':'block';
+  if(arrow) arrow.style.transform=isOpen?'':'rotate(90deg)';
+}
+async function aplicarCuponCart(){
+  const input=document.getElementById('cartCuponInput');
+  const btn=document.getElementById('btnCartCupon');
+  const msgEl=document.getElementById('cartCuponMsg');
+  const codigo=input.value.trim();
+  if(!codigo) return;
+  btn.disabled=true;btn.textContent='...';
+  try{
+    const res=await fetch('api/validar_cupon.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo,total:total(getCart())})});
+    const d=await res.json();
+    if(d.success){
+      _cuponAplicado={codigo,descuento:d.descuento,label:d.label};
+      _envioGratis=d.envio_gratis||false;
+      const ckIn=document.getElementById('ckCuponInput');if(ckIn) ckIn.value=codigo;
+      msgEl.textContent='';
+      document.getElementById('cartCuponOk').style.display='flex';
+      document.getElementById('cartCuponOkLabel').textContent=d.label||`Cupón "${codigo}" aplicado`;
+      document.getElementById('cartCuponOkAmount').textContent=d.envio_gratis?'¡Envío sin costo!':'-'+fmt(d.descuento);
+      const sub=document.getElementById('cartPromoSub');
+      if(sub) sub.textContent=d.label||`Cupón "${codigo}" aplicado`;
+      renderCart();if(typeof buildSummary==='function') buildSummary();
+    } else {
+      msgEl.textContent=d.message||'Código inválido o no disponible';
+    }
+  }catch{ msgEl.textContent='Error de conexión, intentá de nuevo'; }
+  btn.disabled=false;btn.textContent='Aplicar';
+}
+function quitarCuponCart(){
+  quitarCupon();
+  document.getElementById('cartCuponOk').style.display='none';
+  document.getElementById('cartCuponMsg').textContent='';
+  document.getElementById('cartCuponInput').value='';
+  document.getElementById('cartCuponOkAmount').textContent='';
+  const sub=document.getElementById('cartPromoSub');
+  if(sub) sub.textContent='Ingresá tu código de descuento';
 }
 function cerrarTpEdit(){
   document.getElementById('tpEditModal').classList.remove('on');
@@ -3089,7 +3194,7 @@ function renderDesktopCart(){
       ${thumbHtml(it)}
       <div class="cart-item-inf">
         <div class="cart-item-name">${it.nombre}</div>
-        <div class="cart-item-price">${fmt(it.precio*it.cantidad)}</div>
+        <div class="cart-item-price">${fmt((it.precio_base||it.precio)*it.cantidad+(it.toppings&&it.toppings.length?it.toppings.reduce((s,t)=>s+t.precio,0):0))}</div>
       </div>
       <div class="qty-ctrl">
         <button class="qty-btn" onclick="updateQtyByIdx(${idx},-1)">−</button>
