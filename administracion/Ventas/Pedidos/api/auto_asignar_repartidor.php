@@ -190,11 +190,11 @@ try {
         ]); exit;
     }
 
-    $elegido   = $candidatos[0];
-    $repId     = (int)$elegido['idusuario'];
-    $repNombre = trim($elegido['nombre'] . ' ' . ($elegido['apellido'] ?? ''));
+    // Usar el primero como referencia para el campo pendiente (flag de estado)
+    $repId     = (int)$candidatos[0]['idusuario'];
+    $repNombre = trim($candidatos[0]['nombre'] . ' ' . ($candidatos[0]['apellido'] ?? ''));
 
-    // Proponer el pedido al repartidor (pendiente de aceptación) y cambiar estado a 3
+    // Marcar pedido como pendiente de aceptación
     $pdo->prepare("
         UPDATE ventas
         SET estado_venta_idestado_venta = 3,
@@ -206,21 +206,23 @@ try {
     ")->execute([':rep' => $repId, ':id' => $id_venta]);
 
     audit($pdo, 'editar', 'pedidos',
-        "Propuesta pedido #{$id_venta} → {$repNombre} (esperando aceptación)");
+        "Propuesta pedido #{$id_venta} → todos los repartidores disponibles (" . count($candidatos) . ")");
 
-    // Notificación push al repartidor para que responda
+    // Notificación push a TODOS los candidatos disponibles
     require_once __DIR__ . '/../../../../config/web_push.php';
-    push_enviar_a_repartidor(
-        $pdo, $repId,
-        '🔔 ¿Aceptás este pedido?',
-        "El pedido #{$id_venta} te está esperando. Abrí la app y respondé rápido."
-    );
+    foreach ($candidatos as $cand) {
+        push_enviar_a_repartidor(
+            $pdo, (int)$cand['idusuario'],
+            '🔔 ¿Aceptás este pedido?',
+            "El pedido #{$id_venta} está disponible. ¡El primero en aceptar se lo lleva!"
+        );
+    }
 
     ob_end_clean();
     echo json_encode([
         'success'       => true,
         'propuesta'     => true,
-        'repartidor'    => $repNombre,
+        'repartidor'    => 'repartidores',
         'repartidor_id' => $repId,
     ]);
 

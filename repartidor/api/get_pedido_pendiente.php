@@ -37,12 +37,13 @@ try {
         LEFT JOIN usuario     u  ON u.idusuario     = v.usuario_idusuario
         LEFT JOIN metodo_pago mp ON mp.idmetodo_pago = v.metodo_pago_idmetodo_pago
         LEFT JOIN sucursal    s  ON s.idsucursal     = v.sucursal_retiro_idsucursal
-        WHERE v.repartidor_pendiente_idusuario = :rep
-          AND v.repartidor_idusuario IS NULL
+        WHERE v.repartidor_idusuario IS NULL
+          AND v.repartidor_pendiente_idusuario IS NOT NULL
           AND v.estado_venta_idestado_venta = 3
+        ORDER BY v.updated_at ASC
         LIMIT 1
     ");
-    $stmt->execute([':rep' => $repId]);
+    $stmt->execute([]);
     $pedido = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($pedido) {

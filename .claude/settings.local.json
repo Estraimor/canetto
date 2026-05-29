@@ -47,7 +47,18 @@
       "Bash(php -l \"c:/wamp64/www/canetto/administracion/cupones/api/guardar.php\")",
       "Bash(php -l \"c:/wamp64/www/canetto/administracion/cupones/index.php\")",
       "Bash(php -l \"c:/wamp64/www/canetto/administracion/cupones/api/listar.php\")",
-      "Bash(php -l c:/wamp64/www/canetto/tienda/index.php)"
+      "Bash(php -l c:/wamp64/www/canetto/tienda/index.php)",
+      "Bash(Get-ChildItem -Path \"c:\\\\wamp64\\\\www\\\\canetto\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(curl -L -o \"c:/wamp64/www/canetto/tienda/img/mercadopago-logo.png\" \"https://logospng.org/download/mercado-pago/logo-mercado-pago-icone-1024.png\")",
+      "Bash(curl -L -o \"c:/wamp64/www/canetto/tienda/img/mp-logo.png\" \"https://logospng.org/download/mercado-pago/logo-mercado-pago-icone-1024.png\")",
+      "Bash(mysql -u root canetto -e \"SELECT idventas, toppings_json, total FROM ventas WHERE idventas=135;\")",
+      "Bash(mysql -u root -e \"SELECT idventas, toppings_json, total FROM canetto.ventas WHERE idventas=135;\")",
+      "Bash(./bin/mariadb/mariadb.exe -u root canetto -e \"SELECT idventas, toppings_json, total FROM ventas WHERE idventas=135;\")",
+      "Bash(c:/wamp64/bin/mariadb/mariadb11.5.2/bin/mysql.exe -u root canetto -e \"SELECT idventas, toppings_json, total FROM ventas WHERE idventas=135;\")",
+      "Bash(c:/wamp64/bin/mariadb/mariadb11.5.2/bin/mysql.exe -u root -e \"SHOW DATABASES;\")",
+      "Bash(c:/wamp64/bin/mariadb/mariadb11.5.2/bin/mysql.exe -u root u966473590_canetto -e \"SELECT idventas, toppings_json, total FROM ventas WHERE idventas=135;\")",
+      "Bash(c:/wamp64/bin/mariadb/mariadb11.5.2/bin/mysql.exe -u root -e \"SHOW DATABASES LIKE '%canetto%';\")"
     ]
   }
 }

@@ -198,6 +198,18 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
 
 /* ── ACCIONES ── */
 .acciones-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.row-clickable { cursor: pointer; }
+.row-clickable:hover td { background: #f8fafc; }
+.expand-td { text-align: center; width: 32px; }
+.expand-chevron { font-size: 16px; color: #94a3b8; user-select: none; }
+.acciones-expand-row td { padding: 8px 16px 12px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+.acciones-expand-inner { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; animation: slideDown .45s cubic-bezier(.22,.68,0,1.2); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.expand-chevron { display: inline-block; transition: transform .4s cubic-bezier(.22,.68,0,1.2); }
+.expand-chevron.open { transform: rotate(180deg); }
 .btn-accion {
   display: inline-flex; align-items: center; gap: .35rem;
   padding: .38rem .85rem; border-radius: var(--radius);
@@ -272,6 +284,13 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
 .detalle-total { background:var(--ink);color:#fff;border-radius:var(--radius);padding:13px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px; }
 .detalle-total span:first-child { font-size:.9rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.7; }
 .detalle-total span:last-child  { font-family:"Speedee", sans-serif;font-size:1.2rem;font-weight:700; }
+
+/* ── RESUMEN DETALLE ── */
+.detalle-resumen-list { display:flex;flex-direction:column;gap:0;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden; }
+.det-res-row { display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:13px;font-weight:600;color:#1e293b;border-bottom:1px solid #f0f0f0; }
+.det-res-row:last-child { border-bottom:none; }
+.det-res-total { background:#1e293b;color:#fff;font-size:14px;font-weight:800; }
+.det-res-total span { color:#fff !important; }
 
 /* ── TOAST ── */
 .toast {

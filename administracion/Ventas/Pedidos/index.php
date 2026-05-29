@@ -75,7 +75,7 @@ include '../../../panel/dashboard/layaut/nav.php';
         <tr>
           <th>#</th><th>Cliente</th><th>Productos</th>
           <th>Total</th><th>Pago</th><th>Fecha</th>
-          <th>Estado</th><th>Acciones</th>
+          <th>Estado</th><th style="width:32px"></th>
         </tr>
       </thead>
       <tbody id="pedidos-tbody">

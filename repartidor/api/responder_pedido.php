@@ -26,30 +26,31 @@ if (!$idVenta || !in_array($accion, ['aceptar', 'rechazar'])) {
 try {
     $pdo = Conexion::conectar();
 
-    // Verificar que la propuesta pertenece a este repartidor y sigue vigente
+    // Verificar que el pedido sigue pendiente (sin repartidor asignado aún)
     $stmt = $pdo->prepare("
         SELECT idventas FROM ventas
         WHERE idventas = :id
-          AND repartidor_pendiente_idusuario = :rep
           AND repartidor_idusuario IS NULL
+          AND repartidor_pendiente_idusuario IS NOT NULL
           AND estado_venta_idestado_venta = 3
     ");
-    $stmt->execute([':id' => $idVenta, ':rep' => $repId]);
+    $stmt->execute([':id' => $idVenta]);
     if (!$stmt->fetch()) {
         ob_end_clean();
         echo json_encode(['success' => false, 'message' => 'Propuesta no válida o ya fue respondida']); exit;
     }
 
     if ($accion === 'aceptar') {
+        // Cualquier repartidor puede aceptar — se asigna a quien acepta primero
         $upd = $pdo->prepare("
             UPDATE ventas
             SET repartidor_idusuario = :rep,
                 repartidor_pendiente_idusuario = NULL,
                 updated_at = NOW()
             WHERE idventas = :id
-              AND repartidor_pendiente_idusuario = :rep2
+              AND repartidor_idusuario IS NULL
         ");
-        $upd->execute([':rep' => $repId, ':id' => $idVenta, ':rep2' => $repId]);
+        $upd->execute([':rep' => $repId, ':id' => $idVenta]);
 
         audit($pdo, 'editar', 'pedidos', "Repartidor #{$repId} aceptó pedido #{$idVenta}");
 
@@ -72,9 +73,9 @@ try {
             SET repartidor_pendiente_idusuario = NULL,
                 updated_at = NOW()
             WHERE idventas = :id
-              AND repartidor_pendiente_idusuario = :rep
+              AND repartidor_idusuario IS NULL
         ");
-        $upd->execute([':id' => $idVenta, ':rep' => $repId]);
+        $upd->execute([':id' => $idVenta]);
 
         audit($pdo, 'editar', 'pedidos', "Repartidor #{$repId} rechazó pedido #{$idVenta}");
 

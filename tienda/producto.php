@@ -1038,6 +1038,7 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
               </div>
             </div>
           <?php endforeach; ?>
+        </div>
           <!-- Opción sin topping -->
           <div class="det-tp-row det-tp-row-sin" id="detTpSinRow" onclick="toggleSinTopping()">
             <div class="det-tp-info">
@@ -1221,13 +1222,8 @@ function actualizarResumen() {
       partes.push(row.dataset.nombre + (tpQty > 1 ? ' ×' + tpQty : ''));
     }
   });
-  if (partes.length > 0) {
-    resDiv.style.display = 'flex';
-    resDiv.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + partes.join(' · ');
-  } else {
-    resDiv.style.display = 'none';
-    resDiv.innerHTML = '';
-  }
+  resDiv.style.display = 'none';
+  resDiv.innerHTML = '';
 }
 
 function toggleSinTopping() {
@@ -1264,15 +1260,10 @@ function actualizarPrecioBtn() {
       extra += tpQty * (parseFloat(row.dataset.precio) || 0);
     });
   }
-  const porUnidad = PROD_PRECIO + extra;
-  const total = porUnidad * qty;
+  const total = PROD_PRECIO * qty + extra;
   const cp = document.getElementById('ctaPrice');
   if (cp) {
-    if (extra > 0 && qty > 1) {
-      cp.innerHTML = `<span style="font-size:.7em;opacity:.75">${fmtARS(porUnidad)} × ${qty}</span><br>${fmtARS(total)}`;
-    } else {
-      cp.textContent = fmtARS(total);
-    }
+    cp.textContent = fmtARS(total);
   }
 }
 

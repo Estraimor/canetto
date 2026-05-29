@@ -123,7 +123,7 @@ const PedidosApp = (() => {
         : (v.repartidor_nombre
             ? `<small style="color:#f97316">🛵 ${v.repartidor_nombre}</small>`
             : (v.repartidor_pendiente_nombre
-                ? `<small style="color:#f59e0b" id="rep-status-${v.idventas}">⏳ Esperando a ${v.repartidor_pendiente_nombre}...</small>`
+                ? `<small style="color:#f59e0b" id="rep-status-${v.idventas}">⏳ Esperando a repartidores...</small>`
                 : (v.estado_id == 3 && v.tipo_entrega === 'envio'
                     ? `<small style="color:#94a3b8" id="rep-status-${v.idventas}">🔍 Buscando repartidor...</small>`
                     : '')));
@@ -137,8 +137,25 @@ const PedidosApp = (() => {
         return `<option value="${id}" ${estadoId === id ? 'selected' : ''}>${e.label}</option>`;
       }).join('');
 
+      const accionesBtns = `
+        <button class="btn-accion btn-ver" onclick="PedidosApp.verDetalle(${v.idventas})">👁 Ver</button>
+        ${!esCancelado ? `
+        <button class="btn-accion btn-guardar-estado" id="btn-save-${v.idventas}"
+                onclick="PedidosApp.guardarEstado(${v.idventas})" disabled>💾</button>
+        <button class="btn-accion btn-cancelar-venta" onclick="PedidosApp.cancelarPedido(${v.idventas})">✖ Cancelar</button>
+        ` : ''}
+        ${estadoId === 3 && esEnvio ? `
+        <button class="btn-accion btn-reasignar" onclick="PedidosApp.reasignarRepartidor(${v.idventas})">
+          🔄 Liberar y rebuscar
+        </button>
+        <button class="btn-accion btn-whatsapp"
+                onclick="PedidosApp.mensajeCliente('${String(v.cliente_telefono||'').replace(/\D/g,'')}', '${(v.cliente_nombre||'').split(' ')[0].replace(/'/g,"\\'")}')">
+          💬 Mensaje
+        </button>` : ''}
+      `;
+
       return `
-        <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}" data-rep-pendiente="${v.repartidor_pendiente_idusuario || ''}" class="${rowCls}">
+        <tr id="row-${v.idventas}" data-tipo-entrega="${tipoEntrega}" data-rep-pendiente="${v.repartidor_pendiente_idusuario || ''}" class="${rowCls} row-clickable" onclick="PedidosApp.toggleAcciones(${v.idventas})">
           <td>
             <span class="venta-id">#${v.idventas}</span><br>
             ${badgeEntrega}${badgeOrigen}
@@ -155,7 +172,7 @@ const PedidosApp = (() => {
           <td><span class="total-cell">${fmt(v.total)}</span></td>
           <td><span class="pago-badge">${v.metodo_pago || '—'}</span></td>
           <td class="fecha-cell"><strong>${fecha.dia}</strong>${fecha.hora}</td>
-          <td>
+          <td onclick="event.stopPropagation()">
             ${esCancelado
               ? `<span class="estado-pill est-6"><span class="est-dot"></span>Cancelado</span>`
               : `<select class="estado-select estado-bg-${estadoId}" id="estado-select-${v.idventas}"
@@ -164,27 +181,26 @@ const PedidosApp = (() => {
                  </select>`
             }
           </td>
-          <td>
-            <div class="acciones-cell">
-              <button class="btn-accion btn-ver" onclick="PedidosApp.verDetalle(${v.idventas})">👁 Ver</button>
-              ${!esCancelado ? `
-              <button class="btn-accion btn-guardar-estado" id="btn-save-${v.idventas}"
-                      onclick="PedidosApp.guardarEstado(${v.idventas})" disabled>💾</button>
-              <button class="btn-accion btn-cancelar-venta" onclick="PedidosApp.cancelarPedido(${v.idventas})">✖ Cancelar</button>
-              ` : ''}
-              ${estadoId === 3 && esEnvio ? `
-              <button class="btn-accion btn-reasignar" onclick="PedidosApp.reasignarRepartidor(${v.idventas})">
-                🔄 Liberar y rebuscar
-              </button>
-              <button class="btn-accion btn-whatsapp"
-                      onclick="PedidosApp.mensajeCliente('${String(v.cliente_telefono||'').replace(/\D/g,'')}', '${(v.cliente_nombre||'').split(' ')[0].replace(/'/g,"\\'")}')">
-                💬 Mensaje
-              </button>` : ''}
+          <td class="expand-td"><span class="expand-chevron" id="chev-${v.idventas}">▾</span></td>
+        </tr>
+        <tr id="acc-row-${v.idventas}" class="acciones-expand-row" style="display:none">
+          <td colspan="8">
+            <div class="acciones-expand-inner">
+              ${accionesBtns}
             </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  function toggleAcciones(idVenta) {
+    const row = document.getElementById('acc-row-' + idVenta);
+    const chev = document.getElementById('chev-' + idVenta);
+    if (!row) return;
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : 'table-row';
+    if (chev) chev.classList.toggle('open', !open);
   }
 
   function onEstadoChange(idVenta) {
@@ -331,8 +347,8 @@ const PedidosApp = (() => {
         const b = _busquedas[idVenta];
         if (!b) return; // fue cancelada mientras esperaba
         b.repId = data.repartidor_id;
-        _setRepStatus(idVenta, `⏳ Esperando que <strong>${data.repartidor}</strong> acepte...`);
-        showToast(`⏳ Propuesta enviada a ${data.repartidor}`, '');
+        _setRepStatus(idVenta, `⏳ Esperando a repartidores...`);
+        showToast(`⏳ Propuesta enviada a repartidores`, '');
         pollPropuesta(idVenta);
 
       } else if (data.sin_repartidor) {
@@ -549,23 +565,43 @@ const PedidosApp = (() => {
             return `
             <div class="detalle-item">
               <div style="flex:1">
-                <div class="di-nombre">${p.tipo === 'box' ? '📦' : '🍪'} ${p.nombre}</div>
+                <div class="di-nombre"><i class="fa-solid fa-cookie-bite" style="font-size:11px;color:#c88e99;margin-right:5px"></i>${p.nombre}</div>
                 <div class="di-qty">Cantidad: ${p.cantidad}</div>
                 ${boxHtml}
               </div>
               <div class="di-precio">${fmt(p.precio_unitario * p.cantidad)}</div>
             </div>`;
           }).join('')}
-          ${(d.toppings || []).map(t => `
-            <div class="detalle-item detalle-item--topping">
-              <div style="flex:1">
-                <div class="di-nombre">✨ ${t.nombre}</div>
-                <div class="di-qty">Extra / Topping</div>
-              </div>
-              <div class="di-precio di-precio--topping">+${fmt(t.precio)}</div>
-            </div>`).join('')}
+          ${(d.toppings && d.toppings.length)
+            ? d.toppings.map(t => `
+              <div class="detalle-item detalle-item--topping">
+                <div style="flex:1">
+                  <div class="di-nombre"><i class="fa-solid fa-plus" style="font-size:10px;color:#f59e0b;margin-right:5px"></i>${t.nombre}</div>
+                  <div class="di-qty">Extra / Topping</div>
+                </div>
+                <div class="di-precio di-precio--topping">+${fmt(t.precio)}</div>
+              </div>`).join('')
+            : `<div style="font-size:12px;color:#94a3b8;padding:6px 0 2px">Sin extras</div>`
+          }
         </div>
-        <div class="detalle-total"><span>Total</span><span>${fmt(d.total)}</span></div>
+        <div class="detalle-total"><span>Total productos</span><span>${fmt((d.productos||[]).reduce((s,p)=>s+(p.precio_unitario*p.cantidad),0) + (d.toppings||[]).reduce((s,t)=>s+t.precio,0))}</span></div>
+      </div>
+
+      <!-- Resumen de costos -->
+      <div class="detalle-section">
+        <h4><i class="fa-solid fa-receipt" style="font-size:13px;margin-right:6px;color:#64748b"></i>Resumen del pedido</h4>
+        <div class="detalle-resumen-list">
+          ${d.tipo_entrega === 'envio' ? `
+            <div class="det-res-row"><span><i class="fa-solid fa-motorcycle" style="color:#3b82f6;margin-right:6px"></i>Envío${d.direccion_entrega ? ` — <span style="font-weight:400;color:#64748b">${d.direccion_entrega}</span>` : ''}</span><span>${+d.costo_envio > 0 ? fmt(d.costo_envio) : '<span style="color:#16a34a">Gratis</span>'}</span></div>
+          ` : `
+            <div class="det-res-row"><span><i class="fa-solid fa-store" style="color:#64748b;margin-right:6px"></i>Retiro en sucursal</span><span style="color:#64748b">—</span></div>
+          `}
+          ${+d.tarifa_servicio > 0 ? `<div class="det-res-row"><span><i class="fa-solid fa-circle-info" style="color:#94a3b8;margin-right:6px"></i>Tarifa de servicio</span><span>${fmt(d.tarifa_servicio)}</span></div>` : ''}
+          ${+d.propina > 0 ? `<div class="det-res-row"><span><i class="fa-solid fa-hand-holding-heart" style="color:#3b82f6;margin-right:6px"></i>Propina repartidor</span><span>${fmt(d.propina)}</span></div>` : ''}
+          ${d.cupon_codigo ? `<div class="det-res-row" style="color:#16a34a"><span><i class="fa-solid fa-tag" style="margin-right:6px"></i>Cupón ${d.cupon_codigo}</span><span>−${fmt(d.descuento_cupon)}</span></div>` : ''}
+          ${d.observacion_cliente ? `<div class="det-res-row" style="flex-direction:column;gap:2px"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em">Observación</span><span style="font-weight:500">${d.observacion_cliente}</span></div>` : ''}
+          <div class="det-res-row det-res-total"><span>Total</span><span>${fmt(d.total)}</span></div>
+        </div>
       </div>
     `;
   }
@@ -595,5 +631,5 @@ const PedidosApp = (() => {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { cargarPedidos, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, cancelarPedido, confirmarRepartidor, cerrarModalRep, reasignarRepartidor, toggleSeccion };
+  return { cargarPedidos, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, cancelarPedido, confirmarRepartidor, cerrarModalRep, reasignarRepartidor, toggleSeccion, toggleAcciones };
 })();

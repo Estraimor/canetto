@@ -395,7 +395,9 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 .tp-stock-low {background:#fef9c3;color:#a16207}
 .tp-stock-empty{background:#fee2e2;color:#dc2626}
 /* Cart toppings tags */
-.cart-toppings{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px}
+.cart-toppings{display:flex;flex-direction:column;gap:4px;margin:4px 0 2px}
+.cart-topping-row{display:flex;align-items:center;gap:8px}
+.cart-tp-qty{transform:scale(.85);transform-origin:left center}
 .cart-topping-tag{
   font-size:10px;font-weight:600;
   background:#fdf0f3;color:#c88e99;
@@ -409,7 +411,8 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 .cart-item{align-items:flex-start;padding:14px 16px;gap:12px;border-bottom:1px solid #f5f5f5;background:#fff}
 .cart-item-body{flex:1;min-width:0}
 .cart-item-row1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.cart-item-name{font-size:14px;font-weight:700;color:#1e293b;flex:1;min-width:0;line-height:1.35;white-space:normal}
+.cart-item-name-qty{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.cart-item-name{font-size:14px;font-weight:700;color:#1e293b;min-width:0;line-height:1.35;white-space:normal}
 .cart-item-total{font-size:15px;font-weight:900;color:#1e293b;white-space:nowrap;flex-shrink:0}
 .cart-item-row2{display:flex;align-items:center;justify-content:space-between;margin-top:7px;gap:6px}
 .cart-item-breakdown{font-size:11px;color:#94a3b8;font-weight:600;flex:1;min-width:0}
@@ -466,6 +469,8 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 .tp-edit-modal.on .tp-edit-sheet{transform:none}
 .tp-edit-hd{display:flex;align-items:center;gap:10px;padding:16px 18px 0;flex-shrink:0}
 .tp-edit-title{font-size:17px;font-weight:900;color:#1e293b;flex:1}
+.tp-edit-qty-row{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.tp-edit-qty-lbl{font-size:13px;font-weight:700;color:#1e293b}
 .tp-edit-subtitle{font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;padding:6px 18px 10px;flex-shrink:0;border-bottom:1px solid #f0f0f0}
 .tp-edit-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 4px}
 .dips-row{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #f3f3f3}
@@ -1104,8 +1109,8 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
         </div>
       </div>
 
-      <!-- Paso B: Detalle del pago -->
-      <div class="ck-step" id="ckDetails">
+      <!-- Paso B: Entrega -->
+      <div class="ck-step" id="ckEntrega">
 
         <!-- Toggle retiro / envío -->
         <div class="ckd-entrega-tabs">
@@ -1177,6 +1182,28 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
           </div>
         </div>
 
+        <!-- Sección: Propina (solo envío) -->
+        <div class="ckd-sec" id="wrapPropina" style="display:none">
+          <div class="ckd-sec-title"><i class="fa-solid fa-hand-holding-heart"></i> Propina para tu repartidor</div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Es voluntaria y la recibe como reconocimiento por su trabajo</div>
+          <div class="propina-btns" id="propinaBtns">
+            <button type="button" class="propina-btn" onclick="seleccionarPropina(700,this)">$700</button>
+            <button type="button" class="propina-btn" onclick="seleccionarPropina(1000,this)">$1.000</button>
+            <button type="button" class="propina-btn" onclick="seleccionarPropina(1200,this)">$1.200</button>
+            <button type="button" class="propina-btn propina-btn-otra" onclick="propinaCantidadCustom(this)">Otra cantidad ✏️</button>
+          </div>
+          <div class="propina-custom-wrap" id="propinaCustomWrap">
+            <input type="number" id="propinaCustomInput" placeholder="Ingresá el monto" min="0"
+              oninput="_propina=Math.max(0,+this.value)||0;buildSummary()">
+          </div>
+        </div>
+
+        <div style="height:80px"></div>
+      </div>
+
+      <!-- Paso C: Método de pago + resumen -->
+      <div class="ck-step" id="ckDetails">
+
         <!-- Sección: Método de pago -->
         <div class="ckd-sec">
           <div class="ckd-sec-title"><i class="fa-solid fa-credit-card"></i> Método de pago</div>
@@ -1194,10 +1221,7 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
               onclick="seleccionarMetodo(<?= $m['idmetodo_pago'] ?>,this,<?= $esMP?'true':'false' ?>,<?= $esTrans?'true':'false' ?>)">
               <div class="ckd-pago-card-ic">
                 <?php if ($esMP): ?>
-                  <svg viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg" height="24" width="48">
-                    <rect width="56" height="28" rx="5" fill="#009EE3"/>
-                    <text x="28" y="19" font-family="Arial,sans-serif" font-weight="900" font-size="13" fill="#fff" text-anchor="middle" letter-spacing="1">MP</text>
-                  </svg>
+                  <img src="../img/mp-logo.png" alt="Mercado Pago" style="width:22px;height:22px;object-fit:contain">
                 <?php elseif ($esTrans): ?>
                   <i class="fa-solid fa-building-columns" style="font-size:20px;color:#5b6470"></i>
                 <?php elseif ($esTarjeta): ?>
@@ -1234,42 +1258,6 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
           </div>
         </div>
 
-        <!-- Sección: Propina (solo envío) -->
-        <div class="ckd-sec" id="wrapPropina" style="display:none">
-          <div class="ckd-sec-title"><i class="fa-solid fa-hand-holding-heart"></i> Propina para tu repartidor</div>
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Es voluntaria y la recibe como reconocimiento por su trabajo</div>
-          <div class="propina-btns" id="propinaBtns">
-            <button type="button" class="propina-btn" onclick="seleccionarPropina(700,this)">$700</button>
-            <button type="button" class="propina-btn" onclick="seleccionarPropina(1000,this)">$1.000</button>
-            <button type="button" class="propina-btn" onclick="seleccionarPropina(1200,this)">$1.200</button>
-            <button type="button" class="propina-btn propina-btn-otra" onclick="propinaCantidadCustom(this)">Otra cantidad ✏️</button>
-          </div>
-          <div class="propina-custom-wrap" id="propinaCustomWrap">
-            <input type="number" id="propinaCustomInput" placeholder="Ingresá el monto" min="0"
-              oninput="_propina=Math.max(0,+this.value)||0;buildSummary()">
-          </div>
-        </div>
-
-        <!-- Sección: Cupón -->
-        <div class="ckd-sec">
-          <div class="ckd-sec-title"><i class="fa-solid fa-tag"></i> ¿Tenés un cupón?</div>
-          <div class="ckd-cupon-row" style="margin-bottom:8px">
-            <input type="text" id="ckCuponInput" placeholder="Ingresá tu código" autocomplete="off"
-                   oninput="this.value=this.value.toUpperCase()">
-            <button type="button" id="btnAplicarCupon" onclick="aplicarCupon()">Aplicar</button>
-          </div>
-          <div id="cuponMsg" style="display:none;font-size:13px;font-weight:600;color:#dc2626"></div>
-          <div id="cuponResumen" style="display:none;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:13px;color:#15803d;font-weight:700">
-                <i class="fa-solid fa-tag" style="margin-right:5px"></i>
-                <span id="cuponResumenLabel">Cupón aplicado</span>
-              </span>
-              <button type="button" onclick="quitarCupon()" style="background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;font-weight:700">✕ Quitar</button>
-            </div>
-            <div style="font-size:17px;font-weight:800;color:#15803d;margin-top:4px" id="cuponDescuentoLabel"></div>
-          </div>
-        </div>
 
         <!-- Sección: Observación -->
         <div class="ckd-sec">
@@ -1396,6 +1384,14 @@ function addToCart(btn){
 }
 function updateQty(id,d){const c=getCart(),i=c.findIndex(x=>x.id===id);if(i<0)return;c[i].cantidad+=d;if(c[i].cantidad<=0)c.splice(i,1);saveCart(c)}
 function updateQtyByIdx(idx,d){const c=getCart();if(!c[idx])return;c[idx].cantidad+=d;if(c[idx].cantidad<=0)c.splice(idx,1);saveCart(c)}
+function updateTpQtyByIdx(cartIdx,tpId,d){
+  const c=getCart();const it=c[cartIdx];if(!it)return;
+  it.toppings=it.toppings||[];
+  if(d>0){const base=it.toppings.find(t=>t.id==tpId);if(base)it.toppings.push({...base});}
+  else{const i=it.toppings.findIndex(t=>t.id==tpId);if(i>=0)it.toppings.splice(i,1);}
+  it.precio=precioBase(it)+it.toppings.reduce((s,t)=>s+t.precio,0);
+  saveCart(c);
+}
 function clearCart(){saveCart([]);showToast('Carrito vaciado')}
 async function clearCartConfirm(){
   const r=await Swal.fire({
@@ -1456,29 +1452,30 @@ function renderCart(){
   w.innerHTML=c.map((it,idx)=>{
     const base=precioBase(it);
     const tpCosto=it.toppings&&it.toppings.length?it.toppings.reduce((s,t)=>s+t.precio,0):0;
-    const tpHtml=it.toppings&&it.toppings.length
-      ?`<div class="cart-toppings">${it.toppings.map(tp=>`<span class="cart-topping-tag">+ ${tp.nombre}</span>`).join('')}</div>`:'';
+    const tpMap={};(it.toppings||[]).forEach(t=>{if(!tpMap[t.id])tpMap[t.id]={...t,qty:0};tpMap[t.id].qty++;});
+    const tpHtml=Object.keys(tpMap).length
+      ?`<div class="cart-toppings">${Object.values(tpMap).map(tp=>`<div class="cart-topping-row"><span class="cart-topping-tag">+ ${tp.nombre}</span><div class="cart-qty-group cart-tp-qty"><button class="cart-item-del" onclick="updateTpQtyByIdx(${idx},${tp.id},-1)">−</button><span class="qty-num">${tp.qty}</span><button class="qty-btn" onclick="updateTpQtyByIdx(${idx},${tp.id},1)">+</button></div></div>`).join('')}</div>`:'';
     const itemTotal=base*it.cantidad+tpCosto;
     const breakdown=tpCosto>0?`${fmt(base)}/u × ${it.cantidad} + extras ${fmt(tpCosto)}`:`${fmt(base)}/u × ${it.cantidad}`;
-    const extrasTag=tpCosto>0?`<span class="cart-item-extras-badge">+ Extras ${fmt(tpCosto)}</span>`:'';
     const delIcon=it.cantidad===1?'<i class="fa-solid fa-trash-can"></i>':'−';
     return `<div class="cart-item">
       ${thumbHtml(it)}
       <div class="cart-item-body">
         <div class="cart-item-row1">
-          <div class="cart-item-name">${it.nombre}</div>
+          <div class="cart-item-name-qty">
+            <div class="cart-item-name">${it.nombre}</div>
+            <div class="cart-qty-group">
+              <button class="cart-item-del" onclick="updateQtyByIdx(${idx},-1)" title="${it.cantidad===1?'Eliminar':'Reducir'}">${delIcon}</button>
+              <span class="qty-num">${it.cantidad}</span>
+              <button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button>
+            </div>
+          </div>
           <div class="cart-item-total">${fmt(itemTotal)}</div>
         </div>
-        <button class="cart-item-edit" onclick="abrirTpEdit(${idx})">Editar →</button>
+        <button class="cart-item-edit" onclick="abrirTpEdit(${idx})">Editar topping</button>
         ${tpHtml}
-        ${extrasTag}
         <div class="cart-item-row2">
           <span class="cart-item-breakdown">${breakdown}</span>
-          <div class="cart-qty-group">
-            <button class="cart-item-del" onclick="updateQtyByIdx(${idx},-1)" title="${it.cantidad===1?'Eliminar':'Reducir'}">${delIcon}</button>
-            <span class="qty-num">${it.cantidad}</span>
-            <button class="qty-btn" onclick="updateQtyByIdx(${idx},1)">+</button>
-          </div>
         </div>
       </div>
     </div>`;
@@ -1574,6 +1571,13 @@ function cerrarTpEdit(){
   document.body.style.overflow='';
   _editCartIdx=null;
 }
+function changeTpItemQty(d){
+  const el=document.getElementById('tpEditQtyNum');
+  let q=parseInt(el.dataset.qty)||1;
+  q=Math.max(1,q+d);
+  el.dataset.qty=q;
+  el.textContent=q;
+}
 function guardarTpEdit(){
   if(_editCartIdx===null) return;
   const c=getCart();
@@ -1588,6 +1592,7 @@ function guardarTpEdit(){
     }
   });
   it.toppings=toppings;
+  it.cantidad=parseInt(document.getElementById('tpEditQtyNum').dataset.qty)||1;
   it.precio=precioBase(it)+toppings.reduce((s,t)=>s+t.precio,0);
   saveCart(c);
   cerrarTpEdit();
@@ -1937,8 +1942,12 @@ function openCheckout(){
 }
 
 function _abrirCheckoutPrincipal(){
-  if(CLIENTE_PHP){ckCliente={id:CLIENTE_PHP.id,nombre:CLIENTE_PHP.nombre};showCkStep('ckDetails');buildSummary()}
+  if(CLIENTE_PHP){ckCliente={id:CLIENTE_PHP.id,nombre:CLIENTE_PHP.nombre};showCkStep('ckEntrega');}
   else{showCkStep('ckAuth');syncCkTab()}
+}
+function irAPago(){
+  showCkStep('ckDetails');
+  buildSummary();
 }
 function closeCheckout(){
   document.getElementById('checkoutModal').classList.remove('on');
@@ -1956,11 +1965,24 @@ function showCkStep(id){
   const hdBack=document.getElementById('ckHdBack');
   const hdClose=document.getElementById('ckHdClose');
   const footer=document.getElementById('ckdFooter');
-  if(id==='ckDetails'){
-    if(hdTitle) hdTitle.textContent='Detalle del pago';
+  if(id==='ckEntrega'){
+    if(hdTitle) hdTitle.textContent='¿Cómo lo recibís?';
     if(hdBack){ hdBack.style.display=''; hdBack.onclick=()=>backToAuth(); }
     if(hdClose) hdClose.style.display='none';
-    if(footer) footer.classList.add('on');
+    if(footer){
+      footer.classList.add('on');
+      const btn=document.getElementById('btnConfirm');
+      if(btn){btn.textContent='Continuar →';btn.onclick=irAPago;}
+    }
+  } else if(id==='ckDetails'){
+    if(hdTitle) hdTitle.textContent='Método de pago';
+    if(hdBack){ hdBack.style.display=''; hdBack.onclick=()=>showCkStep('ckEntrega'); }
+    if(hdClose) hdClose.style.display='none';
+    if(footer){
+      footer.classList.add('on');
+      const btn=document.getElementById('btnConfirm');
+      if(btn){btn.textContent='Confirmar pedido';btn.onclick=confirmOrder;}
+    }
   } else if(id==='ckSuccess'){
     if(hdTitle) hdTitle.textContent='¡Pedido realizado!';
     if(hdBack) hdBack.style.display='none';
@@ -1992,28 +2014,34 @@ function buildSummary(){
   // Resumen tipo McDonald's
   let rows='';
 
-  // Items
-  rows+=c.map(i=>`<div class="ck-resumen-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(i.precio*i.cantidad)}</span></div>`).join('');
+  // Items: cookie por separado + toppings por separado
+  c.forEach(i=>{
+    const b=i.precio_base||i.precio;
+    const tps=i.toppings||[];
+    const tpMap={};tps.forEach(t=>{if(!tpMap[t.id])tpMap[t.id]={nombre:t.nombre,qty:0,precio:t.precio};tpMap[t.id].qty++;});
+    // Línea de la cookie
+    rows+=`<div class="ck-resumen-row"><span>${i.nombre} × ${i.cantidad}</span><span>${fmt(b*i.cantidad)}</span></div>`;
+    // Línea por cada topping
+    Object.values(tpMap).forEach(tp=>{
+      const tpTotal=tp.precio*tp.qty;
+      rows+=`<div class="ck-resumen-row" style="color:#c88e99;padding-left:12px"><span>+ ${tp.nombre}${tp.qty>1?` ×${tp.qty}`:''}</span><span>${fmt(tpTotal)}</span></div>`;
+    });
+  });
 
-  // Toppings legacy (carrito viejo)
-  if(_toppingsOrden.length){
-    rows+=`<div class="ck-resumen-row" style="color:#c88e99"><span><i class="fa-solid fa-candy-cane"></i> Extras</span><span>${fmt(_costoToppings)}</span></div>`;
-  }
-
-  // Subtotal (siempre visible)
-  rows+=`<div class="ck-resumen-row" style="font-weight:700"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>`;
+  // Subtotal
+  rows+=`<div class="ck-resumen-row" style="font-weight:700;border-top:1px solid #f0f0f0;margin-top:4px;padding-top:8px"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>`;
 
   // Envío
   if(_tipoEntrega==='envio'){
     const envioLabel = _envioGratis
-      ? `<span class="ck-badge-gratis">Envío Gratis</span>`
+      ? `<span class="ck-badge-gratis">Gratis</span>`
       : (costoEnvioEfectivo>0 ? fmt(costoEnvioEfectivo) : '<span style="color:#94a3b8;font-size:12px">A calcular</span>');
     rows+=`<div class="ck-resumen-row"><span>Envío</span><span>${envioLabel}</span></div>`;
   }
 
   // Tarifa de servicio
   if(tarifa>0){
-    rows+=`<div class="ck-resumen-row"><span>Tarifa de servicio <i class="fa-solid fa-circle-info" style="font-size:11px;color:#94a3b8"></i></span><span>${fmt(tarifa)}</span></div>`;
+    rows+=`<div class="ck-resumen-row"><span>Tarifa de servicio</span><span>${fmt(tarifa)}</span></div>`;
   }
 
   // Cupón descuento
@@ -2703,7 +2731,7 @@ async function confirmOrder(){
       total:totalFinal,
       costo_envio:costoEnvioEfectivo,
       costo_toppings:_costoToppings,
-      toppings:_toppingsOrden,
+      toppings:getCart().flatMap(i=>i.toppings||[]),
       tipo_entrega:_tipoEntrega,
       direccion_entrega:_tipoEntrega==='envio'?document.getElementById('ckDireccion').value.trim():'',
       lat_entrega:document.getElementById('ckLat')?.value||null,

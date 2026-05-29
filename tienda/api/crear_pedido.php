@@ -241,11 +241,12 @@ try {
     $stmtD = $pdo->prepare("INSERT INTO detalle_ventas (ventas_idventas, productos_idproductos, cantidad, precio_unitario, precio_original, descuento_pct) VALUES (?,?,?,?,?,?)");
     $resumen = [];
     foreach ($carrito as $item) {
+        $precioUnit = isset($item['precio_base']) && $item['precio_base'] ? (float)$item['precio_base'] : (float)$item['precio'];
         $stmtD->execute([
             $id_venta,
             (int)$item['id'],
             (int)$item['cantidad'],
-            (float)$item['precio'],
+            $precioUnit,
             isset($item['precio_original']) && $item['precio_original'] ? (float)$item['precio_original'] : null,
             isset($item['descuento_pct'])   && $item['descuento_pct']   ? (float)$item['descuento_pct']   : null,
         ]);
