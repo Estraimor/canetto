@@ -10,9 +10,24 @@ if (!$id) { echo json_encode(['error' => 'ID inválido']); exit; }
 try {
     $pdo = Conexion::conectar();
 
+    // Columnas que pueden no existir aún según el entorno
+    foreach ([
+        "ALTER TABLE ventas ADD COLUMN cupon_codigo VARCHAR(50) NULL",
+        "ALTER TABLE ventas ADD COLUMN descuento_cupon DECIMAL(10,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN observacion_cliente TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN toppings_json TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN tipo_entrega VARCHAR(10) NOT NULL DEFAULT 'retiro'",
+        "ALTER TABLE ventas ADD COLUMN direccion_entrega TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
+        "ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN propina DECIMAL(10,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN tarifa_servicio DECIMAL(10,2) NOT NULL DEFAULT 0",
+    ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
+
     $stmt = $pdo->prepare("
         SELECT
-            v.idventas, v.total, v.fecha,
+            v.idventas, COALESCE(v.total, 0) AS total, v.fecha,
             v.estado_venta_idestado_venta AS estado_id,
             COALESCE(v.tipo_entrega,'retiro') AS tipo_entrega,
             v.direccion_entrega,

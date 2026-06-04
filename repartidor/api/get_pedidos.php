@@ -35,7 +35,8 @@ try {
             s.nombre    AS sucursal_nombre,
             s.direccion AS sucursal_direccion,
             s.latitud   AS sucursal_lat,
-            s.longitud  AS sucursal_lng
+            s.longitud  AS sucursal_lng,
+            TIMESTAMPDIFF(MINUTE, v.fecha, NOW()) AS minutos_espera
         FROM ventas v
         LEFT JOIN usuario     u  ON u.idusuario      = v.usuario_idusuario
         LEFT JOIN metodo_pago mp ON mp.idmetodo_pago  = v.metodo_pago_idmetodo_pago
@@ -87,6 +88,7 @@ try {
             $v['productos']       = implode(', ', $partes);
             $v['cliente_nombre']  = trim(($v['cliente_nombre'] ?: 'Cliente') . ' ' . ($v['cliente_apellido'] ?? ''));
             $v['cliente_celular'] = (string)($v['cliente_celular'] ?? '');
+            $v['es_urgente']      = (int)($v['minutos_espera'] ?? 0) >= 20;
         }
         unset($v);
     }

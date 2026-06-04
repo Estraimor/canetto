@@ -317,7 +317,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-<link rel="stylesheet" href="tienda.css">
+<link rel="stylesheet" href="tienda.css?v=<?= filemtime(__DIR__.'/tienda.css') ?>">
 <link rel="prefetch" href="login.php">
 <style>
 .ck-entrega-toggle label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#475569;margin-bottom:8px}
@@ -443,17 +443,6 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 /* Cart free shipping banner */
 .cart-free-ship{display:none;margin:0;background:#e8f5e9;padding:10px 16px;font-size:13px;font-weight:700;color:#2e7d32;align-items:center;gap:8px;border-bottom:1px solid #c8e6c9}
 .cart-free-ship.on{display:flex}
-/* Propina section */
-.propina-wrap{margin-bottom:12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px}
-.propina-title{font-size:14px;font-weight:800;color:#1e293b;margin-bottom:2px}
-.propina-sub{font-size:11px;color:#94a3b8;margin-bottom:10px}
-.propina-btns{display:flex;flex-wrap:wrap;gap:8px}
-.propina-btn{padding:7px 14px;border:2px solid #e2e8f0;border-radius:20px;background:#fff;font-size:13px;font-weight:700;color:#374151;cursor:pointer;transition:all .15s}
-.propina-btn.on{border-color:#3b82f6;background:#eff6ff;color:#3b82f6}
-.propina-btn-otra{border-style:dashed}
-.propina-custom-wrap{margin-top:10px;display:none}
-.propina-custom-wrap.on{display:block}
-.propina-custom-wrap input{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;outline:none}
 /* Resumen pedido estilo McD */
 .ck-resumen-box{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:12px}
 .ck-resumen-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:10px}
@@ -1182,21 +1171,6 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
           </div>
         </div>
 
-        <!-- Sección: Propina (solo envío) -->
-        <div class="ckd-sec" id="wrapPropina" style="display:none">
-          <div class="ckd-sec-title"><i class="fa-solid fa-hand-holding-heart"></i> Propina para tu repartidor</div>
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Es voluntaria y la recibe como reconocimiento por su trabajo</div>
-          <div class="propina-btns" id="propinaBtns">
-            <button type="button" class="propina-btn" onclick="seleccionarPropina(700,this)">$700</button>
-            <button type="button" class="propina-btn" onclick="seleccionarPropina(1000,this)">$1.000</button>
-            <button type="button" class="propina-btn" onclick="seleccionarPropina(1200,this)">$1.200</button>
-            <button type="button" class="propina-btn propina-btn-otra" onclick="propinaCantidadCustom(this)">Otra cantidad ✏️</button>
-          </div>
-          <div class="propina-custom-wrap" id="propinaCustomWrap">
-            <input type="number" id="propinaCustomInput" placeholder="Ingresá el monto" min="0"
-              oninput="_propina=Math.max(0,+this.value)||0;buildSummary()">
-          </div>
-        </div>
 
         <div style="height:80px"></div>
       </div>
@@ -1801,7 +1775,6 @@ let _toppingsOrden=[];
 let _costoToppings=0;
 let _cuponAplicado=null; // { codigo, descuento, label }
 let _envioGratis=false;
-let _propina=0;
 let _editCartIdx=null; // índice del ítem en edición de toppings
 
 /* ── Secciones colapsables / cascada checkout ── */
@@ -1932,7 +1905,6 @@ function openCheckout(){
   _toppingsOrden=[];
   _costoToppings=0;
   _envioGratis=false;
-  _propina=0;
   _cuponAplicado=null;
   _costoEnvio=0;
   // Los toppings ya vienen por cookie desde producto.php — ir directo al checkout
@@ -2009,7 +1981,7 @@ function buildSummary(){
   const descuentoCupon = _cuponAplicado ? (_cuponAplicado.descuento||0) : 0;
   const costoEnvioEfectivo = _envioGratis ? 0 : _costoEnvio;
   const tarifa = window.TARIFA_SERVICIO || 0;
-  const totalFinal = Math.max(0, subtotal + costoEnvioEfectivo + tarifa + _propina - descuentoCupon);
+  const totalFinal = Math.max(0, subtotal + costoEnvioEfectivo + tarifa - descuentoCupon);
 
   // Resumen tipo McDonald's
   let rows='';
@@ -2049,11 +2021,6 @@ function buildSummary(){
     rows+=`<div class="ck-resumen-row" style="color:#15803d"><span><i class="fa-solid fa-tag"></i> Cupón ${_cuponAplicado.codigo}</span><span>−${fmt(descuentoCupon)}</span></div>`;
   }
 
-  // Propina
-  if(_propina>0){
-    rows+=`<div class="ck-resumen-row" style="color:#3b82f6"><span>Propina repartidor</span><span>${fmt(_propina)}</span></div>`;
-  }
-
   // Total
   rows+=`<div class="ck-resumen-row ck-resumen-total"><span>Total</span><span>${fmt(totalFinal)}</span></div>`;
 
@@ -2062,22 +2029,6 @@ function buildSummary(){
   if(footerAmt) footerAmt.textContent=fmt(totalFinal);
 }
 
-/* ── Propina ── */
-function seleccionarPropina(monto, btn){
-  document.querySelectorAll('.propina-btn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  _propina=monto;
-  document.getElementById('propinaCustomWrap').classList.remove('on');
-  document.getElementById('propinaCustomInput').value='';
-  buildSummary();
-}
-function propinaCantidadCustom(btn){
-  document.querySelectorAll('.propina-btn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  _propina=0;
-  document.getElementById('propinaCustomWrap').classList.add('on');
-  document.getElementById('propinaCustomInput').focus();
-}
 function guestContinue(){
   const n=document.getElementById('gNom').value.trim();
   if(!n){setAlert('gAlert','Ingresá tu nombre','err');return}
@@ -2189,13 +2140,8 @@ function setEntrega(tipo){
   document.getElementById('wrapSucursal').style.display=tipo==='retiro'?'':'none';
   document.getElementById('wrapEnvio').style.display   =tipo==='envio'?'':'none';
   if(tipo==='envio'){ const btn=document.getElementById('btnAbrirMapa'); if(btn) btn.style.display='block'; }
-  // Propina: solo visible si es envío
-  const wrapPropina=document.getElementById('wrapPropina');
-  if(wrapPropina) wrapPropina.style.display=tipo==='envio'?'':'none';
   if(tipo==='retiro'){
     _costoEnvio=0;
-    _propina=0;
-    document.querySelectorAll('.propina-btn').forEach(b=>b.classList.remove('on'));
     buildSummary();
     const el=document.getElementById('envioEstimate');
     if(el) el.style.display='none';
@@ -2723,7 +2669,7 @@ async function confirmOrder(){
     const tarifa = window.TARIFA_SERVICIO || 0;
     const baseTotal = total(getCart()) + _costoToppings;
     const descuento = _cuponAplicado ? (_cuponAplicado.descuento||0) : 0;
-    const totalFinal = Math.max(0, baseTotal + costoEnvioEfectivo + tarifa + _propina - descuento);
+    const totalFinal = Math.max(0, baseTotal + costoEnvioEfectivo + tarifa - descuento);
     const body={
       carrito:getCart(),cliente:ckCliente,metodo_pago:+met,
       sucursal_id:_tipoEntrega==='retiro'?document.getElementById('ckSuc').value||null:null,
@@ -2739,7 +2685,6 @@ async function confirmOrder(){
       es_mp:_selectedMetodoEsMP,
       cupon_codigo: _cuponAplicado?.codigo || '',
       envio_gratis: _envioGratis,
-      propina: _propina,
       tarifa_servicio: tarifa,
     };
     const d=await(await fetch('api/crear_pedido.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();

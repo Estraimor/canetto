@@ -19,7 +19,7 @@ const PedidosApp = (() => {
     return [1, 2, 5, 3, 4];                               // sin estado 7
   }
 
-  const fmt = n => '$' + parseFloat(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const fmt = n => '$' + (parseFloat(n) || 0).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
   function fmtFecha(str) {
     if (!str) return { dia: '—', hora: '' };
@@ -569,7 +569,7 @@ const PedidosApp = (() => {
                 <div class="di-qty">Cantidad: ${p.cantidad}</div>
                 ${boxHtml}
               </div>
-              <div class="di-precio">${fmt(p.precio_unitario * p.cantidad)}</div>
+              <div class="di-precio">${fmt(parseFloat(p.precio_unitario||0) * parseInt(p.cantidad||1))}</div>
             </div>`;
           }).join('')}
           ${(d.toppings && d.toppings.length)
@@ -584,7 +584,7 @@ const PedidosApp = (() => {
             : `<div style="font-size:12px;color:#94a3b8;padding:6px 0 2px">Sin extras</div>`
           }
         </div>
-        <div class="detalle-total"><span>Total productos</span><span>${fmt((d.productos||[]).reduce((s,p)=>s+(p.precio_unitario*p.cantidad),0) + (d.toppings||[]).reduce((s,t)=>s+t.precio,0))}</span></div>
+        <div class="detalle-total"><span>Total productos</span><span>${fmt((d.productos||[]).reduce((s,p)=>s+(parseFloat(p.precio_unitario||0)*parseInt(p.cantidad||1)),0) + (d.toppings||[]).reduce((s,t)=>s+(parseFloat(t.precio)||0),0))}</span></div>
       </div>
 
       <!-- Resumen de costos -->

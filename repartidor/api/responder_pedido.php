@@ -52,6 +52,11 @@ try {
         ");
         $upd->execute([':rep' => $repId, ':id' => $idVenta]);
 
+        if ($upd->rowCount() === 0) {
+            ob_end_clean();
+            echo json_encode(['success' => false, 'message' => 'El pedido ya fue tomado por otro repartidor']); exit;
+        }
+
         audit($pdo, 'editar', 'pedidos', "Repartidor #{$repId} aceptó pedido #{$idVenta}");
 
         // Notificar al cliente que su pedido está en camino

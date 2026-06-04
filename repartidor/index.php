@@ -225,6 +225,24 @@ try {
 .pedido-cobro-row{display:flex;justify-content:space-between;font-size:13px;color:#78350f}
 .cobro-total-row{font-weight:800;color:#1c1917;border-top:1.5px solid #d97706;margin-top:6px;padding-top:6px;font-size:15px}
 
+/* ── Badge pedido urgente (≥20 min esperando) ── */
+.pedido-urgente-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:#fff;font-size:10px;font-weight:800;letter-spacing:.05em;
+  text-transform:uppercase;padding:3px 8px;border-radius:6px;
+  animation:urgentePulse 1.4s ease-in-out infinite;
+}
+@keyframes urgentePulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}
+  50%    {box-shadow:0 0 0 7px rgba(239,68,68,0)}
+}
+.uber-pkg-urgente{
+  font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;margin-left:5px;flex-shrink:0;
+  animation:urgentePulse 1.4s ease-in-out infinite;
+}
+
 /* ══ INCOMING ORDER OVERLAY ════════════════════════════════ */
 #incomingOverlay{
   position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;
@@ -735,6 +753,7 @@ try {
       <div class="pedido-head">
         <div class="pedido-num-wrap">
           <span class="pedido-badge badge-moving">EN CAMINO</span>
+          <span class="pedido-urgente-badge" style="display:none">🔥 Demorado</span>
           <span class="pedido-num"></span>
         </div>
         <span class="pedido-total"></span>
@@ -1157,10 +1176,18 @@ async function cargarPedidos() {
 
     actualizarMapa(data.pedidos);
 
+    // Urgentes primero (por minutos de espera desc), luego el resto por id asc
+    const pedidosOrdenados = [...data.pedidos].sort((a, b) => {
+      if (a.es_urgente && !b.es_urgente) return -1;
+      if (!a.es_urgente && b.es_urgente) return  1;
+      if (a.es_urgente && b.es_urgente)  return (b.minutos_espera - a.minutos_espera);
+      return a.idventas - b.idventas;
+    });
+
     const tpl = document.getElementById('tplPedido');
     list.innerHTML = '';
 
-    data.pedidos.forEach((p, i) => {
+    pedidosOrdenados.forEach((p, i) => {
       const clone = tpl.content.cloneNode(true);
       // Guardar datos del pedido para verRutaOptima
       const cardRoot = clone.querySelector('.pedido-card');
@@ -1171,6 +1198,15 @@ async function cargarPedidos() {
       clone.querySelector('.pedido-nombre').textContent    = p.cliente_nombre || 'Cliente';
       clone.querySelector('.pedido-dir-txt').textContent   = p.direccion_entrega || 'Sin dirección';
       clone.querySelector('.pedido-prods-txt').textContent = p.productos || '—';
+
+      // Badge urgente si el pedido lleva 20+ minutos esperando
+      if (p.es_urgente) {
+        const urgBadge = clone.querySelector('.pedido-urgente-badge');
+        if (urgBadge) {
+          urgBadge.style.display = '';
+          urgBadge.title = `Esperando ${p.minutos_espera} min`;
+        }
+      }
 
       // Sucursal de despacho (solo para envíos)
       if (p.sucursal_nombre && p.tipo_entrega === 'envio') {
@@ -2003,22 +2039,37 @@ function getSucLatLng(pedido) {
 }
 
 function optimizarRuta(pedidos) {
-  // Partimos desde la sucursal del primer pedido (o la principal)
-  let cur = pedidos.length ? getSucLatLng(pedidos[0]) : { lat: CANETTO_LAT, lng: CANETTO_LNG };
-  const rem = pedidos.filter(p => p.lat_entrega && p.lng_entrega).map(p => ({...p}));
-  const sin = pedidos.filter(p => !p.lat_entrega || !p.lng_entrega);
-  const ord = [];
-  while (rem.length) {
-    let minD = Infinity, nearest = null, ni = -1;
-    rem.forEach((p, i) => {
-      const d = haversineM(cur.lat, cur.lng, parseFloat(p.lat_entrega), parseFloat(p.lng_entrega));
-      if (d < minD) { minD = d; nearest = p; ni = i; }
-    });
-    ord.push(nearest);
-    cur = { lat: parseFloat(nearest.lat_entrega), lng: parseFloat(nearest.lng_entrega) };
-    rem.splice(ni, 1);
+  function nearestNeighbor(list, start) {
+    let cur = start;
+    const rem = list.filter(p => p.lat_entrega && p.lng_entrega).map(p => ({...p}));
+    const sin = list.filter(p => !p.lat_entrega || !p.lng_entrega);
+    const ord = [];
+    while (rem.length) {
+      let minD = Infinity, nearest = null, ni = -1;
+      rem.forEach((p, i) => {
+        const d = haversineM(cur.lat, cur.lng, parseFloat(p.lat_entrega), parseFloat(p.lng_entrega));
+        if (d < minD) { minD = d; nearest = p; ni = i; }
+      });
+      ord.push(nearest);
+      cur = { lat: parseFloat(nearest.lat_entrega), lng: parseFloat(nearest.lng_entrega) };
+      rem.splice(ni, 1);
+    }
+    return [...ord, ...sin];
   }
-  return [...ord, ...sin];
+
+  const startPoint = pedidos.length ? getSucLatLng(pedidos[0]) : { lat: CANETTO_LAT, lng: CANETTO_LNG };
+  const urgentes   = pedidos.filter(p => p.es_urgente);
+  const normales   = pedidos.filter(p => !p.es_urgente);
+
+  // Urgentes siempre primero (nearest-neighbor entre ellos), luego normales
+  const ordU = nearestNeighbor(urgentes, startPoint);
+  const lastU = ordU.filter(p => p.lat_entrega && p.lng_entrega).slice(-1)[0];
+  const startN = lastU
+    ? { lat: parseFloat(lastU.lat_entrega), lng: parseFloat(lastU.lng_entrega) }
+    : startPoint;
+  const ordN = nearestNeighbor(normales, startN);
+
+  return [...ordU, ...ordN];
 }
 
 function renderPkgQueue(pedidos, currentIdx) {
@@ -2028,13 +2079,15 @@ function renderPkgQueue(pedidos, currentIdx) {
   el.innerHTML = `<div class="uber-pkg-queue">
     <div class="uber-pkg-queue-title"><i class="fa-solid fa-route"></i> Ruta óptima · ${pedidos.length} entregas</div>
     ${pedidos.map((p, i) => {
-      const cls = i < currentIdx ? 'pkg-done' : i === currentIdx ? 'pkg-current' : 'pkg-pending';
-      const dot = i < currentIdx ? '<i class="fa-solid fa-check" style="font-size:9px"></i>' : (i+1);
+      const cls      = i < currentIdx ? 'pkg-done' : i === currentIdx ? 'pkg-current' : 'pkg-pending';
+      const dot      = i < currentIdx ? '<i class="fa-solid fa-check" style="font-size:9px"></i>' : (i+1);
+      const urgBadge = p.es_urgente ? `<span class="uber-pkg-urgente">🔥 DEMORADO</span>` : '';
       return `<div class="uber-pkg-row ${cls}">
         <div class="uber-pkg-dot">${dot}</div>
-        <div style="flex:1;min-width:0">
-          <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.cliente_nombre||'Cliente'}</div>
-          <div style="font-size:10px;opacity:.55">#${p.idventas} · ${p.direccion_entrega||'Sin dir.'}</div>
+        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.cliente_nombre||'Cliente'}</span>
+          ${urgBadge}
+          <div style="width:100%;font-size:10px;opacity:.55">#${p.idventas} · ${p.direccion_entrega||'Sin dir.'}</div>
         </div>
       </div>`;
     }).join('')}
@@ -2745,12 +2798,17 @@ function startIncomingPoll() {
 }
 
 async function _doPollIncoming() {
-  // No hacer poll si ya hay un pedido mostrándose
-  if (_incomingVentaId) { startIncomingPoll(); return; }
   try {
     const res  = await fetch('api/get_pedido_pendiente.php');
     const data = await res.json();
-    if (data.pendiente) {
+    if (_incomingVentaId) {
+      // Overlay visible — si el pedido ya no existe (lo tomó otro), cerrarlo
+      if (!data.pendiente || data.pendiente.idventas !== _incomingVentaId) {
+        _cerrarIncomingTomado();
+      } else {
+        startIncomingPoll();
+      }
+    } else if (data.pendiente) {
       _mostrarIncoming(data.pendiente);
     } else {
       startIncomingPoll();
@@ -2758,6 +2816,14 @@ async function _doPollIncoming() {
   } catch (e) {
     startIncomingPoll();
   }
+}
+
+function _cerrarIncomingTomado() {
+  cancelAnimationFrame(_incomingCountRaf);
+  clearTimeout(_incomingPollTimer);
+  _incomingVentaId = null;
+  document.getElementById('incomingOverlay').classList.remove('visible');
+  startIncomingPoll();
 }
 
 function _mostrarIncoming(pedido) {
@@ -2827,8 +2893,7 @@ async function responderPedidoPendiente(accion) {
   } catch (e) { /* red caída, la propuesta expirará sola */ }
 
   if (accion === 'aceptar') {
-    // Recargar pedidos activos para mostrar el nuevo
-    if (typeof cargarPedidosRepartidor === 'function') cargarPedidosRepartidor();
+    cargarPedidos();
     if (typeof switchTab === 'function') switchTab('pedidos', document.querySelector('.tab-btn'));
   }
 
