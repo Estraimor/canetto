@@ -15,7 +15,11 @@
       "Bash(del \"c:\\\\wamp64\\\\www\\\\canetto\\\\tienda\\\\.htaccess\")",
       "Bash(Get-ChildItem -Path \"c:\\\\wamp64\\\\www\\\\canetto\\\\repartidor\\\\\" -Recurse -Force | Select-Object FullName | ConvertTo-Csv -NoTypeInformation | Select-Object -Skip 1)",
       "Bash(dir \"c:\\\\wamp64\\\\www\\\\canetto\\\\repartidor\\\\api\\\\\" /B)",
-      "Bash(Get-Content \"c:\\\\wamp64\\\\www\\\\canetto\\\\config\\\\conexion.php\" -Head 50)"
+      "Bash(Get-Content \"c:\\\\wamp64\\\\www\\\\canetto\\\\config\\\\conexion.php\" -Head 50)",
+      "Bash(dir c:\\\\wamp64\\\\www\\\\canetto /b)",
+      "Bash(Get-ChildItem -Path \"C:\\\\wamp64\\\\www\\\\canetto\\\\administracion\" -Recurse -File -Filter \"*.css\")",
+      "Bash(Sort-Object)",
+      "Bash(grep -r \"#[0-9a-fA-F]\\\\{3,6\\\\}\" \"C:\\\\wamp64\\\\www\\\\canetto\\\\administracion\\\\Ventas\\\\Pedidos\\\\pedidos.css\")"
     ]
   }
 }

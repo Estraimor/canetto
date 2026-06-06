@@ -1850,7 +1850,10 @@ async function abrirUberMap(pedido, multiPedidos) {
   document.getElementById('uberDelivery').textContent  = pedido.direccion_entrega || 'Sin dirección';
   document.getElementById('uberPickup').textContent    = pedido.sucursal_nombre  || 'Canetto';
   document.getElementById('uberProds').textContent     = pedido.productos || '—';
-  document.getElementById('uberBtnOk').dataset.id      = pedido.idventas;
+  const _btnOk = document.getElementById('uberBtnOk');
+  _btnOk.dataset.id  = pedido.idventas;
+  _btnOk.disabled    = false;
+  _btnOk.innerHTML   = '<i class="fa-solid fa-circle-check"></i> Marcar entregado';
 
   // Opacidad teléfono según disponibilidad
   document.querySelectorAll('.uber-btn-tel').forEach(btn => {
@@ -1996,16 +1999,19 @@ async function uberEntregar() {
     const data = await res.json();
     if (data.success) {
       localStorage.removeItem('uber_phase_' + id);
+      if (typeof resetActividadTimer === 'function') resetActividadTimer();
       const clienteActual = _uberPedido?.cliente_nombre;
 
       // En modo multi, avanzar al siguiente pedido de la cola
       if (_uberMulti.length > 0 && _uberMultiIdx + 1 < _uberMulti.length) {
-        _uberMultiIdx++;
-        const nextPedido = _uberMulti[_uberMultiIdx];
-        // El paquete ya fue retirado — ir directo a entrega
-        localStorage.setItem('uber_phase_' + nextPedido.idventas, 'delivery');
+        // Solo los pendientes — no mostrar el ya entregado en la cola
+        const restantes = _uberMulti.slice(_uberMultiIdx + 1);
+        const nextPedido = restantes[0];
+        // No forzar fase: si fue retirado con el lote anterior ya tiene 'delivery' en
+        // localStorage (lo grabó confirmarPaquete); si es un pedido nuevo aún no retirado
+        // abrirUberMap lo arranca en 'pickup' y muestra la ruta a la sucursal.
         cerrarUberMap();
-        mostrarEntregaAnimacion(id, clienteActual, () => abrirUberMap(nextPedido, _uberMulti));
+        mostrarEntregaAnimacion(id, clienteActual, () => abrirUberMap(nextPedido, restantes));
       } else {
         cerrarUberMap();
         mostrarEntregaAnimacion(id, clienteActual);
@@ -2353,6 +2359,7 @@ function toggleBrujula() {
   _brujulaMode = !_brujulaMode;
   _setMapBtnStyle(document.getElementById('btnBrujula'), _brujulaMode, '#10b981', '0 2px 16px rgba(16,185,129,.5)');
   if (_brujulaMode) {
+    _headingRaw = null; // resetear suavizado para que tome el nuevo valor limpio
     if (_uberMap) _uberMap.setBearing(_lastHeading);
     if (typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -2361,22 +2368,45 @@ function toggleBrujula() {
         .catch(() => toggleBrujula());
     }
   } else {
+    _headingRaw = null;
     if (_uberMap) _uberMap.setBearing(0);
   }
 }
 
 /* Listener de brújula del dispositivo */
-window.addEventListener('deviceorientation', e => {
+let _headingRaw = null;
+
+function _procesarOrientacion(e) {
   if (!_brujulaMode) return;
   let heading;
-  if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-    // iOS: webkitCompassHeading ya es grados desde norte (0–360)
+  if (e.webkitCompassHeading != null) {
+    // iOS: ya viene en grados desde el norte magnético, sentido horario
     heading = e.webkitCompassHeading;
-  } else if (e.alpha !== null) {
-    // Android: alpha es rotación Z, 0 = apunta al norte magnético
+  } else if (e.alpha != null) {
+    // Android (absolute): convertir alpha a heading
     heading = (360 - e.alpha) % 360;
   }
-  _aplicarHeading(heading);
+  if (heading == null || isNaN(heading)) return;
+
+  // Suavizado exponencial para evitar temblor — resuelve el salto en el wraparound (359→1)
+  if (_headingRaw === null) { _headingRaw = heading; }
+  let diff = heading - _headingRaw;
+  if (diff > 180) diff -= 360;
+  if (diff < -180) diff += 360;
+  _headingRaw = (_headingRaw + diff * 0.18 + 360) % 360;
+
+  _aplicarHeading(_headingRaw);
+}
+
+// Android: deviceorientationabsolute da orientación real respecto al norte magnético
+window.addEventListener('deviceorientationabsolute', _procesarOrientacion, { passive: true });
+
+// iOS: deviceorientation con webkitCompassHeading (ya es absoluta)
+// También actúa de fallback en Android si deviceorientationabsolute no está disponible
+window.addEventListener('deviceorientation', e => {
+  if (!_brujulaMode) return;
+  // En Android preferimos deviceorientationabsolute; solo usamos esto en iOS
+  if (e.webkitCompassHeading != null) _procesarOrientacion(e);
 }, { passive: true });
 
 /* ════════════════════════════════════════
@@ -2672,19 +2702,32 @@ function resetActividadTimer() {
   }
 }
 
+let _actividadAudio = null;
+
+function _pararSonido() {
+  if (_actividadAudio) {
+    _actividadAudio.pause();
+    _actividadAudio.currentTime = 0;
+    _actividadAudio = null;
+  }
+}
+
 function _sonidoActividad() {
   try {
+    _pararSonido();
     let plays = 0;
-    const audio = new Audio('sounds/akaza_theme.mp3');
-    audio.volume = 0.85;
-    audio.addEventListener('ended', () => {
+    _actividadAudio = new Audio('sounds/akaza_theme.mp3');
+    _actividadAudio.volume = 0.85;
+    _actividadAudio.addEventListener('ended', () => {
       plays++;
-      if (plays < 5) {
-        audio.currentTime = 0;
-        audio.play().catch(() => {});
+      if (plays < 5 && _actividadAudio) {
+        _actividadAudio.currentTime = 0;
+        _actividadAudio.play().catch(() => {});
+      } else {
+        _actividadAudio = null;
       }
     });
-    audio.play().catch(() => {});
+    _actividadAudio.play().catch(() => {});
   } catch (_) {}
 }
 
@@ -2742,6 +2785,7 @@ function _ocultarModalActividad() {
 
 function confirmarActivo() {
   clearTimeout(_responseTimer);
+  _pararSonido();
   // Cerrar la notificación de Android si está en la barra
   if (_swReg) {
     _swReg.getNotifications({ tag: 'rep-actividad' })
@@ -2946,6 +2990,7 @@ function _tickIncoming() {
 async function responderPedidoPendiente(accion) {
   cancelAnimationFrame(_incomingCountRaf);
   clearTimeout(_incomingPollTimer);
+  _pararSonido();
 
   const ventaId = _incomingVentaId;
   _incomingVentaId = null;

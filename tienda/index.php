@@ -203,7 +203,7 @@ try {
             SELECT DISTINCT pp.productos_idproductos
             FROM producto_packaging pp
             JOIN packaging pk ON pk.idpackaging = pp.packaging_idpackaging
-            WHERE pk.activo = 1 AND pk.stock_actual <= 0
+            WHERE pk.activo = 1 AND COALESCE(pk.stock_actual, 0) <= 0
         ")->fetchAll(PDO::FETCH_COLUMN);
         $sinPkgSet = array_flip($sinPkg);
         foreach ($productos as &$p) {

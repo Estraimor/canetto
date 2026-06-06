@@ -60,7 +60,7 @@ try {
     $chkPkg = $pdo->prepare("
         SELECT COUNT(*) FROM producto_packaging pp
         JOIN packaging pk ON pk.idpackaging = pp.packaging_idpackaging
-        WHERE pp.productos_idproductos = ? AND pk.activo = 1 AND pk.stock_actual <= 0
+        WHERE pp.productos_idproductos = ? AND pk.activo = 1 AND COALESCE(pk.stock_actual, 0) <= 0
     ");
     $chkPkg->execute([$id]);
     if ($chkPkg->fetchColumn() > 0) $prod['stock_hecho'] = 0;
