@@ -1,5 +1,5 @@
 <?php
-define('APP_BOOT', true);
+const APP_BOOT = true;
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../config/google_config.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -569,7 +569,7 @@ try {
     </div>
 
     <div id="pedidosList" class="pedidos-list"></div>
-    <button class="btn-refresh" onclick="cargarPedidos()">
+    <button class="btn-refresh" onclick="cargarPedidos();clearTimeout(_incomingPollTimer);_doPollIncoming();">
       <i class="fa-solid fa-arrows-rotate"></i> Actualizar
     </button>
   </div>
@@ -1050,6 +1050,7 @@ async function doLogin() {
         heartbeat();
         cargarPedidos();
         startAutoRefresh();
+        startIncomingPoll();
         registrarPushRepartidor();
         mostrarPantallaPermisos();
       });
@@ -1317,7 +1318,7 @@ async function marcarEntregado(idVenta, btn, clienteNombre) {
 ════════════════════════════════════════ */
 let _autoCloseTimer = null;
 
-function mostrarEntregaAnimacion(idVenta, clienteNombre) {
+function mostrarEntregaAnimacion(idVenta, clienteNombre, onDone) {
   const overlay = document.getElementById('entregaOverlay');
   document.getElementById('entregaChip').textContent = 'Pedido #' + idVenta;
   document.getElementById('entregaSub').textContent  =
@@ -1333,7 +1334,7 @@ function mostrarEntregaAnimacion(idVenta, clienteNombre) {
   requestAnimationFrame(() => overlay.classList.add('show'));
 
   lanzarConfetti();
-  _autoCloseTimer = setTimeout(cerrarEntregaOverlay, 4200);
+  _autoCloseTimer = setTimeout(() => { cerrarEntregaOverlay(); if (onDone) onDone(); }, 4200);
 }
 
 function cerrarEntregaOverlay() {
@@ -1645,6 +1646,7 @@ async function handleGoogleLogin(response) {
         heartbeat();
         cargarPedidos();
         startAutoRefresh();
+        startIncomingPoll();
         registrarPushRepartidor();
         mostrarPantallaPermisos();
       });
@@ -1768,6 +1770,17 @@ function iconDiv(html, size = 44) {
 
 function createDriverIcon(color) {
   return iconDiv(`<div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.7))"><i class="fa-solid fa-motorcycle" style="font-size:26px;color:${color}"></i></div>`, 38);
+}
+
+function iconNumero(num, activo) {
+  const bg   = activo ? '#c88e99' : 'rgba(51,65,85,.86)';
+  const size = activo ? 42 : 34;
+  const fs   = activo ? 17 : 13;
+  const sh   = activo ? '0 3px 12px rgba(0,0,0,.55)' : '0 2px 6px rgba(0,0,0,.38)';
+  return iconDiv(
+    `<div style="background:${bg};width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;box-shadow:${sh};font-size:${fs}px;font-weight:700;color:#fff;line-height:1">${num}</div>`,
+    size
+  );
 }
 
 function _setMapBtnStyle(btn, active, activeColor, activeShadow) {
@@ -1982,10 +1995,21 @@ async function uberEntregar() {
     });
     const data = await res.json();
     if (data.success) {
-      // Limpiar fase guardada al entregar el pedido
       localStorage.removeItem('uber_phase_' + id);
-      cerrarUberMap();
-      mostrarEntregaAnimacion(id, _uberPedido?.cliente_nombre);
+      const clienteActual = _uberPedido?.cliente_nombre;
+
+      // En modo multi, avanzar al siguiente pedido de la cola
+      if (_uberMulti.length > 0 && _uberMultiIdx + 1 < _uberMulti.length) {
+        _uberMultiIdx++;
+        const nextPedido = _uberMulti[_uberMultiIdx];
+        // El paquete ya fue retirado — ir directo a entrega
+        localStorage.setItem('uber_phase_' + nextPedido.idventas, 'delivery');
+        cerrarUberMap();
+        mostrarEntregaAnimacion(id, clienteActual, () => abrirUberMap(nextPedido, _uberMulti));
+      } else {
+        cerrarUberMap();
+        mostrarEntregaAnimacion(id, clienteActual);
+      }
     } else {
       alert(data.message || 'No se pudo marcar como entregado');
       btn.disabled  = false;
@@ -2006,8 +2030,11 @@ function confirmarPaquete() {
   _uberSteps   = [];
   _uberStepIdx = 0;
 
-  // Persistir fase para que al cerrar y abrir el mapa siga en delivery
-  if (_uberPedido?.idventas) {
+  // Persistir fase — en modo multi, marcar todos los pedidos como listos para entrega
+  // (el repartidor retira todos los paquetes de la sucursal al mismo tiempo)
+  if (_uberMulti.length > 1) {
+    _uberMulti.forEach(p => localStorage.setItem('uber_phase_' + p.idventas, 'delivery'));
+  } else if (_uberPedido?.idventas) {
     localStorage.setItem('uber_phase_' + _uberPedido.idventas, 'delivery');
   }
 
@@ -2200,12 +2227,26 @@ async function dibujarRuta(pedido) {
     } catch(e) {
       _uberRoute = [L.polyline([[fromLat, fromLng], [tiendaLat, tiendaLng]], { color: routeColor, weight: 4, dashArray: '8 10' }).addTo(_uberMap)];
     }
+    // Pines numerados de todos los destinos (visión general mientras va a retirar)
+    if (_uberMulti.length > 1) {
+      _uberMulti.forEach((p, i) => {
+        if (!p.lat_entrega || !p.lng_entrega) return;
+        const lat = parseFloat(p.lat_entrega), lng = parseFloat(p.lng_entrega);
+        const m = L.marker([lat, lng], { icon: iconNumero(i + 1, false) })
+          .bindPopup(`<strong>${p.cliente_nombre||'Cliente'}</strong><br><small>#${p.idventas} · ${p.direccion_entrega||'Sin dirección'}</small>`)
+          .addTo(_uberMap);
+        _uberMarkers.push(m);
+        bounds.push([lat, lng]);
+      });
+    }
     _uberMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
 
   } else if (destLat && destLng) {
-    // Fase entrega: marcador destino + ruta
-    const mDest = L.marker([destLat, destLng], { icon: iconDiv(
-      `<div style="background:#f43f5e;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">📍</div>`, 44)
+    // Fase entrega: marcador destino (numerado en modo multi) + ruta
+    const queueNum = _uberMulti.length > 1 ? _uberMultiIdx + 1 : null;
+    const mDest = L.marker([destLat, destLng], { icon: queueNum
+      ? iconNumero(queueNum, true)
+      : iconDiv(`<div style="background:#f43f5e;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.5);font-size:20px">📍</div>`, 44)
     }).bindPopup(`<strong>${pedido.cliente_nombre||'Cliente'}</strong><br><small>${pedido.direccion_entrega||''}</small>`).addTo(_uberMap);
     _uberMarkers.push(mDest);
     bounds.push([destLat, destLng]);
@@ -2225,6 +2266,19 @@ async function dibujarRuta(pedido) {
       }
     } catch(e) {
       _uberRoute = [L.polyline([[fromLat, fromLng], [destLat, destLng]], { color: routeColor, weight: 4, dashArray: '8 10' }).addTo(_uberMap)];
+    }
+    // Pines grises de las entregas siguientes en la cola
+    if (_uberMulti.length > 1) {
+      _uberMulti.forEach((p, i) => {
+        if (i <= _uberMultiIdx) return; // actual y ya entregados tienen su propio marcador
+        if (!p.lat_entrega || !p.lng_entrega) return;
+        const lat = parseFloat(p.lat_entrega), lng = parseFloat(p.lng_entrega);
+        const m = L.marker([lat, lng], { icon: iconNumero(i + 1, false) })
+          .bindPopup(`<strong>${p.cliente_nombre||'Cliente'}</strong><br><small>#${p.idventas} · ${p.direccion_entrega||'Sin dirección'}</small>`)
+          .addTo(_uberMap);
+        _uberMarkers.push(m);
+        bounds.push([lat, lng]);
+      });
     }
     _uberMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
   } else {
@@ -2253,7 +2307,8 @@ function iniciarGeolocalizacion() {
 
     // Seguimiento automático
     if (_seguirMoto && _uberMap) {
-      _uberMap.setView([lat, lng], _uberMap.getZoom(), { animate: true });
+      const z = _uberMap.getZoom() < 15 ? 17 : _uberMap.getZoom();
+      _uberMap.setView([lat, lng], z, { animate: true });
     }
 
     updateNavBanner(lat, lng);
@@ -2273,7 +2328,7 @@ function iniciarGeolocalizacion() {
 function centrarEnMoto() {
   if (!_uberDriver || !_uberMap) return;
   const pos = _uberDriver.getLatLng();
-  _uberMap.setView([pos.lat, pos.lng], 16, { animate: true });
+  _uberMap.setView([pos.lat, pos.lng], 17, { animate: true });
 }
 
 function toggleSeguir() {
@@ -2762,10 +2817,10 @@ function _sesionExpirada() {
           <span id="incomingProds">—</span>
         </div>
       </div>
-      <div class="incoming-order-row">
+      <div class="incoming-order-row" id="incomingTotalRow" style="display:none">
         <div class="incoming-order-icon"><i class="fa-solid fa-dollar-sign"></i></div>
         <div class="incoming-order-text">
-          <div class="incoming-order-label">Total</div>
+          <div class="incoming-order-label">Total a cobrar</div>
           <strong id="incomingTotal" style="color:#c88e99;font-size:16px">—</strong>
         </div>
       </div>
@@ -2791,10 +2846,12 @@ let _incomingVentaId    = null;
 let _incomingEndMs      = 0;
 const INCOMING_SECS     = 30; // segundos para responder
 const INCOMING_CIRCUM   = 2 * Math.PI * 30; // 188.5
+const _rejectedOrders     = new Map(); // ventaId → timestamp del rechazo
+const REJECTED_COOLDOWN_MS = 15 * 1000; // 15 segundos de cooldown antes de volver a mostrar
 
 function startIncomingPoll() {
   clearTimeout(_incomingPollTimer);
-  _incomingPollTimer = setTimeout(_doPollIncoming, 5000);
+  _incomingPollTimer = setTimeout(_doPollIncoming, 3000);
 }
 
 async function _doPollIncoming() {
@@ -2809,7 +2866,13 @@ async function _doPollIncoming() {
         startIncomingPoll();
       }
     } else if (data.pendiente) {
-      _mostrarIncoming(data.pendiente);
+      const rejectedAt = _rejectedOrders.get(data.pendiente.idventas);
+      if (!rejectedAt || Date.now() - rejectedAt > REJECTED_COOLDOWN_MS) {
+        _rejectedOrders.delete(data.pendiente.idventas); // limpiar entrada vencida
+        _mostrarIncoming(data.pendiente);
+      } else {
+        startIncomingPoll();
+      }
     } else {
       startIncomingPoll();
     }
@@ -2834,7 +2897,16 @@ function _mostrarIncoming(pedido) {
   document.getElementById('incomingCliente').textContent = pedido.cliente_nombre || '—';
   document.getElementById('incomingDir').textContent     = pedido.direccion_entrega || 'Sin dirección';
   document.getElementById('incomingProds').textContent   = pedido.productos || '—';
-  document.getElementById('incomingTotal').textContent   = '$' + parseFloat(pedido.total || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  const esEfectivoInc = (pedido.metodo_pago || '').toLowerCase().includes('efectivo') ||
+                        (pedido.metodo_pago || '').toLowerCase().includes('cash');
+  const totalRow = document.getElementById('incomingTotalRow');
+  if (esEfectivoInc) {
+    document.getElementById('incomingTotal').textContent = '$' + parseFloat(pedido.total || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    totalRow.style.display = '';
+  } else {
+    totalRow.style.display = 'none';
+  }
 
   // Mostrar overlay
   const overlay = document.getElementById('incomingOverlay');
@@ -2883,6 +2955,9 @@ async function responderPedidoPendiente(accion) {
   overlay.classList.remove('visible');
 
   if (!ventaId) { startIncomingPoll(); return; }
+
+  // Si rechaza (manual o por timeout), guardar timestamp para el cooldown
+  if (accion === 'rechazar') _rejectedOrders.set(ventaId, Date.now());
 
   try {
     await fetch('api/responder_pedido.php', {

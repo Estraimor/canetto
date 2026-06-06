@@ -9,7 +9,13 @@
       "Bash(mysql -u root -e \"DESCRIBE u966473590_canetto.ventas;\")",
       "Bash(mysql -u root --password=\"\" -e \"DESCRIBE u966473590_canetto.ventas;\")",
       "PowerShell(& \"C:\\\\wamp64\\\\bin\\\\mariadb\\\\mariadb10.11.6\\\\bin\\\\mysql.exe\" -u root --password=\"\" -e \"DESCRIBE u966473590_canetto.ventas;\")",
-      "Bash(Get-ChildItem -Path \"c:\\\\wamp64\\\\www\\\\Epet_N1\\\\administracion\\\\Ventas\\\\Pedidos\\\\\" -Recurse -File | Select-Object FullName)"
+      "Bash(Get-ChildItem -Path \"c:\\\\wamp64\\\\www\\\\Epet_N1\\\\administracion\\\\Ventas\\\\Pedidos\\\\\" -Recurse -File | Select-Object FullName)",
+      "Bash(Get-ChildItem -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(del \"c:\\\\wamp64\\\\www\\\\canetto\\\\tienda\\\\.htaccess\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\wamp64\\\\www\\\\canetto\\\\repartidor\\\\\" -Recurse -Force | Select-Object FullName | ConvertTo-Csv -NoTypeInformation | Select-Object -Skip 1)",
+      "Bash(dir \"c:\\\\wamp64\\\\www\\\\canetto\\\\repartidor\\\\api\\\\\" /B)",
+      "Bash(Get-Content \"c:\\\\wamp64\\\\www\\\\canetto\\\\config\\\\conexion.php\" -Head 50)"
     ]
   }
 }

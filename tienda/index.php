@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 define('APP_BOOT', true);
 require_once __DIR__ . '/../config/conexion.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -314,6 +314,18 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <title>Canetto — Galletitas Artesanales</title>
 <link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
 <meta name="description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="<?= URL_TIENDA ?>/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Canetto">
+<meta property="og:title" content="Canetto — Galletitas Artesanales">
+<meta property="og:description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
+<meta property="og:image" content="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png">
+<meta property="og:url" content="<?= URL_TIENDA ?>/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Canetto — Galletitas Artesanales">
+<meta name="twitter:description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
+<meta name="twitter:image" content="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -510,7 +522,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
   <nav class="t-nav-links">
     <a href="#prodsGrid"   class="t-nav-link">Productos</a>
     <a href="#boxesGrid"   class="t-nav-link">Boxes</a>
-    <a href="#sucursales"  class="t-nav-link">Sucursales</a>
+    <a href="sucursales.php" class="t-nav-link">Sucursales</a>
     <a href="#sobre-nosotros" class="t-nav-link">Nosotros</a>
   </nav>
 
@@ -643,7 +655,7 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
       <span class="t-cat-ic"><i class="fa-solid fa-box-open"></i></span>
       <span class="t-cat-lbl">Boxes</span>
     </a>
-    <a href="#sucursales" class="t-cat-item" onclick="setCatActive(this)">
+    <a href="sucursales.php" class="t-cat-item">
       <span class="t-cat-ic"><i class="fa-solid fa-location-dot"></i></span>
       <span class="t-cat-lbl">Sucursales</span>
     </a>
@@ -712,7 +724,7 @@ HTML;
 ?>
 
 <!-- Cookies -->
-<div class="prods-section-label" id="secCookies"><i class="fa-solid fa-cookie-bite" style="color:#c88e99;margin-right:6px"></i>Cookies</div>
+<div class="prods-section-label" id="secCookies"><i class="fa-solid fa-cookie-bite" style="color:#c88e99;margin-right:6px"></i>Cookie</div>
 <div class="prods-grid" id="prodsGrid">
 <?php if (empty($galletitas)): ?>
   <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#aaa;font-size:14px">
@@ -1690,7 +1702,7 @@ function mostrarBannerCarrito(){
 })();
 
 // ── CART PAGE ─────────────────────────
-function openCart(){document.getElementById('cartDrawer').classList.add('on');document.body.style.overflow='hidden'}
+function openCart(){document.getElementById('cartDrawer').classList.add('on');if(window.innerWidth<1024)document.body.style.overflow='hidden';}
 function closeCart(){document.getElementById('cartDrawer').classList.remove('on');document.body.style.overflow=''}
 
 // ── FILTER ──────────────────────────────

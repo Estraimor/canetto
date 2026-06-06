@@ -29,18 +29,24 @@ $sucursales = $pdo->query("
   body { background: #f0eeec !important; }
   .bottom-nav { display: none !important; }
   body.has-bottom-nav .t-footer { display: block !important; }
-  .t-nav { padding: 0 48px; box-shadow: 0 1px 0 #e8e8e8; }
-  .t-nav-links { display: flex !important; }
+  .t-nav { padding: 0 56px; box-shadow: 0 1px 0 #e8e8e8; }
+  .t-nav-links { display: flex !important; gap: 4px; align-items: center; }
+  .t-nav-link {
+    font-size: 14px; font-weight: 600; color: #1e293b;
+    text-decoration: none; padding: 7px 16px;
+    border-radius: 20px; transition: background .15s;
+  }
+  .t-nav-link:hover { background: #f1f5f9; }
 }
 
 /* ── Page layout ── */
 .suc-page {
-  max-width: 860px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 24px 16px 40px;
 }
 @media (min-width: 1024px) {
-  .suc-page { padding: 40px 24px 60px; }
+  .suc-page { padding: 48px 56px 80px; }
 }
 
 /* ── Header section ── */
@@ -71,6 +77,11 @@ $sucursales = $pdo->query("
 }
 @media (min-width: 640px) {
   .suc-hero-title { font-size: 32px; }
+}
+@media (min-width: 1024px) {
+  .suc-hero { padding: 48px 80px; margin-bottom: 40px; }
+  .suc-hero-title { font-size: 40px; }
+  .suc-hero-sub { font-size: 16px; }
 }
 
 /* ── Nearest button ── */
@@ -105,10 +116,7 @@ $sucursales = $pdo->query("
   gap: 18px;
 }
 @media (min-width: 640px) {
-  .suc-grid { grid-template-columns: 1fr 1fr; }
-}
-@media (min-width: 1024px) {
-  .suc-grid { grid-template-columns: repeat(3, 1fr); }
+  .suc-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
 }
 
 /* ── Tarjeta ── */
@@ -216,6 +224,59 @@ $sucursales = $pdo->query("
 }
 .suc-empty-ic { font-size: 48px; margin-bottom: 16px; opacity: .35; }
 .suc-empty-txt { font-size: 16px; font-weight: 600; }
+
+/* ════════════════════════════════
+   DESKTOP ≥ 1024px
+════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* Grid: 2 columnas grandes con buen gap */
+  .suc-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+
+  /* Tarjeta más grande y con layout horizontal */
+  .suc-card {
+    display: flex;
+    flex-direction: row;
+    border-radius: 24px;
+    overflow: hidden;
+    min-height: 300px;
+  }
+
+  /* Mapa a la izquierda, fijo en 45% */
+  .suc-map {
+    width: 45%;
+    height: auto;
+    min-height: 280px;
+    flex-shrink: 0;
+  }
+  .suc-map iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 280px;
+  }
+  .suc-map-placeholder {
+    width: 45%;
+    height: auto;
+    min-height: 280px;
+  }
+
+  /* Info a la derecha */
+  .suc-body {
+    flex: 1;
+    padding: 28px 28px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .suc-name { font-size: 20px; }
+  .suc-addr { font-size: 14px; margin-bottom: 18px; }
+
+  .btn-dir {
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+}
 </style>
 </head>
 <body class="has-bottom-nav">

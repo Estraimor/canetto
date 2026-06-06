@@ -48,6 +48,16 @@ function base(): string
  * Si la ruta comienza con 'http' se usa directamente (cross-app).
  * Si no, se antepone base() para rutas internas del mismo subdominio.
  */
+function slugify(string $text): string
+{
+    $text = mb_strtolower($text, 'UTF-8');
+    $map  = ['á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ü'=>'u','ñ'=>'n',
+             'à'=>'a','è'=>'e','ì'=>'i','ò'=>'o','ù'=>'u'];
+    $text = str_replace(array_keys($map), array_values($map), $text);
+    $text = preg_replace('/[^a-z0-9\s-]/', '', $text);
+    return preg_replace('/[\s-]+/', '-', trim($text));
+}
+
 function redirect(string $path): never
 {
     if (str_starts_with($path, 'http')) {

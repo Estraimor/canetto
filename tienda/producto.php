@@ -160,6 +160,13 @@ if ($prod['especificaciones']) {
 // Imágenes desde tabla productos_imagenes (ya cargadas arriba)
 $imgPrincipal = $imagenes[0] ?? '';
 
+// SEO
+$slug        = slugify($prod['nombre']);
+$canonicalUrl = URL_TIENDA . '/producto/' . $id . '/' . $slug;
+$_rawDesc    = strip_tags(preg_replace('/\s+/', ' ', trim($prod['descripcion'] ?: $prod['nombre'] . ' — Galletita artesanal de Canetto.')));
+$metaDesc    = mb_strlen($_rawDesc) > 160 ? mb_substr($_rawDesc, 0, 157) . '...' : $_rawDesc;
+$ogImage     = $imgPrincipal ? URL_ASSETS . '/img/productos/' . rawurlencode($imgPrincipal) : URL_ASSETS . '/img/Logo_Canetto_Cookie.png';
+
 // Toppings asignados a este producto
 $toppingsProd = [];
 if (!$esBox) {
@@ -200,6 +207,19 @@ if (!$esBox) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title><?= $nombre ?> — Canetto</title>
+<meta name="description" content="<?= htmlspecialchars($metaDesc) ?>">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="<?= htmlspecialchars($canonicalUrl) ?>">
+<meta property="og:type" content="product">
+<meta property="og:site_name" content="Canetto">
+<meta property="og:title" content="<?= htmlspecialchars($prod['nombre']) ?> — Canetto">
+<meta property="og:description" content="<?= htmlspecialchars($metaDesc) ?>">
+<meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
+<meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?= htmlspecialchars($prod['nombre']) ?> — Canetto">
+<meta name="twitter:description" content="<?= htmlspecialchars($metaDesc) ?>">
+<meta name="twitter:image" content="<?= htmlspecialchars($ogImage) ?>">
 <link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
 <link rel="stylesheet" href="tienda.css?v=<?= filemtime(__DIR__.'/tienda.css') ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -1347,7 +1367,7 @@ function agregarAlCarrito(){
         const icon = p.tipo === 'box' ? 'fa-box-open' : 'fa-cookie-bite';
         const imgSrc = `<?= URL_ASSETS ?>/img/productos/${encodeURIComponent(p.imagen || '')}`;
         return `
-          <a href="producto.php?id=${p.idproductos}" class="sug-card">
+          <a href="<?= URL_TIENDA ?>/producto/${p.idproductos}" class="sug-card">
             <div class="sug-card-img">
               <img src="${imgSrc}" alt="${p.nombre}"
                    onerror="this.parentElement.innerHTML='<i class=\'fa-solid ${icon}\' style=\'font-size:28px;color:#c88e99\'></i>'">

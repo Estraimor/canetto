@@ -72,11 +72,11 @@ try {
         echo json_encode(['success' => true, 'accion' => 'aceptado']);
 
     } else {
-        // rechazar: liberar para que el sistema proponga al siguiente
+        // rechazar: el pedido sigue visible a los demás repartidores en simultáneo.
+        // Solo actualizamos updated_at para que el orden del poll lo refleje.
         $upd = $pdo->prepare("
             UPDATE ventas
-            SET repartidor_pendiente_idusuario = NULL,
-                updated_at = NOW()
+            SET updated_at = NOW()
             WHERE idventas = :id
               AND repartidor_idusuario IS NULL
         ");

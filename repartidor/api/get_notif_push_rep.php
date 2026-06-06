@@ -41,24 +41,22 @@ try {
 
     if (!$userId) { ob_end_clean(); echo json_encode($fallback); exit; }
 
-    // Última notificación no leída
+    // Notificación más reciente de los últimos 2 minutos
+    // (sin marcar como leída para que todos los dispositivos del usuario reciban el mismo contenido)
     $stmt = $pdo->prepare("
-        SELECT id, titulo, cuerpo FROM notif_repartidores
-        WHERE usuario_id = ? AND leida = 0
+        SELECT titulo, cuerpo FROM notif_repartidores
+        WHERE usuario_id = ?
+          AND created_at >= NOW() - INTERVAL 120 SECOND
         ORDER BY created_at DESC LIMIT 1
     ");
     $stmt->execute([$userId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($row) {
-        // Marcar como leída
-        $pdo->prepare("UPDATE notif_repartidores SET leida = 1 WHERE id = ?")->execute([$row['id']]);
-        ob_end_clean();
-        echo json_encode(['titulo' => $row['titulo'], 'cuerpo' => $row['cuerpo'], 'url' => '/']);
-    } else {
-        ob_end_clean();
-        echo json_encode($fallback);
-    }
+    ob_end_clean();
+    echo json_encode($row
+        ? ['titulo' => $row['titulo'], 'cuerpo' => $row['cuerpo'], 'url' => '/canetto/repartidor/']
+        : $fallback
+    );
 
 } catch (Throwable $e) {
     ob_end_clean();
