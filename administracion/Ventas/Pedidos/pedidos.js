@@ -280,6 +280,7 @@ const PedidosApp = (() => {
       cancelButtonText: 'No'
     });
     if (!ok.isConfirmed) return;
+    _cancelarBusqueda(idVenta);
     const btn = { disabled: false, textContent: '' };
     await ejecutarCambio(idVenta, 6, null, btn);
   }

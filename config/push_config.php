@@ -26,6 +26,6 @@ define('PUSH_MENSAJES', [
     3 => ['titulo' => '🛵 Tu pedido está en camino', 'cuerpo' => 'El repartidor ya salió. ¡Pronto llegará!'],
     4 => ['titulo' => '🎉 ¡Pedido entregado!',       'cuerpo' => 'Tu pedido fue entregado. ¡Gracias por elegirnos!'],
     5 => ['titulo' => '💳 Pendiente de pago',         'cuerpo' => 'Tu pedido está pendiente de pago.'],
-    6 => ['titulo' => '❌ Pedido cancelado',           'cuerpo' => 'Tu pedido fue cancelado. Contactanos si tenés dudas.'],
+    6 => ['titulo' => '❌ Pedido cancelado',           'cuerpo' => 'Tu pedido fue cancelado. Si abonaste, escribinos al WhatsApp 3764-820012 para gestionar el reembolso.'],
     7 => ['titulo' => '📦 Listo para retirar',        'cuerpo' => '¡Tu pedido está listo! Podés venir a buscarlo.'],
 ]);

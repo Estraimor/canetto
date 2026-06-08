@@ -113,6 +113,23 @@ try {
         }
     }
 
+    // Cancelado(6) desde cualquier estado posterior al descuento (2=En preparación, 3=En camino, 7=Listo
+    // para retirar): el stock HECHO ya se había descontado en el paso 1→2 y nunca se repuso, hay que reponerlo
+    if (in_array($estadoAnteriorId, [2, 3, 7], true) && $estado === 6) {
+        $stmtItems = $pdo->prepare("SELECT productos_idproductos, cantidad FROM detalle_ventas WHERE ventas_idventas = ?");
+        $stmtItems->execute([$id_venta]);
+        $stmtStock = $pdo->prepare("UPDATE stock_productos SET stock_actual = stock_actual + :c WHERE productos_idproductos = :p AND tipo_stock = 'HECHO'");
+        foreach ($stmtItems->fetchAll(PDO::FETCH_ASSOC) as $item) {
+            $stmtStock->execute([':c' => $item['cantidad'], ':p' => $item['productos_idproductos']]);
+        }
+    }
+
+    // Cancelado(6): liberar repartidor asignado o pendiente para que quede disponible
+    if ($estado === 6) {
+        $pdo->prepare("UPDATE ventas SET repartidor_idusuario=NULL, repartidor_pendiente_idusuario=NULL WHERE idventas=?")
+            ->execute([$id_venta]);
+    }
+
     audit($pdo, 'editar', 'pedidos', "Estado pedido #{$id_venta}: '{$estadoAnterior}' → '{$nombreEstado}'");
 
     // Notificación push al cliente si cambia de estado

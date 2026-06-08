@@ -93,6 +93,14 @@ if ($status === 'pending' && $pedidoId) {
         } catch (Throwable $e) {}
     } elseif (in_array($mpStatusReal, ['rejected', 'cancelled'], true)) {
         $status = 'failure';
+        try {
+            $pdo = Conexion::conectar();
+            // Solo tocamos la venta si sigue "Verificando pago" (no pisar cambios posteriores del admin)
+            $pdo->prepare("UPDATE ventas SET estado_venta_idestado_venta = 6, updated_at = NOW() WHERE idventas = ? AND estado_venta_idestado_venta = 5")
+                ->execute([$pedidoId]);
+            $pdo->prepare("UPDATE pagos_mercadopago SET estado_mp = ?, mp_payment_id = COALESCE(mp_payment_id, ?) WHERE ventas_idventas = ? LIMIT 1")
+                ->execute([$mpStatusReal, $foundPaymentId !== null ? (string)$foundPaymentId : null, $pedidoId]);
+        } catch (Throwable $e) {}
     }
     // Si sigue vacío o 'in_process'/'pending' → queda en pending → polling activo
 }

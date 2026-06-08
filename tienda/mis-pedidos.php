@@ -72,8 +72,11 @@ $eMap = [
     3 => ['lbl'=>'En camino',         'cls'=>'ped-e3','ic'=>'motorcycle',   'color'=>'#2563eb','light'=>'#eff6ff','border'=>'#60a5fa'],
     4 => ['lbl'=>'Entregado',         'cls'=>'ped-e4','ic'=>'circle-check', 'color'=>'#16a34a','light'=>'#f0fdf4','border'=>'#4ade80'],
     5 => ['lbl'=>'Verificando pago…', 'cls'=>'ped-e5','ic'=>'spinner fa-spin', 'color'=>'#c88e99','light'=>'#fdf0f3','border'=>'#e8b4c0'],
-    6 => ['lbl'=>'Pago no aprobado',  'cls'=>'ped-e6','ic'=>'circle-xmark','color'=>'#dc2626','light'=>'#fef2f2','border'=>'#fca5a5'],
+    6 => ['lbl'=>'Cancelado',         'cls'=>'ped-e6','ic'=>'ban',          'color'=>'#dc2626','light'=>'#fef2f2','border'=>'#fca5a5'],
 ];
+
+// Número de WhatsApp para consultas de reembolso
+$whatsappSoporte = '3764820012';
 $tl = [
     ['ic'=>'clock',       'lbl'=>'Recibido'],
     ['ic'=>'fire',        'lbl'=>'Preparando'],
@@ -85,6 +88,7 @@ $totalPedidos = count($pedidos);
 $pendientes   = count(array_filter($pedidos, fn($p) => in_array((int)($p['estado_id'] ?? 0), [1,2])));
 $enCamino     = count(array_filter($pedidos, fn($p) => (int)($p['estado_id'] ?? 0) === 3));
 $entregados   = count(array_filter($pedidos, fn($p) => (int)($p['estado_id'] ?? 0) === 4));
+$cancelados   = count(array_filter($pedidos, fn($p) => (int)($p['estado_id'] ?? 0) === 6));
 $enCurso      = $pendientes + $enCamino;
 $totalGastado = array_sum(array_column($pedidos, 'total'));
 
@@ -246,6 +250,7 @@ html, body { background: #fff !important; }
 .ped-filter-btn.f-pendiente.active { background: #6366f1; border-color: #6366f1; }
 .ped-filter-btn.f-camino.active    { background: #2563eb; border-color: #2563eb; }
 .ped-filter-btn.f-entregado.active { background: #16a34a; border-color: #16a34a; }
+.ped-filter-btn.f-cancelado.active { background: #dc2626; border-color: #dc2626; }
 
 .ped-filter-count {
   display: inline-flex;
@@ -305,6 +310,8 @@ html, body { background: #fff !important; }
 .ped-card[data-ec="2"] { border-left-color: #fbbf24; }
 .ped-card[data-ec="3"] { border-left-color: #60a5fa; }
 .ped-card[data-ec="4"] { border-left-color: #4ade80; }
+.ped-card[data-ec="5"] { border-left-color: #e8b4c0; }
+.ped-card[data-ec="6"] { border-left-color: #fca5a5; }
 
 /* Card header */
 .ped-card-hd {
@@ -478,6 +485,52 @@ html, body { background: #fff !important; }
   border-radius: 6px; transition: width 1s ease;
 }
 
+/* ── Banner de pedido cancelado ── */
+.ped-cancel-banner {
+  margin: 0 16px 14px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fef2f2, #fff5f5);
+  border: 1.5px solid #fca5a5;
+  border-radius: 14px;
+}
+.ped-cancel-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.ped-cancel-ic {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+.ped-cancel-title { font-size: 14px; font-weight: 800; color: #991b1b; margin-bottom: 3px; }
+.ped-cancel-msg   { font-size: 12px; color: #b45361; line-height: 1.5; }
+.ped-cancel-wa-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 11px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background .15s, transform .1s;
+}
+.ped-cancel-wa-btn:hover  { background: #1fb855; }
+.ped-cancel-wa-btn:active { transform: scale(.98); }
+.ped-cancel-wa-btn i { font-size: 17px; }
+
 /* ── Confirm button ── */
 .ped-btn-confirmar {
   display: block;
@@ -495,6 +548,25 @@ html, body { background: #fff !important; }
   transition: background .15s;
 }
 .ped-btn-confirmar:hover { background: #b87888; }
+
+/* ── Cancelar pedido (cliente) ── */
+.ped-btn-cancelar-cliente {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 4px 16px 14px;
+  padding: 12px;
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.ped-btn-cancelar-cliente:hover     { background: #fef2f2; border-color: #dc2626; }
+.ped-btn-cancelar-cliente:disabled  { opacity: .6; cursor: default; }
 
 /* ── Empty states ── */
 .ped-empty {
@@ -629,6 +701,7 @@ html, body { background: #fff !important; }
   .ped-sucursal   { padding: 10px 28px; font-size: 14px; }
   .ped-pago-recibir { padding: 14px 28px; font-size: 14px; }
   .ped-btn-confirmar { width: calc(100% - 56px); margin: 6px 28px 20px; font-size: 16px; padding: 16px; }
+  .ped-btn-cancelar-cliente { width: calc(100% - 56px); margin: 6px 28px 20px; font-size: 14px; padding: 14px; }
 
   /* Sidebar */
   .ped-side-card {
@@ -764,6 +837,12 @@ html, body { background: #fff !important; }
         <i class="fa-solid fa-circle-check" style="font-size:10px"></i>
         Entregados <span class="ped-filter-count"><?= $entregados ?></span>
       </button>
+      <?php if ($cancelados > 0): ?>
+      <button class="ped-filter-btn f-cancelado" onclick="filtrar(this,'cancelado','Cancelados',<?= $cancelados ?>)">
+        <i class="fa-solid fa-ban" style="font-size:10px"></i>
+        Cancelados <span class="ped-filter-count"><?= $cancelados ?></span>
+      </button>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -801,8 +880,11 @@ html, body { background: #fff !important; }
   $costoEnvio = (float)($p['costo_envio'] ?? 0);
   $subtotal   = $p['total'] - $costoEnvio;
   $pagAlRec   = $eid === 1 && $esEfectivo && $esEnvio;
+  // El cliente puede cancelar mientras el pedido no salió de la tienda (no en camino/entregado/cancelado/verificando pago)
+  $puedeCancelar = in_array($eid, [1, 2, 7], true);
   if (in_array($eid, [1,2]))  $filtroVal = 'pendiente';
   elseif ($eid === 3)          $filtroVal = 'camino';
+  elseif ($eid === 6)          $filtroVal = 'cancelado';
   else                         $filtroVal = 'entregado';
 
   $ts       = strtotime($p['created_at'] ?? $p['fecha']);
@@ -832,6 +914,26 @@ html, body { background: #fff !important; }
   </div>
   <?php endif; ?>
 
+  <!-- Aviso de pedido cancelado -->
+  <?php if ($eid === 6):
+    $waMsg = "Hola! Te escribo por mi Pedido #{$p['idventas']}, figura como cancelado y quería consultar sobre el reembolso.";
+    $waUrl = 'https://wa.me/' . $whatsappSoporte . '?text=' . rawurlencode($waMsg);
+  ?>
+  <div class="ped-cancel-banner">
+    <div class="ped-cancel-top">
+      <div class="ped-cancel-ic"><i class="fa-solid fa-ban"></i></div>
+      <div>
+        <div class="ped-cancel-title">Este pedido fue cancelado</div>
+        <div class="ped-cancel-msg">Si ya habías abonado, no te preocupes: te ayudamos a gestionar el reembolso por WhatsApp en minutos.</div>
+      </div>
+    </div>
+    <a href="<?= htmlspecialchars($waUrl) ?>" target="_blank" rel="noopener" class="ped-cancel-wa-btn">
+      <i class="fa-brands fa-whatsapp"></i>
+      Consultar reembolso por WhatsApp
+    </a>
+  </div>
+  <?php else: ?>
+
   <!-- Timeline -->
   <div class="ped-tl">
     <?php foreach ($tl as $si => $step):
@@ -850,6 +952,7 @@ html, body { background: #fff !important; }
     </div>
     <?php endforeach; ?>
   </div>
+  <?php endif; ?>
 
   <!-- Ítems del pedido -->
   <?php if (!empty($p['items']) || !empty($p['toppings'])): ?>
@@ -932,6 +1035,18 @@ html, body { background: #fff !important; }
   <div>
     <button class="ped-btn-confirmar" onclick="confirmarEntrega(<?= $p['idventas'] ?>, this)">
       <i class="fa-solid fa-circle-check"></i> Confirmar que lo recibí
+    </button>
+  </div>
+  <?php endif; ?>
+
+  <!-- Cancelar pedido (cliente) -->
+  <?php if ($puedeCancelar): ?>
+  <div>
+    <button class="ped-btn-cancelar-cliente"
+            data-id="<?= $p['idventas'] ?>"
+            data-efectivo="<?= $esEfectivo ? '1' : '0' ?>"
+            onclick="cancelarPedidoCliente(this)">
+      <i class="fa-solid fa-ban"></i> Cancelar pedido
     </button>
   </div>
   <?php endif; ?>
@@ -1032,11 +1147,13 @@ html, body { background: #fff !important; }
   </a>
 </nav>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 const FILTRO_EMPTY = {
   pendiente: { title: 'Sin pedidos pendientes',  msg: 'No tenés pedidos en preparación ahora.' },
   camino:    { title: 'Nada en camino',           msg: 'Ningún pedido está siendo entregado.' },
   entregado: { title: 'Sin compras entregadas',   msg: 'Todavía no tenés pedidos completados.' },
+  cancelado: { title: 'Sin pedidos cancelados',   msg: 'Por suerte no tenés pedidos cancelados.' },
 };
 
 function toggleFiltros() {
@@ -1191,7 +1308,7 @@ checkNotifStatus();
     3: { txt: 'En camino',       ic: 'motorcycle',    col: '#2563eb', bg: '#eff6ff', bd: '#60a5fa' },
     4: { txt: 'Entregado',       ic: 'circle-check',  col: '#16a34a', bg: '#f0fdf4', bd: '#4ade80' },
     5: { txt: 'Verificando pago…', ic: 'spinner fa-spin', col: '#c88e99', bg: '#fdf0f3', bd: '#e8b4c0' },
-    6: { txt: 'Pago no aprobado', ic: 'circle-xmark', col: '#dc2626', bg: '#fef2f2', bd: '#fca5a5' },
+    6: { txt: 'Cancelado',        ic: 'ban',             col: '#dc2626', bg: '#fef2f2', bd: '#fca5a5' },
   };
 
   let activos = [...pendientesMP];
@@ -1358,6 +1475,103 @@ async function confirmarEntrega(idVenta, btn) {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar que lo recibí';
   }
+}
+
+// ── Cancelar pedido (cliente) ────────────────────────────────────
+const WHATSAPP_SOPORTE = '<?= htmlspecialchars($whatsappSoporte) ?>';
+
+async function cancelarPedidoCliente(btn) {
+  const idVenta    = btn.dataset.id;
+  const esEfectivo = btn.dataset.efectivo === '1';
+
+  if (esEfectivo) {
+    await cancelarPorEfectivo(idVenta, btn);
+  } else {
+    await cancelarPorMercadoPago(idVenta);
+  }
+}
+
+async function cancelarPorEfectivo(idVenta, btn) {
+  const c1 = await Swal.fire({
+    title: '¿Cancelar este pedido?',
+    text: 'Pedido #' + idVenta + ' — esta acción quedará registrada y no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#94a3b8',
+    confirmButtonText: 'Sí, continuar',
+    cancelButtonText: 'No',
+  });
+  if (!c1.isConfirmed) return;
+
+  const c2 = await Swal.fire({
+    title: 'Última confirmación',
+    text: 'Si cancelás ahora, vas a tener que volver a hacer el pedido si te arrepentís. ¿Confirmás la cancelación?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#94a3b8',
+    confirmButtonText: 'Sí, cancelar pedido',
+    cancelButtonText: 'Volver atrás',
+  });
+  if (!c2.isConfirmed) return;
+
+  btn.disabled  = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cancelando...';
+
+  try {
+    const fd = new FormData();
+    fd.append('id_venta', idVenta);
+    const res  = await fetch('api/cancelar_pedido.php', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (data.success) {
+      Swal.fire({
+        title: 'Pedido cancelado',
+        text: 'Tu pedido #' + idVenta + ' fue cancelado correctamente.',
+        icon: 'success',
+        confirmButtonColor: '#c88e99',
+      }).then(() => location.reload());
+    } else {
+      Swal.fire('No se pudo cancelar', data.message || 'Intentá de nuevo en un momento.', 'error');
+      btn.disabled  = false;
+      btn.innerHTML = '<i class="fa-solid fa-ban"></i> Cancelar pedido';
+    }
+  } catch {
+    Swal.fire('Error de conexión', 'Probá de nuevo en un momento.', 'error');
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="fa-solid fa-ban"></i> Cancelar pedido';
+  }
+}
+
+async function cancelarPorMercadoPago(idVenta) {
+  const c1 = await Swal.fire({
+    title: '¿Cancelar este pedido?',
+    html: 'El Pedido #' + idVenta + ' fue pagado con <strong>Mercado Pago</strong>.<br>' +
+          'Como el pago ya se procesó, la única forma de cancelarlo es coordinando con nosotros el reembolso por WhatsApp.',
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonColor: '#25d366',
+    cancelButtonColor: '#94a3b8',
+    confirmButtonText: 'Continuar por WhatsApp',
+    cancelButtonText: 'No, volver',
+  });
+  if (!c1.isConfirmed) return;
+
+  const c2 = await Swal.fire({
+    title: 'Te vamos a abrir WhatsApp',
+    text: 'Te llevamos a WhatsApp con un mensaje ya redactado para coordinar la cancelación y el reembolso de tu pedido #' + idVenta + '. ¿Continuamos?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#25d366',
+    cancelButtonColor: '#94a3b8',
+    confirmButtonText: 'Sí, abrir WhatsApp',
+    cancelButtonText: 'Cancelar',
+  });
+  if (!c2.isConfirmed) return;
+
+  const msg = 'Hola! Quiero cancelar mi Pedido #' + idVenta + '. Lo pagué con Mercado Pago y necesito coordinar la cancelación y el reembolso. ¡Gracias!';
+  window.open('https://wa.me/' + WHATSAPP_SOPORTE + '?text=' + encodeURIComponent(msg), '_blank');
 }
 </script>
 
