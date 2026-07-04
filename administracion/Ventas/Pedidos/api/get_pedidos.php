@@ -22,6 +22,10 @@ try {
         "ALTER TABLE ventas ADD COLUMN via_uber TINYINT(1) NOT NULL DEFAULT 0",
         "ALTER TABLE ventas ADD COLUMN uber_link VARCHAR(500) NULL",
         "ALTER TABLE ventas ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'pos'",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_solicitada TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_motivo VARCHAR(60) NULL",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_detalle TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_solicitada_at DATETIME NULL",
     ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
     $params = [];
@@ -58,6 +62,9 @@ try {
             COALESCE(v.via_uber, 0) AS via_uber,
             v.uber_link,
             COALESCE(v.origen, 'pos') AS origen,
+            COALESCE(v.cancelacion_solicitada, 0) AS cancelacion_solicitada,
+            v.cancelacion_motivo,
+            v.cancelacion_detalle,
             COALESCE(v.toppings_json, '') AS toppings_json,
 
             u.nombre   AS cliente_nombre,

@@ -51,10 +51,7 @@ $iniciales = strtoupper(
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 @media (min-width: 1024px) {
-  body, body.has-bottom-nav { padding-bottom: 0 !important; }
-  body { background: #f0eeec !important; }
-  .bottom-nav { display: none !important; }
-  body.has-bottom-nav .t-footer { display: block !important; }
+  body { padding-bottom: 0 !important; background: #f0eeec !important; }
   #page-wrap { padding-bottom: 0 !important; }
   .perfil-mini-stats { display: none !important; }
   #alertGlobal { display: none; }
@@ -221,10 +218,15 @@ $iniciales = strtoupper(
 }
 </style>
 </head>
-<body class="has-bottom-nav" style="background:#f5f5f5">
+<body class="t-page" style="background:#f5f5f5">
 <div id="page-wrap">
 
+<?php include __DIR__ . '/nav-drawer.php'; ?>
+
 <header class="t-nav">
+  <button class="nd-toggle" id="ndToggle" aria-label="Abrir menú" onclick="abrirDrawer()">
+    <i class="fa-solid fa-bars"></i>
+  </button>
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
       <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="t-brand-logo">
@@ -236,7 +238,7 @@ $iniciales = strtoupper(
       <i class="fa-solid fa-bag-shopping" style="font-size:14px"></i>
       <span class="t-btn-label" style="display:none">Mis pedidos</span>
     </a>
-    <a href="index.php" class="t-btn" title="Tienda" style="font-size:13px;font-weight:700;width:auto;padding:0 16px;border-radius:22px;gap:6px;display:flex;align-items:center;background:#111;color:#fff">
+    <a href="tienda.php" class="t-btn" title="Tienda" style="font-size:13px;font-weight:700;width:auto;padding:0 16px;border-radius:22px;gap:6px;display:flex;align-items:center;background:#111;color:#fff">
       <i class="fa-solid fa-cart-shopping" style="font-size:14px"></i>
       <span class="t-btn-label" style="display:none">Tienda</span>
     </a>
@@ -493,25 +495,6 @@ $iniciales = strtoupper(
   <div class="t-footer-brand">Canetto</div>
   <div class="t-footer-tag">Cookies hechas con amor</div>
 </footer>
-
-<nav class="bottom-nav">
-  <a href="index.php" class="bn-item">
-    <i class="fa-solid fa-house"></i>
-    <span>Inicio</span>
-  </a>
-  <a href="mis-pedidos.php" class="bn-item">
-    <i class="fa-solid fa-bag-shopping"></i>
-    <span>Mis pedidos</span>
-  </a>
-  <a href="index.php#sucursales" class="bn-item">
-    <i class="fa-solid fa-location-dot"></i>
-    <span>Sucursales</span>
-  </a>
-  <a href="mi-cuenta.php" class="bn-item active">
-    <i class="fa-solid fa-user"></i>
-    <span>Mi cuenta</span>
-  </a>
-</nav>
 
 <script>
 const swalOk  = (titulo, texto) => Swal.fire({

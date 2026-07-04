@@ -668,7 +668,7 @@ body {
 /* Botones de acción */
 .pedido-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr;
+  grid-template-columns: 1fr 1fr;
   gap: 7px;
 }
 
@@ -737,6 +737,17 @@ body {
   opacity: .3;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Cancelar pedido — outline rojo */
+.btn-cancelar-pedido {
+  background: var(--surface);
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.btn-cancelar-pedido:hover:not(.disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 

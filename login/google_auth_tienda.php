@@ -148,7 +148,7 @@ try {
     echo json_encode([
         'success'  => true,
         'nombre'   => $_SESSION['tienda_cliente_nombre'],
-        'redirect' => URL_TIENDA . '/index.php',
+        'redirect' => URL_TIENDA . '/tienda.php',
     ]);
 
 } catch (Throwable $e) {

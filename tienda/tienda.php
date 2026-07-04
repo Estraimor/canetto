@@ -15,7 +15,12 @@ try {
         'horario_cierre'          => '21:00',
         'horario_forzado_cerrado' => '0',
         'tarifa_servicio'         => '0',
+        'min_cookies_pedido'      => '4',
+        'mensaje_min_pedido'      => 'El pedido mínimo es de {min} cookies.',
     ], $_rows);
+
+    $_minCookiesPedido = max(0, (int)$_cfg['min_cookies_pedido']);
+    $_mensajeMinPedido = $_cfg['mensaje_min_pedido'];
 
     $_modoConfig = $_cfg['tienda_modo'];
 
@@ -42,6 +47,8 @@ try {
     $_tiendaAceptaPedidos = true;
     $_tiendaMensaje       = '';
     $_modoEfectivo        = 'abierta';
+    $_minCookiesPedido    = 4;
+    $_mensajeMinPedido    = 'El pedido mínimo es de {min} cookies.';
 }
 
 if (!$_tiendaAbierta) {
@@ -128,7 +135,7 @@ try {
 
     if (empty($ofertas)) {
         $ofertas = [
-            ['titulo' => '¡Bienvenidos a Canetto!', 'descripcion' => 'Las mejores galletitas artesanales, hechas con amor', 'emoji' => '🍪', 'tipo' => 'promo', 'valor' => null],
+            ['titulo' => '¡Bienvenidos a Canetto!', 'descripcion' => 'Las mejores cookies artesanales, hechas con amor', 'emoji' => '🍪', 'tipo' => 'promo', 'valor' => null],
             ['titulo' => 'Armá tu Box', 'descripcion' => 'Combinaciones únicas para cada momento especial', 'emoji' => '📦', 'tipo' => 'promo', 'valor' => null],
         ];
     }
@@ -297,7 +304,7 @@ try {
     }
 
 } catch (Throwable $e) {
-    $ofertas = [['titulo' => '¡Bienvenidos a Canetto!', 'descripcion' => 'Galletitas artesanales', 'emoji' => '🍪', 'tipo' => 'promo', 'valor' => null]];
+    $ofertas = [['titulo' => '¡Bienvenidos a Canetto!', 'descripcion' => 'Cookies artesanales', 'emoji' => '🍪', 'tipo' => 'promo', 'valor' => null]];
     $productos = []; $galletitas = []; $boxes = []; $sucursales = []; $metodos_pago = []; $direcciones_guardadas = [];
 }
 
@@ -311,20 +318,20 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Canetto — Galletitas Artesanales</title>
+<title>Canetto — Cookies Artesanales</title>
 <link rel="icon" type="image/png" href="https://canettocookies.com/img/Logo_Canetto_Cookie.png">
-<meta name="description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
+<meta name="description" content="Las mejores cookies artesanales. Pedí online y retirá en tu sucursal más cercana.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="<?= URL_TIENDA ?>/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Canetto">
-<meta property="og:title" content="Canetto — Galletitas Artesanales">
-<meta property="og:description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
+<meta property="og:title" content="Canetto — Cookies Artesanales">
+<meta property="og:description" content="Las mejores cookies artesanales. Pedí online y retirá en tu sucursal más cercana.">
 <meta property="og:image" content="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png">
 <meta property="og:url" content="<?= URL_TIENDA ?>/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Canetto — Galletitas Artesanales">
-<meta name="twitter:description" content="Las mejores galletitas artesanales. Pedí online y retirá en tu sucursal más cercana.">
+<meta name="twitter:title" content="Canetto — Cookies Artesanales">
+<meta name="twitter:description" content="Las mejores cookies artesanales. Pedí online y retirá en tu sucursal más cercana.">
 <meta name="twitter:image" content="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -455,6 +462,8 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 /* Cart free shipping banner */
 .cart-free-ship{display:none;margin:0;background:#e8f5e9;padding:10px 16px;font-size:13px;font-weight:700;color:#2e7d32;align-items:center;gap:8px;border-bottom:1px solid #c8e6c9}
 .cart-free-ship.on{display:flex}
+/* Cart minimum cookies banner */
+.cart-min-cookies{margin:0;background:#fdf0f3;padding:10px 16px;font-size:13px;font-weight:700;color:#a46678;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f3dde2}
 /* Resumen pedido estilo McD */
 .ck-resumen-box{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:12px}
 .ck-resumen-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:10px}
@@ -506,11 +515,16 @@ $tagLabels      = ['promo' => 'Canetto', 'descuento' => 'Descuento', 'temporada'
 .sn-chev.open{ transform:rotate(90deg); }
 </style>
 </head>
-<body class="has-bottom-nav">
+<body class="t-page">
 <div id="page-wrap">
+
+<?php include __DIR__ . '/nav-drawer.php'; ?>
 
 <!-- ── HEADER ──────────────────── -->
 <header class="t-nav">
+  <button class="nd-toggle" id="ndToggle" aria-label="Abrir menú" onclick="abrirDrawer()">
+    <i class="fa-solid fa-bars"></i>
+  </button>
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
       <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
@@ -728,7 +742,7 @@ HTML;
 <div class="prods-grid" id="prodsGrid">
 <?php if (empty($galletitas)): ?>
   <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#aaa;font-size:14px">
-    Próximamente más galletitas
+    Próximamente más cookies
   </div>
 <?php else: foreach ($galletitas as $p): renderProductCard($p); endforeach; endif; ?>
 </div>
@@ -814,7 +828,7 @@ HTML;
     <div class="sn-brand-card" style="display:none">
       <div>
         <div class="sn-brand-card-name">Canetto</div>
-        <div class="sn-brand-card-desc">Somos una marca artesanal nacida del amor por las galletitas. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.</div>
+        <div class="sn-brand-card-desc">Somos una marca artesanal nacida del amor por las cookies. Cada pieza es elaborada con ingredientes seleccionados, recetas propias y muchísimo cariño. Creemos que un buen regalo siempre sabe mejor cuando viene del corazón.</div>
       </div>
       <div class="sn-brand-card-tag">Cookies hechas con amor</div>
     </div>
@@ -967,6 +981,11 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
       <span class="cart-count-tag" id="cartCountTag">0 items</span>
     </div>
   </div>
+  <?php if ($_minCookiesPedido > 0): ?>
+  <div class="cart-min-cookies">
+    <i class="fa-solid fa-cookie-bite"></i> Pedido mínimo: <?= $_minCookiesPedido ?> cookies
+  </div>
+  <?php endif; ?>
   <div class="cart-free-ship" id="cartFreeShipBanner">
     <i class="fa-solid fa-motorcycle"></i> ¡Ya tenés envío gratis!
   </div>
@@ -1248,7 +1267,7 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
         <!-- Sección: Observación -->
         <div class="ckd-sec">
           <div class="ckd-sec-title"><i class="fa-solid fa-comment-dots"></i> Observación (opcional)</div>
-          <textarea id="ckObs" rows="2" class="ckd-obs" placeholder="Ej: Sin gluten, para regalo, tocar timbre..."></textarea>
+          <textarea id="ckObs" rows="2" class="ckd-obs" placeholder="Ej: Para regalo, tocar timbre..."></textarea>
         </div>
 
         <!-- Resumen del pedido -->
@@ -1309,6 +1328,8 @@ if (window.TIENDA_ACEPTA_PEDIDOS === false) {
 <script>
 // ── PHP DATA ────────────────────────────
 window.TOPPINGS_BY_PRODUCTO = <?= json_encode($toppingsByProducto ?? [], JSON_UNESCAPED_UNICODE) ?>;
+window.MIN_COOKIES_PEDIDO = <?= json_encode($_minCookiesPedido) ?>;
+window.MENSAJE_MIN_PEDIDO = <?= json_encode($_mensajeMinPedido, JSON_UNESCAPED_UNICODE) ?>;
 window.PRODUCTOS   = <?= json_encode($productos,   JSON_UNESCAPED_UNICODE) ?>;
 window.URL_ASSETS_JS = '<?= URL_ASSETS ?>';
 window.SUCURSALES  = <?= json_encode($sucursales,  JSON_UNESCAPED_UNICODE) ?>;
@@ -1344,8 +1365,11 @@ const saveCart=c=>{localStorage.setItem(CK,JSON.stringify(c));renderCart();rende
 
 function requireLogin(){
   if(!CLIENTE_PHP){
-    showToast('Iniciá sesión para continuar 👤','err');
-    setTimeout(()=>window.location.href='<?= base() ?>/login/login.php',1400);
+    Swal.fire({
+      icon:'info', title:'Iniciá sesión',
+      text:'Necesitás una cuenta para continuar.',
+      confirmButtonColor:'#c88e99', confirmButtonText:'Ingresar'
+    }).then(r=>{ if(r.isConfirmed) window.location.href='login.php?retorno='+encodeURIComponent(location.href); });
     return true;
   }
   return false;
@@ -1633,7 +1657,7 @@ function abrirDetalle(id){
     specEl.innerHTML=`<div class="pd-spec-row"><span class="pd-spec-label">Especificaciones</span><span class="pd-spec-val">${p.especificaciones}</span></div>`;
     specEl.style.display='flex';
   } else {
-    specEl.innerHTML=`<div class="pd-spec-row"><span class="pd-spec-label">Tipo</span><span class="pd-spec-val">${p.tipo==='box'?'Box':'Galletita artesanal'}</span></div>`;
+    specEl.innerHTML=`<div class="pd-spec-row"><span class="pd-spec-label">Tipo</span><span class="pd-spec-val">${p.tipo==='box'?'Box':'Cookie artesanal'}</span></div>`;
     specEl.style.display='flex';
   }
 
@@ -1900,16 +1924,23 @@ function openCheckout(){
   if(!c.length){showToast('Tu carrito está vacío','err');return}
   // Mínimo de cookies (se valida también en el servidor)
   const totalCookies=c.filter(i=>i.tipo!=='box').reduce((s,i)=>s+i.cantidad,0);
-  if(totalCookies>0&&totalCookies<4){
+  const minCookies=window.MIN_COOKIES_PEDIDO||0;
+  if(minCookies>0&&totalCookies>0&&totalCookies<minCookies){
+    const msgMin=(window.MENSAJE_MIN_PEDIDO||'El pedido mínimo es de {min} cookies.').replace('{min}',minCookies);
     Swal.fire({
       icon:'warning',
-      title:'Mínimo 4 cookies',
-      html:`Tenés <strong>${totalCookies}</strong> cookie${totalCookies===1?'':'s'} en el carrito.<br>El pedido mínimo es de <strong>4 unidades</strong> 🍪`,
+      title:`Mínimo ${minCookies} cookie${minCookies===1?'':'s'}`,
+      html:`Tenés <strong>${totalCookies}</strong> cookie${totalCookies===1?'':'s'} en el carrito.<br>${msgMin} 🍪`,
       confirmButtonText:'Agregar más',
       confirmButtonColor:'#c88e99',
       showCancelButton:true,
       cancelButtonText:'Cancelar',
       cancelButtonColor:'#aaa',
+    }).then(r=>{
+      if(r.isConfirmed){
+        closeCart();
+        document.getElementById('secCookies')?.scrollIntoView({behavior:'smooth',block:'start'});
+      }
     });
     return;
   }
@@ -2093,7 +2124,7 @@ let _selectedMetodoId=null,_selectedMetodoEsMP=false,_selectedMetodoEsTrans=fals
 function seleccionarMetodo(id,btn,esMP,esTrans=false){
   _selectedMetodoId=id;_selectedMetodoEsMP=esMP;_selectedMetodoEsTrans=esTrans;
   document.getElementById('ckMetodoId').value=id;
-  document.querySelectorAll('.ck-pago-card').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('.ckd-pago-card').forEach(c=>c.classList.remove('on'));
   btn.classList.add('on');
   const al=document.getElementById('dAlert');if(al)al.classList.remove('on');
   const tp=document.getElementById('transferPanel');
@@ -3278,38 +3309,6 @@ document.getElementById('toppingsModal')?.addEventListener('click', e => {
 });
 </script>
 
-<nav class="bottom-nav">
-  <a href="index.php" class="bn-item active">
-    <i class="fa-solid fa-house"></i>
-    <span>Inicio</span>
-  </a>
-  <?php if ($cliente_id): ?>
-  <a href="mis-pedidos.php" class="bn-item">
-    <i class="fa-solid fa-bag-shopping"></i>
-    <span>Mis pedidos</span>
-  </a>
-  <?php else: ?>
-  <a href="login.php" class="bn-item" data-instant>
-    <i class="fa-solid fa-bag-shopping"></i>
-    <span>Mis pedidos</span>
-  </a>
-  <?php endif; ?>
-  <a href="sucursales.php" class="bn-item">
-    <i class="fa-solid fa-location-dot"></i>
-    <span>Sucursales</span>
-  </a>
-  <?php if ($cliente_id): ?>
-  <a href="mi-cuenta.php" class="bn-item">
-    <i class="fa-solid fa-user"></i>
-    <span>Mi cuenta</span>
-  </a>
-  <?php else: ?>
-  <a href="login.php" class="bn-item" data-instant>
-    <i class="fa-solid fa-user"></i>
-    <span>Ingresar</span>
-  </a>
-  <?php endif; ?>
-</nav>
 <!-- ── Cookie consent banner ─────────────────────────────────────── -->
 <div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
      background:#fff;border-top:2px solid #f0d0d8;padding:16px 20px 20px;

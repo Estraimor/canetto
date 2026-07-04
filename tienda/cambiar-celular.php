@@ -193,7 +193,7 @@ body{
       <a href="<?= URL_TIENDA ?>/mi-cuenta.php" class="btn-primary" style="display:block;text-decoration:none;text-align:center;">
         Ir a mi cuenta
       </a>
-      <a href="<?= URL_TIENDA ?>/index.php" class="btn-sec">← Volver a la tienda</a>
+      <a href="<?= URL_TIENDA ?>/tienda.php" class="btn-sec">← Volver a la tienda</a>
     </div>
 
   <?php elseif ($error && !$uid): ?>

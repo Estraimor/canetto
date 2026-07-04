@@ -95,7 +95,11 @@ HTML;
     $_SESSION['tienda_cliente_id']     = $newId;
     $_SESSION['tienda_cliente_nombre'] = trim("$nombre $apellido");
 
-    echo json_encode(['ok' => true, 'nombre' => $nombre]);
+    $retorno = $_SESSION['login_retorno'] ?? '';
+    $destino = ($retorno && str_starts_with($retorno, URL_TIENDA)) ? $retorno : URL_TIENDA . '/tienda.php';
+    unset($_SESSION['login_retorno']);
+
+    echo json_encode(['ok' => true, 'nombre' => $nombre, 'redirect' => $destino]);
 
 } catch (Throwable $e) {
     echo json_encode(['ok' => false, 'msg' => 'Error al crear la cuenta: ' . $e->getMessage()]);

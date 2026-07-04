@@ -128,7 +128,8 @@ const PedidosApp = (() => {
                     ? `<small style="color:#94a3b8" id="rep-status-${v.idventas}">🔍 Buscando repartidor...</small>`
                     : '')));
 
-      const rowCls = `row-estado-${estadoId}` + (esCancelado ? ' row-cancelado' : '');
+      const tieneSolicitudCancel = !!v.cancelacion_solicitada && !esCancelado;
+      const rowCls = `row-estado-${estadoId}` + (esCancelado ? ' row-cancelado' : '') + (tieneSolicitudCancel ? ' row-cancel-solicitud' : '');
 
       const trans      = getTransiciones(estadoId, tipoEntrega);
       const selectOpts = trans.map(id => {
@@ -183,6 +184,23 @@ const PedidosApp = (() => {
           </td>
           <td class="expand-td"><span class="expand-chevron" id="chev-${v.idventas}">▾</span></td>
         </tr>
+        ${tieneSolicitudCancel ? `
+        <tr class="cancel-solicitud-row">
+          <td colspan="8" onclick="event.stopPropagation()">
+            <div class="cancel-solicitud-banner">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <div class="cancel-solicitud-info">
+                <strong>Solicitud de cancelación</strong> — ${v.repartidor_nombre || 'Repartidor'}
+                <div class="cancel-solicitud-motivo">${v.cancelacion_motivo || ''}${v.cancelacion_detalle ? ' — ' + v.cancelacion_detalle : ''}</div>
+              </div>
+              <div class="cancel-solicitud-btns">
+                <button class="btn-accion btn-cancel-aprobar" onclick="PedidosApp.aprobarCancelacion(${v.idventas})">✅ Aprobar</button>
+                <button class="btn-accion btn-cancel-rechazar" onclick="PedidosApp.rechazarCancelacion(${v.idventas})">❌ Rechazar</button>
+              </div>
+            </div>
+          </td>
+        </tr>
+        ` : ''}
         <tr id="acc-row-${v.idventas}" class="acciones-expand-row" style="display:none">
           <td colspan="8">
             <div class="acciones-expand-inner">
@@ -515,96 +533,134 @@ const PedidosApp = (() => {
     }
   }
 
-  function toggleSeccion(h4) {
-    const content = h4.nextElementSibling;
-    const chevron = h4.querySelector('.toggle-chevron');
-    const isOpen  = content.style.display !== 'none';
-    content.style.display = isOpen ? 'none' : '';
-    if (chevron) chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
-  }
-
   function renderDetalle(d) {
     const estadoId = parseInt(d.estado_id);
     const est = ESTADOS[estadoId] || { label: 'Desconocido', cls: 'est-1' };
     const fecha = fmtFecha(d.fecha);
+    const chev = open => `<span class="toggle-chevron" style="transform:rotate(${open ? '0deg' : '-90deg'})">▼</span>`;
+    const cont = open => open ? '' : ' collapsed" style="max-height:0';
     document.getElementById('detalle-body').innerHTML = `
-      <div class="detalle-section">
-        <h4>📦 ESTADO ACTUAL</h4>
-        <span class="estado-pill ${est.cls}"><span class="est-dot"></span>${est.label}</span>
-      </div>
-      <div class="detalle-section">
-        <h4 class="section-toggle" onclick="PedidosApp.toggleSeccion(this)">
-          👤 CLIENTE <span class="toggle-chevron" style="transform:rotate(-90deg)">▼</span>
-        </h4>
-        <div class="section-content" style="display:none">
-          <div class="detalle-info-grid">
-            <div class="info-item"><label>Nombre</label><span>${d.cliente_nombre || '—'} ${d.cliente_apellido || ''}</span></div>
-            <div class="info-item"><label>Teléfono</label><span>${String(d.cliente_telefono || '—')}</span></div>
-            <div class="info-item"><label>Email</label><span>${d.cliente_email || '—'}</span></div>
-            ${d.tipo_entrega === 'envio' ? `
-            <div class="info-item"><label>Tipo entrega</label><span>🛵 Envío</span></div>
-            <div class="info-item" style="grid-column:1/-1"><label>Dirección</label><span>${d.direccion_entrega || '—'}</span></div>
-            <div class="info-item"><label>Repartidor</label><span>${d.via_uber ? '🚗 Uber' : (d.repartidor_nombre || '— Sin asignar —')}</span></div>
-            ` : `<div class="info-item"><label>Tipo entrega</label><span>🏪 Retiro</span></div>`}
+      <div class="detalle-grid">
+        <div class="detalle-col">
+          <div class="detalle-section">
+            <h4 class="section-toggle" onclick="PedidosApp.toggleSeccion(this)"><span>📦 ESTADO ACTUAL</span>${chev(true)}</h4>
+            <div class="section-content"${cont(true)}>
+              <span class="estado-pill ${est.cls}"><span class="est-dot"></span>${est.label}</span>
+            </div>
+          </div>
+          <div class="detalle-section">
+            <h4 class="section-toggle" onclick="PedidosApp.toggleSeccion(this)"><span>👤 CLIENTE</span>${chev(false)}</h4>
+            <div class="section-content"${cont(false)}>
+              <div class="detalle-info-grid">
+                <div class="info-item"><label>Nombre</label><span>${d.cliente_nombre || '—'} ${d.cliente_apellido || ''}</span></div>
+                <div class="info-item"><label>Teléfono</label><span>${String(d.cliente_telefono || '—')}</span></div>
+                <div class="info-item" style="grid-column:1/-1"><label>Email</label><span>${d.cliente_email || '—'}</span></div>
+                ${d.tipo_entrega === 'envio' ? `
+                <div class="info-item"><label>Tipo entrega</label><span>🛵 Envío</span></div>
+                <div class="info-item"><label>Repartidor</label><span>${d.via_uber ? '🚗 Uber' : (d.repartidor_nombre || '— Sin asignar —')}</span></div>
+                <div class="info-item" style="grid-column:1/-1"><label>Dirección</label><span>${d.direccion_entrega || '—'}</span></div>
+                ` : `<div class="info-item"><label>Tipo entrega</label><span>🏪 Retiro</span></div>`}
+              </div>
+            </div>
+          </div>
+          <div class="detalle-section">
+            <h4 class="section-toggle" onclick="PedidosApp.toggleSeccion(this)"><span>💳 PAGO & FECHA</span>${chev(false)}</h4>
+            <div class="section-content"${cont(false)}>
+              <div class="detalle-info-grid">
+                <div class="info-item"><label>Método</label><span>${d.metodo_pago || '—'}</span></div>
+                <div class="info-item"><label>Fecha</label><span>${fecha.dia} ${fecha.hora}</span></div>
+                <div class="info-item" style="grid-column:1/-1"><label>Origen</label><span>${d.origen === 'tienda' ? '📱 App/Tienda' : '🖥 Administración'}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="detalle-col">
+          <div class="detalle-section">
+            <h4 class="section-toggle" onclick="PedidosApp.toggleSeccion(this)"><span>🛍️ Productos</span>${chev(true)}</h4>
+            <div class="section-content"${cont(true)}>
+              <div class="detalle-items-list">
+                ${(d.productos || []).map(p => {
+                  const boxHtml = p.contenido_box
+                    ? `<div class="di-box">📦 ${p.contenido_box}</div>` : '';
+                  return `
+                  <div class="detalle-item">
+                    <div style="flex:1">
+                      <div class="di-nombre"><i class="fa-solid fa-cookie-bite" style="font-size:11px;color:#c88e99;margin-right:5px"></i>${p.nombre}</div>
+                      <div class="di-qty">Cantidad: ${p.cantidad}</div>
+                      ${boxHtml}
+                    </div>
+                    <div class="di-precio">${fmt(parseFloat(p.precio_unitario||0) * parseInt(p.cantidad||1))}</div>
+                  </div>`;
+                }).join('')}
+                ${(d.toppings && d.toppings.length)
+                  ? d.toppings.map(t => `
+                    <div class="detalle-item detalle-item--topping">
+                      <div style="flex:1">
+                        <div class="di-nombre"><i class="fa-solid fa-plus" style="font-size:10px;color:#f59e0b;margin-right:5px"></i>${t.nombre}</div>
+                        <div class="di-qty">Extra / Topping</div>
+                      </div>
+                      <div class="di-precio di-precio--topping">+${fmt(t.precio)}</div>
+                    </div>`).join('')
+                  : `<div style="font-size:12px;color:#94a3b8;padding:6px 0 2px">Sin extras</div>`
+                }
+              </div>
+              <div class="detalle-total"><span>Total productos</span><span>${fmt((d.productos||[]).reduce((s,p)=>s+(parseFloat(p.precio_unitario||0)*parseInt(p.cantidad||1)),0) + (d.toppings||[]).reduce((s,t)=>s+(parseFloat(t.precio)||0),0))}</span></div>
+            </div>
+          </div>
+
+          <!-- Resumen de costos -->
+          <div class="detalle-section">
+            <h4 class="section-toggle" onclick="PedidosApp.toggleSeccion(this)">
+              <span><i class="fa-solid fa-receipt" style="font-size:13px;margin-right:6px;color:#64748b"></i>Resumen del pedido</span>${chev(true)}
+            </h4>
+            <div class="section-content"${cont(true)}>
+              <div class="detalle-resumen-list">
+                ${d.tipo_entrega === 'envio' ? `
+                  <div class="det-res-row"><span><i class="fa-solid fa-motorcycle" style="color:#3b82f6;margin-right:6px"></i>Envío${d.direccion_entrega ? ` — <span style="font-weight:400;color:#64748b">${d.direccion_entrega}</span>` : ''}</span><span>${+d.costo_envio > 0 ? fmt(d.costo_envio) : '<span style="color:#16a34a">Gratis</span>'}</span></div>
+                ` : `
+                  <div class="det-res-row"><span><i class="fa-solid fa-store" style="color:#64748b;margin-right:6px"></i>Retiro en sucursal</span><span style="color:#64748b">—</span></div>
+                `}
+                ${+d.tarifa_servicio > 0 ? `<div class="det-res-row"><span><i class="fa-solid fa-circle-info" style="color:#94a3b8;margin-right:6px"></i>Tarifa de servicio</span><span>${fmt(d.tarifa_servicio)}</span></div>` : ''}
+                ${+d.propina > 0 ? `<div class="det-res-row"><span><i class="fa-solid fa-hand-holding-heart" style="color:#3b82f6;margin-right:6px"></i>Propina repartidor</span><span>${fmt(d.propina)}</span></div>` : ''}
+                ${d.cupon_codigo ? `<div class="det-res-row" style="color:#16a34a"><span><i class="fa-solid fa-tag" style="margin-right:6px"></i>Cupón ${d.cupon_codigo}</span><span>−${fmt(d.descuento_cupon)}</span></div>` : ''}
+                ${d.observacion_cliente ? `<div class="det-res-row" style="flex-direction:column;gap:2px"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em">Observación</span><span style="font-weight:500">${d.observacion_cliente}</span></div>` : ''}
+                <div class="det-res-row det-res-total"><span>Total</span><span>${fmt(d.total)}</span></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="detalle-section">
-        <h4>💳 PAGO & FECHA</h4>
-        <div class="detalle-info-grid">
-          <div class="info-item"><label>Método</label><span>${d.metodo_pago || '—'}</span></div>
-          <div class="info-item"><label>Fecha</label><span>${fecha.dia} ${fecha.hora}</span></div>
-          <div class="info-item"><label>Origen</label><span>${d.origen === 'tienda' ? '📱 App/Tienda' : '🖥 Administración'}</span></div>
-        </div>
-      </div>
-      <div class="detalle-section">
-        <h4>🛍️ Productos</h4>
-        <div class="detalle-items-list">
-          ${(d.productos || []).map(p => {
-            const boxHtml = p.contenido_box
-              ? `<div class="di-box">📦 ${p.contenido_box}</div>` : '';
-            return `
-            <div class="detalle-item">
-              <div style="flex:1">
-                <div class="di-nombre"><i class="fa-solid fa-cookie-bite" style="font-size:11px;color:#c88e99;margin-right:5px"></i>${p.nombre}</div>
-                <div class="di-qty">Cantidad: ${p.cantidad}</div>
-                ${boxHtml}
-              </div>
-              <div class="di-precio">${fmt(parseFloat(p.precio_unitario||0) * parseInt(p.cantidad||1))}</div>
-            </div>`;
-          }).join('')}
-          ${(d.toppings && d.toppings.length)
-            ? d.toppings.map(t => `
-              <div class="detalle-item detalle-item--topping">
-                <div style="flex:1">
-                  <div class="di-nombre"><i class="fa-solid fa-plus" style="font-size:10px;color:#f59e0b;margin-right:5px"></i>${t.nombre}</div>
-                  <div class="di-qty">Extra / Topping</div>
-                </div>
-                <div class="di-precio di-precio--topping">+${fmt(t.precio)}</div>
-              </div>`).join('')
-            : `<div style="font-size:12px;color:#94a3b8;padding:6px 0 2px">Sin extras</div>`
-          }
-        </div>
-        <div class="detalle-total"><span>Total productos</span><span>${fmt((d.productos||[]).reduce((s,p)=>s+(parseFloat(p.precio_unitario||0)*parseInt(p.cantidad||1)),0) + (d.toppings||[]).reduce((s,t)=>s+(parseFloat(t.precio)||0),0))}</span></div>
-      </div>
-
-      <!-- Resumen de costos -->
-      <div class="detalle-section">
-        <h4><i class="fa-solid fa-receipt" style="font-size:13px;margin-right:6px;color:#64748b"></i>Resumen del pedido</h4>
-        <div class="detalle-resumen-list">
-          ${d.tipo_entrega === 'envio' ? `
-            <div class="det-res-row"><span><i class="fa-solid fa-motorcycle" style="color:#3b82f6;margin-right:6px"></i>Envío${d.direccion_entrega ? ` — <span style="font-weight:400;color:#64748b">${d.direccion_entrega}</span>` : ''}</span><span>${+d.costo_envio > 0 ? fmt(d.costo_envio) : '<span style="color:#16a34a">Gratis</span>'}</span></div>
-          ` : `
-            <div class="det-res-row"><span><i class="fa-solid fa-store" style="color:#64748b;margin-right:6px"></i>Retiro en sucursal</span><span style="color:#64748b">—</span></div>
-          `}
-          ${+d.tarifa_servicio > 0 ? `<div class="det-res-row"><span><i class="fa-solid fa-circle-info" style="color:#94a3b8;margin-right:6px"></i>Tarifa de servicio</span><span>${fmt(d.tarifa_servicio)}</span></div>` : ''}
-          ${+d.propina > 0 ? `<div class="det-res-row"><span><i class="fa-solid fa-hand-holding-heart" style="color:#3b82f6;margin-right:6px"></i>Propina repartidor</span><span>${fmt(d.propina)}</span></div>` : ''}
-          ${d.cupon_codigo ? `<div class="det-res-row" style="color:#16a34a"><span><i class="fa-solid fa-tag" style="margin-right:6px"></i>Cupón ${d.cupon_codigo}</span><span>−${fmt(d.descuento_cupon)}</span></div>` : ''}
-          ${d.observacion_cliente ? `<div class="det-res-row" style="flex-direction:column;gap:2px"><span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em">Observación</span><span style="font-weight:500">${d.observacion_cliente}</span></div>` : ''}
-          <div class="det-res-row det-res-total"><span>Total</span><span>${fmt(d.total)}</span></div>
-        </div>
-      </div>
     `;
+  }
+
+  function toggleSeccion(h4) {
+    const content = h4.nextElementSibling;
+    const chevron = h4.querySelector('.toggle-chevron');
+    const isOpen  = !content.classList.contains('collapsed');
+
+    if (isOpen) {
+      // Cerrar: fijar la altura actual y luego animar hacia 0
+      content.style.maxHeight = content.scrollHeight + 'px';
+      requestAnimationFrame(() => {
+        content.classList.add('collapsed');
+        content.style.maxHeight = '0px';
+      });
+    } else {
+      // Abrir: animar desde 0 hasta la altura natural del contenido
+      content.classList.remove('collapsed');
+      const targetHeight = content.scrollHeight + 'px';
+      requestAnimationFrame(() => {
+        content.style.maxHeight = targetHeight;
+      });
+      content.addEventListener('transitionend', function handler(e) {
+        if (e.propertyName === 'max-height') {
+          content.style.maxHeight = '';
+          content.removeEventListener('transitionend', handler);
+        }
+      });
+    }
+
+    if (chevron) chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
   }
 
   function cerrarDetalle() {
@@ -621,6 +677,44 @@ const PedidosApp = (() => {
     window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   }
 
+  // ─── SOLICITUD DE CANCELACIÓN (repartidor) ──
+  async function resolverCancelacion(idVenta, accion) {
+    const esAprobar = accion === 'aprobar';
+    const ok = await Swal.fire({
+      title: esAprobar ? '¿Aprobar cancelación?' : '¿Rechazar solicitud?',
+      html: esAprobar
+        ? 'El pedido pasará a <strong>Cancelado</strong> y se notificará al cliente y al repartidor.'
+        : 'El repartidor deberá continuar con la entrega normalmente.',
+      icon: esAprobar ? 'warning' : 'question',
+      showCancelButton: true,
+      confirmButtonColor: esAprobar ? '#e53e3e' : '#16a34a',
+      cancelButtonColor: '#718096',
+      confirmButtonText: esAprobar ? 'Sí, aprobar' : 'Sí, rechazar',
+      cancelButtonText: 'Volver',
+    });
+    if (!ok.isConfirmed) return;
+
+    try {
+      const res  = await fetch('api/resolver_cancelacion.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_venta: idVenta, accion }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(esAprobar ? '✅ Cancelación aprobada' : '✅ Solicitud rechazada', 'success');
+        cargarPedidos();
+      } else {
+        showToast('Error: ' + (data.message || 'No se pudo procesar'), 'error');
+      }
+    } catch (e) {
+      showToast('Error de conexión', 'error');
+    }
+  }
+
+  function aprobarCancelacion(idVenta)  { resolverCancelacion(idVenta, 'aprobar'); }
+  function rechazarCancelacion(idVenta) { resolverCancelacion(idVenta, 'rechazar'); }
+
   // ─── AUTO-REFRESH cada 30s ─────────────────
   function init() {
     cargarPedidos();
@@ -632,5 +726,5 @@ const PedidosApp = (() => {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { cargarPedidos, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, cancelarPedido, confirmarRepartidor, cerrarModalRep, reasignarRepartidor, toggleSeccion, toggleAcciones };
+  return { cargarPedidos, filtrarPorEstado, guardarEstado, onEstadoChange, verDetalle, cerrarDetalle, mensajeCliente, cancelarPedido, confirmarRepartidor, cerrarModalRep, reasignarRepartidor, toggleSeccion, toggleAcciones, aprobarCancelacion, rechazarCancelacion };
 })();

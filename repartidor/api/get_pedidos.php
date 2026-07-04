@@ -14,8 +14,14 @@ if (!$repId) {
 try {
     $pdo = Conexion::conectar();
 
-    // Agregar columna costo_envio si no existe (idempotente)
-    try { $pdo->exec("ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0"); } catch (Throwable $e) {}
+    // Agregar columnas si no existen (idempotente)
+    foreach ([
+        "ALTER TABLE ventas ADD COLUMN costo_envio DECIMAL(10,2) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_solicitada TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_motivo VARCHAR(60) NULL",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_detalle TEXT NULL",
+        "ALTER TABLE ventas ADD COLUMN cancelacion_solicitada_at DATETIME NULL",
+    ] as $sql) { try { $pdo->exec($sql); } catch (Throwable $e) {} }
 
     $stmt = $pdo->prepare("
         SELECT
@@ -25,6 +31,9 @@ try {
             v.estado_venta_idestado_venta AS estado_id,
             COALESCE(v.tipo_entrega, 'retiro')  AS tipo_entrega,
             COALESCE(v.costo_envio, 0)          AS costo_envio,
+            COALESCE(v.cancelacion_solicitada, 0) AS cancelacion_solicitada,
+            v.cancelacion_motivo,
+            v.cancelacion_detalle,
             v.direccion_entrega,
             v.lat_entrega,
             v.lng_entrega,

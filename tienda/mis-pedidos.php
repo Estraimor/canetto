@@ -616,8 +616,6 @@ html, body { background: #fff !important; }
    DESKTOP (≥ 1024px)
 ═══════════════════════════════════ */
 @media (min-width: 1024px) {
-  .bottom-nav { display: none !important; }
-  body.has-bottom-nav { padding-bottom: 0; }
   #page-wrap { padding-bottom: 0; }
   .t-btn-label { display: inline !important; }
 
@@ -736,8 +734,6 @@ html, body { background: #fff !important; }
   .ped-stat-row:last-child { border-bottom: none; }
   .ped-stat-lbl { color: #888; font-weight: 600; }
   .ped-stat-val { font-weight: 800; color: #111; }
-
-  body.has-bottom-nav .t-footer { display: block; }
 }
 
 /* ═══════════════════════════════════
@@ -757,11 +753,16 @@ html, body { background: #fff !important; }
 }
 </style>
 </head>
-<body>
+<body class="t-page">
 <div id="page-wrap">
+
+<?php include __DIR__ . '/nav-drawer.php'; ?>
 
 <!-- Nav principal -->
 <header class="t-nav">
+  <button class="nd-toggle" id="ndToggle" aria-label="Abrir menú" onclick="abrirDrawer()">
+    <i class="fa-solid fa-bars"></i>
+  </button>
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
       <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="t-brand-logo">
@@ -1128,24 +1129,6 @@ html, body { background: #fff !important; }
 </footer>
 </div><!-- /page-wrap -->
 
-<nav class="bottom-nav">
-  <a href="index.php" class="bn-item">
-    <i class="fa-solid fa-house"></i>
-    <span>Inicio</span>
-  </a>
-  <a href="mis-pedidos.php" class="bn-item active">
-    <i class="fa-solid fa-bag-shopping"></i>
-    <span>Mis pedidos</span>
-  </a>
-  <a href="index.php#sucursales" class="bn-item">
-    <i class="fa-solid fa-location-dot"></i>
-    <span>Sucursales</span>
-  </a>
-  <a href="mi-cuenta.php" class="bn-item">
-    <i class="fa-solid fa-user"></i>
-    <span>Mi cuenta</span>
-  </a>
-</nav>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -1290,64 +1273,100 @@ async function toggleNotificaciones() {
 // Verificar estado al cargar
 checkNotifStatus();
 
-// ── Polling para pedidos MP pendientes de pago ──────────────────────
+// ── Polling de estado para pedidos activos ───────────────────────────
 (function() {
-  // Recopilar IDs de pedidos en estado 5 (Verificando pago MP)
-  const pendientesMP = <?php
-    $ids = array_values(array_map(fn($p) => (int)$p['idventas'],
-      array_filter($pedidos, fn($p) => (int)($p['estado_id'] ?? 0) === 5)
-    ));
-    echo json_encode($ids);
-  ?>;
-
-  if (!pendientesMP.length) return;
-
   const LABELS = {
-    1: { txt: 'Recibido',        ic: 'clock',         col: '#6366f1', bg: '#eef2ff', bd: '#818cf8' },
-    2: { txt: 'En preparación',  ic: 'fire',          col: '#d97706', bg: '#fffbeb', bd: '#fbbf24' },
-    3: { txt: 'En camino',       ic: 'motorcycle',    col: '#2563eb', bg: '#eff6ff', bd: '#60a5fa' },
-    4: { txt: 'Entregado',       ic: 'circle-check',  col: '#16a34a', bg: '#f0fdf4', bd: '#4ade80' },
+    1: { txt: 'Recibido',          ic: 'clock',           col: '#6366f1', bg: '#eef2ff', bd: '#818cf8' },
+    2: { txt: 'En preparación',    ic: 'fire',            col: '#d97706', bg: '#fffbeb', bd: '#fbbf24' },
+    3: { txt: 'En camino',         ic: 'motorcycle',      col: '#2563eb', bg: '#eff6ff', bd: '#60a5fa' },
+    4: { txt: 'Entregado',         ic: 'circle-check',    col: '#16a34a', bg: '#f0fdf4', bd: '#4ade80' },
     5: { txt: 'Verificando pago…', ic: 'spinner fa-spin', col: '#c88e99', bg: '#fdf0f3', bd: '#e8b4c0' },
-    6: { txt: 'Cancelado',        ic: 'ban',             col: '#dc2626', bg: '#fef2f2', bd: '#fca5a5' },
+    6: { txt: 'Cancelado',         ic: 'ban',             col: '#dc2626', bg: '#fef2f2', bd: '#fca5a5' },
+    7: { txt: 'Listo para retiro', ic: 'store',           col: '#0e7490', bg: '#ecfeff', bd: '#67e8f9' },
   };
 
-  let activos = [...pendientesMP];
-  let intentos = 0;
-  const MAX_INTENTOS = 20; // ~1 min de polling
+  function filtroDe(estadoId) {
+    if (estadoId === 1 || estadoId === 2) return 'pendiente';
+    if (estadoId === 3) return 'camino';
+    if (estadoId === 6) return 'cancelado';
+    return 'entregado';
+  }
 
-  async function verificar() {
-    if (!activos.length || intentos >= MAX_INTENTOS) return;
-    intentos++;
+  function actualizarBadge(id, estadoId) {
+    const card  = document.querySelector(`.ped-card[data-pedido-id="${id}"]`);
+    if (!card) return;
+    const badge = card.querySelector('.ped-card-badge');
+    const lbl   = LABELS[estadoId];
+    if (badge && lbl) {
+      badge.innerHTML = `<i class="fa-solid fa-${lbl.ic}"></i> ${lbl.txt}`;
+      badge.style.cssText = `background:${lbl.bg};color:${lbl.col};border-color:${lbl.bd}`;
+    }
+    card.dataset.ec     = estadoId;
+    card.dataset.filtro = filtroDe(estadoId);
+    card.querySelector('.mp-verificando-banner')?.remove();
+  }
 
+  // Pedidos en verificación de pago MP: polling rápido y acotado (cada 3s, ~1 min)
+  const pendientesMP = <?php
+    echo json_encode(array_values(array_map(fn($p) => (int)$p['idventas'],
+      array_filter($pedidos, fn($p) => (int)($p['estado_id'] ?? 0) === 5)
+    )));
+  ?>;
+  let activosMP  = [...pendientesMP];
+  let intentosMP = 0;
+  const MAX_INTENTOS_MP = 20;
+
+  async function verificarMP() {
+    if (!activosMP.length || intentosMP >= MAX_INTENTOS_MP) return;
+    intentosMP++;
     const resueltos = [];
-    for (const id of activos) {
+    for (const id of activosMP) {
       try {
         const r = await fetch(`api/check_pedido_estado.php?id=${id}`);
         const d = await r.json();
         if (!d.ok) continue;
-
         if (d.estado_id !== 5) {
-          // Estado cambió — actualizar badge en pantalla
-          const card  = document.querySelector(`.ped-card[data-pedido-id="${id}"]`);
-          const badge = card?.querySelector('.ped-card-badge');
-          const lbl   = LABELS[d.estado_id];
-          if (badge && lbl) {
-            badge.innerHTML = `<i class="fa-solid fa-${lbl.ic}"></i> ${lbl.txt}`;
-            badge.style.cssText = `background:${lbl.bg};color:${lbl.col};border-color:${lbl.bd}`;
-          }
-          // Quitar banner "verificando pago"
-          card?.querySelector('.mp-verificando-banner')?.remove();
+          actualizarBadge(id, d.estado_id);
           resueltos.push(id);
         }
       } catch(e) {}
     }
-
-    activos = activos.filter(id => !resueltos.includes(id));
-    if (activos.length) setTimeout(verificar, 3000); // cada 3 seg
+    activosMP = activosMP.filter(id => !resueltos.includes(id));
+    if (activosMP.length) setTimeout(verificarMP, 3000);
   }
+  if (pendientesMP.length) setTimeout(verificarMP, 2000);
 
-  // Empezar polling a los 2 seg (tiempo para que el webhook de MP llegue)
-  setTimeout(verificar, 2000);
+  // Resto de pedidos activos (recibido, en preparación, en camino, listo para retiro):
+  // polling más espaciado mientras la pestaña sigue abierta, para reflejar el avance
+  // del pedido sin que el cliente tenga que recargar la página.
+  const estadoConocido = <?php
+    $map = [];
+    foreach ($pedidos as $p) { $map[(int)$p['idventas']] = (int)($p['estado_id'] ?? 1); }
+    echo json_encode($map);
+  ?>;
+  let activosGen = Object.keys(estadoConocido)
+    .map(Number)
+    .filter(id => ![4, 5, 6].includes(estadoConocido[id]));
+
+  async function verificarGenerales() {
+    if (!activosGen.length) return;
+    const resueltos = [];
+    for (const id of activosGen) {
+      try {
+        const r = await fetch(`api/check_pedido_estado.php?id=${id}`);
+        const d = await r.json();
+        if (!d.ok) continue;
+        if (d.estado_id !== estadoConocido[id]) {
+          estadoConocido[id] = d.estado_id;
+          actualizarBadge(id, d.estado_id);
+          if (d.estado_id === 4 || d.estado_id === 6) resueltos.push(id);
+        }
+      } catch(e) {}
+    }
+    activosGen = activosGen.filter(id => !resueltos.includes(id));
+    if (activosGen.length) setTimeout(verificarGenerales, 12000);
+  }
+  if (activosGen.length) setTimeout(verificarGenerales, 12000);
 })();
 // ──────────────────────────────────────────────────────────────────
 

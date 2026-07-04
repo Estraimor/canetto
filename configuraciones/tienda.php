@@ -19,6 +19,7 @@ $defaults = [
     'min_cookies_pedido'      => '4',
     'max_cookies_pedido'      => '100',
     'mensaje_min_pedido'      => 'El pedido mínimo es de {min} cookies.',
+    'limite_toppings'         => '5',
     'tienda_abierta'          => '1',
     'horario_activado'        => '0',
     'horario_apertura'        => '09:00',
@@ -454,6 +455,31 @@ $cfg = array_merge($defaults, $cfg);
         </div>
     </div>
 
+    <!-- Límite de toppings -->
+    <div class="cfg-card" style="align-self:start">
+        <div class="cfg-card-head">
+            <div class="cfg-card-icon"><i class="fa-solid fa-sparkles"></i></div>
+            <div>
+                <div class="cfg-card-title">Límite de toppings</div>
+                <div class="cfg-card-sub">Cantidad máxima de un mismo topping por cookie o box</div>
+            </div>
+        </div>
+        <div class="cfg-card-body">
+            <div class="cfg-field">
+                <label>Límite de toppings por unidad</label>
+                <input type="number" id="limite_toppings" min="1" max="99"
+                       value="<?= htmlspecialchars($cfg['limite_toppings']) ?>">
+                <div class="cfg-hint">Cantidad máxima del mismo topping que se puede sumar a una cookie o box</div>
+            </div>
+        </div>
+        <div class="cfg-actions">
+            <button class="btn-cfg-soft" onclick="resetCard('toppings')">Cancelar</button>
+            <button class="btn-cfg-save" onclick="guardar('toppings')">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar
+            </button>
+        </div>
+    </div>
+
     </div><!-- /cfg-grid -->
 
 </div>
@@ -468,6 +494,7 @@ const ORIG = {
     min_cookies_pedido: <?= json_encode($cfg['min_cookies_pedido']) ?>,
     max_cookies_pedido: <?= json_encode($cfg['max_cookies_pedido']) ?>,
     mensaje_min_pedido: <?= json_encode($cfg['mensaje_min_pedido']) ?>,
+    limite_toppings:    <?= json_encode($cfg['limite_toppings']) ?>,
     tienda_modo:        <?= json_encode($cfg['tienda_modo'] ?? 'abierta') ?>,
     horario_activado:   <?= json_encode($cfg['horario_activado']) ?>,
     horario_apertura:   <?= json_encode($cfg['horario_apertura']) ?>,
@@ -510,6 +537,9 @@ function resetCard(card) {
         document.getElementById('max_cookies_pedido').value = ORIG.max_cookies_pedido;
         document.getElementById('mensaje_min_pedido').value = ORIG.mensaje_min_pedido;
     }
+    if (card === 'toppings') {
+        document.getElementById('limite_toppings').value = ORIG.limite_toppings;
+    }
     if (card === 'horario') {
         // Resetear modo
         document.querySelectorAll('.modo-card').forEach(c => {
@@ -537,6 +567,11 @@ async function guardar(card) {
             max_cookies_pedido: String(max),
             mensaje_min_pedido: val('mensaje_min_pedido') || 'El pedido mínimo es de {min} cookies.',
         };
+    }
+
+    if (card === 'toppings') {
+        const limTopp = parseInt(val('limite_toppings')) || 1;
+        data = { limite_toppings: String(limTopp) };
     }
 
     if (card === 'horario') {

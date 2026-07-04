@@ -86,7 +86,7 @@ $_SESSION['rol_id']                  = $rol['idroles'] ?? null;
 $_SESSION['tienda_cliente_id']       = $user['idusuario'];
 $_SESSION['tienda_cliente_nombre']   = trim($user['nombre'] . ' ' . ($user['apellido'] ?? ''));
 
-$destino = ($_retorno && str_starts_with($_retorno, URL_TIENDA)) ? $_retorno : URL_TIENDA . '/index.php';
+$destino = ($_retorno && str_starts_with($_retorno, URL_TIENDA)) ? $_retorno : URL_TIENDA . '/tienda.php';
 unset($_SESSION['login_retorno']);
 
 // Si viene por fetch (login con animación), devolver JSON

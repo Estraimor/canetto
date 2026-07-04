@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 $id  = (int)($_GET['id'] ?? 0);
 $pdo = Conexion::conectar();
 
-if (!$id) { header('Location: index.php'); exit; }
+if (!$id) { header('Location: tienda.php'); exit; }
 
 // Verificar modo de la tienda
 try {
@@ -26,9 +26,11 @@ try {
         $_modoEfectivo = $_modo;
     }
     $tiendaAceptaPedidos = $_modoEfectivo === 'abierta';
+    $limiteToppings = max(1, (int)($_cfgRows['limite_toppings'] ?? 5));
 } catch (Throwable $_e) {
     $tiendaAceptaPedidos = true;
     $_modoEfectivo = 'abierta';
+    $limiteToppings = 5;
 }
 
 $stmt = $pdo->prepare("
@@ -53,7 +55,7 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$id]);
 $prod = $stmt->fetch();
-if (!$prod) { header('Location: index.php'); exit; }
+if (!$prod) { header('Location: tienda.php'); exit; }
 
 // Si el packaging asignado está agotado, forzar stock = 0
 try {
@@ -163,13 +165,13 @@ $imgPrincipal = $imagenes[0] ?? '';
 // SEO
 $slug        = slugify($prod['nombre']);
 $canonicalUrl = URL_TIENDA . '/producto/' . $id . '/' . $slug;
-$_rawDesc    = strip_tags(preg_replace('/\s+/', ' ', trim($prod['descripcion'] ?: $prod['nombre'] . ' — Galletita artesanal de Canetto.')));
+$_rawDesc    = strip_tags(preg_replace('/\s+/', ' ', trim($prod['descripcion'] ?: $prod['nombre'] . ' — Cookie artesanal de Canetto.')));
 $metaDesc    = mb_strlen($_rawDesc) > 160 ? mb_substr($_rawDesc, 0, 157) . '...' : $_rawDesc;
 $ogImage     = $imgPrincipal ? URL_ASSETS . '/img/productos/' . rawurlencode($imgPrincipal) : URL_ASSETS . '/img/Logo_Canetto_Cookie.png';
 
 // Toppings asignados a este producto
 $toppingsProd = [];
-if (!$esBox) {
+{
     try {
         $stmtTp = $pdo->prepare("
             SELECT t.idtoppings AS id, t.nombre, t.precio,
@@ -918,7 +920,7 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
   </a>
 
   <div class="det-nav-actions" style="display:flex;align-items:center;gap:10px">
-    <a href="index.php" class="det-nav-link">
+    <a href="tienda.php" class="det-nav-link">
       <i class="fa-solid fa-arrow-left" style="font-size:12px"></i> Volver al catálogo
     </a>
     <button class="det-nav-cart" id="btnOpenCart2">
@@ -972,7 +974,7 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
     <div class="det-breadcrumb">
       <a href="index.php">Inicio</a>
       <span>›</span>
-      <a href="index.php"><?= $esBox ? 'Boxes' : 'Cookies' ?></a>
+      <a href="tienda.php#<?= $esBox ? 'boxesGrid' : 'prodsGrid' ?>"><?= $esBox ? 'Boxes' : 'Cookies' ?></a>
       <span>›</span>
       <?= $nombre ?>
     </div>
@@ -1028,7 +1030,7 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
 
 
       <!-- SELECTOR DE TOPPINGS -->
-      <?php if (!$esBox && !empty($toppingsProd)): ?>
+      <?php if (!empty($toppingsProd)): ?>
       <div class="det-tp-section" id="detTpSection">
         <div class="det-tp-title">
           <i class="fa-solid fa-sparkles"></i> Elegí tu topping
@@ -1102,7 +1104,7 @@ body { background: #f8f9fa; margin: 0; font-family: 'Speedee', system-ui, sans-s
         <?php endif; ?>
       </button>
 
-      <a href="index.php" class="det-btn-back">
+      <a href="tienda.php" class="det-btn-back">
         <i class="fa-solid fa-arrow-left" style="font-size:12px"></i> Ver más productos
       </a>
 
@@ -1160,6 +1162,7 @@ const PROD_STOCK = <?= (int)$stock ?>;
 const PROD_IMAGEN= <?= json_encode($imgPrincipal) ?>;
 const CLIENTE_PHP= <?= json_encode($cliente_id ? ['id'=>$cliente_id] : null) ?>;
 const TIENDA_ACEPTA_PEDIDOS = <?= $tiendaAceptaPedidos ? 'true' : 'false' ?>;
+const LIMITE_TOPPINGS = <?= $limiteToppings ?>;
 
 const CK      = CLIENTE_PHP ? 'canetto_cart_' + CLIENTE_PHP.id : 'canetto_cart_guest';
 const getCart = () => { try { return JSON.parse(localStorage.getItem(CK)||'[]'); } catch { return []; } };
@@ -1174,6 +1177,7 @@ function updateBadge(){
 
 let qty = 1;
 function cambiarQty(d){
+  if (d > 0 && requireLoginModal()) return;
   qty = Math.max(1, Math.min(qty + d, PROD_STOCK));
   const v = document.getElementById('qtyVal');
   const vm = document.getElementById('qtyValMob');
@@ -1184,7 +1188,7 @@ function cambiarQty(d){
 
 const PROD_TOPPINGS = <?= json_encode(array_values($toppingsProd ?? []), JSON_UNESCAPED_UNICODE) ?>;
 
-const HAS_TOPPINGS = <?= !$esBox && !empty($toppingsProd) ? 'true' : 'false' ?>;
+const HAS_TOPPINGS = <?= !empty($toppingsProd) ? 'true' : 'false' ?>;
 let _sinTopping = false;
 
 function getSelectedToppings() {
@@ -1208,10 +1212,11 @@ function toppingSeleccionado() {
 }
 
 function changeDipQty(btn, delta) {
+  if (delta > 0 && requireLoginModal()) return;
   const row = btn.closest('.det-tp-row');
   const numEl = row.querySelector('.dips-qty-num');
   let tpQty = parseInt(numEl.dataset.qty) || 0;
-  tpQty = Math.max(0, Math.min(tpQty + delta, 5));
+  tpQty = Math.max(0, Math.min(tpQty + delta, LIMITE_TOPPINGS));
   numEl.dataset.qty = tpQty;
   numEl.textContent = tpQty;
   numEl.className = 'dips-qty-num' + (tpQty === 0 ? ' zero' : '');
@@ -1287,26 +1292,29 @@ function actualizarPrecioBtn() {
   }
 }
 
+function requireLoginModal(){
+  if(CLIENTE_PHP) return false;
+  Swal.fire({
+    icon:'info', title:'Iniciá sesión',
+    text:'Necesitás una cuenta para continuar.',
+    confirmButtonColor:'#c88e99', confirmButtonText:'Ingresar'
+  }).then(r=>{ if(r.isConfirmed) window.location.href='login.php?retorno='+encodeURIComponent(location.href); });
+  return true;
+}
+
 function agregarAlCarrito(){
   if(!TIENDA_ACEPTA_PEDIDOS){
     Swal.fire({icon:'info',title:'Tienda cerrada para pedidos',text:'Podés ver los productos, pero los pedidos no están disponibles por el momento.',confirmButtonColor:'#c88e99'});
     return;
   }
-  if(!CLIENTE_PHP){
-    Swal.fire({
-      icon:'info', title:'Iniciá sesión',
-      text:'Necesitás una cuenta para agregar productos al carrito.',
-      confirmButtonColor:'#c88e99', confirmButtonText:'Ingresar'
-    }).then(r=>{ if(r.isConfirmed) window.location.href='login.php?retorno='+encodeURIComponent(location.href); });
-    return;
-  }
+  if(requireLoginModal()) return;
   // Validar selección de topping
   if (HAS_TOPPINGS && !toppingSeleccionado()) {
     Swal.fire({
       icon: 'info',
       title: '¿Con qué topping?',
       html: `<p style="font-size:15px;color:#555;line-height:1.6">
-               Elegí un topping para tu cookie o seleccioná
+               Elegí un topping para <?= $esBox ? 'tu box' : 'tu cookie' ?> o seleccioná
                <strong>"Sin topping"</strong> para continuar sin extras.
              </p>`,
       confirmButtonColor: '#c88e99',
@@ -1354,7 +1362,7 @@ function agregarAlCarrito(){
     b.style.background = '#2d8a4e';
   });
 
-  const _goCart = () => { window.location.href = 'index.php?carrito=1'; };
+  const _goCart = () => { window.location.href = 'tienda.php?carrito=1'; };
   const _fmtPrecio = n => '$' + Number(n).toLocaleString('es-AR', {maximumFractionDigits:0});
 
   // Buscar sugerencias y mostrar modal
@@ -1478,7 +1486,7 @@ function switchImg(thumb, src){
 }
 
 document.getElementById('btnOpenCart2')?.addEventListener('click', () => {
-  window.location.href = 'index.php';
+  window.location.href = 'tienda.php';
 });
 
 updateBadge();

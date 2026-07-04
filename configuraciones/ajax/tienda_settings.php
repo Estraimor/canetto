@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 if (empty($data)) { echo json_encode(['ok'=>false,'msg'=>'Sin datos']); exit; }
 
-$allowed = ['min_cookies_pedido','max_cookies_pedido','mensaje_min_pedido','tienda_abierta','tienda_mensaje_cierre','tienda_modo','horario_activado','horario_apertura','horario_cierre','horario_forzado_cerrado'];
+$allowed = ['min_cookies_pedido','max_cookies_pedido','mensaje_min_pedido','limite_toppings','tienda_abierta','tienda_mensaje_cierre','tienda_modo','horario_activado','horario_apertura','horario_cierre','horario_forzado_cerrado'];
 
 try {
     $pdo = Conexion::conectar();

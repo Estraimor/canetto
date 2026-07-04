@@ -28,6 +28,7 @@ include '../../../panel/dashboard/layaut/nav.php';
           <option value="3">En reparto</option>
           <option value="5">Pendiente de Pago</option>
           <option value="7">Listo para retiro</option>
+          <option value="6">Cancelado</option>
         </select>
         <select id="filtro-origen" class="filter-select">
           <option value="">Todos los orígenes</option>

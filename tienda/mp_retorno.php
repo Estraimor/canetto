@@ -147,12 +147,12 @@ body{font-family:"Speedee",sans-serif;background:#f8f9fa;display:flex;align-item
   <div class="sub"><?= $info['sub'] ?></div>
 
   <?php if ($status === 'failure'): ?>
-    <a href="index.php" class="btn btn-primary">Volver a la tienda</a>
+    <a href="tienda.php" class="btn btn-primary">Volver a la tienda</a>
   <?php else: ?>
     <?php if (isset($_SESSION['tienda_cliente_id'])): ?>
       <a href="mis-pedidos.php" class="btn btn-primary">Ver mis pedidos</a>
     <?php endif; ?>
-    <a href="index.php" class="btn btn-sec">← Seguir comprando</a>
+    <a href="tienda.php" class="btn btn-sec">← Seguir comprando</a>
   <?php endif; ?>
 </div>
 <script>

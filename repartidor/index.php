@@ -225,6 +225,71 @@ try {
 .pedido-cobro-row{display:flex;justify-content:space-between;font-size:13px;color:#78350f}
 .cobro-total-row{font-weight:800;color:#1c1917;border-top:1.5px solid #d97706;margin-top:6px;padding-top:6px;font-size:15px}
 
+/* ── Banner Cancelación Solicitada ── */
+.pedido-cancel-banner{display:flex;align-items:flex-start;gap:10px;background:#fef2f2;border:2px solid #fca5a5;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.pedido-cancel-banner>i{color:#dc2626;font-size:16px;margin-top:2px;flex-shrink:0}
+.pedido-cancel-body{flex:1}
+.pedido-cancel-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#b91c1c;margin-bottom:4px}
+.pedido-cancel-motivo{font-size:13px;font-weight:700;color:#7f1d1d;margin-bottom:2px}
+.pedido-cancel-hint{font-size:11px;color:#b91c1c;opacity:.8}
+
+/* ── Modal Solicitud de Cancelación ── */
+.modal-cancel-overlay{
+  position:fixed;inset:0;z-index:9996;
+  background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s;
+}
+.modal-cancel-overlay.show{opacity:1;visibility:visible}
+.modal-cancel-card{
+  background:var(--surface);border-radius:var(--radius-lg);padding:22px;
+  max-width:380px;width:100%;max-height:85vh;overflow-y:auto;
+  box-shadow:var(--shadow-lg);
+}
+.modal-cancel-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.modal-cancel-icon{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:#fef2f2;color:#dc2626;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal-cancel-title{font-size:16px;font-weight:800;color:var(--text)}
+.modal-cancel-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+
+.motivo-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.motivo-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:11px 12px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--border);background:var(--gray-7);
+  color:var(--text-2);font-family:inherit;font-size:13px;font-weight:600;
+  text-align:left;cursor:pointer;transition:all var(--transition);
+}
+.motivo-item i{width:18px;text-align:center;color:var(--gray-4);flex-shrink:0}
+.motivo-item:active{transform:scale(.98)}
+.motivo-item.selected{
+  border-color:#dc2626;background:#fef2f2;color:#b91c1c;
+}
+.motivo-item.selected i{color:#dc2626}
+
+.modal-cancel-textarea{
+  width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 12px;font-family:inherit;font-size:13px;color:var(--text);
+  resize:vertical;outline:none;margin-bottom:14px;
+}
+.modal-cancel-textarea:focus{border-color:var(--pink)}
+
+.modal-cancel-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:8px}
+.btn-cancel-secondary,.btn-cancel-primary{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px;border-radius:var(--radius-sm);border:none;
+  font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;
+  transition:all var(--transition);
+}
+.btn-cancel-secondary{background:var(--gray-7);color:var(--text-2)}
+.btn-cancel-secondary:hover{background:var(--gray-6)}
+.btn-cancel-primary{background:#dc2626;color:#fff}
+.btn-cancel-primary:hover:not(:disabled){background:#b91c1c}
+.btn-cancel-primary:disabled{opacity:.4;cursor:not-allowed}
+
 /* ── Badge pedido urgente (≥20 min esperando) ── */
 .pedido-urgente-badge{
   display:inline-flex;align-items:center;gap:3px;
@@ -758,6 +823,15 @@ try {
         </div>
         <span class="pedido-total"></span>
       </div>
+      <!-- Banner solicitud de cancelación enviada -->
+      <div class="pedido-cancel-banner" style="display:none">
+        <i class="fa-solid fa-clock"></i>
+        <div class="pedido-cancel-body">
+          <div class="pedido-cancel-title">Cancelación solicitada</div>
+          <div class="pedido-cancel-motivo"></div>
+          <div class="pedido-cancel-hint">Esperando respuesta de administración</div>
+        </div>
+      </div>
       <!-- Badge pago al cobrar (visible solo para efectivo+envío) -->
       <div class="pedido-cobro-banner" style="display:none">
         <i class="fa-solid fa-coins"></i>
@@ -799,6 +873,9 @@ try {
         </a>
         <button class="btn-action btn-uber-map">
           <i class="fa-solid fa-map-location-dot"></i><span>Ver mapa</span>
+        </button>
+        <button class="btn-action btn-cancelar-pedido">
+          <i class="fa-solid fa-ban"></i><span>Cancelar</span>
         </button>
         <button class="btn-action btn-entregar">
           <i class="fa-solid fa-circle-check"></i><span>Entregado</span>
@@ -958,6 +1035,58 @@ try {
       <div class="entrega-sub" id="entregaSub">El pedido fue marcado como entregado exitosamente.</div>
       <button class="entrega-close" onclick="cerrarEntregaOverlay()">
         <i class="fa-solid fa-arrow-right"></i> Continuar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODAL SOLICITUD DE CANCELACIÓN
+══════════════════════════════════════ -->
+<div id="modalCancelacion" class="modal-cancel-overlay">
+  <div class="modal-cancel-card">
+    <div class="modal-cancel-header">
+      <div class="modal-cancel-icon"><i class="fa-solid fa-ban"></i></div>
+      <div>
+        <div class="modal-cancel-title">Solicitar cancelación</div>
+        <div class="modal-cancel-sub">Pedido <span id="cancelPedidoNum"></span> · Elegí el motivo</div>
+      </div>
+    </div>
+
+    <div class="motivo-list" id="motivoList">
+      <button type="button" class="motivo-item" data-motivo="El cliente no sale / no atiende" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-bell-slash"></i><span>El cliente no sale / no atiende</span>
+      </button>
+      <button type="button" class="motivo-item" data-motivo="No encuentro la dirección" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-map-location-dot"></i><span>No encuentro la dirección</span>
+      </button>
+      <button type="button" class="motivo-item" data-motivo="Zona insegura / barrio peligroso" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-triangle-exclamation"></i><span>Zona insegura / barrio peligroso</span>
+      </button>
+      <button type="button" class="motivo-item" data-motivo="Lugar o personas sospechosas" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-eye"></i><span>Lugar o personas sospechosas</span>
+      </button>
+      <button type="button" class="motivo-item" data-motivo="Calle cortada o inaccesible" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-road-barrier"></i><span>Calle cortada o inaccesible</span>
+      </button>
+      <button type="button" class="motivo-item" data-motivo="El cliente pidió cancelar" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-phone-slash"></i><span>El cliente pidió cancelar</span>
+      </button>
+      <button type="button" class="motivo-item" data-motivo="Problema con el vehículo" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-motorcycle"></i><span>Problema con el vehículo</span>
+      </button>
+      <button type="button" class="motivo-item" data-motivo="Otro motivo" onclick="seleccionarMotivo(this)">
+        <i class="fa-solid fa-ellipsis"></i><span>Otro motivo</span>
+      </button>
+    </div>
+
+    <textarea id="cancelDetalle" class="modal-cancel-textarea" rows="2"
+              placeholder="Detalles adicionales (opcional)"></textarea>
+
+    <div class="modal-cancel-actions">
+      <button class="btn-cancel-secondary" onclick="cerrarModalCancelacion()">Volver</button>
+      <button class="btn-cancel-primary" id="btnEnviarCancelacion" disabled onclick="enviarSolicitudCancelacion()">
+        <i class="fa-solid fa-paper-plane"></i><span>Enviar solicitud</span>
       </button>
     </div>
   </div>
@@ -1246,6 +1375,20 @@ async function cargarPedidos() {
         }
       }
 
+      // Banner / botón de solicitud de cancelación
+      const cancelBanner = clone.querySelector('.pedido-cancel-banner');
+      const btnCancelar  = clone.querySelector('.btn-cancelar-pedido');
+      if (p.cancelacion_solicitada) {
+        cancelBanner.style.display = 'flex';
+        cancelBanner.querySelector('.pedido-cancel-motivo').textContent =
+          p.cancelacion_motivo + (p.cancelacion_detalle ? ' — ' + p.cancelacion_detalle : '');
+        btnCancelar.classList.add('disabled');
+        btnCancelar.innerHTML = '<i class="fa-solid fa-clock"></i><span>Enviada</span>';
+        btnCancelar.addEventListener('click', e => e.preventDefault());
+      } else {
+        btnCancelar.addEventListener('click', () => abrirModalCancelacion(p.idventas));
+      }
+
       const btnTel = clone.querySelector('.btn-tel');
       if (p.cliente_celular) {
         btnTel.href = 'tel:' + p.cliente_celular.replace(/\D/g,'');
@@ -1292,6 +1435,7 @@ async function cargarPedidos() {
 async function marcarEntregado(idVenta, btn, clienteNombre) {
   btn.disabled  = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Procesando...</span>';
+  if (typeof confirmarActivo === 'function') confirmarActivo();
 
   try {
     const res  = await fetch('api/marcar_entregado.php', {
@@ -1300,6 +1444,7 @@ async function marcarEntregado(idVenta, btn, clienteNombre) {
     });
     const data = await res.json();
     if (data.success) {
+      if (typeof confirmarActivo === 'function') confirmarActivo();
       mostrarEntregaAnimacion(idVenta, clienteNombre);
     } else {
       alert(data.message || 'No se pudo marcar como entregado');
@@ -1310,6 +1455,70 @@ async function marcarEntregado(idVenta, btn, clienteNombre) {
     alert('Error de conexión');
     btn.disabled  = false;
     btn.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Entregado</span>';
+  }
+}
+
+/* ════════════════════════════════════════
+   SOLICITUD DE CANCELACIÓN
+════════════════════════════════════════ */
+let _cancelIdVenta = null;
+
+function abrirModalCancelacion(idVenta) {
+  _cancelIdVenta = idVenta;
+  document.getElementById('cancelPedidoNum').textContent = '#' + idVenta;
+  document.querySelectorAll('#motivoList .motivo-item').forEach(b => b.classList.remove('selected'));
+  document.getElementById('cancelDetalle').value = '';
+  document.getElementById('btnEnviarCancelacion').disabled = true;
+  document.getElementById('modalCancelacion').classList.add('show');
+}
+
+function cerrarModalCancelacion() {
+  document.getElementById('modalCancelacion').classList.remove('show');
+  _cancelIdVenta = null;
+}
+
+function seleccionarMotivo(btn) {
+  document.querySelectorAll('#motivoList .motivo-item').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('btnEnviarCancelacion').disabled = false;
+}
+
+async function enviarSolicitudCancelacion() {
+  const sel = document.querySelector('#motivoList .motivo-item.selected');
+  if (!sel || !_cancelIdVenta) return;
+
+  const motivo  = sel.dataset.motivo;
+  const detalle = document.getElementById('cancelDetalle').value.trim();
+
+  if (motivo === 'Otro motivo' && !detalle) {
+    alert('Contanos brevemente el motivo en el campo de detalles');
+    return;
+  }
+
+  const btn = document.getElementById('btnEnviarCancelacion');
+  btn.disabled  = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Enviando...</span>';
+
+  try {
+    const res  = await fetch('api/solicitar_cancelacion.php', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_venta: _cancelIdVenta, motivo, detalle }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      cerrarModalCancelacion();
+      cargarPedidos();
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success',
+        title: 'Solicitud de cancelación enviada', showConfirmButton: false, timer: 2200 });
+    } else {
+      alert(data.message || 'No se pudo enviar la solicitud');
+      btn.disabled  = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Enviar solicitud</span>';
+    }
+  } catch (e) {
+    alert('Error de conexión');
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Enviar solicitud</span>';
   }
 }
 
@@ -1724,6 +1933,7 @@ if (!document.getElementById('appDash').classList.contains('hidden')) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 /* ════════════════════════════════════════
    MAPA UBER — FULLSCREEN
@@ -2683,6 +2893,11 @@ function iniciarSistemaActividad() {
   _actSistActivo = true;
   ['touchstart', 'touchend', 'click', 'scroll', 'keydown'].forEach(ev =>
     document.addEventListener(ev, _onUserActivity, { passive: true }));
+  // Si en el mismo navegador hay otra pestaña de Administración activa (mismo dispositivo,
+  // por ej. probando como admin y repartidor a la vez), su actividad también cuenta.
+  window.addEventListener('storage', e => {
+    if (e.key === 'canetto_admin_heartbeat') _onUserActivity();
+  });
   resetActividadTimer();
 }
 
@@ -2936,6 +3151,13 @@ function _cerrarIncomingTomado() {
 function _mostrarIncoming(pedido) {
   _incomingVentaId = pedido.idventas;
 
+  // Si justo en ese momento estaba mostrándose el check de "¿seguís activo?",
+  // lo descartamos: que llegue un pedido nuevo ya prueba que el repartidor está activo.
+  if (typeof confirmarActivo === 'function') confirmarActivo();
+
+  // Sonido de alerta mientras corre el contador de 30s
+  if (typeof _sonidoActividad === 'function') _sonidoActividad();
+
   // Rellenar info
   document.getElementById('incomingNum').textContent     = '#' + pedido.idventas;
   document.getElementById('incomingCliente').textContent = pedido.cliente_nombre || '—';
@@ -3011,6 +3233,9 @@ async function responderPedidoPendiente(accion) {
       body: JSON.stringify({ id_venta: ventaId, accion }),
     });
   } catch (e) { /* red caída, la propuesta expirará sola */ }
+
+  // Responder a un pedido es actividad real — reiniciar el chequeo de inactividad
+  if (typeof confirmarActivo === 'function') confirmarActivo();
 
   if (accion === 'aceptar') {
     cargarPedidos();

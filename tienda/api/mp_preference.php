@@ -30,7 +30,7 @@ foreach ($items as $it) {
 }
 
 // Título principal: nombre(s) del producto, máx 2 + "y más" si hay más
-$titulo = 'Galletitas Canetto';
+$titulo = 'Cookies Canetto';
 if (!empty($nombresItems)) {
     if (count($nombresItems) === 1) {
         $titulo = $nombresItems[0];

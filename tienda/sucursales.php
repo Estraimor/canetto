@@ -25,10 +25,7 @@ $sucursales = $pdo->query("
 <style>
 /* ── Desktop overrides ── */
 @media (min-width: 1024px) {
-  body, body.has-bottom-nav { padding-bottom: 0 !important; }
-  body { background: #f0eeec !important; }
-  .bottom-nav { display: none !important; }
-  body.has-bottom-nav .t-footer { display: block !important; }
+  body { padding-bottom: 0 !important; background: #f0eeec !important; }
   .t-nav { padding: 0 56px; box-shadow: 0 1px 0 #e8e8e8; }
   .t-nav-links { display: flex !important; gap: 4px; align-items: center; }
   .t-nav-link {
@@ -279,11 +276,16 @@ $sucursales = $pdo->query("
 }
 </style>
 </head>
-<body class="has-bottom-nav">
+<body class="t-page">
 <div id="page-wrap">
+
+<?php include __DIR__ . '/nav-drawer.php'; ?>
 
 <!-- ── HEADER ── -->
 <header class="t-nav">
+  <button class="nd-toggle" id="ndToggle" aria-label="Abrir menú" onclick="abrirDrawer()">
+    <i class="fa-solid fa-bars"></i>
+  </button>
   <a href="index.php" class="t-brand">
     <div class="t-brand-icon">
       <img src="<?= URL_ASSETS ?>/img/Logo_Canetto_Cookie.png" alt="Canetto" class="t-brand-logo" onerror="this.style.display='none'">
@@ -291,8 +293,8 @@ $sucursales = $pdo->query("
     <span class="t-brand-name">Canetto</span>
   </a>
   <nav class="t-nav-links">
-    <a href="index.php"       class="t-nav-link">Productos</a>
-    <a href="index.php#boxesGrid" class="t-nav-link">Boxes</a>
+    <a href="tienda.php"       class="t-nav-link">Productos</a>
+    <a href="tienda.php#boxesGrid" class="t-nav-link">Boxes</a>
     <a href="sucursales.php"  class="t-nav-link" style="color:var(--pk);font-weight:700">Sucursales</a>
   </nav>
   <div class="t-actions">
@@ -409,44 +411,10 @@ $sucursales = $pdo->query("
 <!-- ── FOOTER desktop ── -->
 <footer class="t-footer">
   <span class="t-footer-brand">© <?= date('Y') ?> Canetto</span>
-  <span class="t-footer-tag">Galletitas artesanales</span>
+  <span class="t-footer-tag">Cookies artesanales</span>
 </footer>
 
 </div><!-- /page-wrap -->
-
-<!-- ── BOTTOM NAV ── -->
-<nav class="bottom-nav">
-  <a href="index.php" class="bn-item">
-    <i class="fa-solid fa-house"></i>
-    <span>Inicio</span>
-  </a>
-  <?php if ($cliente_id): ?>
-  <a href="mis-pedidos.php" class="bn-item">
-    <i class="fa-solid fa-bag-shopping"></i>
-    <span>Mis pedidos</span>
-  </a>
-  <?php else: ?>
-  <a href="login.php" class="bn-item">
-    <i class="fa-solid fa-bag-shopping"></i>
-    <span>Mis pedidos</span>
-  </a>
-  <?php endif; ?>
-  <a href="sucursales.php" class="bn-item active">
-    <i class="fa-solid fa-location-dot"></i>
-    <span>Sucursales</span>
-  </a>
-  <?php if ($cliente_id): ?>
-  <a href="mi-cuenta.php" class="bn-item">
-    <i class="fa-solid fa-user"></i>
-    <span>Mi cuenta</span>
-  </a>
-  <?php else: ?>
-  <a href="login.php" class="bn-item">
-    <i class="fa-solid fa-user"></i>
-    <span>Mi cuenta</span>
-  </a>
-  <?php endif; ?>
-</nav>
 
 <script>
 window.SUCURSALES = <?= json_encode($sucursales, JSON_UNESCAPED_UNICODE) ?>;

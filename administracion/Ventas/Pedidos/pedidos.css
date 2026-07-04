@@ -106,7 +106,7 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
 .ventas-table tbody tr { border-bottom: 1px solid var(--rule); transition: background var(--transition); }
 .ventas-table tbody tr:last-child { border-bottom: none; }
 .ventas-table tbody tr:hover { background: #f5f5f5; }
-.ventas-table tbody td { padding: 12px 16px; vertical-align: middle; color: var(--ink-mid); }
+.ventas-table tbody td { padding: 12px 16px; vertical-align: top; color: var(--ink-mid); }
 
 /* ── ROW COLORS PER STATE ── */
 .ventas-table tbody tr.row-estado-1  { background: #fffbea; }
@@ -131,7 +131,10 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
 .cliente-info strong { display: block; color: var(--ink); font-weight: 600; font-size: .97rem; }
 .cliente-info small  { color: var(--ink-soft); font-size: .97rem; }
 
-.productos-mini { display: flex; flex-wrap: wrap; gap: 3px; max-width: 200px; }
+.productos-mini {
+  display: flex; flex-wrap: wrap; align-content: flex-start;
+  gap: 4px; max-width: 320px; max-height: 96px; overflow-y: auto; padding-right: 4px;
+}
 .prod-tag {
   background: var(--paper); border: 1px solid var(--rule);
   border-radius: 4px; padding: 2px 7px;
@@ -230,6 +233,22 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
 .btn-whatsapp:hover:not(:disabled) { background: #1ebe5d; }
 .btn-whatsapp:disabled { opacity:.4; cursor:not-allowed; }
 
+/* ── SOLICITUD DE CANCELACIÓN (repartidor) ── */
+.ventas-table tbody tr.row-cancel-solicitud { background: #fff7f7; }
+.cancel-solicitud-row td { padding: 10px 16px; background: #fef2f2; border-bottom: 2px solid #fca5a5; }
+.cancel-solicitud-banner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  animation: slideDown .45s cubic-bezier(.22,.68,0,1.2);
+}
+.cancel-solicitud-banner > i { color: #dc2626; font-size: 1.1rem; flex-shrink: 0; }
+.cancel-solicitud-info { flex: 1; min-width: 200px; color: #7f1d1d; font-size: .92rem; }
+.cancel-solicitud-motivo { font-size: .85rem; font-weight: 600; color: #b91c1c; margin-top: 2px; }
+.cancel-solicitud-btns { display: flex; gap: 8px; flex-shrink: 0; }
+.btn-cancel-aprobar { background: #16a34a; color: #fff; border-color: #16a34a; }
+.btn-cancel-aprobar:hover { background: #15803d; border-color: #15803d; }
+.btn-cancel-rechazar { background: #fff; color: #b91c1c; border-color: #fca5a5; }
+.btn-cancel-rechazar:hover { background: #b91c1c; color: #fff; border-color: #b91c1c; }
+
 /* ── MODAL ── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(10,10,10,.55);
@@ -244,6 +263,7 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
   display: flex; flex-direction: column;
   box-shadow: var(--shadow-lg); animation: slideUp .25s ease;
 }
+.modal-box.detalle-box { max-width: 900px; }
 @keyframes slideUp { from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)} }
 .modal-header {
   padding: 1.3rem 1.6rem; border-bottom: 1px solid var(--rule);
@@ -260,12 +280,14 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
 .rep-modal-info { background:#f8fafc;border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.8;color:#334155;border:1px solid #e2e8f0; }
 .rep-modal-info strong { color:#1e293b; }
 
+.detalle-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 2rem; align-items:start; }
 .detalle-section { margin-bottom:1.4rem; }
 .detalle-section h4 { font-size:.88rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--rule); }
 .section-toggle { cursor:pointer;user-select:none;display:flex !important;align-items:center;justify-content:space-between; }
 .section-toggle:hover { color:var(--ink) !important; }
 .toggle-chevron { font-size:.7rem;transition:transform .22s ease;display:inline-block;opacity:.6; }
-.section-content { overflow:hidden; }
+.section-content { overflow:hidden;opacity:1;transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s ease; }
+.section-content.collapsed { opacity:0; }
 .detalle-info-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-top:4px; }
 .info-item { background:#f8fafc;border-radius:8px;padding:10px 12px;border:1px solid #e8edf3; }
 .info-item label { font-size:.78rem;color:var(--ink-soft);font-weight:700;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em; }
@@ -312,5 +334,6 @@ body { font-family: "Speedee", sans-serif; font-size: 16px; background: var(--pa
   .ventas-table tbody td:nth-child(3) { display:none; }
   .pedidos-header { flex-direction:column;align-items:flex-start; }
   .stats-bar { grid-template-columns:1fr 1fr; }
+  .detalle-grid { grid-template-columns:1fr; }
 }
 

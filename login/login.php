@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 if (isset($_SESSION['usuario_id'])) {
     $dest = ($_SESSION['rol'] ?? '') === 'cliente'
-        ? URL_TIENDA . '/index.php'
+        ? URL_TIENDA . '/tienda.php'
         : URL_ADMIN  . '/index.php';
     redirect($dest);
 }
@@ -187,7 +187,7 @@ async function doRegister() {
         const d = await (await fetch('register_process.php', { method: 'POST', body: fd })).json();
         if (d.ok) {
             setAlert(alert, '¡Bienvenido, ' + d.nombre + '! Redirigiendo...', 'ok');
-            setTimeout(() => window.location.href = '<?= URL_TIENDA ?>/index.php', 1000);
+            setTimeout(() => window.location.href = '<?= URL_TIENDA ?>/tienda.php', 1000);
         } else {
             setAlert(alert, d.msg || 'Error al registrar.', 'err');
             btn.disabled = false; btn.textContent = 'Crear cuenta';

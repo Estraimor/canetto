@@ -27,6 +27,20 @@
 
 
 
+<!-- ================= HEARTBEAT ACTIVIDAD (cross-tab repartidor) ================= -->
+<script>
+(function() {
+    let _t = 0;
+    const ping = () => {
+        const now = Date.now();
+        if (now - _t < 5000) return; // throttle, no escribir en cada evento
+        _t = now;
+        try { localStorage.setItem('canetto_admin_heartbeat', String(now)); } catch (_) {}
+    };
+    ['click', 'keydown', 'scroll'].forEach(ev => document.addEventListener(ev, ping, { passive: true }));
+})();
+</script>
+
 <!-- ================= SIDEBAR TOGGLE ================= -->
 <script>
 (function() {
